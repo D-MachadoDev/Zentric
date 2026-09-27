@@ -100,6 +100,25 @@ builder.Services.AddScoped<Zentric.Domain.Inventories.Services.InventoryReservat
 // adaptador por uno real (PSE, Wompi, Stripe) no exige tocar Dominio ni casos de uso.
 builder.Services.AddScoped<Zentric.Domain.Payments.Ports.IPaymentGatewayService, Zentric.Infrastructure.Payments.SimulatedPaymentGateway>();
 
+
+// CORS: habilita que el frontend (Vite, otro puerto) llame a la API. La lista de
+// origenes viene de configuracion y NO se usa el comodin: un comodin con
+// credenciales esta prohibido por el protocolo, y el lote 6 dejara JWT, asi que
+// los origenes deben quedar declarados de forma explicita.
+var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Value;
+var allowedOrigins = string.IsNullOrWhiteSpace(configuredOrigins)
+    ? new[] { "http://localhost:5173" }
+    : configuredOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -114,6 +133,8 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.UseCors("Frontend");
 
 // Middleware global de excepciones: las fallas técnicas no controladas se convierten en Problem Details (AGENTS.md, sección 3.4).
 app.UseExceptionHandler();

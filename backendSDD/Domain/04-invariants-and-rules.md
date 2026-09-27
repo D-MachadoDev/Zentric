@@ -22,6 +22,10 @@ El Dominio está obligado a proteger y hacer cumplir las siguientes reglas media
 
 ## 3. Dinámicas Comerciales y Pagos
 7. **Facturación Maestra (Merchant of Record):** Zentric asume legalmente el cobro al comprador. El `CustomerOrder` totaliza todo, incluyendo el `FlatShippingFee` (Tarifa Plana de Envío), y es la base de un único comprobante unificado (no se exponen múltiples recibos de pago al cliente).
+
+    > **ADDENDUM - DICTADO POR OWNER (2026-09-27) — política de envío, sin implementación todavía.** Transportadora única propia ("Zentric"), **número de guía obligatorio** en cada despacho, **tarifa fija** (no por peso, tamaño ni zona, porque el sistema no modela ubicación geográfica) y **lo paga el cliente**, no Zentric. La funcionalidad se **aplaza**: el Owner estima que llegará en algunos años, así que este invariante documenta la decisión pero **no hay código de envío**. La cifra de la tarifa sigue sin definirse y ningún código debe asumir un importe. Ver [ADR-0008](../Adr/0008-transportadora-y-tarifa-de-envio.md).
+    >
+    > *Es un ADDENDUM del Owner; `ZENTRIC.md` no menciona envío, transportadora ni guía.*
 8. **Timeout de Reservas:** Si un pedido pasa más de un tiempo estipulado (ej. 15 minutos) en estado `PendingPayment`, se anula automáticamente y devuelve las cantidades reservadas a `AvailableQuantity`.
 9. **Simulación de Pasarela (YAGNI):** No se almacenan tarjetas de crédito ni billeteras. El Dominio avanza de estado con una simple entidad `PaymentReceipt` que valida la respuesta de éxito/fallo.
 

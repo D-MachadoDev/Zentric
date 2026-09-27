@@ -67,11 +67,10 @@ Endpoint de referencia: `GET /api/Catalog/products/paged?vendorId={id}&page=0&si
 
 ### 3.1 Identidad del llamante y aislamiento por comprador
 
-Todavía **no hay autenticación JWT** (decisión pendiente del Owner). Mientras tanto, el
-comprador se declara en la cabecera **`X-Buyer-Id`**, y el backend la resuelve en
-`HeaderBuyerAccessor`. Cuando exista JWT, ese mismo accesor pasa a leer el claim
-(`NameIdentifier` o `sub`) y **no cambia ningún otro archivo**: la cabecera queda como
-fallback para desarrollo.
+Todavía **no hay autenticación JWT** (ver 3.2). Mientras tanto, el comprador se declara en la
+cabecera **`X-Buyer-Id`**, y el backend la resuelve en `HeaderBuyerAccessor`. Cuando exista
+JWT, ese mismo accesor pasa a leer el claim (`NameIdentifier` o `sub`) y **no cambia ningún
+otro archivo**: la cabecera queda como fallback para desarrollo.
 
 `GET /api/Orders/{id}` sí está aislado: usa `GetOrderByIdForBuyerQuery`, que filtra por
 `BuyerId` **en la consulta**, no después de leer el pedido.
@@ -87,6 +86,36 @@ fallback para desarrollo.
 
 El frontend debe enviar `X-Buyer-Id` en todas las llamadas de pedidos mientras no
 exista JWT.
+
+### 3.2 CORS
+
+Una política `Frontend` habilita el origen declarado en `Cors:AllowedOrigins`
+(`appsettings.json`, o `Cors__AllowedOrigins` por variable de entorno). Varios orígenes se
+separan por comas.
+
+| Petición | Resultado |
+|---|---|
+| `Origin: http://localhost:5173` | `200` + `Access-Control-Allow-Origin` con ese origen |
+| Origen no declarado | `200` pero **sin** header CORS; el navegador bloquea la respuesta |
+| Preflight `OPTIONS` | `204` + `Access-Control-Allow-Methods` |
+
+> **No se usa el comodín `*`.** El lote 6 prevé JWT, y el protocolo prohíbe combinar
+> comodín con credenciales. Los orígenes deben declararse de forma explícita.
+
+### 3.3 Autenticación JWT — **bloqueada, pendiente de decisión del Owner**
+
+No se implementó JWT a propósito, por dos razones concretas:
+
+1. **Falta el algoritmo de hash de contraseñas.** `User.PasswordHash` guarda un hash, pero
+   **no existe ningún método que lo verifique**: el sistema nunca ha validado una contraseña.
+   Crear login exige elegir el algoritmo (PBKDF2, BCrypt, Argon2) y sus parámetros.
+2. **Falta la política de identidad.** `ZENTRIC.md` Dominio 1 describe roles
+   (`Buyer`, `Seller`, `LogisticsOperator`, `Admin`, `Supervisor`) pero **no define emisión
+   de tokens, caducidad, renovación ni revocación**.
+
+Ambos son decisiones de seguridad y de negocio, no técnicas: elegirlas por cuenta propia
+sería inventar política. Cuando el Owner las dicte, el punto de conexión ya está listo:
+`HeaderBuyerAccessor` pasa a leer el claim y el resto del sistema no cambia.
 
 ---
 
