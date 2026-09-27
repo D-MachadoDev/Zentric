@@ -2,22 +2,99 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   build:
+    name: Backend (.NET)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '10.0.x'
     - name: Restore dependencies
       run: dotnet restore Zentric.slnx
     - name: Build
-      run: dotnet build Zentric.slnx --no-restore
+      # Advertencia: se convierte en error. El objetivo de la rama es 0 warnings.
+      run: dotnet build Zentric.slnx --no-restore -warnaserror
     - name: Test
       run: dotnet test Zentric.slnx --no-build --verbosity normal
+
+  frontend:
+    name: Frontend (Node)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+        cache: npm
+        # La cache exige que el lockfile exista; se verifica antes de usarla.
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Verificar que existe el lockfile
+      # npm ci falla sin lockfile y la cache de npm no puede resolverse.
+      run: test -f package-lock.json || (echo "::error::falta frontend/package-lock.json" && exit 1)
+
+    - name: Verificar coherencia del lockfile
+      # Detecta package.json y package-lock.json desincronizados.
+      run: npm ci --dry-run
+
+    - name: Instalar dependencias
+      run: npm ci
+
+    - name: Detectar codigo de aplicacion
+      id: src
+      # La implementacion del frontend esta en NOT_STARTED: frontend/ solo tiene
+      # configuracion base. Los pasos que requieren src/ se omiten hasta que exista.
+      run: |
+        if [ -d src ]; then
+          echo "present=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "present=false" >> "$GITHUB_OUTPUT"
+          echo "::notice::frontend/src no existe todavia; se omiten typecheck, build y test."
+        fi
+
+    - name: Verificar tipos
+      if: steps.src.outputs.present == 'true'
+      run: npm run typecheck
+
+    - name: Build
+      if: steps.src.outputs.present == 'true'
+      run: npm run build
+
+    - name: Test
+      if: steps.src.outputs.present == 'true'
+      run: npm test
+
+  docs:
+    name: Enlaces del SDD
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Comprobar que no hay enlaces Markdown rotos
+      # Tras la migracion de SDD/ a backendSDD/ es facil dejar referencias rotas.
+      run: |
+        set -e
+        broken=0
+        for f in $(find . -name '*.md' -not -path './.git/*' -not -path './node_modules/*' \
+                     -not -path '*/obj/*' -not -path '*/bin/*' -not -path './.agents/*'); do
+          dir=$(dirname "$f")
+          grep -oE '\]\([^)#]+' "$f" 2>/dev/null | sed 's/^](//' | while read -r link; do
+            case "$link" in
+              http*|mailto:*|'') continue ;;
+            esac
+            [ -e "$dir/$link" ] || { echo "::error::enlace roto en $f -> $link"; }
+          done
+        done
+        echo "Verificacion de enlaces completada."

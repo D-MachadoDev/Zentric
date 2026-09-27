@@ -1,6 +1,6 @@
 # AGENTS.md — Directrices y Contexto para Agentes de IA
 
-> Este archivo define las reglas, arquitectura, roles y convenciones que cualquier agente de IA (Antigravity, Cursor, Claude, Copilot) debe seguir estrictamente al trabajar en el repositorio **zentric-backend**.
+> Este archivo define las reglas, arquitectura, roles y convenciones que cualquier agente de IA (Antigravity, Cursor, Claude, Copilot) debe seguir estrictamente al trabajar en el repositorio **zentric**.
 ---
 
 ## 0. ENRUTADOR Y PRINCIPIOS DE SPEC-DRIVEN DEVELOPMENT (SDD)
@@ -11,34 +11,34 @@ En este proyecto aplicamos **Spec-Driven Development (SDD)**. La documentación 
 *   La metodología operativa de todo agente en este repositorio vive en lageneric-sdd-agenteric-sdsddric-sdd-agent v6.0.0** (documento único):
     - Fuente de verdad versionadageneric-sdd-agenteric-sddsddls/generic-sdd-agent/SKILL.md (v6.0.0, monolítico; **ya no usa references/**).
     - Copia instageneric-sdd-agenteric-sdd-sdd automática: %USERPROFILE%\.agents\skills\generic-sdd-agent\ (regenerar con .agents/skills/generic-sdd-agent/scripts/sync-skill.ps1; **no editar la copia a mano**).
-    - Overlay del repositorio: integrado en **este [AGENTS.md](AGENTS.md)** ([:0](AGENTS.md#0-enrutador-y-principios-de-spec-driven-development-sdd)–[:8](AGENTS.md#8-checklist-de-dgeneric-sdd-agenteric-sdd-asddminado-dod-para-agentes)) más el contexto persistente de [SDD/SDD.md]([SDD/SDD.md](SDD/SDD.md)).
-*   **Contexto persistente (huella mínima):** [AGENTS.md](AGENTS.md) (contrato operativo) + [SDD/SDD.md]([SDD/SDD.md](SDD/SDD.md)) (memoria viva: mapa de entidades, decisiones/ADDENDA, verificación, riesgos y estado). [SDD/SDD.md]([SDD/SDD.md](SDD/SDD.md)) **no duplica** las specs: las indexa y apunta a ellas.
-*   Cuando exista conflicto, la prioridad es: decisión del owner → [AGENTS.md](AGENTS.md) → [ZENTRIC.md](/ZENTRIC.md)) (Ley) → resto de SDD/ → skill.
+    - Overlay del repositorio: integrado en **este [AGENTS.md](AGENTS.md)** ([:0](AGENTS.md#0-enrutador-y-principios-de-spec-driven-development-sdd)–[:8](AGENTS.md#8-checklist-de-dgeneric-sdd-agenteric-sdd-asddminado-dod-para-agentes)) más el contexto persistente de [backendSDD/SDD.md](backendSDD/SDD.md).
+*   **Contexto persistente (huella mínima):** [AGENTS.md](AGENTS.md) (contrato operativo) + [backendSDD/SDD.md](backendSDD/SDD.md) (memoria viva: mapa de entidades, decisiones/ADDENDA, verificación, riesgos y estado). [backendSDD/SDD.md](backendSDD/SDD.md) **no duplica** las specs: las indexa y apunta a ellas.
+*   Cuando exista conflicto, la prioridad es: decisión del owner → [AGENTS.md](AGENTS.md) → [ZENTRIC.md](/ZENTRIC.md)) (Ley) → resto de backendSDD/ → skill.
 *   generic-sdd-agent.md (raíz, v2.0.0) quedó **superseded** y fue **ELIMINADO el 2026-09-18** por autorización del Owner (el propio archivo pedía autorización para su eliminación). La skill **v6.0.0** es el único punto de entrada metodológico vigente.
 
 ### 0.1 Consulta Obligatoria Antes de Codificar
 Antes de generar o modificar código, el agente **DEBE** consultar la documentación correspondiente en `/SDD`:
 
-*   **Para contexto del negocio global:** Lee [SDD/01-system-overview.md]([SDD/01-system-overview.md](SDD/01-system-overview.md)).
-*   **Para entender el flujo general y las capas:** Lee [SDD/02-software-architecture.md]([SDD/02-software-architecture.md](SDD/02-software-architecture.md)) para asimilar la Arquitectura Hexagonal y la regla de dependencia.
-*   **Para el contexto de negocio específico y reglas puras (Bounded Context):** Revisa los archivos dentro de SDD/Domain/. Aquí habitan las invariantes, el modelado y las reglas de negocio.
-*   **Para orquestación, puertos de salida y casos de uso:** Revisa los archivos en SDD/Application/.
-*   **Para acceso a datos, ORM y adaptadores:** Revisa los archivos en SDD/Infrastructure/.
-*   **Para controladores y exposición de endpoints:** Revisa los archivos en SDD/Presentation/.
+*   **Para contexto del negocio global:** Lee [backendSDD/01-system-overview.md](backendSDD/01-system-overview.md).
+*   **Para entender el flujo general y las capas:** Lee [backendSDD/02-software-architecture.md](backendSDD/02-software-architecture.md) para asimilar la Arquitectura Hexagonal y la regla de dependencia.
+*   **Para el contexto de negocio específico y reglas puras (Bounded Context):** Revisa los archivos dentro de backendSDD/Domain/. Aquí habitan las invariantes, el modelado y las reglas de negocio.
+*   **Para orquestación, puertos de salida y casos de uso:** Revisa los archivos en backendSDD/Application/.
+*   **Para acceso a datos, ORM y adaptadores:** Revisa los archivos en backendSDD/Infrastructure/.
+*   **Para controladores y exposición de endpoints:** Revisa los archivos en backendSDD/Presentation/.
 
 ### 0.2 Regla de Sincronización Bidireccional (Spec-Anchored Code)
-*   **Sin Especificación no hay Código:** Todo cambio estructural o de regla de negocio debe estar respaldado por la especificación en `/SDD/`.
-*   **Actualización de Specs:** Si durante la implementación surge un ajuste de modelo o regla de negocio, el agente **DEBE actualizar simultáneamente** el documento de especificación correspondiente en `/SDD/` para mantener el código y la especificación 100% sincronizados.
+*   **Sin Especificación no hay Código:** Todo cambio estructural o de regla de negocio debe estar respaldado por la especificación en `/backendSDD/`.
+*   **Actualización de Specs:** Si durante la implementación surge un ajuste de modelo o regla de negocio, el agente **DEBE actualizar simultáneamente** el documento de especificación correspondiente en `/backendSDD/` para mantener el código y la especificación 100% sincronizados.
 
 ### 0.3 El Freno de Mano (Cero Asunciones)
 *   Si el usuario solicita implementar una funcionalidad que **no existe** en la especificación, o si la especificación es **ambigua**, el agente **tiene prohibido inventar o asumir**.
-*   El agente debe **detenerse**, informar al usuario sobre la ambigüedad o falta de especificación, y proponer redactar o aclarar la especificación en `/SDD/` antes de generar una sola línea de código.
+*   El agente debe **detenerse**, informar al usuario sobre la ambigüedad o falta de especificación, y proponer redactar o aclarar la especificación en `/backendSDD/` antes de generar una sola línea de código.
 
 ### 0.4 Lenguaje Ubicuo Estricto (Cero Sinónimos)
-*   El agente tiene prohibido inventar sinónimos al traducir la especificación a código. Las variables, clases, métodos, interfaces y entidades de base de datos **DEBEN usar exactamente los mismos términos** definidos en el Glosario y en los modelos de `/SDD/` (por ejemplo, si la spec dice `Buyer`, nunca usar `Customer` o `Client`).
+*   El agente tiene prohibido inventar sinónimos al traducir la especificación a código. Las variables, clases, métodos, interfaces y entidades de base de datos **DEBEN usar exactamente los mismos términos** definidos en el Glosario y en los modelos de `/backendSDD/` (por ejemplo, si la spec dice `Buyer`, nunca usar `Customer` o `Client`).
 
 ### 0.5 Trazabilidad y Progreso
-*   El agente debe registrar el progreso (por ejemplo, marcando con checkboxes [x]) de las tareas implementadas dentro de los documentos aplicables en /SDD/, o en un archivo de seguimiento dedicado (TRACKING.md / TODO.md), para que siempre exista trazabilidad clara entre la especificacion y el codigo implementado.
+*   El agente debe registrar el progreso (por ejemplo, marcando con checkboxes [x]) de las tareas implementadas dentro de los documentos aplicables en /backendSDD/, o en un archivo de seguimiento dedicado (TRACKING.md / TODO.md), para que siempre exista trazabilidad clara entre la especificacion y el codigo implementado.
 
 ### 0.6 Autonomia de Flujo (No Interrumpir Innecesariamente)
 *   Si el agente finaliza y verifica (tests 100% en verde) una capa completa (ej. Dominio), **DEBE avanzar automaticamente** a la siguiente capa arquitectonica (ej. Aplicacion -> Infraestructura) segun el patron Hexagonal, sin detenerse a preguntar "¿que quieres hacer ahora?", limitandose a informar al usuario de los hitos logrados.
@@ -52,7 +52,7 @@ Antes de generar o modificar código, el agente **DEBE** consultar la documentac
 
 ## 1. Visión General del Proyecto
 
-- **Nombre del Proyecto:** zentric-backend
+- **Nombre del Proyecto:** zentric
 - **Propósito:** API Central y Core de Dominio para Zentric (gestión de marketplace, inventarios, compradores, bodegas, productos, catálogos, vendedores y pedidos).
 - **Stack Tecnológico Principal:**
   - Lenguaje: C# (.NET 10)
@@ -108,7 +108,7 @@ El flujo de dependencias es unidireccional y siempre apunta hacia el centro (Dom
 
 ### 2.4. Auditoria de Mapeo Completo (Anti-Amnesia de Entidades)
 *   **Problema a evitar:** Es una falla critica en proyectos empresariales olvidar entidades en la persistencia por concentrarse solo en los requerimientos nuevos.
-*   **Mandato:** Al construir o inicializar la capa de Infraestructura (ej. DbContext, Repositorios, Migraciones), el agente tiene **PROHIBIDO** basarse unicamente en el contexto de la conversacion reciente. Debe escanear **OBLIGATORIAMENTE** el proyecto Zentric.Domain completo (o SDD/Domain) para garantizar que el **100% de los Agregados Raiz** del sistema sean integrados (ej. DbSets).
+*   **Mandato:** Al construir o inicializar la capa de Infraestructura (ej. DbContext, Repositorios, Migraciones), el agente tiene **PROHIBIDO** basarse unicamente en el contexto de la conversacion reciente. Debe escanear **OBLIGATORIAMENTE** el proyecto Zentric.Domain completo (o backendSDD/Domain) para garantizar que el **100% de los Agregados Raiz** del sistema sean integrados (ej. DbSets).
 
 
 
@@ -142,7 +142,7 @@ El flujo de dependencias es unidireccional y siempre apunta hacia el centro (Dom
 Cuando interactúes en este proyecto, asume o coordina según el rol requerido:
 
 ### 4.1 Domain-Architect-Agent
-- **Responsabilidad:** Modelado de entidades, agregados, servicios, value objects, invariantes de negocio y **mantenimiento de las especificaciones en `/SDD/Domain/`**.
+- **Responsabilidad:** Modelado de entidades, agregados, servicios, value objects, invariantes de negocio y **mantenimiento de las especificaciones en `/backendSDD/Domain/`**.
 - **Criterio:** Garantizar que el modelo refleje fielmente el lenguaje ubicuo y no se contamine con detalles técnicos.
 
 ### 4.2 `Infrastructure-Adapter-Agent`
@@ -155,7 +155,7 @@ Cuando interactúes en este proyecto, asume o coordina según el rol requerido:
 
 ### 4.4 `QA-Testing-Agent`
 - **Responsabilidad:** Tests unitarios de dominio y aplicación (100% de cobertura en reglas de negocio críticas) inyectando adaptadores falsos (Mocks).
-- **Criterio (Tests = Documentación Viva):** En alineación con BDD (Behavior Driven Development), los tests deben mapearse directamente a los casos de uso definidos en `/SDD/Application/`. Los nombres de los tests deben leerse como los criterios de aceptación de la especificación.
+- **Criterio (Tests = Documentación Viva):** En alineación con BDD (Behavior Driven Development), los tests deben mapearse directamente a los casos de uso definidos en `/backendSDD/Application/`. Los nombres de los tests deben leerse como los criterios de aceptación de la especificación.
 - **Criterio Técnico:** Nombrado claro de tests (patrón `Metodo_Condicion_ResultadoEsperado`).
 
 ---
@@ -188,10 +188,10 @@ Antes de dar por terminada una tarea, el agente debe verificar:
 
 ```bash
 # Compilar solución
-dotnet build Zentric.slnx
+cd backend; dotnet build Zentric.slnx
 
 # Ejecutar tests
-dotnet test
+cd backend; dotnet test
 
 # Restaurar paquetes
 dotnet restore
@@ -201,7 +201,7 @@ dotnet restore
 
 ## 8. Checklist de Definición de Terminado (DoD) para Agentes
 
-- [ ] ¿El cambio está respaldado por y alineado con la especificación en SDD/?
+- [ ] ¿El cambio está respaldado por y alineado con la especificación en backendSDD/?
 - [ ] ¿Se utilizaron los términos exactos del Lenguaje Ubicuo sin inventar sinónimos?
 - [ ] ¿El código respeta la arquitectura hexagonal y la regla de dependencias hacia el centro?
 - [ ] ¿El modelo de dominio contiene las invariantes requeridas y evita modelos anémicos?

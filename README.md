@@ -5,7 +5,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![Tests](https://img.shields.io/badge/Tests-238%20Passing%20(100%25)-brightgreen?style=for-the-badge&logo=xunit)](https://xunit.net/)
-[![Architecture](https://img.shields.io/badge/Architecture-Hexagonal%20%2B%20DDD%20%2B%20CQRS-orange?style=for-the-badge)](./SDD/02-software-architecture.md)
+[![Architecture](https://img.shields.io/badge/Architecture-Hexagonal%20%2B%20DDD%20%2B%20CQRS-orange?style=for-the-badge)](./backendSDD/02-software-architecture.md)
 [![Methodology](https://img.shields.io/badge/Methodology-SDD%20v6.0.0-blue?style=for-the-badge)](./.agents/skills/generic-sdd-agent/SKILL.md)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](./LICENSE)
 
@@ -35,8 +35,8 @@ El entorno completo está contenerizado para permitir su ejecución inmediata:
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/D-MachadoDev/zentric-backend.git
-cd zentric-backend
+git clone https://github.com/D-MachadoDev/zentric.git
+cd zentric
 
 # 2. Iniciar PostgreSQL 16 y la API en contenedores
 docker compose up -d --build
@@ -47,7 +47,7 @@ docker compose up -d --build
 
 Para ejecutar la suite de pruebas automatizadas en local (.NET 10 SDK):
 ```bash
-dotnet test Zentric.slnx
+cd backend; dotnet test Zentric.slnx
 ```
 
 ---
@@ -56,7 +56,7 @@ dotnet test Zentric.slnx
 
 **Zentric** gestiona la operación integral de un marketplace multi-vendedor con logística e inventarios distribuidos:
 - **Consistencia de Inventario:** Control atómico de existencias por bodega física y variante (SKU), evitando sobreventa y quiebres por stock fantasma.
-- **Reserva Preventiva:** Retención automática de stock en el checkout con expiración reglamentaria de **15 minutos** (`CheckoutTimeoutService`) si no se confirma el pago ([PED-01](./SDD/Domain/06-business-rules.md)).
+- **Reserva Preventiva:** Retención automática de stock en el checkout con expiración reglamentaria de **15 minutos** (`CheckoutTimeoutService`) si no se confirma el pago ([PED-01](./backendSDD/Domain/06-business-rules.md)).
 - **Logística (Fulfillment):** Partición y despacho de órdenes agrupadas por vendedor y bodega.
 - **Posventa y Garantías:** Solicitudes de devolución con validación de garantía, inspección técnica en bodega y reingreso al inventario clasificado como *Usado*.
 - **Facturación:** Emisión de Factura Maestra consolidada para el comprador, Factura Detalle por cada vendedor y liquidación de comisión de plataforma.
@@ -71,7 +71,7 @@ El desarrollo del proyecto se rige por **Spec-Driven Development (SDD v6.0.0)**,
 flowchart TD
     B1["1. ZENTRIC.md (La Ley)<br/>Especificación funcional del cliente.<br/>Define 10 dominios y objetivos OBJ-01 a OBJ-12."]
     B2["2. Metodología SDD (SKILL.md)<br/>Metodología de ingeniería de software:<br/>freno de mano, anti-amnesia y cero asunciones."]
-    SSOT["3. Memoria Viva (SDD/ y AGENTS.md)<br/>33 Entidades mapeadas, 6 ADRs,<br/>especificaciones por capa y contratos OpenAPI."]
+    SSOT["3. Memoria Viva (backendSDD/ y AGENTS.md)<br/>33 Entidades mapeadas, 6 ADRs,<br/>especificaciones por capa y contratos OpenAPI."]
     CODE["4. Código Implementado (.NET 10)<br/>Dominio puro, CQRS Handlers, FluentValidation,<br/>EF Core aislado y 238 pruebas xUnit."]
 
     B1 --> SSOT
@@ -81,10 +81,10 @@ flowchart TD
 
 | Nivel de Verdad | Documento | Propósito |
 | :--- | :--- | :--- |
-| **Nivel 1: La Biblia (La Ley)** | [`ZENTRIC.md`](./ZENTRIC.md) | Documento funcional original. Intocable en su redacción. En su §3.2 excluye explícitamente bases de datos, UI y tecnologías de implementación. |
-| **Nivel 2: Addenda del Owner** | [`ADD-001` a `ADD-003`](./SDD/SDD.md#addendum---dictado-por-owner) | Resoluciones dictadas por el Owner ante aspectos no especificados en el documento original. |
-| **Nivel 3: Decisiones de Arquitectura** | [`ADR-0001` a `ADR-0006`](./SDD/Adr/) | Registros de decisiones de diseño de software (reserva atómica, VariantId, carritos, etc.). |
-| **Nivel 4: Memoria Viva (SSoT)** | [`SDD/SDD.md`](./SDD/SDD.md) y [`SDD/`](./SDD/) | Fuente Única de Verdad técnica que indexa modelos, invariantes, puertos y contratos. |
+| **Nivel 1: La Biblia (La Ley)** | [`ZENTRIC.md`](./ZENTRIC.md) | Documento funcional original. Intocable en su redacción. En su sección 3.2 excluye explícitamente bases de datos, UI y tecnologías de implementación. |
+| **Nivel 2: Addenda del Owner** | [`ADD-001` a `ADD-003`](./backendSDD/SDD.md#addendum---dictado-por-owner) | Resoluciones dictadas por el Owner ante aspectos no especificados en el documento original. |
+| **Nivel 3: Decisiones de Arquitectura** | [`ADR-0001` a `ADR-0006`](./backendSDD/Adr/) | Registros de decisiones de diseño de software (reserva atómica, VariantId, carritos, etc.). |
+| **Nivel 4: Memoria Viva (SSoT)** | [`backendSDD/SDD.md`](./backendSDD/SDD.md) y [`backendSDD/`](./backendSDD/) | Fuente Única de Verdad técnica que indexa modelos, invariantes, puertos y contratos. |
 | **Nivel 5: Implementación Técnica** | Código Fuente C# | Implementación concreta estructurada en 5 proyectos. |
 
 ---
@@ -144,15 +144,15 @@ El sistema define 9 Agregados Raíz alineados con el Glosario de Términos del d
 
 | Agregado / Entidad | Bounded Context | Invariante Central | Ubicación en Código |
 | :--- | :--- | :--- | :--- |
-| **`User`** | Identity | Unicidad obligatoria de email. Rol único asignado (Buyer, Seller, Admin, Logistics, Supervisor). | [`User.cs`](./Zentric.Domain/Users/User.cs) |
-| **`Warehouse`** | Logistics / Inventory | Capacidad volumétrica positiva. Bodega de vendedor requiere `VendorId`; de marketplace lo prohíbe. | [`Warehouse.cs`](./Zentric.Domain/Warehouses/Warehouse.cs) |
-| **`Product`** | Catalog | Productos físicos requieren variantes (SKUs). Estados: Draft, Published, Suspended. | [`Product.cs`](./Zentric.Domain/Products/Product.cs) |
-| **`ProductVariant`** | Catalog | SKU único, dimensiones físicas y atributos inmutables (`VariantAttribute`). | [`ProductVariant.cs`](./Zentric.Domain/Products/ProductVariant.cs) |
-| **`Inventory`** | Inventory | Prohibido el stock negativo. Contadores atómicos: `Available`, `Reserved`, `Used`, `Damaged`. | [`Inventory.cs`](./Zentric.Domain/Inventories/Inventory.cs) |
-| **`CustomerOrder`** | Ordering | Carrito de compras, cálculo en moneda homogénea (`Money`), checkout con timeout de 15 min. | [`CustomerOrder.cs`](./Zentric.Domain/Orders/CustomerOrder.cs) |
-| **`FulfillmentOrder`**| Fulfillment | Despacho agrupado por vendedor. Confirmación de envío (`Shipment`) y cancelación por quiebre. | [`FulfillmentOrder.cs`](./Zentric.Domain/Logistics/FulfillmentOrder.cs) |
-| **`ReturnRequest`** | Returns / Post-Sale | Doble aprobación técnica y comercial. Prohibido para productos digitales. | [`ReturnRequest.cs`](./Zentric.Domain/Returns/ReturnRequest.cs) |
-| **`Invoice`** | Billing | Emisión de Factura Maestra y Facturas Detalle por vendedor con desglose de comisión. | [`Invoice.cs`](./Zentric.Domain/Billing/Invoice.cs) |
+| **`User`** | Identity | Unicidad obligatoria de email. Rol único asignado (Buyer, Seller, Admin, Logistics, Supervisor). | [`User.cs`](./backend/Zentric.Domain/Users/User.cs) |
+| **`Warehouse`** | Logistics / Inventory | Capacidad volumétrica positiva. Bodega de vendedor requiere `VendorId`; de marketplace lo prohíbe. | [`Warehouse.cs`](./backend/Zentric.Domain/Warehouses/Warehouse.cs) |
+| **`Product`** | Catalog | Productos físicos requieren variantes (SKUs). Estados: Draft, Published, Suspended. | [`Product.cs`](./backend/Zentric.Domain/Products/Product.cs) |
+| **`ProductVariant`** | Catalog | SKU único, dimensiones físicas y atributos inmutables (`VariantAttribute`). | [`ProductVariant.cs`](./backend/Zentric.Domain/Products/ProductVariant.cs) |
+| **`Inventory`** | Inventory | Prohibido el stock negativo. Contadores atómicos: `Available`, `Reserved`, `Used`, `Damaged`. | [`Inventory.cs`](./backend/Zentric.Domain/Inventories/Inventory.cs) |
+| **`CustomerOrder`** | Ordering | Carrito de compras, cálculo en moneda homogénea (`Money`), checkout con timeout de 15 min. | [`CustomerOrder.cs`](./backend/Zentric.Domain/Orders/CustomerOrder.cs) |
+| **`FulfillmentOrder`**| Fulfillment | Despacho agrupado por vendedor. Confirmación de envío (`Shipment`) y cancelación por quiebre. | [`FulfillmentOrder.cs`](./backend/Zentric.Domain/Logistics/FulfillmentOrder.cs) |
+| **`ReturnRequest`** | Returns / Post-Sale | Doble aprobación técnica y comercial. Prohibido para productos digitales. | [`ReturnRequest.cs`](./backend/Zentric.Domain/Returns/ReturnRequest.cs) |
+| **`Invoice`** | Billing | Emisión de Factura Maestra y Facturas Detalle por vendedor con desglose de comisión. | [`Invoice.cs`](./backend/Zentric.Domain/Billing/Invoice.cs) |
 
 ### Value Objects Inmutables
 - **`Money`:** Importe decimal y divisa ISO 4217 ("USD"). Controla que las operaciones aritméticas se realicen sobre la misma moneda.
@@ -164,16 +164,16 @@ El sistema define 9 Agregados Raíz alineados con el Glosario de Términos del d
 
 ## 📑 Registro de Decisiones Arquitectónicas (ADRs)
 
-Las decisiones de diseño técnico se encuentran documentadas en [`SDD/Adr/`](./SDD/Adr/):
+Las decisiones de diseño técnico se encuentran documentadas en [`backendSDD/Adr/`](./backendSDD/Adr/):
 
 | ADR | Título | Resumen de Decisión |
 | :---: | :--- | :--- |
-| **[ADR-0001](./SDD/Adr/0001-reserva-fragmentacion-contingencia.md)** | Reserva, Fraccionamiento y Contingencia | Reserva atómica en checkout. Ante quiebre por stock fantasma, cancelación parcial y liberación de existencias. |
-| **[ADR-0002](./SDD/Adr/0002-clave-inventario-variantid.md)** | Clave de Inventario por `VariantId` | El inventario se controla a nivel de SKU (`VariantId`) para permitir existencias independientes por variante. |
-| **[ADR-0003](./SDD/Adr/0003-variante-obligatoria-productos-fisicos.md)** | Variante Obligatoria en Productos Físicos | Los productos físicos requieren al menos una variante con datos dimensionales para publicarse. |
-| **[ADR-0004](./SDD/Adr/0004-estado-cancelacion-despacho.md)** | Cancelación en Despachos Logísticos | Uso del estado `Cancelled` en `FulfillmentOrder` acompañado de `CancellationReason`. |
-| **[ADR-0005](./SDD/Adr/0005-modelado-carrito-compras.md)** | Modelado de Carrito en `CustomerOrder` | El carrito se modela como el estado inicial (`Cart`) del agregado `CustomerOrder`. |
-| **[ADR-0006](./SDD/Adr/0006-resolucion-contradiccion-ley-addendum.md)** | Prevalencia Normativa de Addendum | Aplicación de la regla dictada por el Owner para la partición de facturas y despachos por vendedor. |
+| **[ADR-0001](./backendSDD/Adr/0001-reserva-fragmentacion-contingencia.md)** | Reserva, Fraccionamiento y Contingencia | Reserva atómica en checkout. Ante quiebre por stock fantasma, cancelación parcial y liberación de existencias. |
+| **[ADR-0002](./backendSDD/Adr/0002-clave-inventario-variantid.md)** | Clave de Inventario por `VariantId` | El inventario se controla a nivel de SKU (`VariantId`) para permitir existencias independientes por variante. |
+| **[ADR-0003](./backendSDD/Adr/0003-variante-obligatoria-productos-fisicos.md)** | Variante Obligatoria en Productos Físicos | Los productos físicos requieren al menos una variante con datos dimensionales para publicarse. |
+| **[ADR-0004](./backendSDD/Adr/0004-estado-cancelacion-despacho.md)** | Cancelación en Despachos Logísticos | Uso del estado `Cancelled` en `FulfillmentOrder` acompañado de `CancellationReason`. |
+| **[ADR-0005](./backendSDD/Adr/0005-modelado-carrito-compras.md)** | Modelado de Carrito en `CustomerOrder` | El carrito se modela como el estado inicial (`Cart`) del agregado `CustomerOrder`. |
+| **[ADR-0006](./backendSDD/Adr/0006-resolucion-contradiccion-ley-addendum.md)** | Prevalencia Normativa de Addendum | Aplicación de la regla dictada por el Owner para la partición de facturas y despachos por vendedor. |
 
 ---
 
@@ -311,10 +311,10 @@ docker compose down
 ### Ejecución Local con .NET 10 SDK
 ```bash
 # Restaurar paquetes
-dotnet restore Zentric.slnx
+cd backend; dotnet restore Zentric.slnx
 
 # Compilar solución
-dotnet build Zentric.slnx
+cd backend; dotnet build Zentric.slnx
 
 # Ejecutar proyecto API
 dotnet run --project Zentric.Api/Zentric.Api.csproj
@@ -327,7 +327,7 @@ dotnet run --project Zentric.Api/Zentric.Api.csproj
 El proyecto cuenta con **238 pruebas unitarias y de integración** ejecutadas con xUnit:
 
 ```bash
-dotnet test Zentric.slnx
+cd backend; dotnet test Zentric.slnx
 ```
 
 ```text
@@ -346,16 +346,16 @@ La siguiente matriz indexa los componentes arquitectónicos y su ubicación en l
 
 | Componente / Capacidad | Especificación y Requisitos | Ubicación en Código / Evidencia |
 | :--- | :--- | :--- |
-| **Metodología SDD** | Especificación previa formal sin asunciones; memoria viva del sistema. | [`ZENTRIC.md`](./ZENTRIC.md)<br/>[`SDD/`](./SDD/) |
-| **Arquitectura Hexagonal** | Regla de dependencias estricta; núcleo de dominio sin dependencias externas. | [`Zentric.Domain/`](./Zentric.Domain/)<br/>[`SDD/02-software-architecture.md`](./SDD/02-software-architecture.md) |
-| **Modelado DDD y Encapsulación** | Agregados con métodos de negocio semánticos; Value Objects inmutables. | [`Zentric.Domain/`](./Zentric.Domain/)<br/>[`SDD/Domain/`](./SDD/Domain/) |
-| **Aislamiento de Persistencia** | Modelos `*DbModel` y `*Mapper` dedicados; Unit of Work. | [`Zentric.Infrastructure/Persistence/`](./Zentric.Infrastructure/Persistence/) |
-| **Segregación CQRS** | Comandos y Consultas independientes; pipeline de validación. | [`Zentric.Application/`](./Zentric.Application/) |
-| **Manejo de Errores** | Mapeo estructurado a RFC 7807 (Problem Details). | [`ApiControllerBase.cs`](./Zentric.Api/Controllers/ApiControllerBase.cs)<br/>[`Program.cs`](./Zentric.Api/Program.cs) |
-| **Cobertura de Pruebas** | Suite de 238 pruebas automatizadas cubriendo casos de éxito y borde. | [`Zentric.Tests/`](./Zentric.Tests/) |
-| **Contenerización** | Despliegue con Docker Compose (PostgreSQL 16 + API). | [`docker-compose.yml`](./docker-compose.yml)<br/>[`Dockerfile`](./Dockerfile) |
-| **Documentación de API** | OpenAPI 3.0 con Swagger UI y esquema Bearer JWT. | [`Program.cs`](./Zentric.Api/Program.cs)<br/>[`SDD/Presentation/01-endpoints.md`](./SDD/Presentation/01-endpoints.md) |
-| **Decisiones Técnicas** | Registro de 6 ADRs documentados bajo formato MADR. | [`SDD/Adr/`](./SDD/Adr/) |
+| **Metodología SDD** | Especificación previa formal sin asunciones; memoria viva del sistema. | [`ZENTRIC.md`](./ZENTRIC.md)<br/>[`backendSDD/`](./backendSDD/) |
+| **Arquitectura Hexagonal** | Regla de dependencias estricta; núcleo de dominio sin dependencias externas. | [`Zentric.Domain/`](./backend/Zentric.Domain/)<br/>[`backendSDD/02-software-architecture.md`](./backendSDD/02-software-architecture.md) |
+| **Modelado DDD y Encapsulación** | Agregados con métodos de negocio semánticos; Value Objects inmutables. | [`Zentric.Domain/`](./backend/Zentric.Domain/)<br/>[`backendSDD/Domain/`](./backendSDD/Domain/) |
+| **Aislamiento de Persistencia** | Modelos `*DbModel` y `*Mapper` dedicados; Unit of Work. | [`Zentric.Infrastructure/Persistence/`](./backend/Zentric.Infrastructure/Persistence/) |
+| **Segregación CQRS** | Comandos y Consultas independientes; pipeline de validación. | [`Zentric.Application/`](./backend/Zentric.Application/) |
+| **Manejo de Errores** | Mapeo estructurado a RFC 7807 (Problem Details). | [`ApiControllerBase.cs`](./backend/Zentric.Api/Controllers/ApiControllerBase.cs)<br/>[`Program.cs`](./backend/Zentric.Api/Program.cs) |
+| **Cobertura de Pruebas** | Suite de 238 pruebas automatizadas cubriendo casos de éxito y borde. | [`Zentric.Tests/`](./backend/Zentric.Tests/) |
+| **Contenerización** | Despliegue con Docker Compose (PostgreSQL 16 + API). | [`docker-compose.yml`](./docker-compose.yml)<br/>[`Dockerfile`](./backend/Dockerfile) |
+| **Documentación de API** | OpenAPI 3.0 con Swagger UI y esquema Bearer JWT. | [`Program.cs`](./backend/Zentric.Api/Program.cs)<br/>[`backendSDD/Presentation/01-endpoints.md`](./backendSDD/Presentation/01-endpoints.md) |
+| **Decisiones Técnicas** | Registro de 6 ADRs documentados bajo formato MADR. | [`backendSDD/Adr/`](./backendSDD/Adr/) |
 
 ---
 
