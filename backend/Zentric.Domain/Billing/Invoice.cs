@@ -55,8 +55,22 @@ namespace Zentric.Domain.Billing
 
         public PlatformFeePolicy(decimal percentage) : this(percentage, null) { }
 
-        /// <summary>Politica vigente. Sin Split: el cobro esta bloqueado.</summary>
-        public static PlatformFeePolicy Current { get; } = new(DefaultPercentage);
+        /// <summary>
+        /// Reparto ratificado por el Owner (2026-09-27, Q-15): el 5 % es la
+        /// comision definitiva de la plataforma y el 95 % corresponde al
+        /// vendedor. Con este reparto el cobro queda habilitado
+        /// (<see cref="IsCollectable"/> = true).
+        ///
+        /// Si el Owner cambia el reparto, se actualiza aqui y la prueba
+        /// DefaultPercentage_IsFivePercent_ButUnratified con el nuevo valor.
+        /// </summary>
+        private static readonly FeeSplit RatifiedSplit = new(0.05m, 0.95m);
+
+        /// <summary>
+        /// Politica vigente, con el reparto ratificado. El cobro esta habilitado.
+        /// </summary>
+        public static PlatformFeePolicy Current { get; } =
+            new(DefaultPercentage, RatifiedSplit);
 
         /// <summary>
         /// Registra el reparto ratificado por el Owner y habilita el cobro.

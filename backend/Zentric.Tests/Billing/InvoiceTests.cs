@@ -2,10 +2,79 @@ using Xunit;
 using Zentric.Domain.Billing;
 using Zentric.Domain.Billing.Enums;
 using Zentric.Domain.Products.ValueObjects;
+using Zentric.Infrastructure.Persistence.Mappers;
+using Zentric.Infrastructure.Persistence.Models;
 using System;
 
 namespace Zentric.Tests.Billing
 {
+    /// <summary>
+    /// Persistencia de la factura de vendedor (Q-18).
+    ///
+    /// Regresion: el mapper no transportaba <c>VendorId</c>, de modo que la
+    /// factura se guardaba sin_dueno y todas las facturas de vendedor quedaban
+    /// indistinguibles entre si. Estas pruebas fijan la ida y vuelta.
+    /// </summary>
+    public class InvoiceVendorPersistenceTests
+    {
+        [Fact]
+        public void VendorInvoice_RoundTripThroughMapper_PreservesVendorId()
+        {
+            var vendorId = Guid.NewGuid();
+            var invoice = Invoice.CreateVendorDetail(
+                Guid.NewGuid(), vendorId, new Money(95_000m, "COP"));
+
+            var dbModel = InvoiceMapper.ToDbModel(invoice);
+            var reloaded = InvoiceMapper.ToDomain(dbModel);
+
+            Assert.Equal(vendorId, dbModel.VendorId);
+            Assert.Equal(vendorId, reloaded.VendorId);
+            Assert.Equal(new Money(95_000m, "COP"), reloaded.TotalAmount);
+            Assert.Equal(InvoiceType.VendorDetail, reloaded.Type);
+        }
+
+        [Fact]
+        public void MasterInvoice_RoundTripThroughMapper_KeepsVendorIdNull()
+        {
+            // La maestra y el detalle de plataforma no pertenecen a ningun vendedor.
+            var master = Invoice.CreateMaster(Guid.NewGuid(), new Money(400_000m, "COP"));
+            var fee = Invoice.CreateZentricDetail(Guid.NewGuid(), new Money(20_000m, "COP"));
+
+            Assert.Null(InvoiceMapper.ToDbModel(master).VendorId);
+            Assert.Null(InvoiceMapper.ToDbModel(fee).VendorId);
+            Assert.Null(InvoiceMapper.ToDomain(InvoiceMapper.ToDbModel(master)).VendorId);
+        }
+
+        [Fact]
+        public void VendorInvoice_KeepsItsOwnVendorId_DistinguishableFromOthers()
+        {
+            // Dos vendedores del mismo pedido no deben confundirse al persistir.
+            var orderId = Guid.NewGuid();
+            var vendorA = Guid.NewGuid();
+            var vendorB = Guid.NewGuid();
+
+            var a = InvoiceMapper.ToDbModel(
+                Invoice.CreateVendorDetail(orderId, vendorA, new Money(95_000m, "COP")));
+            var b = InvoiceMapper.ToDbModel(
+                Invoice.CreateVendorDetail(orderId, vendorB, new Money(285_000m, "COP")));
+
+            Assert.NotEqual(a.VendorId, b.VendorId);
+            Assert.Equal(vendorA, a.VendorId);
+            Assert.Equal(vendorB, b.VendorId);
+        }
+
+        [Fact]
+        public void DbModel_ExposesVendorIdColumn()
+        {
+            // Si la columna desaparece del DbModel, la facturacion por vendedor
+            // vuelve a perderse en silencio.
+            var property = typeof(InvoiceDbModel).GetProperty("VendorId");
+
+            Assert.NotNull(property);
+            Assert.Equal(typeof(Guid?), property!.PropertyType);
+        }
+    }
+
     public class PlatformFeePolicyTests
     {
         [Fact]
@@ -52,22 +121,40 @@ namespace Zentric.Tests.Billing
         }
 
         [Fact]
-        public void DefaultPercentage_IsFivePercent_ButUnratified()
+        public void DefaultPercentage_IsFivePercent_RatifiedByOwner()
         {
-            // Este test documenta el SUPUESTO vigente, no una regla de la Ley.
-            // ZENTRIC.md Dominio 9 no define el porcentaje de la comision. Cuando
-            // el Owner dicte el valor, hay que actualizar esta prueba junto con
-            // PlatformFeePolicy y la documentacion del SDD.
+            // Q-15: el Owner ratifico el 5% de plataforma el 2026-09-27.
+            // Este test documenta la decision vigente. Si el Owner cambia el
+            // reparto, hay que actualizar PlatformFeePolicy.RatifiedSplit y aqui.
             Assert.Equal(0.05m, PlatformFeePolicy.DefaultPercentage);
             Assert.Equal(0.05m, PlatformFeePolicy.Current.Percentage);
         }
 
         [Fact]
-        public void Current_IsNotCollectable_BecauseSplitIsUnratified()
+        public void Current_IsCollectable_BecauseSplitWasRatified()
         {
-            // Q-15: sin reparto ratified, el cobro esta bloqueado.
-            Assert.False(PlatformFeePolicy.Current.IsCollectable);
-            Assert.Null(PlatformFeePolicy.Current.Split);
+            // El reparto 5/95 fue ratificado, asi que el cobro queda habilitado.
+            Assert.True(PlatformFeePolicy.Current.IsCollectable);
+            Assert.NotNull(PlatformFeePolicy.Current.Split);
+        }
+
+        [Fact]
+        public void RatifiedSplit_UsesOwnerDecision()
+        {
+            var split = PlatformFeePolicy.Current.Split!;
+
+            Assert.Equal(0.05m, split.PlatformShare);
+            Assert.Equal(0.95m, split.VendorShare);
+        }
+
+        [Fact]
+        public void UnratifiedPolicy_IsNotCollectable()
+        {
+            // Una politica sin reparto (por ejemplo una recien creada) no es cobrable.
+            var policy = new PlatformFeePolicy(0.05m);
+
+            Assert.False(policy.IsCollectable);
+            Assert.Null(policy.Split);
         }
 
         [Fact]

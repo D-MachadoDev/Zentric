@@ -1,4 +1,4 @@
-using MediatR;
+using Zentric.Application.Common.Messaging;
 using Zentric.Application.Common.Models;
 using Zentric.Application.Common.Ports;
 using Zentric.Domain.Billing.Ports;
@@ -31,16 +31,12 @@ namespace Zentric.Application.Billing.Commands
                 return Result<bool>.Failure("Order not found.");
             }
 
-            // Q-15 (dictamen del Owner): el porcentaje y el reparto plataforma/
-            // vendedor NO estan definidos en la Ley. Mientras no se ratifique el
-            // reparto, se emite la Factura Maestra (que refleja lo que el
-            // comprador debe) pero NO se emite el Detalle Zentric cobrable.
-            // Nadie paga una comision estimada por el agente.
+            // Q-15 (dictamen del Owner 2026-09-27): reparto ratificado 5% plataforma /
+            // 95% vendedor. El cobro de la comision queda habilitado.
             if (!PlatformFeePolicy.Current.IsCollectable)
             {
                 return Result<bool>.Failure(
                     "Platform fee cannot be charged: the revenue split has not been ratified by the owner. " +
-                    "The master invoice can be issued, but the Zentric fee detail remains an estimate. " +
                     "See backendSDD question Q-15.");
             }
 
@@ -48,23 +44,39 @@ namespace Zentric.Application.Billing.Commands
             {
                 var invoicesToSave = new List<Invoice>();
                 var totalAmount = order.TotalAmount;
-
-                // 1. Factura Maestra
-                var masterInvoice = Invoice.CreateMaster(order.Id, totalAmount);
-                invoicesToSave.Add(masterInvoice);
-
-                // 2. Factura Zentric (comision de plataforma), solo si hay reparto ratificado.
                 var feePolicy = PlatformFeePolicy.Current;
-                var zentricFeeAmount = feePolicy.ApplyTo(totalAmount);
-                var zentricInvoice = Invoice.CreateZentricDetail(order.Id, zentricFeeAmount);
-                invoicesToSave.Add(zentricInvoice);
 
-                // 3. Facturas a los Vendedores (Split)
-                // Requiere el VendorId en la linea del pedido (Q-18). El Owner
-                // decidio storing la instantanea historica del vendedor en
-                // OrderItem, de modo que la factura refleje quien vendio el
-                // producto en el momento de la compra aunque despues cambie.
-                // Pendiente de implementacion: migracion + agrupacion por VendorId.
+                // 1. Factura Maestra: la recibe el comprador y refleja el total
+                //    de la operacion (ZENTRIC.md, Dominio 9).
+                invoicesToSave.Add(Invoice.CreateMaster(order.Id, totalAmount));
+
+                // 2. Detalle Zentric: la comision de la plataforma sobre el total.
+                invoicesToSave.Add(
+                    Invoice.CreateZentricDetail(order.Id, feePolicy.ApplyTo(totalAmount)));
+
+                // 3. Factura por vendedor (split). Q-18: el VendorId vive en la
+                //    linea del pedido como instantanea historica, de modo que la
+                //    factura refleje quien vendio en el momento de la compra.
+                //    Se agrupa por vendedor y se descuenta la comion
+                //    proporcional de la parte que le corresponde a cada uno.
+                var vendorShare = feePolicy.Split!.VendorShare;
+
+                foreach (var group in order.Items.GroupBy(i => i.VendorId))
+                {
+                    var vendorGross = new Money(0m, totalAmount.Currency);
+                    foreach (var item in group)
+                    {
+                        vendorGross = vendorGross.Add(item.TotalPrice);
+                    }
+
+                    // El vendedor recibe su porcentaje del importe de sus lineas.
+                    var vendorNet = new Money(
+                        Math.Round(vendorGross.Amount * vendorShare, 2, MidpointRounding.AwayFromZero),
+                        vendorGross.Currency);
+
+                    invoicesToSave.Add(
+                        Invoice.CreateVendorDetail(order.Id, group.Key, vendorNet));
+                }
 
                 await _invoiceRepository.AddRangeAsync(invoicesToSave, cancellationToken);
 

@@ -17,6 +17,7 @@ namespace Zentric.Infrastructure.Persistence.Mappers
             typeof(Invoice).GetProperty("CustomerOrderId")?.SetValue(inv, dbModel.CustomerOrderId);
             typeof(Invoice).GetProperty("Type")?.SetValue(inv, dbModel.Type);
             typeof(Invoice).GetProperty("IssuedAt")?.SetValue(inv, dbModel.IssuedAt);
+            typeof(Invoice).GetProperty("VendorId")?.SetValue(inv, dbModel.VendorId);
             typeof(Invoice).GetProperty("TotalAmount")?.SetValue(inv, new Money(dbModel.TotalAmount.Amount, dbModel.TotalAmount.Currency));
 
             return inv;
@@ -29,6 +30,9 @@ namespace Zentric.Infrastructure.Persistence.Mappers
                 Id = domain.Id,
                 CustomerOrderId = domain.CustomerOrderId,
                 Type = domain.Type,
+                // Q-18: sin esta asignacion la factura de vendedor se persiste sin
+                // dueño y deja de ser distinguible de las demas.
+                VendorId = domain.VendorId,
                 IssuedAt = domain.IssuedAt,
                 TotalAmount = new MoneyDbModel { Amount = domain.TotalAmount.Amount, Currency = domain.TotalAmount.Currency }
             };

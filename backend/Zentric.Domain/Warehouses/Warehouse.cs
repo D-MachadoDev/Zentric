@@ -43,12 +43,12 @@ namespace Zentric.Domain.Warehouses
 
             if (type == WarehouseType.Marketplace && vendorId.HasValue)
             {
-                throw new InvalidOperationException("Marketplace warehouses cannot have a seller assigned.");
+                throw new InvalidOperationException("Marketplace warehouses cannot have a vendor assigned.");
             }
 
             if (type == WarehouseType.Vendor && !vendorId.HasValue)
             {
-                throw new InvalidOperationException("Seller warehouses must have the owner seller ID.");
+                throw new InvalidOperationException("Vendor warehouses must have the owner vendor ID.");
             }
 
             Id = Guid.NewGuid();

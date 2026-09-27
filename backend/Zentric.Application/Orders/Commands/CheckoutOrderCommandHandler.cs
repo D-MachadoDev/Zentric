@@ -1,4 +1,4 @@
-using MediatR;
+using Zentric.Application.Common.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Linq;

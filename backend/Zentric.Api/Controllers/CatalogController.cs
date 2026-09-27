@@ -1,4 +1,4 @@
-using MediatR;
+using Zentric.Application.Common.Messaging;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Application.Catalog.Commands;
 using Zentric.Application.Catalog.Queries;

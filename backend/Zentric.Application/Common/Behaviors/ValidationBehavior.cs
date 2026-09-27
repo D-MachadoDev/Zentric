@@ -1,6 +1,6 @@
 using System.Reflection;
 using FluentValidation;
-using MediatR;
+using Zentric.Application.Common.Messaging;
 using Zentric.Application.Common.Models;
 
 namespace Zentric.Application.Common.Behaviors
@@ -12,7 +12,7 @@ namespace Zentric.Application.Common.Behaviors
     /// backendSDD/Application/01-use-cases-and-ports.md, secciones 1 y 7.
     /// </summary>
     public sealed class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-        where TRequest : notnull
+        where TRequest : IRequest<TResponse>
         where TResponse : Result
     {
         private readonly IEnumerable<IValidator<TRequest>> _validators;

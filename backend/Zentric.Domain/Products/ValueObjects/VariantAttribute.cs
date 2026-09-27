@@ -4,9 +4,12 @@ namespace Zentric.Domain.Products.ValueObjects
     /// Value Object inmutable que representa un atributo de una variante de producto
     /// (ej. Talla = "M", Color = "Rojo", Modelo = "Pro 2024").
     /// Referencia: backendSDD/Domain/01-models.md, sección 2 y
-    /// backendSDD/Domain/02-aggregates-and-entities.md, sección 2 (la variante "maneja las combinaciones").
-    /// [PROPUESTO] ADR-0002: el detalle del modelo de atributos está pendiente de
-    /// confirmación del owner (Q-11 en backendSDD/00-bootstrap/questions-for-owner.md).
+    /// backendSDD/Domain/02-aggregates-and-entities.md, sección 2.
+    ///
+    /// Q-11 (ratificado por el Owner el 2026-09-27): el nombre y el valor son
+    /// texto libre, obligatorios, con un maximo de 50 caracteres. No se usa un
+    /// catalogo cerrado porque la Ley no lo define y cada vendedor comercializa
+    /// atributos distintos.
     /// </summary>
     public sealed class VariantAttribute : IEquatable<VariantAttribute>
     {
@@ -61,7 +64,8 @@ namespace Zentric.Domain.Products.ValueObjects
 
             var normalized = value.Trim();
 
-            //! IA: límite defensivo propuesto (no definido en la spec) — ver Q-11.
+            // Q-11 (ratificado por el Owner): maximo de 50 caracteres por nombre y
+            // valor, y ambos son obligatorios.
             if (normalized.Length > 50)
             {
                 throw new ArgumentException("Variant attribute name and value cannot exceed 50 characters.", paramName);

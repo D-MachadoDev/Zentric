@@ -1,4 +1,4 @@
-using MediatR;
+using Zentric.Application.Common.Messaging;
 using Zentric.Application.Common.Models;
 using Zentric.Domain.Common.Models;
 
@@ -6,10 +6,10 @@ namespace Zentric.Infrastructure.Persistence
 {
     public class DomainEventDispatcher : IDomainEventDispatcher
     {
-        private readonly IPublisher _publisher;
+        private readonly IMediator _publisher;
         private readonly List<IDomainEvent> _domainEvents = new();
 
-        public DomainEventDispatcher(IPublisher publisher)
+        public DomainEventDispatcher(IMediator publisher)
         {
             _publisher = publisher;
         }

@@ -39,19 +39,25 @@ los productos `Digital` como venta final sin logística ni inventario.
 | 4 | `RemoveVariant(variantId)` | `InvalidOperationException` si dejaría un `Physical` sin variantes no eliminadas |
 | 5 | `CanBeSold` | En `Physical` exige al menos una variante **vendible** (activa y no eliminada); en `Digital` no exige variante |
 
-### Sub-decisiones `[PROPUESTO]` (ver [Q-12](../SDD.md#sub-decisiones-propuesto-ver-q-12))
+### Sub-decisiones ratificadas (Q-12, Owner 2026-09-27)
 
-Van más allá del texto literal de [Q-10](../SDD.md#9-cuarta-iteracion-adr-0003-variante-obligatoria-en-fisicos-q-10-c3) y quedan sujetas a confirmación:
+Van más allá del texto literal de [Q-10](../SDD.md#9-cuarta-iteracion-adr-0003-variante-obligatoria-en-fisicos-q-10-c3) y quedaron **ratificadas por el Owner el 2026-09-27**. Cada una coincide con lo que el código implementa:
 
 1. `HasVariant` cuenta solo variantes **no eliminadas lógicamente**.
 2. `CanBeSold` en `Physical` exige una variante **activa** (una variante
    desactivada no hace vendible al producto).
 3. Los productos `Digital` **pueden** declarar variantes ([Q-10](../SDD.md#9-cuarta-iteracion-adr-0003-variante-obligatoria-en-fisicos-q-10-c3) solo dijo que
    *pueden no tener*).
-4. La eliminación lógica de la última variante de un `Physical` **no lanza**:
-   deja el producto no vendible (`CanBeSold == false`) hasta restaurarla o añadir
-   otra. Se eligió no lanzar porque el borrado lógico es una operación de ciclo de
-   vida de datos.
+4. La eliminación de la última variante de un `Physical` **lanza
+   `InvalidOperationException`** y la variante **no se elimina**: el producto
+   conserva su invariante y el error se reporta en el momento, en vez de dejar
+   un producto fisico sin ninguna variante vendible.
+
+> **Corrección 2026-09-27:** la sub-decisión 4 se redactó originalmente como
+> "no lanza; deja el producto no vendible". El código lanza, y esa es la
+> decision ratificada: es preferible un error explicito en el punto de la
+> operacion que un producto fisico invalido persistido. Fuente de verdad:
+> `Product.RemoveVariant`.
 
 ## Alternativas consideradas
 

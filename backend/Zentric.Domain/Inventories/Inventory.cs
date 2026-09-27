@@ -172,7 +172,7 @@ namespace Zentric.Domain.Inventories
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void ReciveReturnedStock(int quantity)
+        public void ReceiveReturnedStock(int quantity)
         {
             if (quantity <= 0)
             {

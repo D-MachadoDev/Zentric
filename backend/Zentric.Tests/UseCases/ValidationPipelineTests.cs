@@ -1,8 +1,10 @@
 using FluentValidation;
-using MediatR;
+using Zentric.Application.Common.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Zentric.Application.Common.Behaviors;
+using Zentric.Application.Common.Messaging;
+using Zentric.Application;
 using Zentric.Application.Logistics.Commands;
 using Zentric.Domain.Logistics.Ports;
 using Zentric.Application.Orders.Commands;
@@ -16,10 +18,10 @@ namespace Zentric.Tests.UseCases
     /// <summary>
     /// Verificación de integración en memoria del montaje de dependencias que usa
     /// <c>Zentric.Api/Program.cs</c>: descubrimiento de validadores FluentValidation,
-    /// resolución del comportamiento genérico del pipeline de MediatR y ejecución real
+    /// resolución del comportamiento genérico del pipeline de mensajes propio y ejecución real
     /// de los handlers. Cubre AGENTS.md, secciones 3.2, 3.4, 4.3 y 6.
     /// </summary>
-    public class MediatRValidationPipelineTests
+    public class ValidationPipelineTests
     {
         private sealed class FakeCustomerOrderRepository : ICustomerOrderRepository
         {
@@ -132,12 +134,11 @@ namespace Zentric.Tests.UseCases
             services.AddSingleton<Zentric.Domain.Products.Ports.IProductRepository>(products);
             services.AddSingleton<Zentric.Domain.Inventories.Services.InventoryReservationService>(new Zentric.Domain.Inventories.Services.InventoryReservationService(new FakeInventoryRepository()));
 
-            services.AddValidatorsFromAssemblyContaining<CreateCartCommand>();
-            services.AddMediatR(cfg =>
-            {
-                cfg.RegisterServicesFromAssembly(typeof(CreateCartCommand).Assembly);
-                cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
-            });
+            // Q-14: el dispatcher propio registra validadores y handlers del ensamblado.
+            services.AddZentricApplication(typeof(CreateCartCommand).Assembly);
+
+            // El comportamiento de validacion envuelve la ejecucion del handler.
+            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
             var provider = services.BuildServiceProvider();
             return (provider.GetRequiredService<IMediator>(), orders);

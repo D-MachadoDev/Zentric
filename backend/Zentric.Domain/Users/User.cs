@@ -7,6 +7,16 @@ namespace Zentric.Domain.Users
     public sealed class User
     {
         public Guid Id { get; init; }
+
+        /// <summary>
+        /// Documento de identidad del usuario, almacenado como texto normalizado.
+        ///
+        /// Q-07 (ratificado por el Owner el 2026-09-27): se conserva como texto
+        /// libre, OBLIGATORIO y no vacio, SIN formato ni longitud impuesta. La Ley
+        /// no define un patron de documento y el pais de emision varia por
+        /// vendedor; inventar una validacion (longitud fija, digito de control)
+        /// rechazaria documentos legitimos.
+        /// </summary>
         public string IdentityDocument { get; private set; }
         public FullName FullName { get; private set; }
         public Email Email { get; private set; }
@@ -35,7 +45,9 @@ namespace Zentric.Domain.Users
             if (!Enum.IsDefined(role)) throw new ArgumentOutOfRangeException(nameof(role), "Invalid user role.");
 
             Id = Guid.NewGuid();
-            IdentityDocument = identityDocument;
+            // Q-07 (ratificado): solo se recorta el espacio exterior. No se aplica
+            // mas formato ni se valida un patron, porque la Ley no define ninguno.
+            IdentityDocument = identityDocument.Trim();
             FullName = fullName;
             Email = email;
             PasswordHash = passwordHash;

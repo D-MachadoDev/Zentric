@@ -1,4 +1,4 @@
-using MediatR;
+using Zentric.Application.Common.Messaging;
 using Zentric.Application.Common.Models;
 using Zentric.Domain.Products.Ports;
 

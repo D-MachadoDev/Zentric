@@ -69,7 +69,7 @@ namespace Zentric.Domain.Products
 
             if (vendorId == Guid.Empty)
             {
-                throw new ArgumentException("The product must belong to a seller.", nameof(vendorId));
+                throw new ArgumentException("The product must belong to a vendor.", nameof(vendorId));
             }
             if (!Enum.IsDefined(typeof(ProductType), type))
             {

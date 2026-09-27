@@ -177,11 +177,11 @@ public sealed class InventoryTests
     }
 
     [Fact]
-    public void ReciveReturnedStock_ValidQuantity_IncreasesAvailableQuantity()
+    public void ReceiveReturnedStock_ValidQuantity_IncreasesAvailableQuantity()
     {
         var inventory = CreateInventory(available: 1, damaged: 1);
 
-        inventory.ReciveReturnedStock(1);
+        inventory.ReceiveReturnedStock(1);
 
         Assert.Equal(2, inventory.AvailableQuantity);
     }
@@ -189,11 +189,11 @@ public sealed class InventoryTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    public void ReciveReturnedStock_NonPositiveQuantity_ThrowsArgumentOutOfRangeException(int quantity)
+    public void ReceiveReturnedStock_NonPositiveQuantity_ThrowsArgumentOutOfRangeException(int quantity)
     {
         var inventory = CreateInventory();
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => inventory.ReciveReturnedStock(quantity));
+        Assert.Throws<ArgumentOutOfRangeException>(() => inventory.ReceiveReturnedStock(quantity));
     }
 
     [Fact]

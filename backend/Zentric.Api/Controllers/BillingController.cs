@@ -1,4 +1,4 @@
-using MediatR;
+using Zentric.Application.Common.Messaging;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Application.Billing.Commands;
 using Zentric.Application.Billing.Queries;

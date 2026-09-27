@@ -23,9 +23,15 @@ Esto causó una discrepancia bloqueante (C-08, Q-13) al momento de implementar l
 El Owner ha dictaminado que **el ADDENDUM tiene la última palabra**. Toda regla o estado definido en el bloque final prevalece sobre el contenido original de la Ley en caso de colisión.
 
 Las reglas específicas adoptadas son:
-1. **FulfillmentOrder (Dominio 8):** Estados `Packed` (Empacado) y `Dispatched` (Despachado). Cancelación obligatoria por "stock fantasma".
+1. **FulfillmentOrder (Dominio 8):** la Ley define **cinco** estados, y son los que el código implementa en `FulfillmentStatus`: `PendingPack` (Pendiente de Empaque) → `Packed` (Empacado) → `Dispatched` (Despachado) → `Delivered` (Entregado), más `Cancelled` (Cancelado por Quiebre). Cancelación obligatoria por "stock fantasma". El despacho nace en `PendingPack`.
 2. **Devoluciones (Dominio 9):** Prohibido devolver digitales. La devolución aprobada devuelve el producto al inventario con etiqueta "Usado".
-3. **Facturación (Dominio 10):** Existen 3 tipos de factura: Maestra, Detalle Zentric y Factura de Vendedor (Split).
+3. **Facturación (Dominio 10):** Existen 3 tipos de factura: Maestra (al comprador, por el total), Detalle Zentric (comisión de la plataforma) y Factura de Vendedor (split por vendedor).
+
+> **Corrección 2026-09-27 (V-01, dictamen del Owner: "que diga la Ley, no el ADR").**
+> Una versión anterior de este ADR declaraba solo dos estados (`Packed` y
+> `Dispatched`), lo que contradecía tanto a la Ley como al código implementado.
+> La Ley prevalece: se adoptan los cinco estados del ADDENDUM del Dominio 8.
+> Fuente de verdad: `Zentric.Domain/Logistics/Enums/FulfillmentStatus.cs`.
 
 ## Consecuencias
 

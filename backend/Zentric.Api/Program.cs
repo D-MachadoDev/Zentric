@@ -6,6 +6,8 @@ using Zentric.Domain.Orders.Ports;
 using Zentric.Domain.Logistics.Ports;
 using FluentValidation;
 using Zentric.Application.Common.Behaviors;
+using Zentric.Application.Common.Messaging;
+using Zentric.Application;
 
 using Microsoft.OpenApi;
 using System.Reflection;
@@ -79,15 +81,19 @@ builder.Services.AddScoped<Zentric.Domain.Billing.Ports.IInvoiceRepository, Invo
 // Register Background Services
 builder.Services.AddHostedService<Zentric.Infrastructure.BackgroundServices.CheckoutTimeoutService>();
 
-// Register MediatR + validación de entrada (FluentValidation): AGENTS.md, sección 4.3 y backendSDD/Application, secciones 1 y 7.
-builder.Services.AddValidatorsFromAssemblyContaining<CreateCartCommand>();
-builder.Services.AddMediatR(cfg =>
-{
-    cfg.RegisterServicesFromAssembly(typeof(CreateCartCommand).Assembly);
-    cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
-});
+// Registro de la capa Application: dispatcher propio, validacion de entrada
+// (FluentValidation) y handlers. Q-14: sustituye a AddMediatR.
+builder.Services.AddZentricApplication();
+
+// Comportamientos del pipeline de mensajes: la validacion se ejecuta antes del handler.
+builder.Services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
 builder.Services.AddScoped<Zentric.Domain.Returns.Services.ReturnsApprovalService>();
 builder.Services.AddScoped<Zentric.Domain.Inventories.Services.InventoryReservationService>();
+
+// Q-08: pasarela de pago SIMULADA. El puerto vive en el Dominio; sustituir este
+// adaptador por uno real (PSE, Wompi, Stripe) no exige tocar Dominio ni casos de uso.
+builder.Services.AddScoped<Zentric.Domain.Payments.Ports.IPaymentGateway, Zentric.Infrastructure.Payments.SimulatedPaymentGateway>();
 
 var app = builder.Build();
 

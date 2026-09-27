@@ -22,7 +22,7 @@ namespace Zentric.Tests.UseCases
 
             var result = await behavior.Handle(
                 new CreateCartCommand(Guid.Empty),
-                _ =>
+                () =>
                 {
                     handlerInvoked = true;
                     return Task.FromResult(Result<Guid>.Success(Guid.NewGuid()));
@@ -44,7 +44,7 @@ namespace Zentric.Tests.UseCases
 
             var result = await behavior.Handle(
                 new AddOrderItemCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 0, 10m, "COP"),
-                _ =>
+                () =>
                 {
                     handlerInvoked = true;
                     return Task.FromResult(Result.Success());
@@ -66,7 +66,7 @@ namespace Zentric.Tests.UseCases
 
             var result = await behavior.Handle(
                 new CreateCartCommand(Guid.NewGuid()),
-                _ =>
+                () =>
                 {
                     handlerInvoked = true;
                     return Task.FromResult(Result<Guid>.Success(expected));
@@ -87,7 +87,7 @@ namespace Zentric.Tests.UseCases
 
             var result = await behavior.Handle(
                 new CreateCartCommand(Guid.Empty),
-                _ =>
+                () =>
                 {
                     handlerInvoked = true;
                     return Task.FromResult(Result<Guid>.Success(Guid.NewGuid()));

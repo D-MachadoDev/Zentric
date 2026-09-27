@@ -24,6 +24,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Zentric.Application\Zentric.Application.csproj" />
     <ProjectReference Include="..\Zentric.Domain\Zentric.Domain.csproj" />
+    <!-- Necesaria para probar los mappers de persistencia (Q-18: VendorId en factura). -->
+    <ProjectReference Include="..\Zentric.Infrastructure\Zentric.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

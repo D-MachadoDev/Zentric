@@ -1,4 +1,4 @@
-using MediatR;
+using Zentric.Application.Common.Messaging;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Application.Common.Models;
 
@@ -8,8 +8,8 @@ namespace Zentric.Api.Controllers
     [Route("api/[controller]")]
     public abstract class ApiControllerBase : ControllerBase
     {
-        private ISender? _mediator;
-        protected ISender Mediator => _mediator ??= HttpContext.RequestServices.GetRequiredService<ISender>();
+        private IMediator? _mediator;
+        protected IMediator Mediator => _mediator ??= HttpContext.RequestServices.GetRequiredService<IMediator>();
 
         protected IActionResult HandleResult(Result result)
         {
