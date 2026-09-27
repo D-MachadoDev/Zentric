@@ -60,6 +60,11 @@ builder.Services.AddOpenApi();
 // Mapeo de errores a RFC 7807 (Problem Details), exigido por AGENTS.md, sección 3.4.
 builder.Services.AddProblemDetails();
 
+// Identidad del llamante. Hoy se resuelve por la cabecera X-Buyer-Id; cuando exista
+// JWT, HeaderBuyerAccessor pasa a leer el claim y no cambia nada mas.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<Zentric.Api.Security.ICurrentBuyerAccessor, Zentric.Api.Security.HeaderBuyerAccessor>();
+
 // Register DbContext
 builder.Services.AddDbContext<ZentricDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),

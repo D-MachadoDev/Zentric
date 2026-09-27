@@ -881,7 +881,7 @@ Los enlaces relativos de este archivo se resuelven desde `backendSDD/` (por ejem
 
 | # | Riesgo | Estado en Zentric (2026-09-26) | Acción / responsable |
 |---|---|---|---|
-| API1 | Broken Object Level Authorization | ⚠️ Los endpoints operan por `Guid` recibido del cliente sin verificar pertenencia (pedido, stock, devolución) | `[PENDIENTE]` Ownership por comando antes del primer dato real (Fase 6) |
+| API1 | Broken Object Level Authorization | 🟡 **Parcial** — `GET /api/Orders/{id}` aislado por comprador (`GetByIdForBuyerQuery` filtra por `BuyerId` en la consulta, mismo mensaje para "no existe" y "no es tuyo"). Verificado en runtime: dueño 200, intruso 404, sin identidad 401. El resto de endpoints sigue operando por `Guid` sin identidad real | Identity: JWT (lote 6, bloqueada por el Owner); mientras tanto cabecera `X-Buyer-Id` |
 | API2 | Broken Authentication | ➖ Fuera de alcance por la Ley; esquema `Bearer` documentado en Swagger | `[PENDIENTE]` Definir perfil de tokens cuando entre el módulo de Auth |
 | API3 | Broken Object Property Level Authorization | ⚠️ Sin control de campos en DTO de respuesta ni de propiedades aceptadas | `[PENDIENTE]` DTOs de salida explícitos (Application-API-Agent) |
 | API4 | Unrestricted Resource Consumption | 🟡 Parcial — **paginación implementada** (`PageRequest`/`PagedResult`, `size` acotado a 100) y verificada contra PostgreSQL; sigue sin rate limiting | `[PENDIENTE]` Límite de página y presupuesto de recursos |

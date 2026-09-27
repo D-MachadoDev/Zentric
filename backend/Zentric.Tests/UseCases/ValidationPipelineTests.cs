@@ -31,7 +31,18 @@ namespace Zentric.Tests.UseCases
 
             public void Seed(CustomerOrder order) => _orders[order.Id] = order;
 
-            public Task<CustomerOrder?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+            public Task<CustomerOrder?> GetByIdForBuyerAsync(
+            Guid id, Guid buyerId, CancellationToken cancellationToken = default)
+        {
+            // El filtro por comprador se aplica en la consulta, igual que en el
+            // repositorio real: un pedido ajeno devuelve null.
+            var order = _orders.TryGetValue(id, out var found) && found.BuyerId == buyerId
+                ? found
+                : null;
+            return Task.FromResult(order);
+        }
+
+        public Task<CustomerOrder?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
                 => Task.FromResult(_orders.TryGetValue(id, out var order) ? order : null);
 
             public Task<IReadOnlyList<CustomerOrder>> GetExpiredOrdersAsync(DateTime threshold, CancellationToken cancellationToken = default)

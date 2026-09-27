@@ -32,6 +32,19 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             return dbModel == null ? null : CustomerOrderMapper.ToDomain(dbModel);
         }
 
+        public async Task<CustomerOrder?> GetByIdForBuyerAsync(
+            Guid id, Guid buyerId, CancellationToken cancellationToken = default)
+        {
+            // El filtro por BuyerId va en la consulta, no despues: asi el pedido
+            // de otro comprador nunca llega a materializarse.
+            var dbModel = await _dbContext.CustomerOrders
+                .AsNoTracking()
+                .Include(o => o.Items)
+                .FirstOrDefaultAsync(o => o.Id == id && o.BuyerId == buyerId, cancellationToken);
+
+            return dbModel == null ? null : CustomerOrderMapper.ToDomain(dbModel);
+        }
+
         public async Task<IReadOnlyList<CustomerOrder>> GetExpiredOrdersAsync(DateTime threshold, CancellationToken cancellationToken = default)
         {
             var list = await _dbContext.CustomerOrders

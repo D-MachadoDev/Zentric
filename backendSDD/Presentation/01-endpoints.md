@@ -65,6 +65,29 @@ Endpoint de referencia: `GET /api/Catalog/products/paged?vendorId={id}&page=0&si
 > El listado sin paginar (`GET /api/Catalog/products`) se conserva por compatibilidad
 > con clientes existentes, pero **el frontend debe usar el paginado**.
 
+### 3.1 Identidad del llamante y aislamiento por comprador
+
+Todavía **no hay autenticación JWT** (decisión pendiente del Owner). Mientras tanto, el
+comprador se declara en la cabecera **`X-Buyer-Id`**, y el backend la resuelve en
+`HeaderBuyerAccessor`. Cuando exista JWT, ese mismo accesor pasa a leer el claim
+(`NameIdentifier` o `sub`) y **no cambia ningún otro archivo**: la cabecera queda como
+fallback para desarrollo.
+
+`GET /api/Orders/{id}` sí está aislado: usa `GetOrderByIdForBuyerQuery`, que filtra por
+`BuyerId` **en la consulta**, no después de leer el pedido.
+
+| Situación | Respuesta |
+|---|---|
+| El comprador dueño, con `X-Buyer-Id` válido | `200 OK` con el pedido |
+| Un comprador distinto al dueño | `404 Not Found` (mismo mensaje que si no existiera) |
+| Sin cabecera y sin identidad autenticada | `401 Unauthorized` |
+
+> El mismo mensaje para "no existe" y "no es tuyo" es deliberado: distinguirlos
+> permitiría enumerar pedidos ajenos probando GUIDs.
+
+El frontend debe enviar `X-Buyer-Id` en todas las llamadas de pedidos mientras no
+exista JWT.
+
 ---
 
 ## 4. Catálogo Detallado de Endpoints por Bounded Context (Tags de Swagger)

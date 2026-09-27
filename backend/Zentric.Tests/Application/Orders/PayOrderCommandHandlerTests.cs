@@ -77,6 +77,13 @@ namespace Zentric.Tests.Application.Orders
             return Task.CompletedTask;
         }
 
+        public Task<CustomerOrder?> GetByIdForBuyerAsync(
+            Guid id, Guid buyerId, CancellationToken cancellationToken = default)
+        {
+            var order = Orders.FirstOrDefault(o => o.Id == id && o.BuyerId == buyerId);
+            return Task.FromResult(order);
+        }
+
         public Task<CustomerOrder?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(Orders.FirstOrDefault(o => o.Id == id));

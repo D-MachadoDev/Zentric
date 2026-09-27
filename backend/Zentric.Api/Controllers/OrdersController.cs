@@ -1,6 +1,8 @@
 using Zentric.Application.Common.Messaging;
 using Microsoft.AspNetCore.Mvc;
+using Zentric.Api.Security;
 using Zentric.Application.Orders.Commands;
+using Zentric.Application.Orders.Queries;
 
 namespace Zentric.Api.Controllers
 {
@@ -14,10 +16,12 @@ namespace Zentric.Api.Controllers
     public class OrdersController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly ICurrentBuyerAccessor _currentBuyer;
 
-        public OrdersController(IMediator mediator)
+        public OrdersController(IMediator mediator, ICurrentBuyerAccessor currentBuyer)
         {
             _mediator = mediator;
+            _currentBuyer = currentBuyer;
         }
 
         /// <summary>
@@ -112,7 +116,18 @@ namespace Zentric.Api.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetOrderById(Guid id)
         {
-            var result = await _mediator.Send(new Zentric.Application.Orders.Queries.GetOrderByIdQuery(id));
+            // Sin comprador identificado no se sirve el pedido: no hay forma de
+            // saber si es suyo. Ver ZENTRIC.md Dominio 2.
+            var buyerId = _currentBuyer.BuyerId;
+            if (!buyerId.HasValue)
+            {
+                return Unauthorized(new ProblemDetails
+                {
+                    Detail = "Missing buyer identity. Send the X-Buyer-Id header."
+                });
+            }
+
+            var result = await _mediator.Send(new GetOrderByIdForBuyerQuery(id, buyerId.Value));
             if (result.IsFailure) return NotFound(new ProblemDetails { Detail = result.Error });
             return Ok(result.Value);
         }
