@@ -20,7 +20,7 @@ namespace Zentric.Tests.Application.Catalog
             var product = new Product(
                 name: "Draft Product",
                 description: "Draft Description",
-                price: new Zentric.Domain.Products.ValueObjects.Money(50m, "USD"),
+                price: new Zentric.Domain.Products.ValueObjects.Money(50m, "COP"),
                 vendorId: Guid.NewGuid(),
                 type: ProductType.Digital,
                 variants: null

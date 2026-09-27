@@ -14,7 +14,8 @@ El modelo respeta la directriz de mantener Agregados Pequeños, estableciendo l�
 ### Aggregate Root: `Product`
 - **Responsabilidad:** Controlar la información comercial de un ítem a la venta.
 - **Propiedades Clave:** `ProductId`, `SellerId`, `BasePrice`, `ProductType` (Físico/Digital), `Status` (Published, Suspended).
-- **Comportamientos:** `SuspendReactively()`, `UpdatePrice()`.
+- **Comportamientos:** `SuspendReactively()`, `UpdatePrice()`, `Publish()`, `Suspend()`, `Update()`, `UpdateType()`, `UpdateName()`, `UpdateDescription()`, `RemoveVariant()`, `Delete()`, `Restore()`.
+  - Fuente de verdad: `Zentric.Domain/Products/Product.cs` (verificado 2026-09-27).
 - **Entidades Hijas: `ProductVariant`**
   - Maneja las combinaciones (ej. Talla/Color). Tiene su propio `VariantId` (que sirve como SKU para el inventario).
 

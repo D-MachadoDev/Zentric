@@ -1,29 +1,44 @@
 # 01. Domain Overview (Visión General)
 
-## 1. Patrón Arquitectónico
-El Dominio de **Zentric Marketplace** está diseñado bajo los principios puros de **Domain-Driven Design (DDD)** y **Arquitectura Hexagonal**. Todo el negocio reside en este núcleo, completamente aislado de bases de datos, pasarelas web, frameworks o interfaces gráficas.
+> **Documento consolidado (2026-09-27).** La visión general de módulos y el
+> patrón arquitectónico que aquí se describían se incorporaron a
+> [`01-models.md`](01-models.md) (visión del dominio) y a
+> [`../02-software-architecture.md`](../02-software-architecture.md) (patrón
+> arquitectónico). Este archivo queda como **índice de navegación** del
+> subárbol `Domain/`, sin duplicar contenido.
+>
+> Motivo de la consolidación: `01-domain-overview.md` y `01-models.md` se
+> solapaban, lo que obligaba a mantener la misma verdad en dos lugares y ya
+> había producido divergencias (p. ej. nombres de método inexistentes en
+> `01-models.md`, corregidos contra el código).
 
-## 2. Límite de Contexto (Context Boundary)
-El sistema opera bajo un **Único Bounded Context (Unified Domain)**. Para gestionar la complejidad y evitar el colapso del Lenguaje Ubicuo (Ubiquitous Language), el dominio se divide lógicamente en **Módulos de Dominio (Namespaces/Folders)** de alta cohesión.
+## Índice del dominio
 
-## 3. Módulos de Dominio Internos
+| Documento | Contenido |
+|---|---|
+| [`01-models.md`](01-models.md) | Aggregate Roots y entidades por Bounded Context, con métodos verificados contra el código |
+| [`02-aggregates-and-entities.md`](02-aggregates-and-entities.md) | Responsabilidades y límites transaccionales de cada agregado |
+| [`02-value-objects.md`](02-value-objects.md) | Value Objects, enumeraciones y la política de moneda por defecto |
+| [`03-domain-services.md`](03-domain-services.md) | Servicios de dominio |
+| [`04-domain-events.md`](04-domain-events.md) | Eventos de dominio |
+| [`04-invariants-and-rules.md`](04-invariants-and-rules.md) | Invariantes estrictas |
+| [`05-ports.md`](05-ports.md) | Puertos de salida del dominio |
+| [`06-business-rules.md`](06-business-rules.md) | Reglas de negocio transversales |
+| [`07-lifecycle.md`](07-lifecycle.md) | Ciclo de vida de las entidades |
+| [`services/`](services/) | Servicios de dominio con semántica particular |
 
-### 3.1. Identity Module (Gestión de Usuarios)
-Controla la autenticación y el estado comercial de los participantes.
-- **Conceptos Clave:** Unicidad de documentos, un solo rol por usuario, bloqueos disciplinarios.
+## Módulos del dominio (resumen)
 
-### 3.2. Catalog Module (Catálogo de Productos)
-Administra la oferta de los vendedores hacia los compradores.
-- **Conceptos Clave:** Productos base y sus Variantes (SKU). Publicación automática y suspensión reactiva (incluso en cascada si un vendedor es bloqueado). Diferenciación estricta entre bienes Físicos y Digitales.
+| Módulo | Responsabilidad | Conceptos clave |
+|---|---|---|
+| Identity | Usuarios y estado comercial de los participantes | Unicidad de documento, un solo rol por usuario, bloqueos |
+| Catalog | Oferta de vendedores hacia compradores | Producto y Variantes (SKU), publicación y suspensión reactiva, físico vs digital |
+| Inventory | Dónde están las cosas físicas y cuántas hay | Control por Variante y Bodega, bodegas Marketplace vs Vendor |
+| Ordering | Intención de compra convertida en contrato | Carrito vs Pedido formal, reservas con *timeout*, factura centralizada, retracto |
+| Fulfillment | Pedido maestro traducido a órdenes de trabajo por vendedor | Fragmentación Master-Detail, quiebres de stock, devoluciones con verificación dual |
+| Returns | Posventa | Inspección logística y aprobación del vendedor |
+| Billing | Facturación | Factura maestra, detalle de plataforma y split por vendedor |
 
-### 3.3. Inventory Module (Inventario y Bodegas)
-El corazón logístico del sistema. Administra dónde están las cosas físicas y cuántas hay.
-- **Conceptos Clave:** Control estricto a nivel de Variante y Bodega. Distinción de propiedad física (Bodegas Marketplace vs. Bodegas Vendor) y protección estricta sobre quién puede hacer ajustes manuales.
-
-### 3.4. Ordering Module (Pedidos y Compras)
-Transforma la intención de compra en un contrato (Pedido Maestro) y procesa los ingresos (Facturación centralizada).
-- **Conceptos Clave:** Carritos efímeros vs. Pedidos formales. Reservas temporales (con *timeout*). Zentric como emisor central de la factura (Merchant of Record). Manejo del derecho a retracto (cancelación temprana).
-
-### 3.5. Fulfillment Module (Despachos y Posventa)
-Traduce el pedido maestro en órdenes de trabajo aisladas para cada vendedor, y gestiona las disputas.
-- **Conceptos Clave:** Fragmentación del pedido (Master-Detail). Quiebres de stock (Cancelación unilateral y transacciones compensatorias). Devoluciones con verificación dual (Logística + Vendedor).
+**Patrón arquitectónico y límite de contexto:** ver
+[`../02-software-architecture.md`](../02-software-architecture.md) y
+`01-models.md`.

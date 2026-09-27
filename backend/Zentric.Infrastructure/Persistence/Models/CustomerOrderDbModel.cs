@@ -19,6 +19,13 @@ namespace Zentric.Infrastructure.Persistence.Models
         public Guid Id { get; set; }
         public Guid CustomerOrderId { get; set; }
         public Guid VariantId { get; set; }
+
+        /// <summary>
+        /// Instantanea historica del vendedor (Q-18). No se recalcula contra
+        /// el producto: la factura refleja quien vendio en la compra.
+        /// </summary>
+        public Guid VendorId { get; set; }
+
         public int Quantity { get; set; }
         public MoneyDbModel UnitPrice { get; set; } = null!;
         public CustomerOrderDbModel CustomerOrder { get; set; } = null!;

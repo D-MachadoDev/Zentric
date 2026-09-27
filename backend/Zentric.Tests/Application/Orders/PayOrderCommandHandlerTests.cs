@@ -50,7 +50,7 @@ namespace Zentric.Tests.Application.Orders
             var handler = new PayOrderCommandHandler(repo, uow);
 
             var order = new CustomerOrder(Guid.NewGuid());
-            order.AddItem(Guid.NewGuid(), 2, new Zentric.Domain.Products.ValueObjects.Money(50m, "USD"));
+            order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 2, new Zentric.Domain.Products.ValueObjects.Money(50m, "COP"));
             order.Checkout(); // Moves Cart -> PendingPayment
             await repo.AddAsync(order);
 

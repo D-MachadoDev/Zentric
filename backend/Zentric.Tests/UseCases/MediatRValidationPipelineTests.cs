@@ -50,6 +50,49 @@ namespace Zentric.Tests.UseCases
             }
         }
 
+        private sealed class FakeProductRepository : Zentric.Domain.Products.Ports.IProductRepository
+        {
+            // Q-18: el dueno del producto devuelto. Los tests deben pasar este
+            // mismo valor como VendorId del comando para que la validacion
+            // de propiedad (Q-18) pase.
+            public static Guid VendorIdUnderTest { get; set; } = Guid.NewGuid();
+
+            public Task<Zentric.Domain.Products.Product?> GetByIdAsync(Guid id, CancellationToken ct = default)
+                => Task.FromResult<Zentric.Domain.Products.Product?>(null);
+
+            public Task<Zentric.Domain.Products.Product?> GetByVariantIdAsync(Guid variantId, CancellationToken ct = default)
+            {
+                // Q-18: el handler valida que el VendorId de la linea coincida
+                // con el dueno real de la variante. Este fake construye un
+                // producto cuyo dueno es VendorIdUnderTest.
+                var money = new Money(10m, "COP");
+                var product = new Zentric.Domain.Products.Product(
+                    name: "Producto",
+                    description: "Descripcion",
+                    price: money,
+                    vendorId: VendorIdUnderTest,
+                    type: Zentric.Domain.Products.Enums.ProductType.Physical,
+                    variants: new (string, IEnumerable<Zentric.Domain.Products.ValueObjects.VariantAttribute>)[]
+                    {
+                        // Una variante debe declarar al menos un atributo (CAT-03).
+                        ("SKU-1", new[]
+                        {
+                            new Zentric.Domain.Products.ValueObjects.VariantAttribute("Color", "Negro")
+                        })
+                    });
+                return Task.FromResult<Zentric.Domain.Products.Product?>(product);
+            }
+
+            public Task<IReadOnlyList<Zentric.Domain.Products.Product>> GetAllAsync(Guid? vendorId = null, CancellationToken ct = default)
+                => Task.FromResult((IReadOnlyList<Zentric.Domain.Products.Product>)new List<Zentric.Domain.Products.Product>());
+
+            public Task AddAsync(Zentric.Domain.Products.Product product, CancellationToken ct = default)
+                => Task.CompletedTask;
+
+            public Task UpdateAsync(Zentric.Domain.Products.Product product, CancellationToken ct = default)
+                => Task.CompletedTask;
+        }
+
         private sealed class FakeFulfillmentOrderRepository : IFulfillmentOrderRepository
         {
             public Task<FulfillmentOrder?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -76,6 +119,7 @@ namespace Zentric.Tests.UseCases
         private static (IMediator Mediator, FakeCustomerOrderRepository Orders) BuildMediator()
         {
             var orders = new FakeCustomerOrderRepository();
+            var products = new FakeProductRepository();
             var services = new ServiceCollection();
 
             // MediatR 14 exige ILoggerFactory registrado antes de AddMediatR();
@@ -85,7 +129,7 @@ namespace Zentric.Tests.UseCases
             services.AddSingleton<IFulfillmentOrderRepository, FakeFulfillmentOrderRepository>();
             services.AddSingleton<Zentric.Domain.Inventories.Ports.IInventoryRepository, FakeInventoryRepository>();
             services.AddSingleton<Zentric.Application.Common.Ports.IUnitOfWork>(new Moq.Mock<Zentric.Application.Common.Ports.IUnitOfWork>().Object);
-            services.AddSingleton<Zentric.Domain.Products.Ports.IProductRepository>(new Moq.Mock<Zentric.Domain.Products.Ports.IProductRepository>().Object);
+            services.AddSingleton<Zentric.Domain.Products.Ports.IProductRepository>(products);
             services.AddSingleton<Zentric.Domain.Inventories.Services.InventoryReservationService>(new Zentric.Domain.Inventories.Services.InventoryReservationService(new FakeInventoryRepository()));
 
             services.AddValidatorsFromAssemblyContaining<CreateCartCommand>();
@@ -128,7 +172,7 @@ namespace Zentric.Tests.UseCases
         {
             var (mediator, _) = BuildMediator();
 
-            var result = await mediator.Send(new AddOrderItemCommand(Guid.NewGuid(), Guid.NewGuid(), 0, 10m, "USD"));
+            var result = await mediator.Send(new AddOrderItemCommand(Guid.NewGuid(), Guid.NewGuid(), FakeProductRepository.VendorIdUnderTest, 0, 10m, "COP"));
 
             Assert.True(result.IsFailure);
             Assert.Contains("Quantity must be greater than zero.", result.Error);
@@ -139,7 +183,7 @@ namespace Zentric.Tests.UseCases
         {
             var (mediator, _) = BuildMediator();
 
-            var result = await mediator.Send(new AddOrderItemCommand(Guid.NewGuid(), Guid.NewGuid(), 1, 10m, "USD"));
+            var result = await mediator.Send(new AddOrderItemCommand(Guid.NewGuid(), Guid.NewGuid(), FakeProductRepository.VendorIdUnderTest, 1, 10m, "COP"));
 
             Assert.True(result.IsFailure);
             Assert.Equal("Order not found.", result.Error);
@@ -152,11 +196,11 @@ namespace Zentric.Tests.UseCases
             // catch (Exception) genérico; ahora el fallo previsible se informa como Result.
             var (mediator, orders) = BuildMediator();
             var order = new CustomerOrder(Guid.NewGuid());
-            order.AddItem(Guid.NewGuid(), 1, new Money(10, "USD"));
+            order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 1, new Money(10, "COP"));
             order.Checkout();
             orders.Seed(order);
 
-            var result = await mediator.Send(new AddOrderItemCommand(order.Id, Guid.NewGuid(), 1, 10m, "USD"));
+            var result = await mediator.Send(new AddOrderItemCommand(order.Id, Guid.NewGuid(), FakeProductRepository.VendorIdUnderTest, 1, 10m, "COP"));
 
             Assert.True(result.IsFailure);
             Assert.Equal("Items can only be added while the order is in the Cart status.", result.Error);
@@ -171,13 +215,13 @@ namespace Zentric.Tests.UseCases
             orders.Seed(order);
             var variantId = Guid.NewGuid();
 
-            var result = await mediator.Send(new AddOrderItemCommand(order.Id, variantId, 2, 15m, "usd"));
+            var result = await mediator.Send(new AddOrderItemCommand(order.Id, variantId, FakeProductRepository.VendorIdUnderTest, 2, 15m, "cop"));
 
             Assert.True(result.IsSuccess);
             Assert.Equal(1, orders.UpdateCalls);
             Assert.Single(order.Items);
             Assert.Equal(variantId, order.Items.First().VariantId);
-            Assert.Equal(new Money(30m, "USD"), order.TotalAmount);
+            Assert.Equal(new Money(30m, "COP"), order.TotalAmount);
         }
 
         [Fact]

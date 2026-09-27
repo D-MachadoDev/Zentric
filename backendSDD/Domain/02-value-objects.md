@@ -6,9 +6,10 @@ Este documento define los Value Objects (objetos inmutables sin identidad propia
 
 ### `Money`
 Encapsula valores financieros garantizando cálculos precisos.
-- **Propiedades:** `Amount` (decimal), `Currency` (string, ej. "USD").
+- **Propiedades:** `Amount` (decimal), `Currency` (string, código ISO 4217 de 3 letras, ej. "COP").
 - **Reglas:** `Amount` no puede ser menor a cero para precios.
 - **Comportamientos:** `Add(Money)`, `Subtract(Money)`. Solo se pueden sumar/restar objetos con la misma moneda.
+- **Moneda por defecto:** `CustomerOrder.DefaultCurrency = "COP"`. Se usa únicamente cuando el carrito está vacío y no hay moneda de referencia que inferir. El sistema es **multi-moneda**: con items, el total adopta la moneda del primero.
 
 ### `Address`
 Ubicación geográfica estandarizada para bodegas y direcciones de despacho.

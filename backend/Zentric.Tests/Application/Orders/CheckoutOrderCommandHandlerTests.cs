@@ -67,8 +67,12 @@ namespace Zentric.Tests.Application.Orders
             var order = new CustomerOrder(buyerId);
             var variantId1 = Guid.NewGuid();
             var variantId2 = Guid.NewGuid();
-            order.AddItem(variantId1, 2, new Money(10, "USD"));
-            order.AddItem(variantId2, 1, new Money(20, "USD"));
+            // Q-18: la linea guarda el VendorId como instantanea historica.
+            // Orden de la firma: AddItem(variantId, vendorId, quantity, unitPrice).
+            var vendor1Id = Guid.NewGuid();
+            var vendor2Id = Guid.NewGuid();
+            order.AddItem(variantId1, vendor1Id, 2, new Money(10, "COP"));
+            order.AddItem(variantId2, vendor2Id, 1, new Money(20, "COP"));
 
             var command = new CheckoutOrderCommand(order.Id);
 
@@ -85,13 +89,11 @@ namespace Zentric.Tests.Application.Orders
                 .ReturnsAsync(new List<Zentric.Domain.Inventories.Inventory> { inventory2 });
 
             // Mock Products
-            var vendor1Id = Guid.NewGuid();
-            var product1 = new Product("P1", "D1", new Money(10, "USD"), vendor1Id, ProductType.Physical, new List<(string, IEnumerable<VariantAttribute>)> { ("SKU1", new List<VariantAttribute> { new VariantAttribute("Color", "Red") }) });
+            var product1 = new Product("P1", "D1", new Money(10, "COP"), vendor1Id, ProductType.Physical, new List<(string, IEnumerable<VariantAttribute>)> { ("SKU1", new List<VariantAttribute> { new VariantAttribute("Color", "Red") }) });
             // For testing, we mock that the product has the exact variant ID (reflection or just return it).
             // Since our handler just uses the product's VendorId, we can just return a product with the matching VendorId.
             
-            var vendor2Id = Guid.NewGuid();
-            var product2 = new Product("P2", "D2", new Money(20, "USD"), vendor2Id, ProductType.Physical, new List<(string, IEnumerable<VariantAttribute>)> { ("SKU2", new List<VariantAttribute> { new VariantAttribute("Color", "Blue") }) });
+            var product2 = new Product("P2", "D2", new Money(20, "COP"), vendor2Id, ProductType.Physical, new List<(string, IEnumerable<VariantAttribute>)> { ("SKU2", new List<VariantAttribute> { new VariantAttribute("Color", "Blue") }) });
 
             _productRepoMock.Setup(r => r.GetByVariantIdAsync(variantId1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(product1);

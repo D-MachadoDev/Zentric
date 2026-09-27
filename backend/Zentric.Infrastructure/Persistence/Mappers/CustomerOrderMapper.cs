@@ -31,6 +31,7 @@ namespace Zentric.Infrastructure.Persistence.Mappers
                     typeof(OrderItem).GetProperty("Id")?.SetValue(item, itemDb.Id);
                     typeof(OrderItem).GetProperty("CustomerOrderId")?.SetValue(item, itemDb.CustomerOrderId);
                     typeof(OrderItem).GetProperty("VariantId")?.SetValue(item, itemDb.VariantId);
+                    typeof(OrderItem).GetProperty("VendorId")?.SetValue(item, itemDb.VendorId);
                     typeof(OrderItem).GetProperty("Quantity")?.SetValue(item, itemDb.Quantity);
                     typeof(OrderItem).GetProperty("UnitPrice")?.SetValue(item, new Money(itemDb.UnitPrice.Amount, itemDb.UnitPrice.Currency));
                     itemsList.Add(item);
@@ -58,6 +59,7 @@ namespace Zentric.Infrastructure.Persistence.Mappers
                     Id = item.Id,
                     CustomerOrderId = item.CustomerOrderId,
                     VariantId = item.VariantId,
+                    VendorId = item.VendorId,
                     Quantity = item.Quantity,
                     UnitPrice = new MoneyDbModel { Amount = item.UnitPrice.Amount, Currency = item.UnitPrice.Currency }
                 });

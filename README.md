@@ -155,7 +155,7 @@ El sistema define 9 Agregados Raíz alineados con el Glosario de Términos del d
 | **`Invoice`** | Billing | Emisión de Factura Maestra y Facturas Detalle por vendedor con desglose de comisión. | [`Invoice.cs`](./backend/Zentric.Domain/Billing/Invoice.cs) |
 
 ### Value Objects Inmutables
-- **`Money`:** Importe decimal y divisa ISO 4217 ("USD"). Controla que las operaciones aritméticas se realicen sobre la misma moneda.
+- **`Money`:** Importe decimal y divisa ISO 4217 de 3 letras. Controla que las operaciones aritméticas se realicen sobre la misma moneda. El sistema es multi-moneda y la moneda por defecto del sistema es **COP** (`CustomerOrder.DefaultCurrency`), usada solo cuando el carrito está vacío.
 - **`Email`:** Normalización y validación de formato.
 - **`FullName`:** Nombres y apellidos con validación de longitud.
 - **`VariantAttribute`:** Pares de atributo-valor (Talla, Color, etc.).

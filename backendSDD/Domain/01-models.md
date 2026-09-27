@@ -10,7 +10,9 @@ Representa a cualquier individuo con acceso a la plataforma (Comprador, Vendedor
 - **Reglas de Negocio:** 
   - El correo y documento de identidad deben ser únicos en todo el sistema.
   - Un usuario solo puede tener un único rol asignado.
-- **Comportamientos (Métodos):** `Lock()`, `Unlock()`, `ChangeRole()`.
+- **Comportamientos (Métodos):** `Block()`, `Activate()`, `UpdateRole()`, `UpdateFullName()`, `UpdateEmail()`, `UpdatePasswordHash()`, `Delete()`, `Restore()`, `DeleteByAdmin()`.
+  - `Block()` dispara un evento de dominio que suspende en cascada los artefactos del usuario.
+  - Fuente de verdad: `Zentric.Domain/Users/User.cs` (verificado 2026-09-27). Las versiones anteriores de este documento listaban `Lock()`/`Unlock()`/`ChangeRole()`, nombres que **no existen en el código**.
 
 ## 2. Bounded Context: Catalog (Catálogo)
 

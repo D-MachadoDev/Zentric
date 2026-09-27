@@ -20,13 +20,13 @@ public sealed class ProductTests
     //! IA: Q-10 = C3 (ADR-0003) — un producto Fisico exige al menos una variante, por
     // eso el helper por defecto crea un Digital (CAT-02: sin logistica ni inventario).
     private static Product CreateProduct(ProductType type = ProductType.Digital)
-        => new("Camiseta", "Camiseta de algodón", new Money(25.50m, "USD"), VendorId, type);
+        => new("Camiseta", "Camiseta de algodón", new Money(25.50m, "COP"), VendorId, type);
 
     private static Product CreatePhysicalProduct(string sku = "CAM-M")
         => new(
             "Camiseta",
             "Camiseta de algodón",
-            new Money(25.50m, "USD"),
+            new Money(25.50m, "COP"),
             VendorId,
             ProductType.Physical,
             new List<(string Sku, IEnumerable<VariantAttribute> Attributes)>
@@ -49,7 +49,7 @@ public sealed class ProductTests
     [Fact]
     public void Constructor_ValidData_TrimsTextFields()
     {
-        var product = new Product("  Camiseta  ", "  Tela  ", new Money(1m, "USD"), VendorId, ProductType.Digital);
+        var product = new Product("  Camiseta  ", "  Tela  ", new Money(1m, "COP"), VendorId, ProductType.Digital);
 
         Assert.Equal("Camiseta", product.Name);
         Assert.Equal("Tela", product.Description);
@@ -59,7 +59,7 @@ public sealed class ProductTests
     public void Constructor_EmptyName_ThrowsArgumentException()
     {
         var exception = Assert.Throws<ArgumentException>(
-            () => new Product(" ", "Descripción", new Money(1m, "USD"), VendorId, ProductType.Physical));
+            () => new Product(" ", "Descripción", new Money(1m, "COP"), VendorId, ProductType.Physical));
 
         Assert.Equal("name", exception.ParamName);
     }
@@ -68,14 +68,14 @@ public sealed class ProductTests
     public void Constructor_EmptyDescription_ThrowsArgumentException()
     {
         Assert.Throws<ArgumentException>(
-            () => new Product("Camiseta", " ", new Money(1m, "USD"), VendorId, ProductType.Physical));
+            () => new Product("Camiseta", " ", new Money(1m, "COP"), VendorId, ProductType.Physical));
     }
 
     [Fact]
     public void Constructor_EmptyVendorId_ThrowsArgumentException()
     {
         var exception = Assert.Throws<ArgumentException>(
-            () => new Product("Camiseta", "Descripción", new Money(1m, "USD"), Guid.Empty, ProductType.Physical));
+            () => new Product("Camiseta", "Descripción", new Money(1m, "COP"), Guid.Empty, ProductType.Physical));
 
         Assert.Equal("vendorId", exception.ParamName);
     }
@@ -84,7 +84,7 @@ public sealed class ProductTests
     public void Constructor_UndefinedProductType_ThrowsArgumentOutOfRangeException()
     {
         Assert.Throws<ArgumentOutOfRangeException>(
-            () => new Product("Camiseta", "Descripción", new Money(1m, "USD"), VendorId, (ProductType)99));
+            () => new Product("Camiseta", "Descripción", new Money(1m, "COP"), VendorId, (ProductType)99));
     }
 
     [Fact]
@@ -98,7 +98,7 @@ public sealed class ProductTests
     public void UpdatePrice_ActiveProduct_ReplacesPrice()
     {
         var product = CreateProduct();
-        var newPrice = new Money(30m, "USD");
+        var newPrice = new Money(30m, "COP");
 
         product.UpdatePrice(newPrice);
 
@@ -111,7 +111,7 @@ public sealed class ProductTests
         var product = CreateProduct();
         product.Delete();
 
-        Assert.Throws<InvalidOperationException>(() => product.UpdatePrice(new Money(30m, "USD")));
+        Assert.Throws<InvalidOperationException>(() => product.UpdatePrice(new Money(30m, "COP")));
     }
 
     [Fact]
@@ -321,7 +321,7 @@ public sealed class ProductTests
     public void Constructor_PhysicalWithoutVariants_ThrowsArgumentException()
     {
         var exception = Assert.Throws<ArgumentException>(
-            () => new Product("Camiseta", "Algodón", new Money(1m, "USD"), VendorId, ProductType.Physical));
+            () => new Product("Camiseta", "Algodón", new Money(1m, "COP"), VendorId, ProductType.Physical));
 
         Assert.Equal("variants", exception.ParamName);
     }
@@ -333,7 +333,7 @@ public sealed class ProductTests
             () => new Product(
                 "Camiseta",
                 "Algodón",
-                new Money(1m, "USD"),
+                new Money(1m, "COP"),
                 VendorId,
                 ProductType.Physical,
                 new List<(string Sku, IEnumerable<VariantAttribute> Attributes)>()));
@@ -342,7 +342,7 @@ public sealed class ProductTests
     [Fact]
     public void Constructor_DigitalWithoutVariants_CreatesProductWithoutVariants()
     {
-        var product = new Product("Ebook", "PDF", new Money(1m, "USD"), VendorId, ProductType.Digital);
+        var product = new Product("Ebook", "PDF", new Money(1m, "COP"), VendorId, ProductType.Digital);
 
         Assert.Empty(product.Variants);
         Assert.False(product.HasVariant);
@@ -366,7 +366,7 @@ public sealed class ProductTests
         var product = new Product(
             "Ebook",
             "PDF",
-            new Money(1m, "USD"),
+            new Money(1m, "COP"),
             VendorId,
             ProductType.Digital,
             new List<(string Sku, IEnumerable<VariantAttribute> Attributes)>
@@ -388,7 +388,7 @@ public sealed class ProductTests
         };
 
         Assert.Throws<InvalidOperationException>(
-            () => new Product("Camiseta", "Algodón", new Money(1m, "USD"), VendorId, ProductType.Physical, seeds));
+            () => new Product("Camiseta", "Algodón", new Money(1m, "COP"), VendorId, ProductType.Physical, seeds));
     }
 
     [Fact]

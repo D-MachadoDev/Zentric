@@ -14,7 +14,7 @@ namespace Zentric.Tests.UseCases
         private readonly AddOrderItemCommandValidator _validator = new();
 
         private static AddOrderItemCommand ValidCommand() =>
-            new(Guid.NewGuid(), Guid.NewGuid(), 2, 19.99m, "USD");
+            new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 2, 19.99m, "COP");
 
         [Fact]
         public void Validate_ValidCommand_IsValid()
@@ -93,7 +93,7 @@ namespace Zentric.Tests.UseCases
             var result = _validator.Validate(command);
 
             Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, error => error.ErrorMessage == "Currency must be a valid ISO code like USD, EUR, COP.");
+            Assert.Contains(result.Errors, error => error.ErrorMessage == "Currency must be a valid ISO 4217 code, for example COP.");
         }
 
         [Theory]

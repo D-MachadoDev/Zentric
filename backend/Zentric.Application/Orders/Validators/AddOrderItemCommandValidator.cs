@@ -35,7 +35,7 @@ namespace Zentric.Application.Orders.Validators
 
             RuleFor(command => command.Currency)
                 .Must(currency => currency is null || currency.Trim().Length == 3)
-                .WithMessage("Currency must be a valid ISO code like USD, EUR, COP.");
+                .WithMessage("Currency must be a valid ISO 4217 code, for example COP.");
         }
     }
 }

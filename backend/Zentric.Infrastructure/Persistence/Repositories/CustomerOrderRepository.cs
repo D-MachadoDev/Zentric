@@ -81,6 +81,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
                     Id = i.Id,
                     CustomerOrderId = order.Id,
                     VariantId = i.VariantId,
+                    VendorId = i.VendorId,
                     Quantity = i.Quantity,
                     UnitPrice = new MoneyDbModel { Amount = i.UnitPrice.Amount, Currency = i.UnitPrice.Currency }
                 })

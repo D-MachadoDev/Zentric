@@ -171,8 +171,45 @@ Cuando interactúes en este proyecto, asume o coordina según el rol requerido:
   - Priorizar record o clases con propiedades init / private set en Value Objects y DTOs.
   - Priorizar `sealed` en clases de dominio que no deban ser heredadas.
   - **Evitar setters públicos:** Las entidades y agregados deben exponer métodos de negocio explícitos que modifiquen su estado, prohibido usar setters públicos anémicos.
-- **Documentación:**
-  - Comentarios XML claros en APIs públicas o reglas de negocio complejas.
+- **Documentación:** ver [sección 5.1](#51-reglas-de-comentado-del-código).
+
+### 5.1 Reglas de comentado del código
+
+**Idioma:** código en inglés, comentarios en español. Un comentario que explique una decisión del dominio **debe** citar la regla y su origen (`ZENTRIC.md`, ADR, invariante). Un comentario que repita el código sobra.
+
+**Qué SÍ lleva comentario:**
+
+| Elemento | Motivo |
+|---|---|
+| Invariante o regla de negocio | Es lo único que el compilador no puede expresar |
+| Por qué se eligió esta solución | Para que nadie la "simplifique" sin saber qué rompe |
+| Workaround o deuda técnica conocida | Para que no se lea como error |
+| Decisión del Owner que difiere de la Ley | `[ADDENDUM]` o referencia al ADR |
+| Par magical | `DefaultPercentage = 0.05m` sin contexto es un bug esperando |
+
+**Qué NO lleva comentario:**
+
+| Prohibido | Ejemplo de lo que hay que borrar |
+|---|---|
+| Traducir la firma | `// Devuelve el total` sobre `Money TotalAmount` |
+| Marcar secciones obvias | `// Constructor`, `// Método público` |
+| Comentario muerto | Describir un `if` que ya no existe |
+| Describir el *qué* en vez del *por qué* | `// Itera sobre items` antes de un `foreach` |
+| Justificativo sin decisión | "Porrequirement del cliente" sin citar la regla |
+
+**Casos límite:**
+
+- **Complejidad inevitable** (algoritmo de fraccionamiento, split de comisión): comentario que explique el algoritmo y su invariante, con referencia al ADR.
+- **Código de la Ley:** cada traducción de la Ley al código debe citar la sección: `// ZENTRIC.md Dominio 6: no se permiten existencias negativas.`
+
+**Formato:**
+
+- Comentarios de una línea: `// texto` con espacio después de `//`.
+- Comentarios de bloque: usar `//` alineado, nunca `/* ... */` salvo XML doc.
+- Documentación pública: XML `///` con `<summary>` y `<param>`. En el Dominio, además `<remarks>` cuando la regla viene de la Ley.
+- **Nada de TODO sin dueño ni contexto.** Un `TODO` sin issue o sin nombre es ruido.
+
+**Vencimiento:** un `// TODO` o `// FIXME` con más de 30 días se escala a pregunta abierta en `backendSDD/SDD.md` o se borra. Si nadie lo reclama en 30 días, no era importante.
 
 ---
 

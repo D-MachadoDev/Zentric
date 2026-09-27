@@ -17,7 +17,7 @@
 | URL base | `VITE_API_BASE_URL`, defecto `http://localhost:5076` |
 | Cabeceras fijas | `Accept: application/json`, `Content-Type: application/json` |
 | Autenticación | `Authorization: Bearer <token>` **sólo si** existe token |
-| Correlación | `X-Request-Id` por petición, visible en errores |
+| Correlación | **No implementada.** Propagar un id de correlación es `[PROPUESTO]`: el backend actual no lo soporta (verificado en `Program.cs`). El `traceId` de ASP.NET es lo único disponible |
 | Tiempo máximo | 15 s, con cancelación por `AbortController` |
 | Reintentos | 1 reintento sólo en `5xx` y error de red; nunca en `4xx` |
 

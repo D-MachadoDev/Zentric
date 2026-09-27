@@ -31,6 +31,19 @@ namespace Zentric.Application.Billing.Commands
                 return Result<bool>.Failure("Order not found.");
             }
 
+            // Q-15 (dictamen del Owner): el porcentaje y el reparto plataforma/
+            // vendedor NO estan definidos en la Ley. Mientras no se ratifique el
+            // reparto, se emite la Factura Maestra (que refleja lo que el
+            // comprador debe) pero NO se emite el Detalle Zentric cobrable.
+            // Nadie paga una comision estimada por el agente.
+            if (!PlatformFeePolicy.Current.IsCollectable)
+            {
+                return Result<bool>.Failure(
+                    "Platform fee cannot be charged: the revenue split has not been ratified by the owner. " +
+                    "The master invoice can be issued, but the Zentric fee detail remains an estimate. " +
+                    "See backendSDD question Q-15.");
+            }
+
             try
             {
                 var invoicesToSave = new List<Invoice>();
@@ -40,21 +53,18 @@ namespace Zentric.Application.Billing.Commands
                 var masterInvoice = Invoice.CreateMaster(order.Id, totalAmount);
                 invoicesToSave.Add(masterInvoice);
 
-                // 2. Factura Zentric (Platform Fee, supuesto 5%)
-                // Nota: Asumimos un 5% de fee fijo.
-                var zentricFeeAmount = new Money(Math.Round(totalAmount.Amount * 0.05m, 2), totalAmount.Currency);
+                // 2. Factura Zentric (comision de plataforma), solo si hay reparto ratificado.
+                var feePolicy = PlatformFeePolicy.Current;
+                var zentricFeeAmount = feePolicy.ApplyTo(totalAmount);
                 var zentricInvoice = Invoice.CreateZentricDetail(order.Id, zentricFeeAmount);
                 invoicesToSave.Add(zentricInvoice);
 
                 // 3. Facturas a los Vendedores (Split)
-                // Para simplificar, suponemos que el VendorTotalAmount es el subtotal de sus items, menos el fee proporcional.
-                // Como no tenemos el SellerId en el OrderItem en este punto (está en Product), 
-                // para la especificacion de facturación lo ideal es calcularlo. 
-                // Por ahora creamos un VendorDetail general si tuviéramos un VendorId, o lo dejamos como TBD si requerimos inyectar los VendorIds.
-                // En un escenario real, agruparíamos OrderItems por VendorId.
-                
-                // TODO: Obtener los VendorIds reales agrupando desde ProductRepository. 
-                // Para la SPEC-008 actual, demostramos la orquestación.
+                // Requiere el VendorId en la linea del pedido (Q-18). El Owner
+                // decidio storing la instantanea historica del vendedor en
+                // OrderItem, de modo que la factura refleje quien vendio el
+                // producto en el momento de la compra aunque despues cambie.
+                // Pendiente de implementacion: migracion + agrupacion por VendorId.
 
                 await _invoiceRepository.AddRangeAsync(invoicesToSave, cancellationToken);
 

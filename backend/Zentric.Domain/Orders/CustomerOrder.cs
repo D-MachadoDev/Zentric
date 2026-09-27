@@ -6,6 +6,14 @@ namespace Zentric.Domain.Orders
 {
     public sealed class CustomerOrder : Zentric.Domain.Common.Models.Entity
     {
+        /// <summary>
+        /// Moneda por defecto del sistema, usada solo cuando el carrito esta vacio
+        /// y, por tanto, no hay ninguna moneda de referencia que inferir.
+        /// Cuando el carrito tiene items, el total adopta la moneda del primero.
+        /// El sistema es multi-moneda: cada operacion conserva la que se le pasa.
+        /// </summary>
+        public const string DefaultCurrency = "COP";
+
         public Guid Id { get; init; }
         public Guid BuyerId { get; private set; }
         public OrderStatus Status { get; private set; }
@@ -21,7 +29,9 @@ namespace Zentric.Domain.Orders
             {
                 if (_items.Count == 0)
                 {
-                    return new Money(0, "USD"); // Por defecto o manejar divisa
+                    // Carrito sin items: el total es cero y no hay una moneda de
+                    // referencia propia. Se usa la moneda por defecto del sistema.
+                    return new Money(0, DefaultCurrency);
                 }
 
                 var firstCurrency = _items.First().UnitPrice.Currency;
@@ -51,7 +61,7 @@ namespace Zentric.Domain.Orders
             UpdatedAt = CreatedAt;
         }
 
-        public void AddItem(Guid variantId, int quantity, Money unitPrice)
+        public void AddItem(Guid variantId, Guid vendorId, int quantity, Money unitPrice)
         {
             EnsureNotDelivered();
             
@@ -67,7 +77,7 @@ namespace Zentric.Domain.Orders
             }
             else
             {
-                _items.Add(new OrderItem(Id, variantId, quantity, unitPrice));
+                _items.Add(new OrderItem(Id, variantId, vendorId, quantity, unitPrice));
             }
             
             UpdatedAt = DateTime.UtcNow;

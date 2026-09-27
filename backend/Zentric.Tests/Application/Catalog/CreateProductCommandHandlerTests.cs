@@ -73,7 +73,7 @@ namespace Zentric.Tests.Application.Catalog
                 Name: "Test Product",
                 Description: "A great product",
                 PriceAmount: 100m,
-                PriceCurrency: "USD",
+                PriceCurrency: "COP",
                 VendorId: Guid.NewGuid(),
                 Type: ProductType.Physical,
                 Variants: new List<CreateProductVariantDto>

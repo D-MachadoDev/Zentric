@@ -1,5 +1,10 @@
 services:
   db:
+    # Version fijada (no `latest` ni `16-alpine`) para que el entorno sea
+    # reproducible: una actualizacion de la imagen no puede cambiar el
+    # comportamiento entre maquinas sin que quede registrado en git.
+    # DECISION TECNICA del agente, no requisito de negocio: la Ley no fija
+    # version de base de datos. Ver backendSDD/SDD.md seccion de decisiones.
     image: postgres:16.15-alpine
     container_name: zentric-postgres
     restart: unless-stopped

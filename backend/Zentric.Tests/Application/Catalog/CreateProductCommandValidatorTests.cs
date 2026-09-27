@@ -18,7 +18,7 @@ namespace Zentric.Tests.Application.Catalog
                 Name: "Phone",
                 Description: "Smartphone",
                 PriceAmount: 999m,
-                PriceCurrency: "USD",
+                PriceCurrency: "COP",
                 VendorId: Guid.NewGuid(),
                 Type: ProductType.Physical,
                 Variants: new List<CreateProductVariantDto>
@@ -41,7 +41,7 @@ namespace Zentric.Tests.Application.Catalog
                 Name: "Phone",
                 Description: "Smartphone",
                 PriceAmount: 999m,
-                PriceCurrency: "USD",
+                PriceCurrency: "COP",
                 VendorId: Guid.NewGuid(),
                 Type: ProductType.Physical,
                 Variants: new List<CreateProductVariantDto>() // Empty variants

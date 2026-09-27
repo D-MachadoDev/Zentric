@@ -3,27 +3,45 @@ using Zentric.Application.Common.Models;
 using Zentric.Application.Common.Ports;
 using Zentric.Domain.Orders.Ports;
 using Zentric.Domain.Orders.Enums;
+using Zentric.Domain.Products.Ports;
 using Zentric.Domain.Products.ValueObjects;
 
 using Zentric.Domain.Inventories.Ports;
 
 namespace Zentric.Application.Orders.Commands
 {
-    public record AddOrderItemCommand(Guid OrderId, Guid VariantId, int Quantity, decimal UnitPrice, string Currency) : IRequest<Result>;
+    /// <summary>
+    /// Agrega una linea al carrito.
+    ///
+    /// Q-18: <paramref name="VendorId"/> es la instantanea historica del
+    /// vendedor. Se valida contra el producto para no aceptar un vendedor
+    /// arbitrario del cliente, y se persiste en la linea para que la factura
+    /// refleje quien vendio en el momento de la compra.
+    /// </summary>
+    public record AddOrderItemCommand(
+        Guid OrderId,
+        Guid VariantId,
+        Guid VendorId,
+        int Quantity,
+        decimal UnitPrice,
+        string Currency) : IRequest<Result>;
 
     public class AddOrderItemCommandHandler : IRequestHandler<AddOrderItemCommand, Result>
     {
         private readonly ICustomerOrderRepository _orderRepository;
         private readonly IInventoryRepository _inventoryRepository;
+        private readonly IProductRepository _productRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public AddOrderItemCommandHandler(
             ICustomerOrderRepository orderRepository,
             IInventoryRepository inventoryRepository,
+            IProductRepository productRepository,
             IUnitOfWork unitOfWork)
         {
             _orderRepository = orderRepository;
             _inventoryRepository = inventoryRepository;
+            _productRepository = productRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -40,6 +58,21 @@ namespace Zentric.Application.Orders.Commands
                 return Result.Failure("Items can only be added while the order is in the Cart status.");
             }
 
+            // Q-18: el vendedor indicado debe ser el dueno real de la variante.
+            // Sin esta comprobacion, un cliente podria atribuir la venta a otro
+            // vendedor y corromper el reparto de la facturacion.
+            var product = await _productRepository.GetByVariantIdAsync(request.VariantId, cancellationToken);
+            if (product == null)
+            {
+                return Result.Failure($"Product for variant {request.VariantId} not found.");
+            }
+
+            if (product.VendorId != request.VendorId)
+            {
+                return Result.Failure(
+                    $"Vendor {request.VendorId} does not own variant {request.VariantId}.");
+            }
+
             var totalAvailable = await _inventoryRepository.GetTotalAvailableStockAsync(request.VariantId, cancellationToken);
             if (totalAvailable < request.Quantity)
             {
@@ -48,7 +81,7 @@ namespace Zentric.Application.Orders.Commands
 
             var money = new Money(request.UnitPrice, request.Currency);
 
-            order.AddItem(request.VariantId, request.Quantity, money);
+            order.AddItem(request.VariantId, request.VendorId, request.Quantity, money);
             await _orderRepository.UpdateAsync(order, cancellationToken);
 
             // Persistir la linea del pedido: sin este guardado el item se pierde.
