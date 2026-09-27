@@ -1,0 +1,31 @@
+# Contexto de build: frontend/ (ver frontend/Dockerfile)
+
+# Dependencias y artefactos de compilacion
+node_modules
+dist
+dist-ssr
+build
+coverage
+.vitest
+
+# Secretos y entornos
+.env
+.env.*
+!.env.example
+
+# Documentacion
+*.md
+../backendSDD
+../frontendSDD
+
+# Control de versiones y editores
+.git
+.gitignore
+.vscode
+.idea
+.github
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log
