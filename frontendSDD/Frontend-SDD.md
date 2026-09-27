@@ -11,11 +11,34 @@
 
 ---
 
+
+---
+
+## Reglas obligatorias al construir el frontend
+
+Estas reglas son **no negociables**: la primera mitad viene de la Ley (`ZENTRIC.md`) y
+la segunda de lo que el backend ya expone y verifica. El detalle y la evidencia estan
+en [`Contract-alignment.md`](Contract-alignment.md).
+
+### Del contrato con la API
+
+1. **Enviar `X-Buyer-Id` en todas las llamadas.** El backend no emite JWT. Sin la cabecera,
+   los endpoints que exigen identidad responden `401`.
+2. **Usar paginación en todo listado.** `page` base cero, `size` por defecto `20` y maximo `100`.
+   Consumir `items`, `totalItems`, `totalPages`, `hasNext` para construir los controles.
+3. **No diferenciar "no existe" de "no es tuyo".** Ambos devuelven `404` a proposito, para no
+   permitir enumerar pedidos ajenos. La UI debe mostrar "no encontrado".
+4. **Centralizar el envio de `X-Buyer-Id` y la base URL en un unico interceptor HTTP.** Asi la
+   migracion futura a JWT es un solo punto de cambio.
+5. **Errores con Problem Details (RFC 9457).** El backend responde con `ProblemDetails`;
+   leer `detail` para el mensaje y `status` para el caso. No inventar codigos propios.
+
 ## 0. Control de Versiones
 
 | Versión | Fecha | Cambio | Autor |
 | --- | --- | --- | --- |
 | 1.0.0 | 2026-09-27 | Especificación inicial del frontend. Configuración base creada; implementación diferida. | Agente IA |
+| 1.1.0 | 2026-09-27 | Sincronizado con el backend real (29 endpoints): CORS resuelto, `X-Buyer-Id` obligatorio, paginación con `size` acotado a 100, reglas de la Ley aplicadas a la UI, R-08 (reportes) registrado. | Agente IA |
 
 ---
 
@@ -28,6 +51,24 @@
 - **Límite duro:** el frontend **no** implementa reglas de negocio. Si una regla
   parece necesitar lógica en el cliente, es deuda del backend y se registra
   como `REPAIR_BACKEND`.
+
+### De la Ley (`ZENTRIC.md`) que restringen la interfaz
+
+6. **Un comprador nunca ve datos de otro comprador** (Dominio 2). Ni por URL, ni por error,
+   ni por cache del navegador.
+7. **No ofrecer devolucion de productos digitales** (Dominio 10: "esta prohibido devolver
+   productos digitales"). El boton no debe renderizarse para `ProductType == Digital`.
+8. **La devolucion fisica reingresa como "Usado"** (Dominio 10). No presentarla como
+   devolucion de stock nuevo.
+9. **`Supervisor` es un perfil de consulta** (Dominio 1). Sin acciones de escritura en su UI.
+10. **No inventar reglas de negocio.** Si la UI necesita una regla que no esta en la Ley
+       ni en `backendSDD/`, se pregunta al Owner (freno de mano, `AGENTS.md` 0.3).
+
+> **La Ley no define diseno de interfaz.** `ZENTRIC.md` es funcional: no prescribe
+> pantallas, componentes ni estilos. Esas decisiones son del Owner y deben quedar
+> documentadas aqui como decisiones, nunca como si vinieran de la Ley.
+
+---
 
 ### 1.1 Documentos que componen este SDD
 
@@ -52,7 +93,7 @@
 | Backend | .NET 10, puerto host `5076`, contenedor `8080` | `[OBSERVADO]` |
 | Endpoints publicados | 26 en OpenAPI + `/health` | `[OBSERVADO]` |
 | Autenticación | **No implementada** en el backend | `[OBSERVADO]` |
-| CORS | No configurado en el backend | `[OBSERVADO]` |
+| CORS | **Configurado y verificado** (politica `Frontend`) | `[CONFIRMADO]` |
 | Código de frontend | Configuración base únicamente | `[OBSERVADO]` |
 | SDKs | Node 24.14, npm 10.8.2, Docker 29.7.2 | `[OBSERVADO]` |
 
@@ -130,7 +171,7 @@ aplicable, pero se **sustituye todo el dominio** por el de Zentric. Implementar 
 | ID | Riesgo | Impacto | Mitigación | Estado |
 | --- | --- | --- | --- | --- |
 | FR-01 | Sin autenticación en el backend | No se puede aplicar RG-01 en la UI | Sesión local marcada `PROVISIONAL` | `ABIERTO` |
-| FR-02 | CORS no configurado | El navegador bloqueará `/api/*` desde `localhost:5173` | Registrar `REPAIR_BACKEND` | `ABIERTO` |
+| FR-02 | ~~CORS no configurado~~ **RESUELTO** | Origenes declarados; sin comodin | Ya no aplica | `CERRADO` |
 | FR-03 | La creación de producto no devuelve `variantId` | El cliente debe leer `variants[0].id` | Mapeo explícito en `Frontend-Adapters.md` | `CONOCIDO` |
 | FR-04 | No hay endpoint de listado de pedidos | El panel no puede listar pedidos | Verificar contra la API en ejecución | `ABIERTO` |
 | FR-05 | Enums serializados como números | Acoplamiento al orden de valores | Constantes explícitas, nunca índices literales | `CONTROLADO` |
@@ -142,7 +183,7 @@ aplicable, pero se **sustituye todo el dominio** por el de Zentric. Implementar 
 
 1. **Autenticación (FR-01):** ¿se implementa JWT en el backend antes que la
    pantalla de login, o el frontend sigue con sesión provisional?
-2. **CORS (FR-02):** sin decisión del backend, el frontend no funciona desde el
+2. **CORS (FR-02): RESUELTO.** Si el frontend se despliega en otro dominio, hay que declararlo en el backend (no hay comodin). Originalmente el frontend no funcionaba desde el
    navegador.
 3. **Matriz de permisos por rol:** con 4 roles y 26 endpoints falta decidir qué
    módulo ve cada actor.

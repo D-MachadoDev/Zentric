@@ -16,7 +16,7 @@
 | --- | --- |
 | URL base | `VITE_API_BASE_URL`, defecto `http://localhost:5076` |
 | Cabeceras fijas | `Accept: application/json`, `Content-Type: application/json` |
-| Autenticación | `Authorization: Bearer <token>` **sólo si** existe token |
+| Autenticación | Cabecera `X-Buyer-Id` (JWT no emitido; R-01 bloqueado). Enviar en todas las llamadas |
 | Correlación | **No implementada.** Propagar un id de correlación es `[PROPUESTO]`: el backend actual no lo soporta (verificado en `Program.cs`). El `traceId` de ASP.NET es lo único disponible |
 | Tiempo máximo | 15 s, con cancelación por `AbortController` |
 | Reintentos | 1 reintento sólo en `5xx` y error de red; nunca en `4xx` |
@@ -154,12 +154,12 @@ es una decisión de presentación, no de dominio. Obligatorio en:
 | ID | Hallazgo | Acción solicitada |
 | --- | --- | --- |
 | R-01 | No hay autenticación ni emisión de JWT | Definir esquema de identidad y claims |
-| R-02 | No hay política CORS | Habilitar el origen del frontend en desarrollo |
+| R-02 | ~~No hay política CORS~~ **RESUELTO 2026-09-27** | Verificado: origen permitido recibe header, ajeno no, preflight 204 |
 | R-03 | `GET /api/Logistics/fulfillment` no admite `GET` (405) | Añadir listado o documentar el método real |
 | R-04 | No existe listado de pedidos | Añadir `GET /api/Orders` si el panel debe listar |
 | R-05 | `ProblemDetails` usa la forma RFC 7807 | Migrar a RFC 9457 |
 | R-06 | El alta de producto no devuelve `variantId` | Devolverlo junto al `productId` |
-| R-07 | Facturas de vendedor (split) no implementadas | Completar o documentar el alcance |
+| R-07 | ~~Split no implementado~~ **RESUELTO 2026-09-27** | Una factura por `VendorId`; verificado contra la base real |
 
-Mientras R-01 y R-02 sigan abiertos, el frontend **no puede autenticarse ni
+R-02 (CORS) esta resuelto y verificado. Mientras R-01 siga abierto, el frontend **no puede autenticarse ni
 consumir la API desde el navegador**. Se registra como bloqueo de entrega.
