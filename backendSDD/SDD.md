@@ -737,7 +737,7 @@ porque la Ley (ZENTRIC.md) no las define. Groupings por causa:
 | OBS-02 | Consistencia con AGENTS.md, sección 3.2 | 11 handlers usan `catch` filtrado de guardas conocidas → `Result.Failure` (no hay `catch` genérico pelado) | búsqueda `catch (` en `Zentric.Application` | Ratificación del Owner; documentar el patrón si se aprueba |
 | OBS-03 | Persistencia | Migraciones y mapeo EF sin ejecución real contra PostgreSQL | `Migrations/` | Fase 6: levantar compose y aplicar migraciones |
 | OBS-05 | CI | El workflow solo dispara en `main`; `develop` no se valida en cada push | `.github/workflows/ci.yml` | Ampliar `branches` a `develop` (decisión menor del Owner) |
-| OBS-06 | Calidad de build | El build emite **12 warnings `SYSLIB0050`**: los mappers EF (`WarehouseMapper`, `BuyerMapper`, `InventoryMapper`, `CustomerOrderMapper` ×2, `InvoiceMapper`, `FulfillmentOrderMapper` ×2, `ReturnRequestMapper`, `ProductMapper` ×3) usan `FormatterServices` (obsoleto) para materializar agregados | `dotnet build --no-incremental` (2026-09-26) | Migrar la materialización a una fábrica interna por agregado y activar `TreatWarningsAsErrors` |
+| OBS-06 | Calidad de build | ⚠️ ~~12 warnings `SYSLIB0050`~~ — **cerrado 2026-09-27**: `dotnet build --no-incremental` reporta 0 warnings; los mappers EF (`WarehouseMapper`, `BuyerMapper`, `InventoryMapper`, `CustomerOrderMapper` ×2, `InvoiceMapper`, `FulfillmentOrderMapper` ×2, `ReturnRequestMapper`, `ProductMapper` ×3) usan `FormatterServices` (obsoleto) para materializar agregados | `dotnet build --no-incremental` (2026-09-26) | Migrar la materialización a una fábrica interna por agregado y activar `TreatWarningsAsErrors` |
 
 ### 10.3 Contradicciones de especificación — cierre
 
@@ -763,7 +763,7 @@ porque la Ley (ZENTRIC.md) no las define. Groupings por causa:
 - **PostgreSQL real:** las 3 migraciones nunca se aplicaron; no hay servidor en el entorno actual ni pruebas de integración de datos.
 - **Comportamiento HTTP:** la API no se levantó; no hay ninguna petición real ejecutada contra los 27 endpoints (T-032 pendiente).
 - **Mapeo EF en runtime:** `OwnsOne`/`OwnsMany` y conversiones de Value Objects sin validar contra una base real.
-- **Lint/análisis estático:** sin `AnalysisLevel`/`TreatWarningsAsErrors`; el build ya emite hallazgos reales (**12 × `SYSLIB0050`**, OBS-06).
+- **Lint/análisis estático:** sin `AnalysisLevel`/`TreatWarningsAsErrors`; el build ya emite hallazgos reales (**0 warnings** verificados el 2026-09-27 con `dotnet build --no-incremental`; OBS-06 cerrado).
 - **Licenciamiento (Q-14):** cerrado. MediatR fue eliminado; FluentValidation 12.1.1 es Apache-2.0 y se mantiene.
 
 ### 11.3 Cómo re-verificar (comandos de referencia)
