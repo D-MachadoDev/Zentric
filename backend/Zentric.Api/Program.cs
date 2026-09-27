@@ -4,10 +4,9 @@ using Zentric.Application.Orders.Commands;
 using Zentric.Infrastructure.Persistence.Repositories;
 using Zentric.Domain.Orders.Ports;
 using Zentric.Domain.Logistics.Ports;
-using FluentValidation;
+using Zentric.Application;
 using Zentric.Application.Common.Behaviors;
 using Zentric.Application.Common.Messaging;
-using Zentric.Application;
 
 using Microsoft.OpenApi;
 using System.Reflection;

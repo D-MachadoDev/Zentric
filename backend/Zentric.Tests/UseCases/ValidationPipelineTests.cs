@@ -1,10 +1,9 @@
 using FluentValidation;
-using Zentric.Application.Common.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using Zentric.Application;
 using Zentric.Application.Common.Behaviors;
 using Zentric.Application.Common.Messaging;
-using Zentric.Application;
 using Zentric.Application.Logistics.Commands;
 using Zentric.Domain.Logistics.Ports;
 using Zentric.Application.Orders.Commands;
