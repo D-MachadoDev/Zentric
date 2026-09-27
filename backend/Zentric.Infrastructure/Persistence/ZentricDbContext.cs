@@ -88,7 +88,20 @@ namespace Zentric.Infrastructure.Persistence
                 });
             });
 
-            modelBuilder.Entity<BuyerDbModel>().HasKey(b => b.UserId);
+            modelBuilder.Entity<BuyerDbModel>(b =>
+            {
+                b.HasKey(x => x.UserId);
+
+                // La direccion se guarda descompuesta en columnas propias.
+                b.OwnsOne(x => x.MainAddress, a =>
+                {
+                    a.Property(p => p.Street).HasColumnName("MainAddressStreet");
+                    a.Property(p => p.City).HasColumnName("MainAddressCity");
+                    a.Property(p => p.State).HasColumnName("MainAddressState");
+                    a.Property(p => p.ZipCode).HasColumnName("MainAddressZipCode");
+                    a.Property(p => p.Country).HasColumnName("MainAddressCountry");
+                });
+            });
             modelBuilder.Entity<ReturnRequestDbModel>().HasKey(r => r.Id);
             modelBuilder.Entity<InventoryDbModel>().HasKey(i => i.Id);
             modelBuilder.Entity<WarehouseDbModel>().HasKey(w => w.Id);

@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Zentric.Domain.Buyers.ValueObjects;
 
 namespace Zentric.Domain.Buyers
 {
@@ -7,8 +11,18 @@ public sealed class Buyer
         // Así los conectamos sin mezclar sus datos.
         public Guid UserId { get; init; }
 
-        public string MainAddress { get; private set; } //! Value Object? Podría ser un Value Object de Address, pero por simplicidad lo dejamos como string.
-        public List<string> AdditionalAddresses { get; private set; }
+        /// <summary>
+        /// Direccion principal, obligatoria segun ZENTRIC.md Dominio 2.
+        /// Es un Value Object: si el comprador cambia de casa se genera otra
+        /// instancia, nunca se muta la existente.
+        /// </summary>
+        public Address MainAddress { get; private set; }
+
+        /// <summary>Direcciones adicionales, opcionales (Dominio 2).</summary>
+        public IReadOnlyList<Address> AdditionalAddresses => _additionalAddresses.AsReadOnly();
+
+        private readonly List<Address> _additionalAddresses = new();
+
         public bool IsActiveForCommerce { get; private set; }
         
         public DateTime CreatedAt { get; private set; }
@@ -17,15 +31,14 @@ public sealed class Buyer
         private Buyer()
         {
             MainAddress = null!;
-            AdditionalAddresses = new List<string>();
             
         }
 
-        public Buyer(Guid userId, string mainAddress)
+        public Buyer(Guid userId, Address mainAddress)
         {
-            if (string.IsNullOrWhiteSpace(mainAddress))
+            if (mainAddress is null)
             {
-                throw new ArgumentException("Main address is required.");
+                throw new ArgumentException("Main address is required.", nameof(mainAddress));
             }
 
             if (userId == Guid.Empty)
@@ -35,31 +48,41 @@ public sealed class Buyer
 
             UserId = userId; // Vinculamos 1 a 1
             MainAddress = mainAddress;
-            AdditionalAddresses = new List<string>();
             
             IsActiveForCommerce = true; // Empieza listo para comprar
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = CreatedAt;
         }
 
-        public void AdditionalAddress(string address)
-        {
+        /// <summary>
+        /// Fabrica desde los componentes sueltos de la direccion. Permite a las
+        /// capas superiores construir el VO sin conocer su tipo.
+        /// </summary>
+        public static Buyer Create(
+            Guid userId,
+            string street,
+            string city,
+            string state,
+            string zipCode,
+            string country)
+            => new(userId, new Address(street, city, state, zipCode, country));
 
-            if (string.IsNullOrWhiteSpace(address))
+        public void AdditionalAddress(Address address)
+        {
+            if (address is null)
             {
-                throw new ArgumentException("Address cannot be empty.");
+                throw new ArgumentException("Address cannot be empty.", nameof(address));
             }
 
-            AdditionalAddresses.Add(address);
+            _additionalAddresses.Add(address);
             UpdatedAt = DateTime.UtcNow;
 
             // TODO: Domain event BuyerAdditionalAddressAdded
         }
 
-        public void RemoveAdditionalAddress(string address)
+        public void RemoveAdditionalAddress(Address address)
         {
-
-            if (!AdditionalAddresses.Remove(address))
+            if (!_additionalAddresses.Remove(address))
             {
                 throw new InvalidOperationException("Address not found in additional addresses.");
             }
@@ -69,12 +92,11 @@ public sealed class Buyer
             // TODO: Domain event BuyerAdditionalAddressRemoved
         }
 
-        public void UpdateMainAddress(string newAddress)
+        public void UpdateMainAddress(Address newAddress)
         {
-
-            if (string.IsNullOrWhiteSpace(newAddress))
+            if (newAddress is null)
             {
-                throw new ArgumentException("New main address cannot be empty.");
+                throw new ArgumentException("New main address cannot be empty.", nameof(newAddress));
             }
 
             MainAddress = newAddress;
