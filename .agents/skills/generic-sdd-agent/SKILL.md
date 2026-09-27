@@ -1,6 +1,6 @@
 ---
 name: generic-sdd-agent
-version: 6.0.0
+version: 7.0.0
 language: es
 scope: universal — cualquier software, lenguaje, dominio, tamaño o madurez; desde una pregunta hasta la operación
 ssot-default: AGENTS.md (contrato del repo) + SDD/SDD.md (memoria viva). Si el repo declara otra SSoT, se respeta y no se crea una paralela
