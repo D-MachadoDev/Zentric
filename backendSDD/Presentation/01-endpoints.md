@@ -34,7 +34,40 @@ Todos los controladores heredan o implementan contratos HTTP RESTful con formato
 
 ---
 
-## 3. Catálogo Detallado de Endpoints por Bounded Context (Tags de Swagger)
+## 3. Paginación de Listados
+
+Los listados usan `PageRequest` y devuelven `PagedResult<T>`.
+
+| Parámetro | Regla |
+|---|---|
+| `page` | Base cero: la primera página es `0`. Un valor negativo se recorta a `0`. |
+| `size` | Por defecto `20`, máximo `100`. Un valor `<= 0` cae al defecto; uno mayor que `100` se recorta. |
+
+Respuesta (`200 OK`):
+
+```json
+{
+  "items": [ ... ],
+  "page": 0,
+  "size": 20,
+  "totalItems": 137,
+  "totalPages": 7,
+  "hasPrevious": false,
+  "hasNext": true
+}
+```
+
+El `totalItems` se cuenta en la base **antes** de aplicar `Skip`/`Take`, para que el
+frontend pueda construir sus controles de paginación sin adivinar.
+
+Endpoint de referencia: `GET /api/Catalog/products/paged?vendorId={id}&page=0&size=20`.
+
+> El listado sin paginar (`GET /api/Catalog/products`) se conserva por compatibilidad
+> con clientes existentes, pero **el frontend debe usar el paginado**.
+
+---
+
+## 4. Catálogo Detallado de Endpoints por Bounded Context (Tags de Swagger)
 
 ### 3.1. Tag: `1. Usuarios y Roles` (`/api/users`)
 | Método | Endpoint | Tipo CQRS | Entrada / Payload | Respuestas | Descripción de Negocio e Invariantes |

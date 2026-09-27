@@ -87,6 +87,14 @@ namespace Zentric.Tests.UseCases
             public Task<IReadOnlyList<Zentric.Domain.Products.Product>> GetAllAsync(Guid? vendorId = null, CancellationToken ct = default)
                 => Task.FromResult((IReadOnlyList<Zentric.Domain.Products.Product>)new List<Zentric.Domain.Products.Product>());
 
+        public Task<(IReadOnlyList<Zentric.Domain.Products.Product> Items, int TotalItems)> GetPagedAsync(
+            Guid? vendorId, int skip, int take, CancellationToken cancellationToken = default)
+        {
+            // Los fakes en memoria no necesitan paginar de verdad.
+            var all = GetAllAsync(vendorId, cancellationToken).Result;
+            return Task.FromResult<(IReadOnlyList<Zentric.Domain.Products.Product>, int)>((all.Skip(skip).Take(take).ToList(), all.Count()));
+        }
+
             public Task AddAsync(Zentric.Domain.Products.Product product, CancellationToken ct = default)
                 => Task.CompletedTask;
 

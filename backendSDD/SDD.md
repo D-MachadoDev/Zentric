@@ -884,7 +884,7 @@ Los enlaces relativos de este archivo se resuelven desde `backendSDD/` (por ejem
 | API1 | Broken Object Level Authorization | ⚠️ Los endpoints operan por `Guid` recibido del cliente sin verificar pertenencia (pedido, stock, devolución) | `[PENDIENTE]` Ownership por comando antes del primer dato real (Fase 6) |
 | API2 | Broken Authentication | ➖ Fuera de alcance por la Ley; esquema `Bearer` documentado en Swagger | `[PENDIENTE]` Definir perfil de tokens cuando entre el módulo de Auth |
 | API3 | Broken Object Property Level Authorization | ⚠️ Sin control de campos en DTO de respuesta ni de propiedades aceptadas | `[PENDIENTE]` DTOs de salida explícitos (Application-API-Agent) |
-| API4 | Unrestricted Resource Consumption | 🟡 Sin rate limiting ni paginación (las queries no reciben `page`/`size`) | `[PENDIENTE]` Límite de página y presupuesto de recursos |
+| API4 | Unrestricted Resource Consumption | 🟡 Parcial — **paginación implementada** (`PageRequest`/`PagedResult`, `size` acotado a 100) y verificada contra PostgreSQL; sigue sin rate limiting | `[PENDIENTE]` Límite de página y presupuesto de recursos |
 | API5 | Broken Function Level Authorization | ⚠️ `UserRole` existe en el dominio pero no se aplica en la capa HTTP | `[PENDIENTE]` Políticas por rol al activar Auth |
 | API6 | Unrestricted Access to Sensitive Business Flows | ⚠️ Acciones de negocio sensibles (emitir facturas, despachar, aprobar devoluciones, agregar stock) sin traza de actor | `[PENDIENTE]` Auditoría de actor + idempotencia |
 | API7 | Server Side Request Forgery | ➖ No hay clientes HTTP salientes con URI proporcionada por el usuario | Sin acción |

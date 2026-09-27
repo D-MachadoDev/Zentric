@@ -52,6 +52,32 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             return list.Select(ProductMapper.ToDomain).ToList();
         }
 
+        public async Task<(IReadOnlyList<Product> Items, int TotalItems)> GetPagedAsync(
+            Guid? vendorId, int skip, int take, CancellationToken cancellationToken = default)
+        {
+            var query = _dbContext.Products
+                .Include(p => p.Variants)
+                .ThenInclude(v => v.Attributes)
+                .AsNoTracking();
+
+            if (vendorId.HasValue)
+            {
+                query = query.Where(p => p.VendorId == vendorId.Value);
+            }
+
+            // El total se cuenta antes de aplicar Skip/Take: es lo que permite
+            // al cliente saber cuantas paginas existen.
+            var total = await query.CountAsync(cancellationToken);
+
+            var page = await query
+                .OrderBy(p => p.CreatedAt)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync(cancellationToken);
+
+            return (page.Select(ProductMapper.ToDomain).ToList(), total);
+        }
+
         public Task AddAsync(Product product, CancellationToken cancellationToken = default)
         {
             var dbModel = ProductMapper.ToDbModel(product);

@@ -26,6 +26,15 @@ namespace Zentric.Tests.Application.Catalog
     {
         public List<Product> Products { get; } = new();
 
+        public Task<(IReadOnlyList<Product> Items, int TotalItems)> GetPagedAsync(
+            Guid? vendorId, int skip, int take, CancellationToken cancellationToken = default)
+        {
+            // Los fakes en memoria no necesitan paginar de verdad: basta con aplicar
+            // Skip/Take sobre la lista completa.
+            var all = GetAllAsync(vendorId, cancellationToken).Result;
+            return Task.FromResult<(IReadOnlyList<Zentric.Domain.Products.Product>, int)>((all.Skip(skip).Take(take).ToList(), all.Count()));
+        }
+
         public Task AddAsync(Product product, CancellationToken cancellationToken = default)
         {
             Products.Add(product);

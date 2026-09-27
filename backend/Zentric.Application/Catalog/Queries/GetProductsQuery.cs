@@ -1,3 +1,4 @@
+using System;
 using Zentric.Application.Common.Messaging;
 using Zentric.Application.Common.Models;
 using Zentric.Domain.Products.Ports;
@@ -82,6 +83,42 @@ namespace Zentric.Application.Catalog.Queries
             );
 
             return Result<ProductDto>.Success(dto);
+        }
+    }
+
+    /// <summary>
+    /// Listado paginado del catalogo. Los parametros se acotan en <see cref="PageRequest"/>,
+    /// de modo que un cliente no puede pedir la tabla completa de un golpe.
+    /// </summary>
+    public record GetProductsPagedQuery(Guid? VendorId = null, int Page = 0, int Size = PageRequest.DefaultPageSize)
+        : IRequest<Result<PagedResult<ProductDto>>>;
+
+    public class GetProductsPagedQueryHandler : IRequestHandler<GetProductsPagedQuery, Result<PagedResult<ProductDto>>>
+    {
+        private readonly IProductRepository _productRepository;
+
+        public GetProductsPagedQueryHandler(IProductRepository productRepository)
+        {
+            _productRepository = productRepository;
+        }
+
+        public async Task<Result<PagedResult<ProductDto>>> Handle(
+            GetProductsPagedQuery request, CancellationToken cancellationToken)
+        {
+            var page = new PageRequest(request.Page, request.Size);
+
+            var (products, total) = await _productRepository.GetPagedAsync(
+                request.VendorId, page.Skip, page.Take, cancellationToken);
+
+            var dtos = products.Select(p => new ProductDto(
+                p.Id, p.Name, p.Description, p.Price.Amount, p.Price.Currency, p.VendorId,
+                p.Type.ToString(), p.Status.ToString(),
+                p.Variants.Select(v => new ProductVariantDto(v.Id, v.Sku, v.CanBeSold)).ToList(),
+                p.CreatedAt
+            )).ToList();
+
+            return Result<PagedResult<ProductDto>>.Success(
+                new PagedResult<ProductDto>(dtos, page.Page, page.Size, total));
         }
     }
 }

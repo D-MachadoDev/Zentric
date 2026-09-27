@@ -2,6 +2,7 @@ using Zentric.Application.Common.Messaging;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Application.Catalog.Commands;
 using Zentric.Application.Catalog.Queries;
+using Zentric.Application.Common.Models;
 
 namespace Zentric.Api.Controllers
 {
@@ -77,6 +78,25 @@ namespace Zentric.Api.Controllers
             return Ok(result.Value);
         }
 
+
+        /// <summary>
+        /// Lista el catalogo por paginas. Es la variante recomendada para el
+        /// frontend: <c>size</c> se acota en 100 y por defecto trae 20 elementos.
+        /// </summary>
+        /// <param name="vendorId">Filtro opcional por identificador único del vendedor.</param>
+        /// <param name="page">Página basada en cero (primera página = 0).</param>
+        /// <param name="size">Tamaño de página (1..100, por defecto 20).</param>
+        /// <response code="200">Página de productos con metadatos de paginación.</response>
+        [HttpGet("products/paged")]
+        [ProducesResponseType(typeof(PagedResult<ProductDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetProductsPaged(
+            [FromQuery] Guid? vendorId = null,
+            [FromQuery] int page = 0,
+            [FromQuery] int size = PageRequest.DefaultPageSize)
+        {
+            var result = await _mediator.Send(new GetProductsPagedQuery(vendorId, page, size));
+            return Ok(result.Value);
+        }
         /// <summary>
         /// Obtiene la ficha técnica detallada de un producto por su identificador único.
         /// </summary>
