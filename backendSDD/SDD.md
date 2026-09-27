@@ -664,13 +664,22 @@ Estado actual: 🟡 `NOT_STARTED`. Cada paso deja evidencia en el registro ([sec
 
 **Cerradas con evidencia en esta sesión (2026-09-27):**
 
-| ID | Cómo se cerró |
-|---|---|
-| **Q-06** | Documentación de `Domain/` consolidada; se corrigieron contra el código los nombres de método que no existían |
-| **Q-15** (parcial) | La comisión dejó de ser un literal mágico y pasó a `PlatformFeePolicy`, con el supuesto marcado y 6 pruebas. **El valor sigue sin ratificar** |
-| **Q-19** | Intentado el renombrado de la carpeta; bloqueado por el sistema operativo (`in use`). Requiere acción manual |
+| ID | Cómo se cerró | Evidencia |
+|---|---|---|
+| **Q-06** | Documentación de `Domain/` consolidadas; se corrigieron contra el código los nombres de método que no existían (`Lock()`→`Block()`) | `backendSDD/Domain/01-domain-overview.md` ahora es índice |
+| **Q-17** | Resuelta como efecto de Q-16: la lista blanca rechaza `"USD"` y `"ABC"` aunque tengan 3 letras | `SupportedCurrencies.Normalize` + pruebas en `MoneyTests` |
+| **Q-19** | **BLOQUEADA, requiere acción manual.** El renombrado de carpeta a `Zentric` falla con `Cannot rename the item because it is in use`. No se ha cerrado | `Rename-Item` falló; hay procesos de VS Code con la carpeta abierta |
 
-**Abiertas: 12.** Ninguna bloquea el build ni las pruebas (256/256 verdes, 0 warnings).
+**Dictadas por el Owner, implementadas y con parte pendiente (2026-09-27):**
+
+| ID | Dictamen | Implementado | **Pendiente** |
+|---|---|---|---|
+| **Q-15** | Comisión provisional, **no se cobra** hasta definir el reparto | `PlatformFeePolicy.IsCollectable=false` sin `FeeSplit`; el handler rechaza emitir el Detalle Zentric | **El Owner debe definir el reparto.** Sin esto, la facturación por vendedor no puede emitirse |
+| **Q-16** | Multi-moneda con lista blanca, rechazo claro al mezclar | `SupportedCurrencies` + `MixedCurrencyException` (400, no 500) | Ninguno |
+| **Q-18** | `VendorId` como instantánea histórica en la línea | Campo en dominio y persistencia, migración aplicada, validación de propiedad en el handler | **Emitir la factura por vendedor** agrupando por `VendorId` |
+
+**Abiertas: 9.** Ninguna bloquea el build ni las pruebas
+(`dotnet build` → 0 warnings · `dotnet test` → 256/256).
 
 **Ninguna se puede cerrar leyendo el repo.** Todas exigen un dictamen del Owner
 porque la Ley (ZENTRIC.md) no las define. Groupings por causa:
