@@ -101,5 +101,5 @@ En cumplimiento de `ZENTRIC.md` OBJ-12 ("Consolidar información administrativa 
 ---
 
 ## 5. Pipeline de Validación y Resiliencia
-- `ValidationBehavior<TRequest, TResponse>` intercepta todas las llamadas a MediatR antes de invocar el handler. Si hay errores de validación, retorna `Result.Failure` con el desglose RFC 7807 sin arrojar excepciones no controladas.
+- `ValidationBehavior<TRequest, TResponse>` intercepta todas las llamadas a MediatR antes de invocar el handler. Si hay errores de validación, retorna `Result.Failure` con el desglose RFC 9457 sin arrojar excepciones no controladas.
 

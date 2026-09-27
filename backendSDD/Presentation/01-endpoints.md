@@ -20,7 +20,7 @@ Conforme a **ZENTRIC.md, sección 3.2**, los mecanismos de autenticación técni
 Todos los controladores heredan o implementan contratos HTTP RESTful con formato `application/json` y `application/problem+json`:
 
 - **Éxito (200 OK):** Retorna el identificador `Guid` generado, el DTO de consulta correspondiente o `200 OK` vacío en comandos de mutación.
-- **Fallo de Validación o Negocio (400 Bad Request):** Respuestas mapeadas obligatoriamente al estándar **RFC 7807 (Problem Details)**:
+- **Fallo de Validación o Negocio (400 Bad Request):** Respuestas mapeadas obligatoriamente al estándar **RFC 9457 (Problem Details)**:
   ```json
   {
     "type": "https://tools.ietf.org/html/rfc7807",
@@ -29,7 +29,7 @@ Todos los controladores heredan o implementan contratos HTTP RESTful con formato
     "detail": "Descripción de la invariante violada o error de validación."
   }
   ```
-- **Recurso no Encontrado (404 Not Found):** Respuestas RFC 7807 cuando un identificador de consulta no existe en el sistema.
+- **Recurso no Encontrado (404 Not Found):** Respuestas RFC 9457 cuando un identificador de consulta no existe en el sistema.
 - **Falla Técnica no Controlada (500 Internal Server Error):** Interceptada por el middleware global `app.UseExceptionHandler()` para no filtrar detalles de infraestructura (cadenas de conexión, trazas de SQL) al cliente.
 
 ---

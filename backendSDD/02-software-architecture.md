@@ -70,7 +70,7 @@ la regla se cumple en el único proyecto existente.
 | Domain | Guardas defensivas (`ArgumentException`/`InvalidOperationException`) o `Result`. Prohibido `try-catch` técnico |
 | Application | Validación de entrada obligatoria (FluentValidation) y retorno de `Result<T>`. Prohibido capturar excepciones catastróficas |
 | Infrastructure | Traduce errores predecibles a `Result.Failure`; no expone `SqlException` ni cadenas de conexión |
-| Api | Middleware global de excepciones; mapea `Result<T>` a HTTP con RFC 7807 (Problem Details) |
+| Api | Middleware global de excepciones; mapea `Result<T>` a HTTP con RFC 9457 (Problem Details) |
 
 Prohibido usar excepciones para el flujo lógico habitual.
 
@@ -119,7 +119,7 @@ dotnet test
 | Regla de dependencia | unidireccional hacia el centro | **cumple** (`Domain` ← `Application` ← `Infrastructure` ← `Api`) |
 | Aislamiento EF ↔ dominio | entidades EF separadas ([:4.2](../AGENTS.md#42-infrastructure-adapter-agent)) | **no cumple** ([H-13](SDD.md): el `DbContext` mapea los agregados de dominio) |
 | Validación de entrada (FluentValidation) | obligatoria en Application | **cumple** desde SPEC-007: `ValidationBehavior<,>` + 3 validadores (21 pruebas) |
-| Middleware global + RFC 7807 | en Api | **cumple** en código desde SPEC-007 (`AddProblemDetails()` + `UseExceptionHandler()`); `[PENDIENTE]` verificación por HTTP real |
+| Middleware global + RFC 9457 | en Api | **cumple** en código desde SPEC-007 (`AddProblemDetails()` + `UseExceptionHandler()`); `[PENDIENTE]` verificación por HTTP real |
 
 Detalle y evidencia: [SDD.md :5 (Verificación)](SDD.md).
 

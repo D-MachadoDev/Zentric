@@ -1,6 +1,6 @@
 # SDD — Orquestador agéntico del backend Zentric
 
-> `[CONFIRMADO]` **Tablero vigente:** rama `develop` @ `1d85a48` · build sin errores (12 warnings `SYSLIB0050` pendientes de reparación) · **256/256 pruebas PASS** · mapa 33/33 (100 %) · re-verificación ejecutada: **2026-09-26**. Cambios de documentación sin commitear declarados en la sección 12.1.
+> `[CONFIRMADO]` **Tablero vigente:** `main` @ `9ddaa92` (en línea con `develop` y `origin`) · build con `-warnaserror`: **0 errores, 0 warnings** · **309/309 pruebas PASS** · mapa 33/33 (100 %) · re-verificación ejecutada: **2026-09-27**. Comandos: `dotnet build Zentric.slnx --no-restore -warnaserror` y `dotnet test Zentric.slnx --no-build`; además verificado contra PostgreSQL real vía Docker (`GET /health` → `{"status":"healthy","database":"up"}`). Los 12 warnings `SYSLIB0050` que figuran en secciones anteriores están **cerrados** (OBS-06).
 
 > **Qué es este documento.** Es el **Prompt de Orquestación Agéntica** del backend Zentric: define cómo un agente (o varios) diagnostica el repositorio, elige la siguiente tarea, la ejecuta, la valida y registra evidencia. Es la única **memoria viva** del proyecto: indexa y apunta a la SSoT (no la duplica). El contrato operativo y la arquitectura obligatoria viven en [AGENTS.md](../AGENTS.md); la Ley funcional es [ZENTRIC.md](../ZENTRIC.md).
 
@@ -25,7 +25,7 @@ Zentric/
 │   ├── Zentric.Application/      # Casos de uso CQRS, validación, Result, puertos.
 │   ├── Zentric.Infrastructure/   # EF Core + PostgreSQL, mappers, repositorios, background services.
 │   ├── Zentric.Api/              # Composition Root + controladores REST (27 endpoints).
-│   ├── Zentric.Tests/            # xUnit (29 archivos de suite, 256 casos).
+│   ├── Zentric.Tests/            # xUnit (34 archivos de suite, 309 casos).
 │   ├── Zentric.slnx
 │   └── Dockerfile                # Imagen multi-stage de la API (contexto raíz, puerto 8080).
 ├── frontend/                    # Consola web React + TypeScript (solo configuración base).
@@ -65,8 +65,8 @@ Reglas de organización:
 | Arquitectura | Hexagonal (puertos y adaptadores) + DDD táctico + CQRS + Result Pattern |
 | Mediación / validación | MediatR 14.2.0 · FluentValidation 12.1.1 |
 | Persistencia | EF Core + Npgsql 10.0.3 sobre **PostgreSQL 16** (contenedor `zentric-postgres`, puerto `5432`, base `ZentricDb`) |
-| API | ASP.NET Core + OpenAPI/Swagger (XML docs, tags, RFC 7807) |
-| Pruebas | xUnit 2.9.3 (29 archivos, 256 casos) |
+| API | ASP.NET Core + OpenAPI/Swagger (XML docs, tags, RFC 9457) |
+| Pruebas | xUnit 2.9.3 (33 archivos, 309 casos) |
 | Contenedores | `Dockerfile` multi-stage (EXPOSE 8080) + `docker-compose.yml` (API en `5076:8080`, base en `5432:5432`) |
 | CI | `.github/workflows/ci.yml` (restore + build + test; dispara solo en push/PR a `main`) |
 
@@ -145,7 +145,7 @@ graph TD
 | 2B | Eventos + `UnitOfWork` | ✅ `IMPLEMENTED` | `DomainEventDispatcher`; flujo Devoluciones→Inventario | Cobertura directa del dispatcher |
 | 2C | CQRS de entrada (16 commands, 8 queries) | ✅ `VERIFIED` | 13 suites de handlers + validadores | — |
 | 3A | Servicios de dominio y casos de uso | ✅ `VERIFIED` | `InventoryReservationService`, `ReturnsApprovalService`, checkout | — |
-| 3B | REST, DTOs, validadores | ⚠️ `PARTIAL` | 27 endpoints, RFC 7807, Swagger | Pruebas HTTP E2E (T-032) |
+| 3B | REST, DTOs, validadores | ⚠️ `PARTIAL` | 27 endpoints, RFC 9457, Swagger | Pruebas HTTP E2E (T-032) |
 | 4 | Integración local y seguridad | ⚠️ `PARTIAL` | Swagger Bearer preparado; Auth real fuera de alcance | Smoke con la API levantada |
 | 5A | Pruebas de dominio y servicios | ✅ `VERIFIED` | 256/256 PASS | — |
 | 5B | Pruebas de adaptadores y REST | ⚠️ `PARTIAL` | Suites DI + queries | E2E HTTP y PostgreSQL real |
@@ -350,7 +350,7 @@ Regla: si existe una prueba fallida, un endpoint simulado, una dependencia no va
 ### FASE 3B — REST, DTOs y validadores
 
 - **Objetivo:** exponer los casos de uso por HTTP con validación de entrada.
-- **Entregables:** 8 controladores de negocio + `ApiControllerBase` (27 endpoints), 13 validadores FluentValidation, RFC 7807, Swagger (Bearer, XML docs, tags).
+- **Entregables:** 8 controladores de negocio + `ApiControllerBase` (27 endpoints), 13 validadores FluentValidation, RFC 9457, Swagger (Bearer, XML docs, tags).
 - **Realidad:** ⚠️ `PARTIAL`: sin pruebas E2E HTTP (T-032) ni smoke con la API levantada.
 
 ### FASE 4 — Integración local y seguridad
@@ -428,8 +428,8 @@ Estado actual: 🟡 `NOT_STARTED`. Cada paso deja evidencia en el registro ([sec
 | **E-021** | `ZentricDbContext` + `*DbModel` + Mappers + `UnitOfWork` | Datos (adaptador) | `Zentric.Infrastructure/Persistence/` | ✅ Implementado — 9 `DbSet<*DbModel>`; aislamiento EF respecto a Domain (H-13 cerrado); mappers 1:1 | — |
 | **E-022** | 9 repositorios EF | Adaptadores de salida | `Zentric.Infrastructure/Persistence/Repositories/` | ✅ Implementados (uno por agregado/puerto) | — |
 | **E-023** | Migraciones EF (`InitialCreate`, `CompleteSchema`, `AddBackgroundServicesAndUpdates`) | Datos | `Zentric.Infrastructure/Migrations/` | ⚠️ Generadas; **nunca aplicadas a PostgreSQL** ([sección 11.2](#112-validaciones-no-ejecutadas-honestidad-de-evidencia)) | — |
-| **E-024** | `Program.cs` + 9 controladores (27 endpoints) | Puntos de entrada | `Zentric.Api/` | ✅ Implementado — RFC 7807 + Swagger (Bearer), XML docs y tags; sin pruebas HTTP reales (T-032) | — |
-| **E-025** | Suite `Zentric.Tests` (29 archivos, 256 casos) | Pruebas | `Zentric.Tests/` | ✅ En verde al 2026-09-26; cubre dominio, aplicación y contenedor DI | — |
+| **E-024** | `Program.cs` + 9 controladores (27 endpoints) | Puntos de entrada | `Zentric.Api/` | ✅ Implementado — RFC 9457 + Swagger (Bearer), XML docs y tags; sin pruebas HTTP reales (T-032) | — |
+| **E-025** | Suite `Zentric.Tests` (33 archivos, 309 casos) | Pruebas | `Zentric.Tests/` | ✅ En verde al 2026-09-26; cubre dominio, aplicación y contenedor DI | — |
 | **E-026** | `Zentric.slnx` | Configuración | raíz | ✅ Ensambla los 5 proyectos | — |
 | **E-027** | Skill `generic-sdd-agent` v6.0.0 + `sync-skill.ps1` | Operación | `.agents/skills/generic-sdd-agent/` | ✅ Repo y copia instalada alineadas (C-09 corregida); re-verificable con `Get-FileHash` ([sección 11.3](#113-cómo-re-verificar-comandos-de-referencia)) | — |
 
@@ -485,7 +485,7 @@ Estado actual: 🟡 `NOT_STARTED`. Cada paso deja evidencia en el registro ([sec
 | [services/order-splitter-service.md](Domain/services/order-splitter-service.md) | Especificación del split de pedidos en N guías |
 | [services/returns-approval-service.md](Domain/services/returns-approval-service.md) | Especificación de la doble aprobación de devoluciones |
 
-`[PENDIENTE]` **Q-06:** `backendSDD/Domain/` conserva parejas numeradas solapadas (`01-domain-overview`/`01-models`, `02-aggregates`/`02-value-objects`, `04-domain-events`/`04-invariants-and-rules`). La consolidación requiere dictamen del Owner ([sección 9.1](#91-preguntas-al-owner-abiertas)).
+✅ **RESUELTO (verificado 2026-09-27)** **Q-06:** `backendSDD/Domain/` ya no conserva parejas numeradas solapadas. `01-domain-overview.md` quedó como **índice de navegación** sin duplicar contenido (su visión y el patrón arquitectónico se movieron a `01-models.md` y `02-software-architecture.md`); los pares `02-aggregates`/`02-value-objects` y `04-domain-events`/`04-invariants-and-rules` tienen responsabilidades distintas y ya no se solapan. Nombres de método corregidos contra el código real (`Block()`/`Activate()`/`UpdateRole()`).
 
 ### 6.3 Aplicación, infraestructura y presentación
 
@@ -495,7 +495,7 @@ Estado actual: 🟡 `NOT_STARTED`. Cada paso deja evidencia en el registro ([sec
 | [Infrastructure/01-data-access.md](Infrastructure/01-data-access.md) | Persistencia EF Core, `DbModel`, mappers, repositorios y migraciones |
 | [Infrastructure/02-containerization-and-deployment.md](Infrastructure/02-containerization-and-deployment.md) | Dockerfile, docker-compose y despliegue |
 | [Infrastructure/03-background-services.md](Infrastructure/03-background-services.md) | Background services (expiración de checkout) |
-| [Presentation/01-endpoints.md](Presentation/01-endpoints.md) | Catálogo de los 27 endpoints REST, seguridad OpenAPI y RFC 7807 |
+| [Presentation/01-endpoints.md](Presentation/01-endpoints.md) | Catálogo de los 27 endpoints REST, seguridad OpenAPI y RFC 9457 |
 
 ### 6.4 ADRs — `backendSDD/Adr/` (decisiones vigentes)
 
@@ -519,7 +519,7 @@ Estado actual: 🟡 `NOT_STARTED`. Cada paso deja evidencia en el registro ([sec
 | SPEC-004 | Infraestructura (EF Core, mapeos, migraciones, background services, Docker) | viva |
 | SPEC-005 | Presentación (endpoints REST + OpenAPI) | viva |
 | SPEC-006 | Trazabilidad de la tanda no registrada (T-011…T-022) | hecha |
-| SPEC-007 | Validación de entrada + RFC 7807 + higiene (H-09/H-11/H-12) | hecha |
+| SPEC-007 | Validación de entrada + RFC 9457 + higiene (H-09/H-11/H-12) | hecha |
 
 ## 7. Estado de implementación por capa
 
@@ -574,7 +574,7 @@ Estado actual: 🟡 `NOT_STARTED`. Cada paso deja evidencia en el registro ([sec
 
 ✅ **Hecho**
 - `Program.cs` (Composition Root) + `ApiControllerBase` + 8 controladores de negocio (**27 endpoints HTTP**).
-- RFC 7807 (`AddProblemDetails()` + `UseExceptionHandler()`), validadores y comportamiento de pipeline registrados.
+- RFC 9457 (`AddProblemDetails()` + `UseExceptionHandler()`), validadores y comportamiento de pipeline registrados.
 - Swagger UI (`/swagger`) y OpenAPI v1 (`/swagger/v1/swagger.json`): esquema `Bearer` (JWT) preparado, XML docs activadas, 8 tags por bounded context. Rutas abiertas en desarrollo hasta que exista el módulo técnico de Auth (fuera de alcance).
 
 🟡 **Pendiente**
@@ -618,7 +618,7 @@ Estado actual: 🟡 `NOT_STARTED`. Cada paso deja evidencia en el registro ([sec
 | ADD-002 | Dom. 9 — Devoluciones | Prohibida la devolución de digitales; flujo físico inspección → aprobación del Vendedor → vuelta al stock con etiqueta "Usado" | ✅ `ReturnRequest` + `ReturnApprovedEvent` → `ReturnToUsedStock` (H-14 cerrado) |
 | ADD-003 | Dom. 10 — Facturación | Factura Maestra, Detalle Zentric y Factura de Vendedor (Split) | ✅ `InvoiceType` = `Master`, `ZentricDetail`, `VendorDetail` |
 
-`[PENDIENTE]` **C-10:** el bloque base de `DOMINIO 8/9/10` no lleva el rótulo `[ADDENDUM - DICTADO POR OWNER]` que exige [AGENTS.md, sección 0.7](../AGENTS.md#07-inmutabilidad-de-los-documentos-biblia-y-registro-de-cambios). La Biblia es intocable: **solo el Owner puede autorizar añadir el rótulo** (sin tocar el texto).
+🟡 **BLOQUEADO POR EL OWNER (no es deuda técnica)** **C-10:** el bloque base de `DOMINIO 8/9/10` no lleva el rótulo `[ADDENDUM - DICTADO POR OWNER]` que exige [AGENTS.md, sección 0.7](../AGENTS.md#07-inmutabilidad-de-los-documentos-biblia-y-registro-de-cambios). **La Biblia es intocable: solo el Owner puede autorizar añadir el rótulo**, y el agente no puede editar `ZENTRIC.md`. Mientras no se autorice, **no bloquea el desarrollo**: la precedencia del ADDENDUM ya está resuelta y documentada en [ADR-0006](Adr/0006-resolucion-contradiccion-ley-addendum.md), y la trazabilidad de lo dictado por el Owner vive en el `SDD.md` y en los ADR.
 
 ### 8.3 Trazabilidad de preguntas ya cerradas
 
@@ -789,7 +789,7 @@ Get-FileHash "$env:USERPROFILE\.agents\skills\generic-sdd-agent\SKILL.md" | Sele
 
 ### 11.4 Gates y criterios de finalización del proyecto
 
-1. **Compilación y pruebas limpias:** build sin errores y **256/256** pruebas en verde, registrando comando y código de salida (`[PENDIENTE]` reparar OBS-06 para llegar a 0 warnings).
+1. **Compilación y pruebas limpias:** build sin errores y **309/309** pruebas en verde, registrando comando y código de salida (`[PENDIENTE]` reparar OBS-06 para llegar a 0 warnings).
 2. **Cumplimiento estricto de las specs de dominio:** cada regla de `backendSDD/Domain/` implementada sin omisiones y con prueba asociada.
 3. **Esquema real:** contra PostgreSQL, las migraciones crean el esquema y la API opera con él (Fase 6; hoy `NOT_STARTED`).
 4. **Desacoplamiento estricto:** `Zentric.Domain` sin referencias a EF, ASP.NET, HTTP ni MediatR (✅ verificado).
@@ -799,7 +799,7 @@ Get-FileHash "$env:USERPROFILE\.agents\skills\generic-sdd-agent\SKILL.md" | Sele
 8. **Cierre reproducible:** un agente nuevo repite el diagnóstico y obtiene la misma fase siguiente sin conocimiento conversacional.
 9. **Trazabilidad requisito → código → prueba:** matriz 11.5; un requisito sin prueba o evidencia queda `PARTIAL`, nunca `VERIFIED`.
 10. **Entrega Docker reproducible:** `Dockerfile`, `.dockerignore`, compose, healthchecks, build sin caché, arranque limpio, smoke y apagado (Fase 6).
-11. **Handler global de excepciones:** existe y cumple RFC 7807; falta el smoke de errores conocidos/desconocidos.
+11. **Handler global de excepciones:** existe y cumple RFC 9457; falta el smoke de errores conocidos/desconocidos.
 12. **Diagnóstico completo por etapas:** cada fase y entregable con estado y evidencia en el tablero 2.2.
 13. **Alineación cruzada:** nombres, firmas, códigos HTTP, validaciones y puertos coinciden entre código y SDD (alignment gate, [sección 3.1](#31-diagnóstico-obligatorio-y-selección-de-tarea)).
 
@@ -867,7 +867,7 @@ Los enlaces relativos de este archivo se resuelven desde `backendSDD/` (por ejem
 | Documento | Regla / estándar | Estado vigente al 2026-09-26 | Aplicación en Zentric | Estado |
 |---|---|---|---|---|
 | OWASP | API Security Top 10, edición 2023 (10 riesgos) | Vigente | Evaluación riesgo por riesgo en la [sección 13.2](#132-owasp-api-security-top-10-2023--evaluación-por-ítem) | ⚠️ 6 riesgos con acciones pendientes |
-| IETF | RFC 9457 — *Problem Details for HTTP APIs* (julio de 2023; **obsoleta RFC 7807**) | Vigente | `AddProblemDetails()` + `UseExceptionHandler()` y `application/problem+json` | ✔ aplicado; falta usar `type` como URI y `instance`, y citar RFC 9457 (no 7807) en la spec de endpoints |
+| IETF | RFC 9457 — *Problem Details for HTTP APIs* (julio de 2023; **obsoleta RFC 9457**) | Vigente | `AddProblemDetails()` + `UseExceptionHandler()` y `application/problem+json` | ✔ aplicado; falta usar `type` como URI y `instance`, y citar RFC 9457 (no 7807) en la spec de endpoints |
 | OAI | OpenAPI 3.2.1, publicada el 2026-09-10 | Vigente | `/swagger/v1/swagger.json` generado por ASP.NET Core 10 | ⚠️ La versión declarada por el documento generado está `[PENDIENTE]` de verificar en runtime; 3.1.2 sigue siendo una versión válida |
 | Microsoft | .NET 10 = **LTS hasta noviembre de 2028** (.NET 9 = STS hasta noviembre de 2026) | Vigente | Los 5 proyectos apuntan a `net10.0` | ✔ En soporte. Activar `CheckSdkVulnerabilities` en CI (avisa SDK fuera de soporte) |
 | PostgreSQL | Política de soporte: 5 años por versión mayor. **16.15 → 2028-11-09**; 17.11 → 2029-11-08; 18.6 → 2030-11-14; 19 en beta | Vigente | `docker-compose.yml` usa `postgres:16-alpine` | ✔ Soportado. `[PENDIENTE]` Fijar versión exacta (no etiqueta flotante) y fijar `imagePullPolicy`; evaluar salto a 18.x |
@@ -896,7 +896,7 @@ Los enlaces relativos de este archivo se resuelven desde `backendSDD/` (por ejem
 
 - Formato de error único: `application/problem+json` con `type` (URI), `title`, `status`, `detail` e `instance`; las extensiones del negocio (`balance`, `requestId`) van como miembros de extensión, no sustituyendo campos.
 - El tipo de error debe ser una **URI**; RFC 9457 registra `about:blank` y un registro de URIs de problema comunes que deben adoptarse en lugar de inventar códigos.
-- `[PENDIENTE]` Las specs de presentación y arquitectura citan **RFC 7807** (obsoleta); deben actualizarse a RFC 9457 y documentarse la tabla `type` por error de negocio.
+- `[PENDIENTE]` Las specs de presentación y arquitectura citan **RFC 9457** (obsoleta); deben actualizarse a RFC 9457 y documentarse la tabla `type` por error de negocio.
 
 ## 14. Matriz de cobertura 360° (dimensiones aplicables)
 
@@ -1017,7 +1017,7 @@ Siguiente paso: Fase 6 — reparación, Docker e integración real
 | Fecha | Fuente | Tipo | Hallazgo y uso |
 |---|---|---|---|
 | 2026-09-26 | [OWASP API Security Top 10 2023](https://owasp.org/API-Security/editions/2023/en/0x11-t10/) | primaria | Los 10 riesgos API1 a API10 de la edición 2023, con su nombre exacto; base de la evaluación de la [sección 13.2](#132-owasp-api-security-top-10-2023--evaluación-por-ítem) |
-| 2026-09-26 | [RFC 9457 (IETF)](https://www.rfc-editor.org/info/rfc9457/) | primaria | "Problem Details for HTTP APIs" es **Proposed Standard** de julio de 2023 y **obsoleta RFC 7807**; añade un registro de URIs de tipo comunes, aclara el tratamiento de problemas múltiples y orienta sobre URIs no desreferenciables |
+| 2026-09-26 | [RFC 9457 (IETF)](https://www.rfc-editor.org/info/rfc9457/) | primaria | "Problem Details for HTTP APIs" es **Proposed Standard** de julio de 2023 y **obsoleta RFC 9457**; añade un registro de URIs de tipo comunes, aclara el tratamiento de problemas múltiples y orienta sobre URIs no desreferenciables |
 | 2026-09-26 | [.NET releases and support (Microsoft Learn)](https://learn.microsoft.com/en-us/dotnet/core/releases-and-support) | primaria | .NET 10 es **LTS con soporte hasta noviembre de 2028**; .NET 9 (STS) y .NET 8 (LTS) terminan en noviembre de 2026; existe la propiedad MSBuild `CheckSdkVulnerabilities` (avisa con NETSDK1239 si el SDK está fuera de soporte) |
 | 2026-09-26 | [Licensing FAQ (Lucky Penny Software)](https://luckypennysoftware.com/faq) | primaria | **MediatR 13.0.0 o superior requiere licencia comercial**; los niveles son por tamaño de equipo (Standard 1-10, Professional 11-50, Enterprise sin límite); no hace falta licencia en desarrollo, CI/CD, staging o QA, **sí en producción**; las versiones anteriores conservan MIT/Apache-2.0 y hay alternativa gratuita bajo RPL-1.5; la clave se aplica sin servidor de licencias (solo avisos en log); **FluentValidation no figura entre los paquetes con licencia comercial** |
 | 2026-09-26 | [OpenAPI Specification 3.2.1](https://spec.openapis.org/oas/v3.2.1.html) | primaria | La versión vigente de la especificación es **3.2.1, publicada el 10 de septiembre de 2026**; 3.1.2 es la anterior |
