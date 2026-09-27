@@ -9,6 +9,8 @@ using Zentric.Application.Orders.Commands;
 using Zentric.Domain.Orders;
 using Zentric.Domain.Orders.Enums;
 using Zentric.Domain.Orders.Ports;
+using Zentric.Domain.Payments;
+using Zentric.Domain.Payments.Enums;
 using Zentric.Domain.Payments.Ports;
 using Zentric.Domain.Products.ValueObjects;
 using Zentric.Tests.Application.Catalog;
@@ -19,7 +21,7 @@ namespace Zentric.Tests.Application.Orders
     /// Pasarela que aprueba siempre. Q-08: el cobro ocurre antes de marcar el
     /// pedido como pagado, asi que los tests del handler necesitan una pasarela.
     /// </summary>
-    public sealed class ApprovingPaymentGateway : IPaymentGateway
+    public sealed class ApprovingPaymentGateway : IPaymentGatewayService
     {
         public List<Money> ChargedAmounts { get; } = new();
 
@@ -32,11 +34,37 @@ namespace Zentric.Tests.Application.Orders
     }
 
     /// <summary>Pasarela que rechaza siempre, para probar el rechazo como resultado de negocio.</summary>
-    public sealed class DecliningPaymentGateway : IPaymentGateway
+    public sealed class DecliningPaymentGateway : IPaymentGatewayService
     {
         public Task<PaymentResult> ChargeAsync(
             Guid orderId, Money amount, CancellationToken cancellationToken = default)
             => Task.FromResult(PaymentResult.Rejected("insufficient-funds"));
+    }
+
+    /// <summary>
+    /// Repositorio de comprobantes en memoria. Permite afirmar que el cobro
+    /// quedo registrado, no solo que el pedido quedo pagado.
+    /// </summary>
+    public sealed class FakePaymentReceiptRepository : IPaymentReceiptRepository
+    {
+        public List<PaymentReceipt> Receipts { get; } = new();
+
+        public Task AddAsync(PaymentReceipt receipt, CancellationToken cancellationToken = default)
+        {
+            Receipts.Add(receipt);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(PaymentReceipt receipt, CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<PaymentReceipt?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+            => Task.FromResult(Receipts.FirstOrDefault(r => r.Id == id));
+
+        public Task<PaymentReceipt?> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default)
+            => Task.FromResult(Receipts.LastOrDefault(r => r.OrderId == orderId));
     }
 
     public class FakeCustomerOrderRepositoryForPay : ICustomerOrderRepository
@@ -69,13 +97,57 @@ namespace Zentric.Tests.Application.Orders
     public class PayOrderCommandHandlerTests
     {
         [Fact]
+        public async Task Handle_PersistsThePaymentReceipt_WhenApproved()
+        {
+            // El cobro debe quedar registrado, no solo el pedido pagado: sin
+            // comprobante no hay forma de saber que se cobro ni por cuanto.
+            var repo = new FakeCustomerOrderRepositoryForPay();
+            var receipts = new FakePaymentReceiptRepository();
+            var handler = new PayOrderCommandHandler(
+                repo, new FakeUnitOfWork(), new ApprovingPaymentGateway(), receipts);
+
+            var order = new CustomerOrder(Guid.NewGuid());
+            order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 2, new Money(50m, "COP"));
+            order.Checkout();
+            await repo.AddAsync(order);
+
+            var result = await handler.Handle(new PayOrderCommand(order.Id), CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            var receipt = Assert.Single(receipts.Receipts);
+            Assert.Equal(PaymentStatus.Approved, receipt.Status);
+            Assert.Equal(order.Id, receipt.OrderId);
+            Assert.Equal(new Money(100m, "COP"), receipt.Amount);
+        }
+
+        [Fact]
+        public async Task Handle_PersistsDeclinedReceipt_WhenGatewayRejects()
+        {
+            // Aunque se rechace, queda constancia del intento de cobro.
+            var repo = new FakeCustomerOrderRepositoryForPay();
+            var receipts = new FakePaymentReceiptRepository();
+            var handler = new PayOrderCommandHandler(
+                repo, new FakeUnitOfWork(), new DecliningPaymentGateway(), receipts);
+
+            var order = new CustomerOrder(Guid.NewGuid());
+            order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 1, new Money(50m, "COP"));
+            order.Checkout();
+            await repo.AddAsync(order);
+
+            await handler.Handle(new PayOrderCommand(order.Id), CancellationToken.None);
+
+            var receipt = Assert.Single(receipts.Receipts);
+            Assert.Equal(PaymentStatus.Declined, receipt.Status);
+        }
+
+        [Fact]
         public async Task Handle_WhenGatewayDeclines_DoesNotMarkOrderAsPaid()
         {
             // Q-08: un rechazo es un resultado previsto de negocio, no una excepcion,
             // y el pedido NO debe quedar pagado (seria un pedido cobrado sin cobrar).
             var repo = new FakeCustomerOrderRepositoryForPay();
             var uow = new FakeUnitOfWork();
-            var handler = new PayOrderCommandHandler(repo, uow, new DecliningPaymentGateway());
+            var handler = new PayOrderCommandHandler(repo, uow, new DecliningPaymentGateway(), new FakePaymentReceiptRepository());
 
             var order = new CustomerOrder(Guid.NewGuid());
             order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 1, new Money(50m, "COP"));
@@ -95,7 +167,7 @@ namespace Zentric.Tests.Application.Orders
             // El importe cobrado debe ser el total del pedido, no una unidad ni un cero.
             var repo = new FakeCustomerOrderRepositoryForPay();
             var gateway = new ApprovingPaymentGateway();
-            var handler = new PayOrderCommandHandler(repo, new FakeUnitOfWork(), gateway);
+            var handler = new PayOrderCommandHandler(repo, new FakeUnitOfWork(), gateway, new FakePaymentReceiptRepository());
 
             var order = new CustomerOrder(Guid.NewGuid());
             order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 2, new Money(50m, "COP"));
@@ -113,7 +185,7 @@ namespace Zentric.Tests.Application.Orders
         {
             var repo = new FakeCustomerOrderRepositoryForPay();
             var uow = new FakeUnitOfWork();
-            var handler = new PayOrderCommandHandler(repo, uow, new ApprovingPaymentGateway());
+            var handler = new PayOrderCommandHandler(repo, uow, new ApprovingPaymentGateway(), new FakePaymentReceiptRepository());
 
             var order = new CustomerOrder(Guid.NewGuid());
             order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 2, new Zentric.Domain.Products.ValueObjects.Money(50m, "COP"));
@@ -133,7 +205,7 @@ namespace Zentric.Tests.Application.Orders
         {
             var repo = new FakeCustomerOrderRepositoryForPay();
             var uow = new FakeUnitOfWork();
-            var handler = new PayOrderCommandHandler(repo, uow, new ApprovingPaymentGateway());
+            var handler = new PayOrderCommandHandler(repo, uow, new ApprovingPaymentGateway(), new FakePaymentReceiptRepository());
 
             var command = new PayOrderCommand(Guid.NewGuid());
             var result = await handler.Handle(command, CancellationToken.None);

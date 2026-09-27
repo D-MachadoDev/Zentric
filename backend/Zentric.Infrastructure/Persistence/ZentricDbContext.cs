@@ -9,6 +9,7 @@ namespace Zentric.Infrastructure.Persistence
         public DbSet<FulfillmentOrderDbModel> FulfillmentOrders => Set<FulfillmentOrderDbModel>();
         public DbSet<ReturnRequestDbModel> ReturnRequests => Set<ReturnRequestDbModel>();
         public DbSet<InvoiceDbModel> Invoices => Set<InvoiceDbModel>();
+        public DbSet<PaymentReceiptDbModel> PaymentReceipts => Set<PaymentReceiptDbModel>();
         
         public DbSet<UserDbModel> Users => Set<UserDbModel>();
         public DbSet<BuyerDbModel> Buyers => Set<BuyerDbModel>();
@@ -67,6 +68,24 @@ namespace Zentric.Infrastructure.Persistence
             modelBuilder.Entity<UserDbModel>(b => 
             {
                 b.HasKey(u => u.Id);
+            });
+
+            // Comprobante de pago (invariante 9). No guarda datos de tarjeta: solo
+            // el resultado del cobro y, si aplica, el credito a favordevuelto.
+            modelBuilder.Entity<PaymentReceiptDbModel>(b =>
+            {
+                b.HasKey(p => p.Id);
+                b.HasIndex(p => p.OrderId);
+                b.OwnsOne(p => p.Amount, a =>
+                {
+                    a.Property(x => x.Amount).HasColumnName("Amount");
+                    a.Property(x => x.Currency).HasColumnName("Currency");
+                });
+                b.OwnsOne(p => p.RefundedAmount, a =>
+                {
+                    a.Property(x => x.Amount).HasColumnName("RefundedAmount");
+                    a.Property(x => x.Currency).HasColumnName("RefundedCurrency");
+                });
             });
 
             modelBuilder.Entity<BuyerDbModel>().HasKey(b => b.UserId);

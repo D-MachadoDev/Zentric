@@ -9,13 +9,13 @@ namespace Zentric.Domain.Payments.Ports
     /// Puerto de salida para procesar un cobro. Define QUE necesita el dominio
     /// (autorizar un importe) sin afirmar COMO se cobra.
     ///
-    /// Q-08 (ratificado por el Owner el 2026-09-27): la interfaz nace simulada y
+    /// Invariante 9 (04-invariants-and-rules.md): la pasarela nace simulada y
     /// escalable. No se integra ninguna pasarela real (PSE, Stripe, Wompi) porque
     /// la Ley no la define. El adaptador de infraestructura es intercambiable:
     /// sustituir la simulacion por una pasarela real exige un nuevo adaptador que
     /// implemente este mismo puerto, sin tocar Dominio ni los casos de uso.
     /// </summary>
-    public interface IPaymentGateway
+    public interface IPaymentGatewayService
     {
         /// <summary>Solicita el cobro de <paramref name="amount"/> y devuelve el resultado.</summary>
         /// <param name="orderId">Pedido al que se imputa el cobro.</param>

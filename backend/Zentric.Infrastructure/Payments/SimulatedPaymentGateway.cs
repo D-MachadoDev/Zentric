@@ -7,7 +7,7 @@ using Zentric.Domain.Products.ValueObjects;
 namespace Zentric.Infrastructure.Payments
 {
     /// <summary>
-    /// Adaptador de salida SIMULADO para <see cref="IPaymentGateway"/>.
+    /// Adaptador de salida SIMULADO para <see cref="IPaymentGatewayService"/>.
     ///
     /// Q-08 (ratificado por el Owner el 2026-09-27): no existe pasarela real
     /// integrada. Este adaptador aprueba siempre el cobro y genera un
@@ -17,7 +17,7 @@ namespace Zentric.Infrastructure.Payments
     /// Para conectar una pasarela real basta con registrar otro adaptador de este
     /// mismo puerto en el Composition Root; Dominio y casos de uso no cambian.
     /// </summary>
-    public sealed class SimulatedPaymentGateway : IPaymentGateway
+    public sealed class SimulatedPaymentGateway : IPaymentGatewayService
     {
         public Task<PaymentResult> ChargeAsync(
             Guid orderId,

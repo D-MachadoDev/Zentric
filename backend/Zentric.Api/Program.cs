@@ -76,6 +76,7 @@ builder.Services.AddScoped<Zentric.Domain.Orders.Ports.ICustomerOrderRepository,
 builder.Services.AddScoped<Zentric.Domain.Logistics.Ports.IFulfillmentOrderRepository, FulfillmentOrderRepository>();
 builder.Services.AddScoped<Zentric.Domain.Returns.Ports.IReturnRequestRepository, ReturnRequestRepository>();
 builder.Services.AddScoped<Zentric.Domain.Billing.Ports.IInvoiceRepository, InvoiceRepository>();
+builder.Services.AddScoped<Zentric.Domain.Payments.Ports.IPaymentReceiptRepository, PaymentReceiptRepository>();
 
 // Register Background Services
 builder.Services.AddHostedService<Zentric.Infrastructure.BackgroundServices.CheckoutTimeoutService>();
@@ -92,7 +93,7 @@ builder.Services.AddScoped<Zentric.Domain.Inventories.Services.InventoryReservat
 
 // Q-08: pasarela de pago SIMULADA. El puerto vive en el Dominio; sustituir este
 // adaptador por uno real (PSE, Wompi, Stripe) no exige tocar Dominio ni casos de uso.
-builder.Services.AddScoped<Zentric.Domain.Payments.Ports.IPaymentGateway, Zentric.Infrastructure.Payments.SimulatedPaymentGateway>();
+builder.Services.AddScoped<Zentric.Domain.Payments.Ports.IPaymentGatewayService, Zentric.Infrastructure.Payments.SimulatedPaymentGateway>();
 
 var app = builder.Build();
 

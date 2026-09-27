@@ -25,6 +25,12 @@ El Dominio está obligado a proteger y hacer cumplir las siguientes reglas media
 8. **Timeout de Reservas:** Si un pedido pasa más de un tiempo estipulado (ej. 15 minutos) en estado `PendingPayment`, se anula automáticamente y devuelve las cantidades reservadas a `AvailableQuantity`.
 9. **Simulación de Pasarela (YAGNI):** No se almacenan tarjetas de crédito ni billeteras. El Dominio avanza de estado con una simple entidad `PaymentReceipt` que valida la respuesta de éxito/fallo.
 
+    > **Estado de implementación (verificado 2026-09-27):** `PaymentReceipt` existe como raíz de agregado en `Zentric.Domain/Payments/PaymentReceipt.cs` y **está persistido** (`PaymentReceipts`, con `Amount`, `RefundedAmount`, `TransactionId`, `RefundedAt`). `PayOrderCommandHandler` cobra **antes** de marcar el pedido como pagado y emite el comprobante **también cuando la pasarela rechaza**, de modo que todo intento de cobro queda registrado.
+    >
+    > **ADDENDUM - DICTADO POR OWNER (2026-09-27) — reembolso como crédito a favor:** la devolución de un producto físico genera un **crédito a favor del comprador dentro de la plataforma**, no una transferencia de dinero, porque el sistema no custodia fondos. El comprobante de pago pasa a `Refunded` con `RefundedAmount` y `RefundedAt`, y **el `CustomerOrder` NO se revierte**: ya fue entregado y facturado, y reabrirlo obligaría a deshacer logística y facturación cerradas. El estado `Reembolsada` del Dominio 10 de la Ley se materializa así.
+    >
+    > *Esta nota es un ADDENDUM del Owner; no forma parte de la Ley (`ZENTRIC.md`), que no menciona el mecanismo de reembolso.*
+
 ## 4. Posventa y Excepciones Logísticas
 10. **Retracto Temprano:** Un comprador puede cancelar su propio `CustomerOrder` autónomamente solo si TODOS los `FulfillmentOrder` hijos siguen en estado `Pending`. Si uno solo avanzó a `Packed`, la cancelación inmediata se bloquea y el usuario debe esperar a tramitar devolución.
 11. **Cancelación por Stock Fantasma:** El Vendedor o Bodega puede anular unilateralmente partes de su orden por pérdida física de stock. Esto genera un reembolso parcial inmediato, pero no mata el resto del `CustomerOrder`.
