@@ -1,0 +1,43 @@
+# Contexto de build: raiz del repositorio (ver backend/Dockerfile)
+
+# Control de versiones y datos sensibles
+.git
+.gitignore
+.github
+.agents
+**/.vs
+**/.vscode
+**/.idea
+
+# Secretos y entornos reales (nunca deben entrar en la imagen)
+**/.env
+**/.env.*
+!**/.env.example
+**/*.user
+**/*.suo
+
+# Artefactos de compilacion (se recompilan dentro de la imagen)
+**/bin
+**/obj
+**/out
+**/artifacts
+**/TestResults
+**/coverage
+**/coverage*.json
+**/coverage*.xml
+**/coverage*.info
+**/*.trx
+**/*.binlog
+
+# Documentacion y SDD: no son necesarios en runtime
+backendSDD
+frontendSDD
+*.md
+LICENSE
+
+# Frontend (se construye en su propia imagen)
+frontend
+
+# Sistema
+**/.DS_Store
+**/Thumbs.db

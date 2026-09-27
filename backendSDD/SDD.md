@@ -1,0 +1,1047 @@
+# SDD — Orquestador agéntico del backend Zentric
+
+> `[CONFIRMADO]` **Tablero vigente:** rama `develop` @ `1d85a48` · build sin errores (12 warnings `SYSLIB0050` pendientes de reparación) · **238/238 pruebas PASS** · mapa 33/33 (100 %) · re-verificación ejecutada: **2026-09-26**. Cambios de documentación sin commitear declarados en la sección 12.1.
+
+> **Qué es este documento.** Es el **Prompt de Orquestación Agéntica** del backend Zentric: define cómo un agente (o varios) diagnostica el repositorio, elige la siguiente tarea, la ejecuta, la valida y registra evidencia. Es la única **memoria viva** del proyecto: indexa y apunta a la SSoT (no la duplica). El contrato operativo y la arquitectura obligatoria viven en [AGENTS.md](../AGENTS.md); la Ley funcional es [ZENTRIC.md](../ZENTRIC.md).
+
+> **Jerarquía de verdad:** decisión del Owner → [AGENTS.md](../AGENTS.md) → [ZENTRIC.md](../ZENTRIC.md) (Ley, intocable) → resto de `/backendSDD/` → este archivo.
+
+> **Etiquetas de evidencia:** `[CONFIRMADO]` verificado por ejecución o lectura directa · `[OBSERVADO]` visto sin verificación plena · `[INFERIDO]` deducido del contexto · `[SUPUESTO]` asumido (requiere confirmación) · `[PENDIENTE]` por hacer/verificar · `[RIESGO]` riesgo registrado.
+
+> **Estados de trabajo** (definiciones completas en la [sección 3.2](#32-estados-transiciones-y-límites)): `NOT_STARTED → PARTIAL → IMPLEMENTED → VERIFIED`; cualquier estado puede degradar a `FAILING`. Marcas usadas en las tablas: ✅ implementado/verificado · ⚠️ parcial · 🟡 no iniciado · ❌ fallando.
+
+**Navegación:** [0. Entrega](#0-entrega-y-organización-del-repositorio) · [1. Orquestador](#1-identificación-y-configuración-del-agente-orquestador) · [2. Fases](#2-mapa-de-fases-paralelización-y-dependencias) · [3. Instrucciones](#3-instrucciones-ejecutivas-del-orquestador) · [4. Fases detalladas](#4-fases-detalladas-fase-0a--fase-6) · [5. Mapa](#5-mapa-de-entidades-anti-amnesia) · [6. Specs](#6-índice-de-especificaciones-ssot) · [7. Estado](#7-estado-de-implementación-por-capa) · [8. Decisiones](#8-decisiones-adrs-y-addenda) · [9. Preguntas](#9-preguntas-abiertas-y-bloqueos) · [10. Riesgos](#10-riesgos-hallazgos-y-observaciones) · [11. Verificación](#11-verificación-gates-y-criterios-de-finalización) · [12. Registro](#12-registro-de-acciones-y-control-del-documento) · [13. Normativa](#13-cumplimiento-normativo-y-estándares-vigentes-verificado-2026-09-26) · [14. Matriz 360°](#14-matriz-de-cobertura-360-dimensiones-aplicables) · [15. Auditoría](#15-auditoría-de-mapeo-de-entidades-formato-de-la-metodología) · [16. Trazabilidad](#16-trazabilidad-con-la-metodología-v600) · [17. Research Log](#17-research-log-2026-09-26-verificación-de-estándares-vigentes) · [18. SPEC-008](#18-spec-008--fase-6-reparación-docker-e-integración-real)
+
+## 0. Entrega y organización del repositorio
+
+`Zentric` es un **monorepo** con dos aplicaciones y sus especificaciones separadas.
+Este documento orquesta **el backend**; la especificación del frontend vive en
+[`../frontendSDD/`](../frontendSDD/). Estructura física obligatoria:
+
+```text
+Zentric/
+├── backend/                     # API .NET 10 (solución Zentric.slnx, 5 proyectos)
+│   ├── Zentric.Domain/           # Núcleo puro (DDD). Sin dependencias externas.
+│   ├── Zentric.Application/      # Casos de uso CQRS, validación, Result, puertos.
+│   ├── Zentric.Infrastructure/   # EF Core + PostgreSQL, mappers, repositorios, background services.
+│   ├── Zentric.Api/              # Composition Root + controladores REST (27 endpoints).
+│   ├── Zentric.Tests/            # xUnit (29 archivos de suite, 238 casos).
+│   ├── Zentric.slnx
+│   └── Dockerfile                # Imagen multi-stage de la API (contexto raíz, puerto 8080).
+├── frontend/                    # Consola web React + TypeScript (solo configuración base).
+├── backendSDD/                  # SSoT del backend: especificaciones por capa, ADRs y este orquestador.
+├── frontendSDD/                 # SSoT del frontend: arquitectura, contratos, flujos y design system.
+├── .github/workflows/ci.yml     # CI (backend: restore+build+test; frontend: npm ci+build).
+├── docker-compose.yml           # PostgreSQL 16.15 + API + frontend.
+├── .dockerignore · .env.example
+└── AGENTS.md · ZENTRIC.md · README.md · LICENSE · .editorconfig
+```
+
+Reglas de organización:
+
+1. Ningún código de producción del backend puede vivir fuera de `backend/Zentric.*` (más `Zentric.Tests`).
+2. Todo el código del frontend vive bajo `frontend/`; su especificación bajo `frontendSDD/`.
+3. Toda entidad nueva recorre las 5 etapas: Dominio → Aplicación (CQRS) → Infraestructura (mapeo + repositorio) → Api (endpoint) → Tests; y se registra en el mapa de la sección 5.
+4. **Ajenos / generados (clasificados, no mapeados):** `bin/`, `obj/`, `.git/`, `.agents/`, `.github/`, `LICENSE`, `.gitignore`, `.vscode/`, `appsettings.Development.json`, `node_modules/`.
+5. Si se parte de una estructura heredada, se migra completa (imports, Docker, Compose, CI, README y pruebas) y se verifica que no queden referencias al path anterior.
+
+## 1. Identificación y configuración del agente orquestador
+
+### 1.1 Rol, objetivo y alcance
+
+- **Rol:** Agente Orquestador Principal / Lead Software Architect del backend Zentric.
+- **Objetivo:** determinar el estado real del repositorio y ejecutar únicamente el siguiente trabajo necesario. Reanudar lo implementado sin regenerarlo, reparar fallos antes de avanzar y paralelizar sub-agentes solo cuando sus dependencias y archivos no se solapen.
+- **Propósito del sistema** `[OBSERVADO]`: API central y núcleo de dominio de **Zentric**, plataforma que intermedia entre **Comprador** y **Vendedor** administrando usuarios, catálogo, inventario distribuido, pedidos, facturación, logística y posventa.
+- **Owner:** no registrado en el repositorio `[PENDIENTE]`; las decisiones se dictan por chat y quedan registradas como ADDENDUM en la Ley o como ADR en `backendSDD/Adr/`.
+- **Biblia (intocable, [AGENTS.md, sección 0.7](../AGENTS.md#07-inmutabilidad-de-los-documentos-biblia-y-registro-de-cambios)):** [ZENTRIC.md](../ZENTRIC.md). Integridad verificada el 2026-09-18 (`git diff --numstat` = 38 adiciones / 1 borrado, y el borrado fue una línea separadora). Las adiciones están dictadas por el Owner: ADD-001…ADD-003 ([sección 8.2](#82-adiciones-a-la-biblia-addendum---dictado-por-owner-en-zentricmd)).
+- **Alcance incluido:** dominio de marketplace completo (identidad, catálogo, bodegas, inventario, pedidos, logística, devoluciones, facturación), API REST y persistencia PostgreSQL.
+- **Fuera de alcance:** UI, apps móviles, portales, autenticación técnica real y almacenamiento según el alcance incluido y excluido de [01-system-overview.md](01-system-overview.md). Swagger ya prepara el esquema `Bearer` para cuando se formalice Auth.
+
+### 1.2 Entorno local, stack y comandos oficiales
+
+| Recurso | Valor |
+|---|---|
+| Lenguaje / runtime | C# · .NET 10 (`net10.0`) |
+| Arquitectura | Hexagonal (puertos y adaptadores) + DDD táctico + CQRS + Result Pattern |
+| Mediación / validación | MediatR 14.2.0 · FluentValidation 12.1.1 |
+| Persistencia | EF Core + Npgsql 10.0.3 sobre **PostgreSQL 16** (contenedor `zentric-postgres`, puerto `5432`, base `ZentricDb`) |
+| API | ASP.NET Core + OpenAPI/Swagger (XML docs, tags, RFC 7807) |
+| Pruebas | xUnit 2.9.3 (29 archivos, 238 casos) |
+| Contenedores | `Dockerfile` multi-stage (EXPOSE 8080) + `docker-compose.yml` (API en `5076:8080`, base en `5432:5432`) |
+| CI | `.github/workflows/ci.yml` (restore + build + test; dispara solo en push/PR a `main`) |
+
+Comandos oficiales ([AGENTS.md, [sección 7](#7-estado-de-implementación-por-capa)](../AGENTS.md#7-comandos-de-verificación-y-compilación)):
+
+```powershell
+cd backend; dotnet restore Zentric.slnx
+cd backend; dotnet build Zentric.slnx
+cd backend; dotnet test Zentric.slnx
+```
+
+Infraestructura local (resumen real de `docker-compose.yml`):
+
+```yaml
+services:
+  db:                       # imagen postgres:16-alpine · contenedor zentric-postgres
+    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres, POSTGRES_DB: ZentricDb }
+    ports: ["5432:5432"]    # volumen persistente zentric_pgdata
+  api:                      # imagen zentric:latest · contenedor zentric-api
+    environment: { ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=ZentricDb;..." }
+    ports: ["5076:8080"]
+```
+
+Regla: dentro de Docker la API usa el nombre de servicio `db`, nunca `localhost`. `[RIESGO]` Las credenciales de desarrollo están en claro (`appsettings.json` y compose); mover a variables de entorno antes de producción (observación OBS-04, [sección 10](#10-riesgos-hallazgos-y-observaciones)).
+
+### 1.3 Registro de agentes y formato de delegación
+
+Los nombres `domain-architect`, `infrastructure-adapter`, etc. son **roles lógicos** (definidos en [AGENTS.md, [sección 4](#4-fases-detalladas-fase-0a--fase-6)](../AGENTS.md#4-roles-de-agentes-especializados)), no agentes obligatoriamente instalados. Antes de delegar, el orquestador asigna cada rol a un agente disponible por capacidad; si no existe un agente especializado, usa un agente general de ejecución conservando el mismo alcance, archivos y gate.
+
+| Rol lógico ([AGENTS.md, [sección 4](#4-fases-detalladas-fase-0a--fase-6)](../AGENTS.md#4-roles-de-agentes-especializados)) | Alcance |
+|---|---|
+| Domain-Architect-Agent | Entidades, agregados, value objects, invariantes, eventos, puertos y specs de `backendSDD/Domain/` |
+| Infrastructure-Adapter-Agent | `DbModel` + mappers + repositorios + migraciones + background services |
+| Application-API-Agent | Commands/Queries, DTOs, validadores, controladores, Problem Details |
+| QA-Testing-Agent | Pruebas BDD de dominio y aplicación (xUnit) y arneses de DI |
+
+Toda delegación debe incluir siempre: (1) rol lógico, (2) stack detectado, (3) documentos SDD de entrada, (4) archivos permitidos, (5) archivos prohibidos, (6) dependencias, (7) criterio de salida, (8) comando de validación y (9) formato de reporte. No se inventan nombres de agentes ni se asume que un agente puede editar fuera de su alcance.
+
+## 2. Mapa de fases, paralelización y dependencias
+
+### 2.1 Diagrama de fases
+
+El flujo es un ciclo de diagnóstico, diseño, implementación, containerización, reparación y validación, con fases `0A` a `6`. Las tareas paralelas solo se ejecutan cuando el diagnóstico confirma dependencias satisfechas y archivos sin solape.
+
+```mermaid
+graph TD
+  F0[Fase 0: Diagnóstico de estado] --> F0A[0A: Detección de stack .NET]
+  F0A --> F0B[0B: Infraestructura local PostgreSQL + configuración]
+  F0B --> F0C[0C: Compose y entorno Docker]
+  F0C --> F0D[0D: SDD de frontend — NO APLICA en este repositorio]
+  F0D --> F1[1: Dominio core]
+  F1 --> F2A[2A: Persistencia EF/PostgreSQL]
+  F1 --> F2B[2B: Eventos de dominio + UnitOfWork]
+  F1 --> F2C[2C: Puertos de entrada CQRS]
+  F2A --> F3A[3A: Servicios de dominio y handlers]
+  F2B --> F3A
+  F2C --> F3B[3B: REST, DTOs, validadores]
+  F3A --> F4[4: Integración, Bearer/OpenAPI, ProblemDetails]
+  F3B --> F4
+  F4 --> F5A[5A: Pruebas de dominio y servicios]
+  F4 --> F5B[5B: Pruebas de adaptadores y REST]
+  F5A --> F6[6: Reparación, Docker e integración real]
+  F5B --> F6
+```
+
+### 2.2 Tablero de fases (estado real al 2026-09-26)
+
+| Fase | Entregables | Estado | Evidencia | Gate pendiente |
+|---|---|---|---|---|
+| 0A | Detección de stack | ✅ `VERIFIED` | 5 `.csproj` net10.0 + `Zentric.slnx` | — |
+| 0B | PostgreSQL + configuración | ✅ `VERIFIED` | `postgres:16.15-alpine` saludable; 3 migraciones aplicadas; 13 tablas reales | — |
+| 0C | Compose y entorno Docker | ✅ `VERIFIED` | `docker compose build` exit 0; `up` con healthcheck; `/health` → 200 `{"status":"healthy","database":"up"}` | — |
+| 0D | SDD de frontend | ➖ `NO APLICA` | Repositorio backend-only | — |
+| 1 | Dominio core (9 agregados, VOs, puertos, eventos) | ✅ `VERIFIED` | 238/238 pruebas | — |
+| 2A | Persistencia EF + mappers + repositorios | ⚠️ `IMPLEMENTED` | 9 `DbSet`, 9 mappers, 9 repositorios | Gate de integración real (OBS-03) |
+| 2B | Eventos + `UnitOfWork` | ✅ `IMPLEMENTED` | `DomainEventDispatcher`; flujo Devoluciones→Inventario | Cobertura directa del dispatcher |
+| 2C | CQRS de entrada (16 commands, 8 queries) | ✅ `VERIFIED` | 13 suites de handlers + validadores | — |
+| 3A | Servicios de dominio y casos de uso | ✅ `VERIFIED` | `InventoryReservationService`, `ReturnsApprovalService`, checkout | — |
+| 3B | REST, DTOs, validadores | ⚠️ `PARTIAL` | 27 endpoints, RFC 7807, Swagger | Pruebas HTTP E2E (T-032) |
+| 4 | Integración local y seguridad | ⚠️ `PARTIAL` | Swagger Bearer preparado; Auth real fuera de alcance | Smoke con la API levantada |
+| 5A | Pruebas de dominio y servicios | ✅ `VERIFIED` | 238/238 PASS | — |
+| 5B | Pruebas de adaptadores y REST | ⚠️ `PARTIAL` | Suites DI + queries | E2E HTTP y PostgreSQL real |
+| 6 | Reparación e integración | ✅ `VERIFIED` (código) | SPEC-008 aplicado: 12 warnings `SYSLIB0050` → **0**; 6 handlers sin `SaveChangesAsync` corregidos; `IdentityMap` y `NullReferenceException` reparados; flujo E2E completo verificado en PostgreSQL | Pruebas E2E automatizadas (Playwright/T-032) siguen pendientes |
+
+> **Prioridad:** las tareas pendientes de una fase anterior tienen prioridad sobre generar contenido de una fase posterior; no se marca `VERIFIED` una fase con entregables `PARTIAL` o `FAILING`.
+
+### 2.3 Regla de reanudación (cómo elegir el siguiente paso)
+
+El flujo no asume repositorio vacío. En cada ejecución el orquestador debe:
+
+1. Leer este documento y los contratos SDD relevantes antes de modificar código.
+2. Inspeccionar el árbol de archivos, dependencias, configuración, pruebas y artefactos de ejecución.
+3. Ejecutar el diagnóstico mínimo disponible: compilación y pruebas ([sección 3.5](#35-comandos-de-validación-y-gates-por-fase)).
+4. Clasificar cada entregable del tablero 2.2 como `NOT_STARTED`, `PARTIAL`, `IMPLEMENTED`, `FAILING` o `VERIFIED` con evidencia.
+5. Seleccionar una única fase siguiente con la matriz de decisión de la sección 3.1.
+6. No regenerar archivos clasificados `IMPLEMENTED` o `VERIFIED`; solo corregirlos cuando exista evidencia de fallo o incumplimiento del SDD.
+7. Actualizar el tablero 2.2 y el registro de la [sección 12](#12-registro-de-acciones-y-control-del-documento) al terminar cada tarea.
+
+Si faltan herramientas, dependencias o infraestructura, se registra el bloqueo exacto y se resuelve o se detiene con una instrucción reproducible. No se declara completitud basándose únicamente en que existan archivos o rutas.
+
+### 2.4 Estado persistente de la orquestación
+
+El estado persistente es **este documento** (tablero 2.2 + mapa de la [sección 5](#5-mapa-de-entidades-anti-amnesia) + registro de la [sección 12](#12-registro-de-acciones-y-control-del-documento)), anclado a `commit + fecha`. No se crea un archivo de estado paralelo: duplicaría la SSoT (regla de [AGENTS.md, sección 0.2](../AGENTS.md#02-regla-de-sincronización-bidireccional-spec-anchored-code)). Cada entrada del registro incluye:
+
+```text
+fecha, fase, tarea, estado, archivos, evidencia, comando, resultado, bloqueos, siguienteAccion
+```
+
+Los cambios de código y el estado deben poder asociarse al `commit` correspondiente. Si el registro y el repositorio discrepan, gana el repositorio: se re-ejecuta el diagnóstico antes de continuar.
+
+## 3. Instrucciones ejecutivas del orquestador
+
+### 3.1 Diagnóstico obligatorio y selección de tarea
+
+Antes de ejecutar cualquier fase de implementación, producir una tabla con esta forma (ejemplo real del 2026-09-26):
+
+| Área | Evidencia revisada | Estado | Acción siguiente | Validación requerida |
+|---|---|---|---|---|
+| Stack y dependencias | 5 `.csproj`, `Zentric.slnx` | ✅ `VERIFIED` | — | `dotnet build` |
+| Dominio | modelos, VOs, puertos, eventos, servicios | ✅ `VERIFIED` | — | 238/238 pruebas |
+| Persistencia SQL | `DbModel`, mappers, repositorios, migraciones | ⚠️ `PARTIAL` | Aplicar migraciones en PostgreSQL real | integración real |
+| Eventos | `Entity.AddDomainEvent`, dispatcher, `UnitOfWork` | ✅ `IMPLEMENTED` | Cobertura directa del dispatcher | flujo devolución → stock "Usado" |
+| Casos de uso | 16 commands, 8 queries, validadores | ✅ `VERIFIED` | — | suites de handlers |
+| REST | DTOs, controladores, rutas | ⚠️ `PARTIAL` | Pruebas E2E HTTP (T-032) | contrato de [Presentation/01-endpoints.md](Presentation/01-endpoints.md) |
+| Excepciones REST | `AddProblemDetails()` + `UseExceptionHandler()` | ⚠️ `PARTIAL` | Smoke de códigos 400/404/500 | pruebas HTTP |
+| Seguridad | esquema Bearer en Swagger (Auth real fuera de alcance) | ⚠️ `PARTIAL` | Decisión del Owner si se formaliza Auth | smoke |
+| Containerización | `Dockerfile`, `docker-compose.yml`, CI | ⚠️ `PARTIAL` | `docker compose build/up` + smoke | gate Docker ([sección 11.4](#114-gates-y-criterios-de-finalización-del-proyecto)) |
+| Pruebas | 29 archivos, 238 casos | ✅ `VERIFIED` | E2E HTTP y PostgreSQL real | `dotnet test` |
+
+Procedimiento obligatorio:
+
+1. Enumerar los entregables definidos en las fases ([sección 4](#4-fases-detalladas-fase-0a--fase-6)) y en los SDD referenciados.
+2. Localizar cada entregable en el repositorio; no inferirlo por la existencia de una carpeta.
+3. Comparar firma, comportamiento y configuración contra el contrato correspondiente.
+4. Ejecutar el gate mínimo de ese entregable, aunque la fase parezca completa.
+5. Marcarlo con el estado correspondiente y evidencia.
+6. Generar la lista ordenada de pendientes por dependencia.
+7. Ejecutar la primera tarea desbloqueada; luego actualizar el estado persistente y repetir el diagnóstico.
+
+**Matriz de decisión (en orden):**
+
+1. Si el build falla → `REPAIR_BUILD`; no se avanza de fase.
+2. Si hay pruebas fallidas → `REPAIR_TESTS`; corregir la causa y repetir exactamente la prueba fallida.
+3. Si compila y las pruebas pasan pero falta un entregable de cualquier etapa → ejecutar la tarea pendiente de menor dependencia.
+4. Si los entregables existen pero contradicen el backendSDD/contrato → `REPAIR_CONTRACT`.
+5. Si las fases de implementación están completas → `INTEGRATION_VALIDATION`.
+6. Solo marcar `COMPLETE` cuando todos los gates de la [sección 11.4](#114-gates-y-criterios-de-finalización-del-proyecto) estén verificados con evidencia reciente.
+
+**Alignment gate:** contra [AGENTS.md](../AGENTS.md), las specs de `/SDD` y [Presentation/01-endpoints.md](Presentation/01-endpoints.md); detectar firmas incompatibles, nombres duplicados, discrepancias de códigos HTTP (400/404/422), endpoints sin matriz de errores y diferencias de puertos host vs contenedor. Cualquier hallazgo selecciona `REPAIR_CONTRACT` antes de continuar.
+
+### 3.2 Estados, transiciones y límites
+
+Estados válidos: `NOT_STARTED → IN_PROGRESS → IMPLEMENTED → VERIFIED`. Desde `IMPLEMENTED` o `VERIFIED` se puede degradar a `FAILING` si una validación posterior lo demuestra; `FAILING` solo vuelve a `VERIFIED` ejecutando la prueba que lo detectó y la validación completa de la fase.
+
+Reglas obligatorias:
+
+- `IMPLEMENTED` significa que el código existe; **no** que funcione.
+- Un endpoint registrado no cuenta como implementado si no ejecuta el caso de uso, respeta el código HTTP y cumple el contrato de respuesta.
+- Un repositorio no cuenta como verificado hasta probar mapeo, persistencia y errores de infraestructura.
+- Tras cada edición sustantiva se ejecuta primero el check más estrecho que pueda falsar la hipótesis del cambio.
+- Después de una reparación, no se continúa con otra fase hasta que la validación vuelva a pasar.
+- Los agentes devuelven archivos modificados, evidencia, comandos ejecutados, resultado y bloqueos; no declaran éxito sin ejecutar su gate.
+
+### 3.3 Política de trabajo existente e idempotencia
+
+- Preservar cambios del usuario y trabajar sobre ellos; no hacer reset, checkout destructivo ni sobrescritura masiva.
+- Leer el archivo antes de editarlo y aplicar cambios mínimos.
+- Buscar implementaciones equivalentes antes de crear archivos nuevos.
+- Si una tarea ya está resuelta, marcarla `VERIFIED` mediante pruebas en lugar de reimplementarla.
+- Si el comportamiento actual y el SDD discrepan → `REPAIR_CONTRACT`: documentar la decisión y modificar el origen del comportamiento, no parchear otra capa.
+- No ejecutar agentes en paralelo si comparten archivos, símbolos, migraciones, tablas, contratos o configuración.
+- **Freno de mano ([AGENTS.md, sección 0.3](../AGENTS.md#03-el-freno-de-mano-cero-asunciones)):** una funcionalidad sin especificación o con especificación ambigua detiene la implementación y escala al Owner.
+
+### 3.4 Ciclo operativo por tarea
+
+```text
+diagnosticar -> elegir tarea mínima -> editar -> validar localmente
+    ^                                      |
+    |                                      v
+  reparar <-------- falla <------------ registrar evidencia
+```
+
+Una tarea termina solo cuando su criterio de salida es verificable. Si falla tres veces en la misma superficie, se detiene, se conserva la evidencia y se escala la decisión en lugar de seguir generando código dependiente.
+
+### 3.5 Comandos de validación y gates por fase
+
+| Momento | Comando | Resultado esperado |
+|---|---|---|
+| Compilación | `cd backend; dotnet build Zentric.slnx --nologo` | `Build succeeded` (12 warnings `SYSLIB0050` conocidos — OBS-06) |
+| Suite completa | `cd backend; dotnet test Zentric.slnx --nologo` | `238/238`, 0 skipped |
+| Filtro puntual | `dotnet test --filter FullyQualifiedName~<Suite>` | 0 fallos en la suite filtrada |
+| Diagnóstico git | `git status --short` · `git log --oneline -5` | árbol acorde a lo declarado |
+| Persistencia (Fase 6) | `docker compose up -d db` + aplicar migraciones EF | PostgreSQL saludable |
+| Docker (Fase 6) | `docker compose config` → `build --no-cache` → `up -d` → `ps` → smoke → `down` | gate completo ([sección 11.4](#114-gates-y-criterios-de-finalización-del-proyecto)) |
+
+Reglas: no ejecutar literalmente un comando que no exista en el proyecto (registrar el comando real y su código de salida); un warning no debe ocultar un código de salida fallido.
+
+### 3.6 Formato del reporte de tarea y del informe de cierre
+
+Cada tarea reporta: archivos modificados, evidencia, comandos ejecutados con resultado, pruebas, bloqueos y siguiente acción.
+
+Informe de cierre de sesión o entrega:
+
+```text
+Estado: COMPLETE | BLOCKED | IN_PROGRESS
+Stack validado: ...
+Fase seleccionada y motivo: ...
+Cambios realizados: ...
+Comandos ejecutados y códigos de salida: ...
+Pruebas: unitarias .../...; integración .../...; E2E .../...
+Docker: build ...; servicios saludables ...; smoke tests ...; apagado ...
+Gates aprobados: ...
+Faltantes o bloqueos: ...
+Siguiente acción exacta: ...
+```
+
+Regla: si existe una prueba fallida, un endpoint simulado, una dependencia no validada o un gate no ejecutado, el estado máximo permitido es `IN_PROGRESS` o `BLOCKED`, nunca `COMPLETE`.
+
+## 4. Fases detalladas (Fase 0A → Fase 6)
+
+> Cada tarjeta resume objetivo, entregables, estado real al 2026-09-26 y gate. El detalle por capa está en la sección 7.
+
+### FASE 0A — Detección de stack
+
+- **Objetivo:** confirmar lenguaje, framework y estructura antes de generar cualquier archivo.
+- **Entregables:** stack detectado y justificado.
+- **Realidad:** C#/.NET 10 con 5 proyectos y solución `Zentric.slnx` `[CONFIRMADO]`. ✅ `VERIFIED`.
+- **Gate:** cumplido (5 `.csproj` leídos).
+
+### FASE 0B — Infraestructura local y configuración
+
+- **Objetivo:** PostgreSQL local + configuración de la API.
+- **Entregables:** `docker-compose.yml` (PostgreSQL 16 en 5432), cadena de conexión, esquema vía migraciones EF.
+- **Realidad:** compose y conexión existen; **las 3 migraciones nunca se aplicaron**. ⚠️ `PARTIAL`.
+- **Gate pendiente:** `docker compose up -d db` + aplicar migraciones contra PostgreSQL real y verificar tablas.
+
+### FASE 0C — Compose y entorno Docker
+
+- **Objetivo:** dejar el entorno listo sin exigir el build final (pertenece a la Fase 6).
+- **Entregables:** `Dockerfile` multi-stage, `.dockerignore`, compose con red/volúmenes/healthchecks.
+- **Realidad:** `Dockerfile` y compose existen con volumen persistente; sin healthchecks verificados y sin build ejecutado. ⚠️ `PARTIAL`.
+- **Gate pendiente:** sección 11.4.
+
+### FASE 0D — SDD de frontend
+
+- ➖ **NO APLICA:** este repositorio es exclusivamente backend. No se generan documentos ni código de frontend. Si el Owner incorpora un frontend, se definirá su propia fase con contrato aparte.
+
+### FASE 1 — Dominio core
+
+- **Objetivo:** capa de dominio pura, sin frameworks ni dependencias externas.
+- **Entregables:** 9 agregados raíz, entidades hijas, 4 value objects, 9 enums, 6 eventos, 2 servicios de dominio y 9 puertos de repositorio.
+- **Realidad:** ✅ `VERIFIED` (238/238 pruebas; `Zentric.Domain` sin `PackageReference`).
+- **Gate:** cumplido.
+
+### FASE 2A — Persistencia relacional (EF Core/PostgreSQL)
+
+- **Objetivo:** repositorios EF aislados del dominio.
+- **Entregables:** 10 `DbModel` + 9 mappers + 9 repositorios + `ZentricDbContext` (9 `DbSet`).
+- **Realidad:** ⚠️ `IMPLEMENTED` (aislamiento EF verificado: el DbContext no referencia entidades de dominio).
+- **Gate pendiente:** integración real contra PostgreSQL (OBS-03) y reparar los 12 warnings `SYSLIB0050` de los mappers (OBS-06).
+
+### FASE 2B — Eventos de dominio y UnitOfWork
+
+- **Objetivo:** publicar y despachar eventos dentro de la transacción de persistencia.
+- **Entregables:** `IDomainEventDispatcher` + `DomainEventDispatcher` + `UnitOfWork` con despacho + `DomainEventNotification<T>`.
+- **Realidad:** ✅ `IMPLEMENTED` (flujo Devoluciones → `ReturnToUsedStock` operativo vía evento).
+- **Gate pendiente:** prueba directa del dispatcher y de la transaccionalidad.
+
+### FASE 2C — Puertos de entrada CQRS
+
+- **Objetivo:** exponer los casos de uso como commands y queries.
+- **Entregables:** 16 commands + 8 archivos de queries (11 endpoints GET) con handlers y `Result<T>`.
+- **Realidad:** ✅ `VERIFIED` (13 suites de handlers + suite de queries).
+
+### FASE 3A — Servicios de dominio y casos de uso
+
+- **Objetivo:** implementar la lógica de negocio orquestada.
+- **Entregables:** `InventoryReservationService` (reserva multi-bodega con fallo si no alcanza), `ReturnsApprovalService`, flujo `Cart → Checkout → Pay → Dispatch`.
+- **Realidad:** ✅ `VERIFIED` por pruebas. `[PENDIENTE]` Observación OBS-01: el orden de reserva no codifica la prioridad de [ADR-0001](Adr/0001-reserva-fragmentacion-contingencia.md) (verificación V-02, [sección 9.2](#92-verificaciones-de-consistencia-pendientes)).
+
+### FASE 3B — REST, DTOs y validadores
+
+- **Objetivo:** exponer los casos de uso por HTTP con validación de entrada.
+- **Entregables:** 8 controladores de negocio + `ApiControllerBase` (27 endpoints), 13 validadores FluentValidation, RFC 7807, Swagger (Bearer, XML docs, tags).
+- **Realidad:** ⚠️ `PARTIAL`: sin pruebas E2E HTTP (T-032) ni smoke con la API levantada.
+
+### FASE 4 — Integración local y seguridad
+
+- **Objetivo (adaptado):** handler global de excepciones + conectividad local + esquema de seguridad documentado.
+- **Entregables:** `AddProblemDetails()` + `UseExceptionHandler()`; esquema `Bearer` en Swagger; Auth real declarado **fuera de alcance** por la Ley ([sección 3.2](#32-estados-transiciones-y-límites) de [ZENTRIC.md](../ZENTRIC.md)).
+- **Realidad:** ⚠️ `PARTIAL` hasta ejecutar el smoke (400/404/500 con Problem Details).
+
+### FASE 5A / 5B — Pruebas
+
+- **5A (dominio y servicios):** ✅ `VERIFIED` — 29 archivos de suite, 238 casos en verde, incluida la suite de integración DI.
+- **5B (adaptadores y REST):** ⚠️ `PARTIAL` — cubiertos validadores, pipeline y queries; faltan E2E HTTP y pruebas contra PostgreSQL real.
+- **Regla:** una prueba unitaria con mocks **no** sustituye una prueba de integración con base de datos real.
+
+### FASE 6 — Reparación, Docker e integración real (siguiente fase activa)
+
+Orden obligatorio:
+
+1. Reparar primero build/tests: hoy build ✅ (con 12 warnings `SYSLIB0050` → reparación OBS-06 pendiente) y tests 238/238 ✅.
+2. Ejecutar el alignment gate ([sección 3.1](#31-diagnóstico-obligatorio-y-selección-de-tarea)).
+3. Validar configuración y puertos reales de PostgreSQL vía compose.
+4. `docker compose build --no-cache` (o el comando equivalente documentado).
+5. `docker compose up -d` y comprobar `docker compose ps` con servicios `healthy` (requiere añadir healthchecks).
+6. Verificar conectividad con nombre de servicio `db` dentro de la red Docker (nunca `localhost`).
+7. Smoke: `/swagger`, endpoints de lectura y flujo mínimo carrito → checkout → pago.
+8. `docker compose down` y repetir arranque en limpio; no declarar éxito si depende de artefactos previos.
+
+Estado actual: 🟡 `NOT_STARTED`. Cada paso deja evidencia en el registro ([sección 12](#12-registro-de-acciones-y-control-del-documento)).
+
+## 5. Mapa de entidades (anti-amnesia)
+
+> **Procedimiento (anti-amnesia, [AGENTS.md, secciones 2.4](../AGENTS.md#24-auditoria-de-mapeo-completo-anti-amnesia-de-entidades) y [4.1](../AGENTS.md#41-domain-architect-agent)):** antes de cualquier cambio estructural se re-enumera el árbol completo de `Zentric.Domain` (y su reflejo en Application/Infrastructure/Api) contra esta tabla. Ninguna entidad puede quedar fuera de la persistencia sin registrarse aquí. Estado de verificación: `[CONFIRMADO]` por enumeración directa del árbol, `.csproj`, `Program.cs`, `ZentricDbContext` y las suites de `Zentric.Tests` (2026-09-26).
+
+### 5.1 Resumen ejecutivo
+
+| Métrica | Valor |
+|---|---|
+| Entidades mapeadas | **33** (E-001…E-033) |
+| Cobertura | **33/33 (100 %)** — 0 huérfanos, 0 fantasmas |
+| Agregados raíz | 9 (`User`, `Buyer`, `Product`, `Inventory`, `Warehouse`, `CustomerOrder`, `FulfillmentOrder`, `Invoice`, `ReturnRequest`) |
+| Puertos de dominio | 9 repositorios; + `IUnitOfWork` en Application |
+| Eventos de dominio | 6 emitidos y despachados (`OrderCreated`, `OrderPaid`, `CartExpired`, `PhysicalProductShipped`, `PartialFulfillmentCancelled`, `ReturnApproved`) |
+| Pruebas asociadas | 238 casos en verde |
+
+### 5.2 Tabla de entidades (parte 1: E-001…E-008)
+
+| ID | Entidad | Tipo | Código | Estado verificado (2026-09-26) | Pruebas |
+|---|---|---|---|---|---|
+| **E-001** | `User` | Agregado raíz | `Zentric.Domain/Users/User.cs` | ✅ Implementado — `IdentityDocument` con guarda y unicidad verificada en `CreateUserCommandHandler` (H-05 cerrado; falta re-verificar constraint en BD). Eventos de usuario aún `// TODO` | `Zentric.Tests/Users/UserTests.cs` |
+| **E-002** | `Buyer` | Agregado raíz | `Zentric.Domain/Buyers/Buyer.cs` | ⚠️ Parcial — `PaymentTokens` **eliminado** (H-03/Q-08 resueltos en código); dirección sigue como `string` (VO `Address` pendiente). Sin pruebas propias | 🟡 `[PENDIENTE]` — T-002b |
+| **E-003** | `Product` | Agregado raíz | `Zentric.Domain/Products/Product.cs` | ✅ Implementado — variantes obligatorias en `Physical` (CAT-03/ADR-0003); usa `VendorId` y `ProductStatus`; `CanBeSold` con variante vendible | `Products/ProductTests.cs` |
+| **E-004** | `ProductVariant` | Entidad hija | `Zentric.Domain/Products/ProductVariant.cs` | ✅ Implementado — SKU = `VariantId`, único dentro del producto (ADR-0002) | `Products/ProductVariantTests.cs` |
+| **E-005** | `VariantAttribute` | Value Object | `Zentric.Domain/Products/ValueObjects/VariantAttribute.cs` | ✅ Implementado — `[PROPUESTO]`; detalle del modelo abierto en Q-11 ([sección 9.1](#91-preguntas-al-owner-abiertas)) | `Products/VariantAttributeTests.cs` |
+| **E-006** | `Money` | Value Object | `Zentric.Domain/Products/ValueObjects/Money.cs` | ✅ Implementado — aritmética homogénea de moneda | `Products/MoneyTests.cs` |
+| **E-007** | `Inventory` | Agregado raíz | `Zentric.Domain/Inventories/Inventory.cs` | ⚠️ Parcial — H-01 y H-02 **corregidos** (`DispatchStock` valida `ReservedQuantity`; `UpdateQuantities` ya no existe); queda H-06 (reloj directo) y el naming `ReciveReturnedStock` | `Inventories/InventoryTests.cs` |
+| **E-008** | `Warehouse` | Agregado raíz | `Zentric.Domain/Warehouses/Warehouse.cs` | ⚠️ Parcial — `WarehouseType` ya usa `Vendor` (C-05 parcialmente cerrada); naming residual por Q-05/Q-09 | `Warehouses/WarehouseTests.cs` |
+
+### 5.3 Tabla de entidades (parte 2: E-009…E-027)
+
+| ID | Entidad | Tipo | Código | Estado verificado (2026-09-26) | Pruebas |
+|---|---|---|---|---|---|
+| **E-009** | `CustomerOrder` | Agregado raíz | `Zentric.Domain/Orders/CustomerOrder.cs` | ✅ Implementado — estados `Cart → PendingPayment → Paid → Dispatched → Delivered / Cancelled` (ADR-0005); checkout, pago y cancelación por timeout operativos | `Orders/CustomerOrderTests.cs` |
+| **E-010** | `OrderItem` | Entidad hija | `Zentric.Domain/Orders/Entities/OrderItem.cs` | ✅ Implementado — usa `Money`; pertenece a E-009 | `Orders/CustomerOrderTests.cs` |
+| **E-011** | `FulfillmentOrder` | Agregado raíz | `Zentric.Domain/Logistics/FulfillmentOrder.cs` | ✅ Implementado — nace en `PendingPack`; `Pack`/`Dispatch`/`Deliver`/`CancelDueToNoStock` (Stock Fantasma). Ver verificación V-01 ([sección 9.2](#92-verificaciones-de-consistencia-pendientes)) | `Logistics/FulfillmentOrderTests.cs` |
+| **E-012** | `Shipment` | Entidad hija | `Zentric.Domain/Logistics/Entities/Shipment.cs` | ✅ Implementado — guía por bodega; dispara `PhysicalProductShippedDomainEvent` al despachar | `Logistics/FulfillmentOrderTests.cs` |
+| **E-013** | `Invoice` | Agregado raíz | `Zentric.Domain/Billing/Invoice.cs` | ✅ Implementado — tipos `Master`, `ZentricDetail`, `VendorDetail` (ADD-003 cumplido) | `Billing/InvoiceTests.cs` |
+| **E-014** | `ReturnRequest` | Agregado raíz | `Zentric.Domain/Returns/ReturnRequest.cs` | ✅ Implementado — doble aprobación; `ReturnApprovedEvent` → handler → `ReturnToUsedStock` (H-14 cerrado; ADD-002 cumplido) | `Returns/ReturnRequestTests.cs` |
+| **E-015** | 9 puertos de repositorio | Puertos de salida | `Zentric.Domain/**/Ports/` (`IUserRepository`, `IBuyerRepository`, `IProductRepository`, `IInventoryRepository`, `IWarehouseRepository`, `ICustomerOrderRepository`, `IFulfillmentOrderRepository`, `IInvoiceRepository`, `IReturnRequestRepository`) | ✅ Implementados por E-022 e inyectados | Cubiertos por suites de handlers |
+| **E-016** | `IUnitOfWork` | Puerto de salida | `Zentric.Application/Common/Ports/IUnitOfWork.cs` | ✅ Implementado por E-022; persiste y **despacha eventos de dominio** | Cubierto por suites DI |
+| **E-017** | `IDomainEventDispatcher` + `DomainEventNotification<T>` | Puerto + adaptador de eventos | `Zentric.Infrastructure/Persistence/IDomainEventDispatcher.cs` · `Zentric.Application/Common/Models/DomainEventNotification.cs` | ✅ Implementado — 6 eventos publicados vía MediatR | Cubierto por suites DI |
+| **E-018** | `Result` / `Result<T>` | Tipo de aplicación | `Zentric.Application/Common/Models/Result.cs` | ✅ Implementado — sin excepciones de flujo | Suites de validadores/pipeline |
+| **E-019** | 16 Commands CQRS | Casos de uso | `Zentric.Application/<Contexto>/Commands/` (Users, Warehouses, Catalog, Inventories, Orders, Logistics, Returns, Billing) | ✅ Implementados con `Result<T>`, validadores y handler | 13 suites de handlers |
+| **E-020** | 8 archivos de Queries CQRS (11 endpoints GET) | Casos de uso | `Zentric.Application/<Contexto>/Queries/` | ✅ Implementados (Users, Warehouses, Catalog, Inventories, Orders, Logistics, Returns, Billing) | `Application/Queries/QueryHandlersTests.cs` |
+| **E-021** | `ZentricDbContext` + `*DbModel` + Mappers + `UnitOfWork` | Datos (adaptador) | `Zentric.Infrastructure/Persistence/` | ✅ Implementado — 9 `DbSet<*DbModel>`; aislamiento EF respecto a Domain (H-13 cerrado); mappers 1:1 | — |
+| **E-022** | 9 repositorios EF | Adaptadores de salida | `Zentric.Infrastructure/Persistence/Repositories/` | ✅ Implementados (uno por agregado/puerto) | — |
+| **E-023** | Migraciones EF (`InitialCreate`, `CompleteSchema`, `AddBackgroundServicesAndUpdates`) | Datos | `Zentric.Infrastructure/Migrations/` | ⚠️ Generadas; **nunca aplicadas a PostgreSQL** ([sección 11.2](#112-validaciones-no-ejecutadas-honestidad-de-evidencia)) | — |
+| **E-024** | `Program.cs` + 9 controladores (27 endpoints) | Puntos de entrada | `Zentric.Api/` | ✅ Implementado — RFC 7807 + Swagger (Bearer), XML docs y tags; sin pruebas HTTP reales (T-032) | — |
+| **E-025** | Suite `Zentric.Tests` (29 archivos, 238 casos) | Pruebas | `Zentric.Tests/` | ✅ En verde al 2026-09-26; cubre dominio, aplicación y contenedor DI | — |
+| **E-026** | `Zentric.slnx` | Configuración | raíz | ✅ Ensambla los 5 proyectos | — |
+| **E-027** | Skill `generic-sdd-agent` v6.0.0 + `sync-skill.ps1` | Operación | `.agents/skills/generic-sdd-agent/` | ✅ Repo y copia instalada alineadas (C-09 corregida); re-verificable con `Get-FileHash` ([sección 11.3](#113-cómo-re-verificar-comandos-de-referencia)) | — |
+
+### 5.4 Tabla de entidades (parte 3: E-028…E-033)
+
+| ID | Entidad | Tipo | Código | Estado verificado (2026-09-26) | Notas |
+|---|---|---|---|---|---|
+| **E-028** | Documentos `backendSDD/` | Documentos (SSoT) | `backendSDD/**` | ✅ Índice completo en la [sección 6](#6-índice-de-especificaciones-ssot) | Indexados por este orquestador |
+| **E-029** | `ZENTRIC.md` | Biblia (Ley) | raíz | ✅ Intacta + ADDENDA (ADD-001…003) | Ver C-10 en la [sección 10.3](#103-contradicciones-de-especificación--cierre) |
+| **E-030** | `ADR-0001`…`ADR-0006` | Decisiones | `backendSDD/Adr/` | ✅ Aprobadas por el Owner | Detalle en la [sección 8](#8-decisiones-adrs-y-addenda) |
+| **E-031** | `Dockerfile` | Infraestructura / Despliegue | raíz | ✅ Multi-stage .NET 10 SDK → ASP.NET 10 (EXPOSE 8080) | [Infrastructure/02-containerization-and-deployment.md](Infrastructure/02-containerization-and-deployment.md) |
+| **E-032** | `docker-compose.yml` | Infraestructura / Orquestación | raíz | ✅ PostgreSQL 16 + API | [Infrastructure/02-containerization-and-deployment.md](Infrastructure/02-containerization-and-deployment.md) |
+| **E-033** | `CheckoutTimeoutService` | BackgroundService | `Zentric.Infrastructure/BackgroundServices/CheckoutTimeoutService.cs` | ✅ Implementado — expira pedidos a los 15 min y libera stock; registra log de cada barrido | [Infrastructure/03-background-services.md](Infrastructure/03-background-services.md) |
+
+### 5.5 Cierre del mapa
+
+- **Ajenos / generados (clasificados, no mapeados):** `bin/`, `obj/`, `.git/`, `.agents/`, `.github/`, `LICENSE`, `.gitignore`, `.vscode/`, `appsettings.Development.json`.
+- **Huérfanos:** ninguno. `Software-arquitecture.md` (0 bytes) y el duplicado `03-value-objects.md` fueron eliminados el 2026-09-18.
+- **Fantasmas resueltos (100 %):** eventos de dominio + dispatcher, 9 puertos, `InventoryReservationService`, `ReturnsApprovalService`, `CheckoutTimeoutService`, los 16 commands con validadores y controladores, y Swagger UI en `/swagger`.
+- **Regla de deriva:** cualquier entidad nueva debe (1) sumarse al dominio respetando el lenguaje ubicuo, (2) mapearse en `ZentricDbContext` + `DbModel` + `Mapper` + repositorio, (3) sumar su fila aquí con evidencia de pruebas y (4) actualizar las specs de `backendSDD/` en el mismo cambio.
+- `[RIESGO]` Las herramientas de búsqueda pueden no indexar rutas no versionadas (falso negativo comprobado en etapas previas). Ante cualquier carpeta nueva sin commitear, usar escaneo directo por archivo.
+
+## 6. Índice de especificaciones (SSoT)
+
+> Este orquestador **no duplica** las especificaciones: las indexa. Los documentos canónicos viven en `/backendSDD/` y en la raíz del repositorio.
+
+### 6.1 Documentos normativos y de panorama
+
+| Documento | Contenido | Rol |
+|---|---|---|
+| [ZENTRIC.md](../ZENTRIC.md) | Ley funcional del cliente (reglas RG, dominios 1–11, roles) + `[ADDENDUM - DICTADO POR OWNER]` | **Congelada (Biblia)** — intocable; ADDENDA registradas en la [sección 8.2](#82-adiciones-a-la-biblia-addendum---dictado-por-owner-en-zentricmd) |
+| [AGENTS.md](../AGENTS.md) | Contrato operativo de agentes: arquitectura hexagonal, reglas por capa, DoD, comandos | Normativo |
+| [01-system-overview.md](01-system-overview.md) | Negocio global, alcance incluido/excluido, glosario de contexto | Panorama |
+| [02-software-architecture.md](02-software-architecture.md) | Arquitectura hexagonal, regla de dependencia, capas y puertos | Panorama |
+| `README.md` (raíz) | Presentación técnica integral del repositorio (matriz tecnológica, diagramas, guía de arranque) | Divulgación |
+
+### 6.2 Dominio — `backendSDD/Domain/`
+
+| Documento | Contenido |
+|---|---|
+| [01-domain-overview.md](Domain/01-domain-overview.md) | Visión general del dominio y bounded contexts |
+| [01-models.md](Domain/01-models.md) | Modelos por contexto: agregados, entidades, propiedades |
+| [02-aggregates-and-entities.md](Domain/02-aggregates-and-entities.md) | Agregados, entidades y relaciones |
+| [02-value-objects.md](Domain/02-value-objects.md) | Value Objects y enumeraciones |
+| [03-domain-services.md](Domain/03-domain-services.md) | Servicios de dominio (reserva, split, timeout, devoluciones) |
+| [04-domain-events.md](Domain/04-domain-events.md) | Eventos de dominio y mensajería |
+| [04-invariants-and-rules.md](Domain/04-invariants-and-rules.md) | Invariantes estrictas (lista numerada) |
+| [05-ports.md](Domain/05-ports.md) | Puertos de repositorio y de mensajería |
+| [06-business-rules.md](Domain/06-business-rules.md) | Reglas de negocio catalogadas (INV, CAT, PED, DEV, RG…) |
+| [07-lifecycle.md](Domain/07-lifecycle.md) | Máquinas de estado críticas (pedido, despacho, devolución) |
+| [services/checkout-timeout-service.md](Domain/services/checkout-timeout-service.md) | Especificación del timeout de carrito/checkout (15 min) |
+| [services/inventory-reservation-service.md](Domain/services/inventory-reservation-service.md) | Especificación de reserva de stock (ADR-0001) |
+| [services/order-splitter-service.md](Domain/services/order-splitter-service.md) | Especificación del split de pedidos en N guías |
+| [services/returns-approval-service.md](Domain/services/returns-approval-service.md) | Especificación de la doble aprobación de devoluciones |
+
+`[PENDIENTE]` **Q-06:** `backendSDD/Domain/` conserva parejas numeradas solapadas (`01-domain-overview`/`01-models`, `02-aggregates`/`02-value-objects`, `04-domain-events`/`04-invariants-and-rules`). La consolidación requiere dictamen del Owner ([sección 9.1](#91-preguntas-al-owner-abiertas)).
+
+### 6.3 Aplicación, infraestructura y presentación
+
+| Documento | Contenido |
+|---|---|
+| [Application/01-use-cases-and-ports.md](Application/01-use-cases-and-ports.md) | Casos de uso CQRS y puertos de la capa de aplicación |
+| [Infrastructure/01-data-access.md](Infrastructure/01-data-access.md) | Persistencia EF Core, `DbModel`, mappers, repositorios y migraciones |
+| [Infrastructure/02-containerization-and-deployment.md](Infrastructure/02-containerization-and-deployment.md) | Dockerfile, docker-compose y despliegue |
+| [Infrastructure/03-background-services.md](Infrastructure/03-background-services.md) | Background services (expiración de checkout) |
+| [Presentation/01-endpoints.md](Presentation/01-endpoints.md) | Catálogo de los 27 endpoints REST, seguridad OpenAPI y RFC 7807 |
+
+### 6.4 ADRs — `backendSDD/Adr/` (decisiones vigentes)
+
+| ADR | Título | Estado |
+|---|---|---|
+| [0001](Adr/0001-reserva-fragmentacion-contingencia.md) | Reserva de inventario: bodega única con fraccionamiento de contingencia | accepted (2026-09-17) |
+| [0002](Adr/0002-clave-inventario-variantid.md) | Clave del inventario: `VariantId` (SKU) | accepted (2026-09-17) |
+| [0003](Adr/0003-variante-obligatoria-productos-fisicos.md) | Variante obligatoria solo para productos físicos | accepted (2026-09-17) |
+| [0004](Adr/0004-estado-cancelacion-despacho.md) | Estado de cancelación de despacho | accepted |
+| [0005](Adr/0005-modelado-carrito-compras.md) | Modelado del carrito de compras (`Cart` como estado con timeout) | accepted |
+| [0006](Adr/0006-resolucion-contradiccion-ley-addendum.md) | Precedencia del ADDENDUM sobre la Ley original (C-08/Q-13) | accepted (2026-09-19) |
+
+### 6.5 Specs activas (códigos SPEC)
+
+| ID | Spec | Estado |
+|---|---|---|
+| SPEC-000 | Adopción SDD (bootstrap brownfield) | hecha |
+| SPEC-001 | Ley funcional Zentric | congelada (Biblia) |
+| SPEC-002 | Dominio (modelos, reglas, invariantes, puertos, eventos, ciclo de vida) | viva |
+| SPEC-003 | Aplicación (casos de uso y puertos) | viva |
+| SPEC-004 | Infraestructura (EF Core, mapeos, migraciones, background services, Docker) | viva |
+| SPEC-005 | Presentación (endpoints REST + OpenAPI) | viva |
+| SPEC-006 | Trazabilidad de la tanda no registrada (T-011…T-022) | hecha |
+| SPEC-007 | Validación de entrada + RFC 7807 + higiene (H-09/H-11/H-12) | hecha |
+
+## 7. Estado de implementación por capa
+
+> Verificado el 2026-09-26 por enumeración de archivos + `dotnet test` (238/238). Leyenda: ✅ hecho · ⚠️ parcial · 🟡 pendiente.
+
+### 7.1 Zentric.Domain (el centro)
+
+✅ **Hecho**
+- 9 agregados raíz: `User`, `Buyer`, `Product`, `Inventory`, `Warehouse`, `CustomerOrder`, `FulfillmentOrder`, `Invoice`, `ReturnRequest`; entidades hijas `ProductVariant`, `OrderItem`, `Shipment`.
+- Value Objects: `Email`, `FullName` (Users), `Money`, `VariantAttribute` (Products). Enums: `UserRole`, `UserStatus`, `ProductType`, `ProductStatus`, `OrderStatus`, `FulfillmentStatus`, `ReturnStatus`, `InvoiceType`, `WarehouseType`.
+- 6 eventos de dominio con emisión real: `OrderCreatedDomainEvent`, `OrderPaidDomainEvent`, `CartExpiredDomainEvent`, `PhysicalProductShippedDomainEvent`, `PartialFulfillmentCancelledDomainEvent`, `ReturnApprovedEvent` (+ `Entity` base con `AddDomainEvent`).
+- 2 servicios de dominio: `InventoryReservationService` (reserva multi-bodega con fallo si no alcanza), `ReturnsApprovalService`.
+- 9 puertos de repositorio, uno por agregado.
+- Reglas duras implementadas y probadas: INV-01 (no negatividad), CAT-03 (variante obligatoria en físicos), estados de pedido/despacho/devolución, "Stock Fantasma" (`CancelDueToNoStock` + `ReconcileGhostStock`), devolución aprobada → stock "Usado" (ADD-002).
+
+⚠️ **Deuda registrada**
+- Sin abstracción de tiempo (`DateTime.UtcNow` directo en entidades — H-06): las reglas temporales (timeout) no son deterministas en pruebas.
+- Naming residual (`ReciveReturnedStock`; `Avalible` ya corregido a `Available`): Q-09 abierta.
+- Eventos de usuario marcados `// TODO` en `User.cs` (Block/Activate/Delete/UpdateEmail): la suspensión en cascada al bloquear vendedor (T-017) no existe.
+- IDs `Guid` planos y ausencia de VO `Address` (G-07, T-004).
+
+### 7.2 Zentric.Application (orquestación)
+
+✅ **Hecho**
+- **16 Commands** con handler y `Result<T>`: `CreateUserCommand`; `CreateWarehouseCommand`; `CreateProductCommand`, `PublishProductCommand`; `AddStockCommand`; `CreateCartCommand`, `AddOrderItemCommand`, `CheckoutOrderCommand`, `PayOrderCommand`; `CreateFulfillmentOrderCommand`, `DispatchFulfillmentCommand`, `CancelFulfillmentOrderDueToNoStockCommand`; `RequestReturnCommand`, `InspectReturnCommand`, `ApproveReturnCommand`; `GenerateInvoicesCommand`.
+- **8 archivos de Queries** (11 endpoints GET): Users, Warehouses, Catalog, Inventories, Orders, Logistics, Returns, Billing.
+- **13 validadores FluentValidation** + `ValidationBehavior<,>` (fallo de negocio sin excepción; registrados con `AddOpenBehavior`).
+- `ReturnApprovedEventHandler` (comunicación Devoluciones → Inventario por evento).
+- `Result`/`Result<T>`, `DomainEventNotification<T>`, `IUnitOfWork`.
+- Flujo de checkout completo: `Cart → Checkout (reserva + creación de FulfillmentOrder por vendedor) → Pay → Dispatch`, con cancelación por timeout vía background service.
+
+⚠️ **Deuda registrada**
+- Los handlers traducen guardas conocidas del dominio con `catch` filtrado (`ArgumentException`/`InvalidOperationException`) → `Result.Failure` (11 archivos). Es consistente entre sí, pero **requiere ratificación del Owner** por su relación con AGENTS.md, sección 3.2 (observación OBS-02, [sección 10.2](#102-riesgos-y-observaciones-vigentes)).
+- `InventoryReservationService` reserva recorriendo bodegas sin criterio explícito de prioridad (bodega única primero / mayor stock / `Marketplace`), que es lo que dicta ADR-0001 (observación OBS-01; verificación V-02, [sección 9.2](#92-verificaciones-de-consistencia-pendientes)).
+- Sin cobertura de tests E2E HTTP (T-032).
+
+### 7.3 Zentric.Infrastructure (tecnología)
+
+✅ **Hecho**
+- `ZentricDbContext` con 9 `DbSet<*DbModel>` (aislamiento estricto EF ↔ Domain: H-13 cerrado), 9 mappers (`*Mapper`), 10 modelos (`*DbModel`).
+- 9 repositorios EF + `UnitOfWork` que guarda y **despacha los eventos de dominio** (`DomainEventDispatcher`).
+- `CheckoutTimeoutService` (BackgroundService): barre cada minuto, cancela pedidos expirados (15 min), devuelve stock reservado y registra log.
+- 3 migraciones generadas: `InitialCreate`, `CompleteSchema`, `AddBackgroundServicesAndUpdates`.
+- `Dockerfile` multi-stage y `docker-compose.yml` (PostgreSQL 16 + API).
+
+⚠️ **Deuda registrada**
+- Migraciones **nunca aplicadas** contra PostgreSQL real; mapeo EF sin validar en runtime (OBS-03, [sección 10.2](#102-riesgos-y-observaciones-vigentes)).
+- Credenciales de PostgreSQL en claro en `Zentric.Api/appsettings.json` (R-16; OBS-04).
+- Sin índice único verificado en BD para `Email`/`IdentityDocument` (la unicidad hoy es de aplicación).
+
+### 7.4 Zentric.Api (presentación)
+
+✅ **Hecho**
+- `Program.cs` (Composition Root) + `ApiControllerBase` + 8 controladores de negocio (**27 endpoints HTTP**).
+- RFC 7807 (`AddProblemDetails()` + `UseExceptionHandler()`), validadores y comportamiento de pipeline registrados.
+- Swagger UI (`/swagger`) y OpenAPI v1 (`/swagger/v1/swagger.json`): esquema `Bearer` (JWT) preparado, XML docs activadas, 8 tags por bounded context. Rutas abiertas en desarrollo hasta que exista el módulo técnico de Auth (fuera de alcance).
+
+🟡 **Pendiente**
+- Pruebas de extremo a extremo por HTTP/TestServer (T-032): la API no se ha levantado contra peticiones reales.
+
+### 7.5 Zentric.Tests (QA)
+
+✅ **Hecho** — 29 archivos de suite, **238 casos en verde** (2026-09-26): reglas de dominio por agregado (Inventory, Warehouse, User, Product/Variantes, Money, CustomerOrder, FulfillmentOrder, Invoice, ReturnRequest), validadores FluentValidation, comportamiento del pipeline y una suite de integración DI real (MediatR + FluentValidation + handlers con repositorios falsos).
+
+🟡 **Pendiente** — `Buyer` y VOs `Email`/`FullName` sin pruebas propias (T-002b); sin pruebas E2E HTTP; sin pruebas contra PostgreSQL real.
+
+### 7.6 Build, higiene y operación
+
+| Artefacto | Estado |
+|---|---|
+| `.editorconfig` | ✅ Presente |
+| CI `.github/workflows/ci.yml` | ✅ restore + build + test (.NET 10) — `[OBSERVADO]` solo dispara en push/PR a `main`, no a `develop` (OBS-05, [sección 10.2](#102-riesgos-y-observaciones-vigentes)) |
+| `Dockerfile` + `docker-compose.yml` | ✅ Presentes |
+| `.dockerignore` | 🟡 No presente (verificado 2026-09-26); crear en la Fase 6 (gate Docker, [sección 11.4](#114-gates-y-criterios-de-finalización-del-proyecto)) |
+| `README.md` | ✅ Publicado (matriz técnica, diagramas, guía de arranque) |
+| Analizadores / `TreatWarningsAsErrors` | ⚠️ Verificado 2026-09-26: el build emite **12 warnings `SYSLIB0050`** (mappers EF con `FormatterServices`); sin `TreatWarningsAsErrors` (OBS-06, [sección 10.2](#102-riesgos-y-observaciones-vigentes)) |
+
+## 8. Decisiones, ADRs y ADDENDA
+
+### 8.1 Decisiones del Owner aplicadas (fuente: ADRs)
+
+| Pregunta resuelta | Decisión | Registro |
+|---|---|---|
+| Q-01 — ¿fraccionar la reserva entre bodegas? | **A3 híbrido:** bodega única si cubre; fraccionamiento solo como contingencia si ninguna cubre; fallo + liberación si la suma no alcanza. N guías cuando hubo fraccionamiento | [ADR-0001](Adr/0001-reserva-fragmentacion-contingencia.md) |
+| Q-02 — ¿clave del inventario: producto o variante? | **B2:** inventario por `VariantId` (SKU); `ProductVariant` como entidad hija; clave `(VariantId, WarehouseId)` | [ADR-0002](Adr/0002-clave-inventario-variantid.md) |
+| Q-10 — ¿variante obligatoria? | **C3:** obligatoria solo en `Physical`; `Digital` puede nacer sin variantes (CAT-03) | [ADR-0003](Adr/0003-variante-obligatoria-productos-fisicos.md) |
+| Q-03 — cancelación de despacho | Estado único `Cancelled` + `CancellationReason` (Stock Fantasma) | [ADR-0004](Adr/0004-estado-cancelacion-despacho.md) |
+| Q-04 — ¿`Cart` es estado de `CustomerOrder`? | Sí: `Cart` es estado inicial con timeout de 15 min | [ADR-0005](Adr/0005-modelado-carrito-compras.md) |
+| Q-13 / C-08 — Ley duplicada (`DOMINIO 8/9/10`) | **El ADDENDUM tiene la última palabra** sobre el bloque base; se adoptan sus estados/reglas para Logística, Devoluciones y Facturación | [ADR-0006](Adr/0006-resolucion-contradiccion-ley-addendum.md) |
+
+### 8.2 Adiciones a la Biblia (`[ADDENDUM - DICTADO POR OWNER]` en ZENTRIC.md)
+
+| ID | Dominio afectado | Regla dictada (resumen) | Cumplimiento en código |
+|---|---|---|---|
+| ADD-001 | Dom. 8 — Logística | Estados Empacado/Despachado; **Stock Fantasma** → cancelación con devolución obligatoria | ✅ `FulfillmentStatus` + `CancelDueToNoStock` + `ReconcileGhostStock` (verificación V-01, [sección 9.2](#92-verificaciones-de-consistencia-pendientes)) |
+| ADD-002 | Dom. 9 — Devoluciones | Prohibida la devolución de digitales; flujo físico inspección → aprobación del Vendedor → vuelta al stock con etiqueta "Usado" | ✅ `ReturnRequest` + `ReturnApprovedEvent` → `ReturnToUsedStock` (H-14 cerrado) |
+| ADD-003 | Dom. 10 — Facturación | Factura Maestra, Detalle Zentric y Factura de Vendedor (Split) | ✅ `InvoiceType` = `Master`, `ZentricDetail`, `VendorDetail` |
+
+`[PENDIENTE]` **C-10:** el bloque base de `DOMINIO 8/9/10` no lleva el rótulo `[ADDENDUM - DICTADO POR OWNER]` que exige [AGENTS.md, sección 0.7](../AGENTS.md#07-inmutabilidad-de-los-documentos-biblia-y-registro-de-cambios). La Biblia es intocable: **solo el Owner puede autorizar añadir el rótulo** (sin tocar el texto).
+
+### 8.3 Trazabilidad de preguntas ya cerradas
+
+| Pregunta | Estado | Evidencia |
+|---|---|---|
+| Q-01, Q-02, Q-10 | ✅ Resueltas 2026-09-17 | ADR-0001/0002/0003 |
+| Q-03, Q-04 | ✅ Resueltas | ADR-0004/0005; código y pruebas alineados |
+| Q-13 (bloqueante) | ✅ Resuelta 2026-09-19 | ADR-0006; `FulfillmentStatus`, `InvoiceType` y flujo de devolución corregidos |
+| Q-14 | ⚠️ Parcial — 2026-09-18 se corrigió el arnés (`AddLogging()`); **el licenciamiento de MediatR 14 / FluentValidation sigue sin verificar** | R-19 ([sección 10.2](#102-riesgos-y-observaciones-vigentes)) |
+
+> **Regla:** ninguna decisión se "resuelve" solo en código. Si un cambio toca una regla de negocio, primero se dicta/documenta (ADR o ADDENDUM) y después se implementa ([AGENTS.md, secciones 0.3](../AGENTS.md#03-el-freno-de-mano-cero-asunciones) y [0.7](../AGENTS.md#07-inmutabilidad-de-los-documentos-biblia-y-registro-de-cambios)).
+
+## 9. Preguntas abiertas y bloqueos
+
+> **Freno de mano ([AGENTS.md, sección 0.3](../AGENTS.md#03-el-freno-de-mano-cero-asunciones)):** cuando una pregunta esté abierta y el trabajo dependa de ella, el agente **se detiene**, la reporta y propone redactar la especificación antes de escribir código. Solo el Owner dicta las reglas.
+
+### 9.1 Preguntas al Owner (abiertas)
+
+| ID | Pregunta | Impacto | Bloquea |
+|---|---|---|---|
+| **Q-05** | ¿`Vendor` o `Seller`? (el código migró bodega/producto a `Vendor`; `UserRole.Seller` permanece como rol de negocio) | Lenguaje ubicuo / contratos | Renombrado masivo (T-008) |
+| **Q-06** | Consolidación de los documentos numerados solapados de `backendSDD/Domain/` | Navegabilidad de la SSoT | Reorganización documental |
+| **Q-07** | Formato y alcance de `IdentityDocument` (el campo ya existe y es obligatorio en el código; falta definir formato/país y si la unicidad exige constraint de BD) | Validez de datos de identidad | T-006 (cierre formal) |
+| **Q-08** | Residual: ¿se crea `PaymentReceipt` / se define pasarela? (`PaymentTokens` ya fue eliminado del código) | Invariante 9 / pagos | T-009 |
+| **Q-09** | Naming canónico pendiente: `ReciveReturnedStock`, `Inventory` vs `InventoryItem`, `Email` vs `EmailAddress`, `Administrator` vs `Admin`, `Name` vs `Title`… | Coste de renombrado creciente | T-008 |
+| **Q-11** | Modelo de atributos de variante: ¿nombre/valor libres o catálogo cerrado? ¿obligatorios? ¿límites de longitud? | Refinamiento de catálogo | T-010b |
+| **Q-12** | 4 sub-decisiones `[PROPUESTO]` de ADR-0003 (semántica de `HasVariant`/`CanBeSold`, variantes en digitales, borrado lógico de la última variante) | Cierre definitivo de ADR-0003 | T-010c (cierre formal) |
+| **Q-14** | Licenciamiento de MediatR 14 y FluentValidation para uso comercial (el modelo de licencia 13+ ejecuta una comprobación en runtime) | Cumplimiento / sostenibilidad | Nada del roadmap |
+
+### 9.2 Verificaciones de consistencia pendientes
+
+| ID | Verificación | Evidencia del hallazgo |
+|---|---|---|
+| **V-01** | **ADR-0006 vs código (Fulfillment):** el ADR declara los estados `Packed` y `Dispatched` como dictamen del ADDENDUM, mientras el código implementa 5 estados (`PendingPack → Packed → Dispatched → Delivered → Cancelled`) y nace en `PendingPack`. Confirmar con el Owner cuál es la máquina de estados vigente | `FulfillmentStatus.cs` vs [ADR-0006](Adr/0006-resolucion-contradiccion-ley-addendum.md) |
+| **V-02** | **ADR-0001 vs `InventoryReservationService`:** el ADR exige bodega única primero y fraccionamiento solo como contingencia (mayor stock, prioridad `Marketplace`); el servicio actual recorre bodegas en el orden que entregue el repositorio (OBS-01, [sección 10.2](#102-riesgos-y-observaciones-vigentes)) | `InventoryReservationService.cs` vs [ADR-0001](Adr/0001-reserva-fragmentacion-contingencia.md) |
+| **V-03** | **C-10:** ¿se autoriza rotular el bloque base de `DOMINIO 8/9/10` como `[ADDENDUM - DICTADO POR OWNER]` para distinguir texto del cliente de la expansión? | `git diff` de [ZENTRIC.md](../ZENTRIC.md) |
+
+### 9.3 Bloqueos vigentes
+
+1. **Ninguno bloquea build/pruebas**: la suite está 100 % verde y el árbol compila.
+2. **Q-05 y Q-09** afectan el renombrado masivo (T-008): aplazarlas encarece cada artefacto nuevo que use los nombres actuales.
+3. **Q-14** es riesgo de cumplimiento si el producto se comercializa.
+4. **V-01** no debe resolverse por código: cualquier ajuste de la máquina de estados de despacho requiere dictamen del Owner (Ley + ADDENDUM).
+
+> **Siguiente paso recomendado (no vinculante):** un solo dictamen del Owner con (a) Q-05/Q-09 (naming), (b) V-01 (estados de despacho) y (c) Q-07 (formato de `IdentityDocument`) desbloquea las tres deudas de mayor propagación.
+
+## 10. Riesgos, hallazgos y observaciones
+
+### 10.1 Hallazgos de código H-01…H-14 — estado verificado (2026-09-26)
+
+| ID | Hallazgo | Estado |
+|---|---|---|
+| H-01 | `DispatchStock` validaba el contador equivocado (reservado negativo) | ✅ **Corregido** — valida `ReservedQuantity` antes de decrementar (`Inventory.cs:91-105`) |
+| H-02 | `UpdateQuantities` sobrescribía los tres contadores saltándose las operaciones de negocio | ✅ **Corregido** — el método ya no existe; solo hay mutación por métodos de negocio |
+| H-03 | `Buyer.PaymentTokens` contra la invariante 9 | ✅ **Corregido** — `PaymentTokens` eliminado; queda el residual Q-08 (PaymentReceipt/pasarela) |
+| H-04 | `MarkAsDeleted()` duplicaba `Delete()` en `Inventory`/`Warehouse` | ⚠️ **Parcial** — ya no hay alias duplicado; revisar el nombre con Q-09 |
+| H-05 | `User` sin `IdentityDocument` (obligatorio y único) | ✅ **Corregido** — campo en `User` + guarda + unicidad en `CreateUserCommandHandler` |
+| H-06 | `DateTime.UtcNow` directo en entidades (46 usos detectados) | ❌ **Abierto** — sin `IClock`; afecta determinismo (R-06) |
+| H-07 | Unicidad de correo "marcada pero no aplicada" | ⚠️ **Parcial** — aplicada en la capa de aplicación (`IsEmailUniqueAsync`); sin constraint verificado en BD |
+| H-08 | `ReturnToAvalible` sin guarda de cantidad positiva | ✅ **Corregido** (2026-09-17) — `ReturnToAvailable` valida `quantity > 0` |
+| H-09 | `catch (Exception)` genérico en Application | ✅ **Corregido** en SPEC-007 |
+| H-10 | La spec de Application prometía validación de stock inexistente | ✅ **Superado** — la reserva real existe (`InventoryReservationService` en checkout); revisar redacción de [Application/01-use-cases-and-ports.md](Application/01-use-cases-and-ports.md) |
+| H-11 | Middleware sin `AddProblemDetails()`; FluentValidation sin validadores/pipeline | ✅ **Corregido** en SPEC-007 |
+| H-12 | `Class1.cs` vacíos en Application/Infrastructure | ✅ **Corregido** en SPEC-007 |
+| H-13 | EF mapeaba agregados de dominio directamente | ✅ **Corregido** — `*DbModel` + mappers convierten en la frontera |
+| H-14 | `ReturnToUsedStock` nunca se invocaba (ADD-002 incumplido) | ✅ **Corregido** — `ReturnApprovedEvent` → `ReturnApprovedEventHandler` → stock "Usado" |
+
+### 10.2 Riesgos y observaciones vigentes
+
+| ID | Tipo | Descripción | Evidencia | Mitigación propuesta |
+|---|---|---|---|---|
+| R-06 | Testabilidad | Reloj directo (`DateTime.UtcNow`) en dominio e infraestructura | `User.cs`, `Inventory.cs`, `CheckoutTimeoutService.cs`… | T-004: abstracción `IClock` |
+| R-08 | Higiene | Analizadores / `TreatWarningsAsErrors` no activados (ver también OBS-06) | raíz del repo | Evaluar `AnalysisLevel` en los `.csproj` |
+| R-09 | Lenguaje ubicuo | Naming residual vs spec (`ReciveReturnedStock`, `Inventory` vs `InventoryItem`…) | Q-09 ([sección 9.1](#91-preguntas-al-owner-abiertas)) | Dictamen del Owner → T-008 |
+| R-16 / OBS-04 | Seguridad | Credenciales PostgreSQL en claro en `appsettings.json` y en compose | `Zentric.Api/appsettings.json`, `docker-compose.yml` | Mover a user-secrets / variables de entorno antes de producción |
+| R-19 | Licencias | MediatR 14 ejecuta comprobación de licencia en runtime (13+ cambió el modelo) | stack trace `MediatRServiceCollectionExtensions.CheckLicense` | Dictamen Q-14 |
+| OBS-01 | Consistencia con ADR-0001 | `InventoryReservationService` no codifica la prioridad (bodega única → mayor stock → `Marketplace`) | `InventoryReservationService.cs` | Verificación V-02 ([sección 9.2](#92-verificaciones-de-consistencia-pendientes)) |
+| OBS-02 | Consistencia con AGENTS.md, sección 3.2 | 11 handlers usan `catch` filtrado de guardas conocidas → `Result.Failure` (no hay `catch` genérico pelado) | búsqueda `catch (` en `Zentric.Application` | Ratificación del Owner; documentar el patrón si se aprueba |
+| OBS-03 | Persistencia | Migraciones y mapeo EF sin ejecución real contra PostgreSQL | `Migrations/` | Fase 6: levantar compose y aplicar migraciones |
+| OBS-05 | CI | El workflow solo dispara en `main`; `develop` no se valida en cada push | `.github/workflows/ci.yml` | Ampliar `branches` a `develop` (decisión menor del Owner) |
+| OBS-06 | Calidad de build | El build emite **12 warnings `SYSLIB0050`**: los mappers EF (`WarehouseMapper`, `BuyerMapper`, `InventoryMapper`, `CustomerOrderMapper` ×2, `InvoiceMapper`, `FulfillmentOrderMapper` ×2, `ReturnRequestMapper`, `ProductMapper` ×3) usan `FormatterServices` (obsoleto) para materializar agregados | `dotnet build --no-incremental` (2026-09-26) | Migrar la materialización a una fábrica interna por agregado y activar `TreatWarningsAsErrors` |
+
+### 10.3 Contradicciones de especificación — cierre
+
+- **Cerradas:** C-01/C-02 (ADR-0001/0002), C-03/C-04 (ADR-0004/0005), C-06 (documentos creados), C-08 (ADR-0006), C-09 (skill sincronizada el 2026-09-18).
+- **Vigentes:** C-05 residual (Q-05), C-07 (Q-06), C-10 (V-03). Ninguna bloquea build/pruebas; todas requieren dictamen o autorización del Owner.
+
+## 11. Verificación, gates y criterios de finalización
+
+### 11.1 Línea base ejecutada (2026-09-26)
+
+| Comando / verificación | Resultado | Evidencia |
+|---|---|---|
+| `cd backend; dotnet test Zentric.slnx --nologo` | ✅ `total: 238, failed: 0, succeeded: 238, skipped: 0` (7.9 s de suite; compilación de los 5 proyectos en la misma corrida) | salida de consola |
+| `cd backend; dotnet build Zentric.slnx --no-restore` | ✅ `Build succeeded` — `[OBSERVADO]` **12 warnings `SYSLIB0050`** en mappers de `Zentric.Infrastructure` (OBS-06) | salida de consola |
+| `git --no-pager log --oneline -6` | ✅ HEAD `1d85a48` en `develop`; últimos hitos: timeout de checkout con 238 tests, queries CQRS, docs SDD, README y corrección mermaid | salida de consola |
+| `git status --short` | ✅ Sin cambios pendientes al inicio de la sesión (los cambios de esta sesión están declarados en la [sección 12](#12-registro-de-acciones-y-control-del-documento)) | salida de consola |
+| `(Select-String 'Zentric.Api\Controllers\*.cs' '\[Http').Count` | ✅ **27** endpoints | salida de consola |
+| Enumeración de `Zentric.Domain` / `Application` / `Infrastructure` / `Api` / `Tests` | ✅ 9 agregados, 16 commands, 8 archivos de queries, 13 validadores, 9 repositorios, 9 controladores, 29 archivos de suite | listados por archivo |
+| `DbSet<` en `ZentricDbContext` | ✅ **9** (todos sobre `*DbModel`) | lectura directa |
+
+### 11.2 Validaciones NO ejecutadas (honestidad de evidencia)
+
+- **PostgreSQL real:** las 3 migraciones nunca se aplicaron; no hay servidor en el entorno actual ni pruebas de integración de datos.
+- **Comportamiento HTTP:** la API no se levantó; no hay ninguna petición real ejecutada contra los 27 endpoints (T-032 pendiente).
+- **Mapeo EF en runtime:** `OwnsOne`/`OwnsMany` y conversiones de Value Objects sin validar contra una base real.
+- **Lint/análisis estático:** sin `AnalysisLevel`/`TreatWarningsAsErrors`; el build ya emite hallazgos reales (**12 × `SYSLIB0050`**, OBS-06).
+- **Licenciamiento (Q-14):** sin verificación legal de MediatR/FluentValidation.
+
+### 11.3 Cómo re-verificar (comandos de referencia)
+
+```powershell
+# 1) Suite completa (compila + prueba)
+cd backend; dotnet test Zentric.slnx --nologo
+
+# 2) Estado del repositorio
+git --no-pager log --oneline -5; git status --short
+
+# 3) Conteo de endpoints y de DbSets
+(Select-String -Path 'Zentric.Api\Controllers\*.cs' -Pattern '\[Http').Count
+(Select-String -Path 'Zentric.Infrastructure\Persistence\ZentricDbContext.cs' -Pattern 'DbSet<').Count
+
+# 4) Integridad de la Ley (debe seguir siendo adiciones sin reescritura del texto original)
+git diff --numstat -- ZENTRIC.md
+
+# 5) Sincronía de la skill instalada (hash repo = hash copia)
+Get-FileHash '.agents/skills/generic-sdd-agent/SKILL.md' | Select-Object Hash
+Get-FileHash "$env:USERPROFILE\.agents\skills\generic-sdd-agent\SKILL.md" | Select-Object Hash
+```
+
+### 11.4 Gates y criterios de finalización del proyecto
+
+1. **Compilación y pruebas limpias:** build sin errores y **238/238** pruebas en verde, registrando comando y código de salida (`[PENDIENTE]` reparar OBS-06 para llegar a 0 warnings).
+2. **Cumplimiento estricto de las specs de dominio:** cada regla de `backendSDD/Domain/` implementada sin omisiones y con prueba asociada.
+3. **Esquema real:** contra PostgreSQL, las migraciones crean el esquema y la API opera con él (Fase 6; hoy `NOT_STARTED`).
+4. **Desacoplamiento estricto:** `Zentric.Domain` sin referencias a EF, ASP.NET, HTTP ni MediatR (✅ verificado).
+5. **Trazabilidad completa:** `RequestDTO → dominio → caso de uso → servicio → puerto → mapper/repositorio`.
+6. **Contrato REST verificado:** los 27 endpoints existen, ejecutan su caso de uso y responden método/código/DTO pactados (E2E pendiente, T-032).
+7. **Validación de integración:** pruebas contra PostgreSQL real (bootstrap, persistencia, lectura y auditoría de eventos); hoy pendientes.
+8. **Cierre reproducible:** un agente nuevo repite el diagnóstico y obtiene la misma fase siguiente sin conocimiento conversacional.
+9. **Trazabilidad requisito → código → prueba:** matriz 11.5; un requisito sin prueba o evidencia queda `PARTIAL`, nunca `VERIFIED`.
+10. **Entrega Docker reproducible:** `Dockerfile`, `.dockerignore`, compose, healthchecks, build sin caché, arranque limpio, smoke y apagado (Fase 6).
+11. **Handler global de excepciones:** existe y cumple RFC 7807; falta el smoke de errores conocidos/desconocidos.
+12. **Diagnóstico completo por etapas:** cada fase y entregable con estado y evidencia en el tablero 2.2.
+13. **Alineación cruzada:** nombres, firmas, códigos HTTP, validaciones y puertos coinciden entre código y SDD (alignment gate, [sección 3.1](#31-diagnóstico-obligatorio-y-selección-de-tarea)).
+
+Regla final: cualquier prueba fallida, endpoint simulado, dependencia no validada o gate no ejecutado deja el estado máximo en `IN_PROGRESS` o `BLOCKED`, nunca `COMPLETE`.
+
+### 11.5 Matriz mínima de trazabilidad (ejemplo vigente)
+
+| Requisito / contrato SDD | Archivo o símbolo | Prueba / comando | Estado | Evidencia |
+|---|---|---|---|---|
+| INV-01 (no negatividad) | `Inventory.cs` | `InventoryTests` | ✅ `VERIFIED` | 238/238 (2026-09-26) |
+| CAT-03 (variante en físicos) | `Product.cs` | `ProductTests` | ✅ `VERIFIED` | 238/238 |
+| ADD-002 (stock "Usado") | `ReturnApprovedEventHandler` | `ReturnRequestTests` + flujo de evento | ✅ `VERIFIED` (diseño + pruebas) | H-14 cerrado |
+| Contrato REST (27 endpoints) | [Presentation/01-endpoints.md](Presentation/01-endpoints.md) | E2E HTTP (T-032) | ⚠️ `PARTIAL` | endpoints compilan; sin peticiones reales |
+| Migraciones aplicadas | `Migrations/` | `docker compose` + migraciones EF | 🟡 `NOT_STARTED` | OBS-03 |
+| OBS-06 (warnings de build) | `Mappers/*.cs` | `dotnet build` sin warnings | ❌ `FAILING` | 12 × `SYSLIB0050` |
+
+### 11.6 Informe de cierre
+
+El formato obligatorio del informe de cierre está definido en la [sección 3.6](#36-formato-del-reporte-de-tarea-y-del-informe-de-cierre); toda sesión lo adjunta al terminar y registra su entrada en la sección 12.
+
+## 12. Registro de acciones y control del documento
+
+### 12.1 Registro de acciones (append-only)
+
+> Formato: `[fecha] acción · objeto · resultado/evidencia`. Las entradas del ciclo anterior a la versión 3.0.0 fueron retiradas por decisión del Owner (2026-09-26): el historial completo permanece en git hasta el commit `1d85a48` y en los ADR.
+
+```text
+[2026-09-26] Reestructuración completa de backendSDD/SDD.md → Orquestador agéntico v3.0.0: secciones 0–12, tablero de fases 0A–6, estados NOT_STARTED/PARTIAL/IMPLEMENTED/FAILING/VERIFIED, gates y formato de informe · decisión del Owner · objeto: E-028
+[2026-09-26] Eliminación del símbolo de sección (signo tipográfico de párrafo) en todo el repositorio: 28 ocurrencias en 20 archivos de código (Program.cs, controladores, validadores, behavior, dominio y pruebas) + 6 en README/specs + 45 en este documento, reemplazadas por "sección/secciones" · objeto: E-024, E-025, E-028
+[2026-09-26] Verificación de completitud contra la metodología v6.0.0: auditoría de las secciones obligatorias (13.2), matriz 360° (12), informe de mapeo (14.8), research log (7.8), gates/fases (10/11) y checklist (21) · se añadieron las secciones 13 a 18 · objeto: E-028
+[2026-09-26] Investigación web de estándares vigentes con fuente primaria: OWASP API Top 10 2023, RFC 9457 (obsoleta 7807), .NET 10 LTS hasta 2028-11, PostgreSQL 16.15 hasta 2028-11-09, OpenAPI 3.2.1 (2026-09-10), licencia comercial de MediatR desde 13.0.0 (FluentValidation sin licencia), xUnit v3, Ley 25.326 · hallazgo: se corrige la hipótesis previa de licencia de FluentValidation y se precise el alcance de la licencia de MediatR (solo producción) · objeto: E-019, E-024
+[2026-09-26] Conversion de referencias numeradas sueltas a enlaces con ancla (regla 23 de la metodologia): 74 referencias convertidas y validadas, 0 anclas invalidas, 0 ocurrencias del simbolo de seccion · objeto: E-028
+[2026-09-26] Re-verificacion ejecutada · cd backend; dotnet test Zentric.slnx --nologo → 238/238 PASS (334 ms) · objeto: E-025
+[2026-09-27] Reestructuración a monorepo: `SDD/` → `backendSDD/`, proyectos C# movidos a `backend/`, `frontend/` y `frontendSDD/` creados. 151 referencias migradas en 27 archivos; 360 enlaces Markdown verificados con 0 rotos (se corrigieron 32, incluidos enlaces anidados mal formados en `AGENTS.md` y rutas de código en README/ADRs) · objeto: E-028
+[2026-09-27] SPEC-008 aplicado y verificado contra ejecución: (1) 12 warnings `SYSLIB0050` sustituidos por `RuntimeHelpers.GetUninitializedObject` → build con 0 warnings; (2) `Entity._domainEvents` corregido con resolución perezosa, eliminando una `NullReferenceException` en `Checkout`; (3) 6 handlers sin `SaveChangesAsync` (CreateCart, AddOrderItem, CreateFulfillmentOrder, InspectReturn, GenerateInvoices, CancelFulfillmentOrderDueToNoStock) detectados por búsqueda anti-amnesia y corregidos; (4) colisiones de `IdentityMap` en `CustomerOrderRepository` e `InventoryRepository` resueltas con lecturas `AsNoTracking` y actualización explícita · objeto: OBS-06, SPEC-008
+[2026-09-27] Entorno real levantado: `postgres:16.15-alpine` healthy, 3 migraciones aplicadas, 13 tablas creadas, `dotnet ef database update` ejecutado, imagen de API construida (exit 0) y `/health` respondiendo `200 {"status":"healthy","database":"up"}` · objeto: OBS-04, OBS-05
+[2026-09-27] Flujo E2E verificado contra PostgreSQL real: usuario → bodega → producto con variante → stock → carrito → ítem → checkout → pago → facturación. Confirmado en base de datos: pedido en `PendingPayment` (1) y luego `Paid` (2), stock 50→48 disponibles con 2 reservados, orden de despacho generada y 2 facturas (36.000 ARS maestra + 1.800 ARS detalle Zentric, 5%) · objeto: T-032
+[2026-09-27] `/health` implementado en `Program.cs` con verificación de conectividad a la base de datos, más `Dockerfile` multi-etapa con usuario no root, `.dockerignore`, `.env.example`, healthchecks en compose y CI con jobs separados de backend y frontend · objeto: OBS-07, SPEC-008
+[2026-09-27] Especificación del frontend creada en `frontendSDD/` (8 documentos) tras eliminar el código React previamente generado; se conserva sólo la configuración base. Se detectó y documentó que el prompt de orquestación recibido corresponde a un dominio bancario ajeno a Zentric (roles `teller`/`natural-customer`, préstamos, transferencias, JWT) y se conservó sólo su estructura metodológica · objeto: E-033
+```
+
+### 12.2 Control del documento
+
+| Campo | Valor |
+|---|---|
+| Versión | **3.2.0** — Reestructuración a monorepo (`backend/`, `backendSDD/`, `frontend/`, `frontendSDD/`), cierre de fases 0B, 0C y 6 con evidencia ejecutada, y alta de la especificación del frontend |
+| Última actualización | 2026-09-27 |
+| Fuente de los datos | Verificación ejecutada el mismo día ([sección 11](#11-verificación-gates-y-criterios-de-finalización)) + ADRs + specs de `/SDD` |
+| Alcance | Estado vigente, mapa, decisiones, preguntas, riesgos y protocolo. No contiene la historia de iteraciones previa |
+| Regla de actualización | Patch: cifras/fechas · Minor: nueva sección, pregunta o gate · Major: reestructura (requiere decisión del Owner) |
+
+### 12.3 Convención de enlaces
+
+Los enlaces relativos de este archivo se resuelven desde `backendSDD/` (por ejemplo: `Domain/06-business-rules.md`, `Adr/0001-….md`, `../ZENTRIC.md`, `../Zentric.Domain/**`). Los enlaces internos usan los anclajes de la navegación superior; las referencias a la metodología v6.0.0 enlazan a [SKILL.md](../.agents/skills/generic-sdd-agent/SKILL.md) con su ancla.
+
+## 13. Cumplimiento normativo y estándares vigentes (verificado 2026-09-26)
+
+> **Regla de evidencia:** todo lo citado es una afirmación externa verificada contra la fuente primaria en la fecha indicada; la fuente y la fecha están en el [Research Log](#17-research-log-2026-09-26-verificación-de-estándares-vigentes). Lo no verificado se marca `[PENDIENTE]` y no se afirma como hecho.
+
+### 13.1 Estándares, dependencias y normativa aplicable
+
+| Documento | Regla / estándar | Estado vigente al 2026-09-26 | Aplicación en Zentric | Estado |
+|---|---|---|---|---|
+| OWASP | API Security Top 10, edición 2023 (10 riesgos) | Vigente | Evaluación riesgo por riesgo en la [sección 13.2](#132-owasp-api-security-top-10-2023--evaluación-por-ítem) | ⚠️ 6 riesgos con acciones pendientes |
+| IETF | RFC 9457 — *Problem Details for HTTP APIs* (julio de 2023; **obsoleta RFC 7807**) | Vigente | `AddProblemDetails()` + `UseExceptionHandler()` y `application/problem+json` | ✔ aplicado; falta usar `type` como URI y `instance`, y citar RFC 9457 (no 7807) en la spec de endpoints |
+| OAI | OpenAPI 3.2.1, publicada el 2026-09-10 | Vigente | `/swagger/v1/swagger.json` generado por ASP.NET Core 10 | ⚠️ La versión declarada por el documento generado está `[PENDIENTE]` de verificar en runtime; 3.1.2 sigue siendo una versión válida |
+| Microsoft | .NET 10 = **LTS hasta noviembre de 2028** (.NET 9 = STS hasta noviembre de 2026) | Vigente | Los 5 proyectos apuntan a `net10.0` | ✔ En soporte. Activar `CheckSdkVulnerabilities` en CI (avisa SDK fuera de soporte) |
+| PostgreSQL | Política de soporte: 5 años por versión mayor. **16.15 → 2028-11-09**; 17.11 → 2029-11-08; 18.6 → 2030-11-14; 19 en beta | Vigente | `docker-compose.yml` usa `postgres:16-alpine` | ✔ Soportado. `[PENDIENTE]` Fijar versión exacta (no etiqueta flotante) y fijar `imagePullPolicy`; evaluar salto a 18.x |
+| Lucky Penny Software | **MediatR 13.0.0 o superior exige licencia comercial**; niveles por tamaño de equipo (1-10 / 11-50 / ilimitado); sin licencia en desarrollo, CI, staging y QA; **obligatoria en producción**; versiones anteriores siguen bajo MIT/Apache-2.0; alternativa gratuita bajo RPL-1.5 | Vigente | `MediatR 14.2.0` | ⚠️ R-19: decidir licencia de producción o migración. El umbral económico no está publicado en la fuente consultada `[PENDIENTE]` de confirmar con el proveedor |
+| Lucky Penny Software | **FluentValidation no figura** entre los paquetes con licencia comercial | Vigente | 12.1.1 en `Zentric.Application` | ✔ Sin riesgo de licencia (corrige la hipótesis previa de "MediatR/FluentValidation") |
+| Npgsql | `Npgsql.EntityFrameworkCore.PostgreSQL` estable 10.0.3 (11.0.0 en RC) | Vigente | 10.0.3 | ✔ Sin cambio; no subir a RC en producción |
+| xUnit | xUnit v3 (4.0.x) es la línea actual; v2 (2.9.x) sigue publicada | Vigente | xUnit 2.9.3 | ⚠️ `[PENDIENTE]` Evaluar migración a v3 (cambio de runner y paquetes) |
+| Legal | Ley 25.326 y Decreto 1558/2001 (Argentina) — protección de datos personales | Vigente si la operación es argentina | PII tratada: `IdentityDocument`, `Email`, `FullName`, `PasswordHash`, direcciones de comprador y bodegas | 🟡 `[PENDIENTE]` **Definición del Owner**: jurisdicción aplicable, aviso de privacidad, registro de bases, derechos de los titulares y retención |
+
+### 13.2 OWASP API Security Top 10 (2023) — evaluación por ítem
+
+| # | Riesgo | Estado en Zentric (2026-09-26) | Acción / responsable |
+|---|---|---|---|
+| API1 | Broken Object Level Authorization | ⚠️ Los endpoints operan por `Guid` recibido del cliente sin verificar pertenencia (pedido, stock, devolución) | `[PENDIENTE]` Ownership por comando antes del primer dato real (Fase 6) |
+| API2 | Broken Authentication | ➖ Fuera de alcance por la Ley; esquema `Bearer` documentado en Swagger | `[PENDIENTE]` Definir perfil de tokens cuando entre el módulo de Auth |
+| API3 | Broken Object Property Level Authorization | ⚠️ Sin control de campos en DTO de respuesta ni de propiedades aceptadas | `[PENDIENTE]` DTOs de salida explícitos (Application-API-Agent) |
+| API4 | Unrestricted Resource Consumption | 🟡 Sin rate limiting ni paginación (las queries no reciben `page`/`size`) | `[PENDIENTE]` Límite de página y presupuesto de recursos |
+| API5 | Broken Function Level Authorization | ⚠️ `UserRole` existe en el dominio pero no se aplica en la capa HTTP | `[PENDIENTE]` Políticas por rol al activar Auth |
+| API6 | Unrestricted Access to Sensitive Business Flows | ⚠️ Acciones de negocio sensibles (emitir facturas, despachar, aprobar devoluciones, agregar stock) sin traza de actor | `[PENDIENTE]` Auditoría de actor + idempotencia |
+| API7 | Server Side Request Forgery | ➖ No hay clientes HTTP salientes con URI proporcionada por el usuario | Sin acción |
+| API8 | Security Misconfiguration | ⚠️ Credenciales en claro (OBS-04), rutas abiertas, sin `.dockerignore` ni healthchecks | Mover secretos a variables; gate Docker ([sección 11.4](#114-gates-y-criterios-de-finalización-del-proyecto)) |
+| API9 | Improper Inventory Management | ✅ 27 endpoints documentados + OpenAPI; ⚠️ sin versionado de API | `[PENDIENTE]` Política de versionado y deprecación |
+| API10 | Unsafe Consumption of APIs | ➖ No se consumen APIs de terceros | Sin acción |
+
+### 13.3 Problem Details (RFC 9457)
+
+- Formato de error único: `application/problem+json` con `type` (URI), `title`, `status`, `detail` e `instance`; las extensiones del negocio (`balance`, `requestId`) van como miembros de extensión, no sustituyendo campos.
+- El tipo de error debe ser una **URI**; RFC 9457 registra `about:blank` y un registro de URIs de problema comunes que deben adoptarse en lugar de inventar códigos.
+- `[PENDIENTE]` Las specs de presentación y arquitectura citan **RFC 7807** (obsoleta); deben actualizarse a RFC 9457 y documentarse la tabla `type` por error de negocio.
+
+## 14. Matriz de cobertura 360° (dimensiones aplicables)
+
+> Plantilla obligatoria de la metodología ([sección 12](#12-registro-de-acciones-y-control-del-documento) de [SKILL.md](../.agents/skills/generic-sdd-agent/SKILL.md)). Cada dimensión aplicable está marcada: ✔ cubierta · ⚠️ parcial · 🟡 pendiente · ➖ no aplica (con motivo).
+
+| # | Dimensión | Estado | Referencia o motivo |
+|---|---|---|---|
+| 1 | Propósito y señal de resultado | ✔ | Propósito en la [sección 1.1](#11-rol-objetivo-y-alcance); señal = suite verde + gates de la [sección 11.4](#114-gates-y-criterios-de-finalización-del-proyecto) |
+| 2 | Actores | ✔ | Participantes de la Ley (ZENTRIC.md) y roles de agente en la [sección 1.3](#13-registro-de-agentes-y-formato-de-delegación) |
+| 3 | Alcance y prioridad | ✔ | [secciones 1.1](#11-rol-objetivo-y-alcance) y [4](#4-fases-detalladas-fase-0a--fase-6) |
+| 4 | Costo y recursos | 🟡 | `[PENDIENTE]` Sin estimación documentada; coste de licencia MediatR y de infraestructura sin dimensionar |
+| 5 | Legal, privacidad y licencias | ⚠️ | Licencias de terceros verificadas ([sección 13.1](#131-estándares-dependencias-y-normativa-aplicable)); normativa de datos personales `[PENDIENTE]` de jurisdicción ([sección 13.1](#131-estándares-dependencias-y-normativa-aplicable), última fila) |
+| 6 | Adopción y cambio | 🟡 | `[PENDIENTE]` No hay plan de migración de datos existentes ni estrategia de rollout de versión |
+| 7 | Resultado posterior | 🟡 | `[PENDIENTE]` Gate 5 sin señal definida; candidata: tasa de error en checkout y uso de la reserva de stock |
+| 8 | UX y estados | ➖ | No hay UI en este repositorio ([sección 0](#0-entrega-y-organización-del-repositorio)). En la API los estados de error están cubiertos por Problem Details ([sección 13.3](#133-problem-details-rfc-9457)) |
+| 9 | Accesibilidad e i18n | ⚠️ | API agnóstica de idioma; `[PENDIENTE]` mensajes de error en inglés y sin versionar texto de dominio |
+| 10 | Arquitectura y datos | ✔ | Regla hexagonal y mapa 33/33 ([secciones 0](#0-entrega-y-organización-del-repositorio) y [5](#5-mapa-de-entidades-anti-amnesia)) |
+| 11 | Seguridad y amenazas | ⚠️ | Evaluación OWASP completa ([sección 13.2](#132-owasp-api-security-top-10-2023--evaluación-por-ítem)); controles de autenticación/autorización `[PENDIENTE]` |
+| 12 | Rendimiento y capacidad | 🟡 | `[PENDIENTE]` Sin objetivos medibles de latencia, volumen ni límites de concurrencia |
+| 13 | Fiabilidad y continuidad | 🟡 | `[PENDIENTE]` Sin política de backups, RPO/RTO ni plan de recuperación de PostgreSQL |
+| 14 | Observabilidad y operación | ⚠️ | Logging de hosting y traza del `CheckoutTimeoutService`; `[PENDIENTE]` métricas, trazas distribuidas, correlation-id y alertas |
+| 15 | Dependencias y cadena de suministro | ⚠️ | Licencias verificadas ([sección 13.1](#131-estándares-dependencias-y-normativa-aplicable)); `[PENDIENTE]` escaneo de vulnerabilidades y política de actualización en CI |
+| 16 | Compatibilidad y soporte | ✔ | .NET 10 LTS hasta 2028-11 y PostgreSQL 16 hasta 2028-11 ([sección 13.1](#131-estándares-dependencias-y-normativa-aplicable)) |
+| 17 | Pruebas y calidad | ✔ | 238/238 en verde; faltan E2E HTTP y pruebas contra PostgreSQL ([sección 11.2](#112-validaciones-no-ejecutadas-honestidad-de-evidencia)) |
+| 18 | Despliegue y configuración | ⚠️ | Dockerfile, compose y CI existen; nunca se han ejecutado de extremo a extremo (Fase 6) |
+| 19 | Datos y analítica | 🟡 | `[PENDIENTE]` No hay registro de auditoría persistido ni política de retención; los eventos de dominio solo viven en memoria durante la transacción |
+
+## 15. Auditoría de mapeo de entidades (formato de la metodología)
+
+> Plantilla de la sección 14.8 de [SKILL.md](../.agents/skills/generic-sdd-agent/SKILL.md), con los cruces obligatorios de la metodología (sección 14.4 de [SKILL.md](../.agents/skills/generic-sdd-agent/SKILL.md)).
+
+```text
+Auditoría de Mapeo — 2026-09-26 — alcance: todo el backend — base: commit 1d85a48
+Cobertura: 33/33 mapeadas (100 %) · Huérfanos: 0 · Fantasmas: 0
+Zonas no exploradas: (1) runtime de Docker/PostgreSQL, nunca levantado; (2) DI real en un entorno desplegado; (3) frontend, que no existe en este repositorio; (4) migraciones aplicadas a una base real
+Cruces ejecutados: archivos fuente vs mapa · rutas y handlers vs puntos de entrada · DbSet y migraciones vs datos · imports y DI vs relaciones · pruebas vs entidades · documentos y Biblia vs código · manifiestos vs dependencias · CI e infraestructura vs operación
+Cambios desde el mapa anterior: +0 ~6 −0 (E-021 a E-025 y E-033 actualizados al árbol real: DbModels, 9 repositorios, 3 migraciones, 9 controladores con 27 endpoints y 29 archivos de suite)
+Huérfanos clasificados: ninguno
+Veredicto: mapa COMPLETO para el código versionado; PARCIAL en runtime (ver zonas no exploradas)
+Siguiente paso: Fase 6 — reparación, Docker e integración real
+```
+
+**Ciclo de vida del mapa (reglas de la [sección 14.5 de la metodología](../.agents/skills/generic-sdd-agent/SKILL.md#145-deriva-y-mantenimiento)):**
+
+| Regla | Aplicación en este repositorio |
+|---|---|
+| Deriva por commit | El `mapa-base` se compara con `git log` al abrir sesión; si el árbol cambió, se reaudita solo lo afectado |
+| Actualización por hito | Cada hito actualiza las filas afectadas de la [sección 5](#5-mapa-de-entidades-anti-amnesia) y deja entrada en la [sección 12.1](#121-registro-de-acciones-append-only) |
+| Mapa no confiable | Si el mapa queda viejo o el repo cambió mucho, se marca `[OBSOLETO]` y se reconstruye antes de planificar |
+| Honestidad de cobertura | Nunca se declara cobertura total sin enumerar las zonas no exploradas (las cuatro listadas arriba) |
+
+## 16. Trazabilidad con la metodología v6.0.0
+
+### 16.1 Correspondencia con la plantilla obligatoria de este documento
+
+| Sección obligatoria ([[sección 13.2](#132-owasp-api-security-top-10-2023--evaluación-por-ítem) de la metodología](../.agents/skills/generic-sdd-agent/SKILL.md#132-plantilla-de-sddsddmd-memoria-viva-única)) | Dónde vive en este orquestador |
+|---|---|
+| 1. Contexto y alcance | Secciones 0 y 1 |
+| 2. Mapa de entidades | Sección 5 |
+| 3. Especificaciones activas | Secciones 6.5 y 18 |
+| 4. Decisiones y ADDENDA | Sección 8 y carpeta `Adr/` |
+| 5. Verificación y línea base | Sección 11 |
+| 6. Riesgos, contradicciones y preguntas | Secciones 9 y 10 |
+| 7. Estado y próximos pasos | Secciones 2.2, 4 y 12 |
+| 8. Investigación y discovery | Sección 17 |
+
+### 16.2 Gates de calidad ([[sección 10](#10-riesgos-hallazgos-y-observaciones) de la metodología](../.agents/skills/generic-sdd-agent/SKILL.md#10-gates-de-calidad-solo-en-vía-completa)) y su equivalente aquí
+
+| Gate | Equivalente en este repositorio | Estado |
+|---|---|---|
+| Gate 0 Clasificar | 1.1 (rol y objetivo) + 2.2 (tablero de fases) | ✔ |
+| Gate 1 Requisitos | 9.1 (preguntas abiertas) + 18 (FR y CA de SPEC-008) | ✔ para el trabajo en curso |
+| Gate 1B Resultado | 11.4 (señal de cierre del proyecto) | ⚠️ La señal de resultado posterior sigue pendiente (dimensión 7) |
+| Gate 2 Plan | 2.2 (tablero) + 4 (orden de fases) | ✔ |
+| Gate 3 Consistencia | 3.1 (alignment gate) + 13.2 (OWASP) | ✔ ejecutado el 2026-09-26 |
+| Gate 4 Entrega | 11.1, 11.2 y 3.5 (comandos) | ⚠️ parcial: sin E2E HTTP ni PostgreSQL real |
+| Gate 5 Resultado posterior | — | 🟡 no programado |
+
+### 16.3 Fases de la metodología ([sección 11](#11-verificación-gates-y-criterios-de-finalización)) y su equivalente aquí
+
+| Fase de la metodología | Fase del proyecto | Nota |
+|---|---|---|
+| 0 Orientación | 0A y 2.3 | Detección de stack y regla de reanudación |
+| 1 Descubrimiento | 5 y 7 | Mapa de entidades y estado por capa |
+| 2 Especificación | 6 y 18 | Índice de specs y SPEC del trabajo activo |
+| 3 Clarificación | 9 | Preguntas y verificaciones abiertas |
+| 4 Plan | 2.2 | Tablero de fases aprobado |
+| 5 Descomposición | 4 | Fases, entregables y tareas |
+| 6 Implementación | 3A, 3B, 4 y 5 | Servicios, REST, integración y pruebas |
+| 7 Diagnóstico | 3.1 y 10.1 | Matriz de decisión y estado de hallazgos |
+| 8 Revisión | 16.4 | Checklist de cierre |
+| 9 Cierre | 3.6 y 12.1 | Informe de cierre y registro |
+
+### 16.4 Autoevaluación de cierre (checklist de la [sección 21 de la metodología](../.agents/skills/generic-sdd-agent/SKILL.md#21-checklist-de-revisión-fase-8-y-autoevaluación-previa-a-cerrar))
+
+| Verificación | Estado |
+|---|---|
+| Cada requisito tiene implementación y evidencia; cada criterio de aceptación, una validación | ⚠️ E2E y PostgreSQL pendientes |
+| Los invariantes se preservan; la Biblia no fue alterada y toda adición está como ADDENDUM | ✔ (`git diff --numstat` = 38/1; ADD-001 a ADD-003) |
+| El mapa refleja el cambio; no quedan huérfanos; nada se duplicó | ✔ |
+| Se respetó la organización del código que el repo ya usa | ✔ Regla hexagonal verificada |
+| Errores coherentes y seguros; autorización en el límite correcto | ⚠️ Falta `type` URI en Problem Details ([sección 13.3](#133-problem-details-rfc-9457)) |
+| Datos válidos y migraciones seguras | ⚠️ Migraciones nunca aplicadas ([sección 11.2](#112-validaciones-no-ejecutadas-honestidad-de-evidencia)) |
+| Sin secretos, datos personales sensibles ni logs inseguros | ❌ Credenciales en claro (OBS-04) |
+| Matriz 360° marcada solo en lo aplicable | ✔ Sección 14 |
+| Afirmaciones externas con fuente, fecha y nivel; nada inventado | ✔ Secciones 13 y 17 |
+| Ninguna prueba fue ocultada, debilitada ni desactivada | ✔ 238/238 |
+| Lo no ejecutado y lo asumido está declarado | ✔ Sección 11.2 |
+| `AGENTS.md` y este archivo siguen siendo verdaderos y no se crearon archivos de más | ⚠️ Pendiente la ampliación propuesta de `AGENTS.md` ([sección 12.1](#121-registro-de-acciones-append-only)) |
+| La respuesta empieza por la conclusión y termina con el siguiente paso | ✔ Protocolo 3.6 |
+
+**Veredicto de la autoevaluación:** no es posible declarar `COMPLETE`; el estado máximo permitido es `IN_PROGRESS` (gate 4 parcial, riesgo abierto de secretos y dimensiones 360° pendientes).
+
+## 17. Research Log (2026-09-26): verificación de estándares vigentes
+
+> Registro exigido por la [sección 7.8 de la metodología](../.agents/skills/generic-sdd-agent/SKILL.md#78-research-log-en-sddsddmd-sección-88-investigación-y-discovery-opcional). Solo se asientan hallazgos verificados contra la fuente; lo no verificado queda `[PENDIENTE]`.
+
+| Fecha | Fuente | Tipo | Hallazgo y uso |
+|---|---|---|---|
+| 2026-09-26 | [OWASP API Security Top 10 2023](https://owasp.org/API-Security/editions/2023/en/0x11-t10/) | primaria | Los 10 riesgos API1 a API10 de la edición 2023, con su nombre exacto; base de la evaluación de la [sección 13.2](#132-owasp-api-security-top-10-2023--evaluación-por-ítem) |
+| 2026-09-26 | [RFC 9457 (IETF)](https://www.rfc-editor.org/info/rfc9457/) | primaria | "Problem Details for HTTP APIs" es **Proposed Standard** de julio de 2023 y **obsoleta RFC 7807**; añade un registro de URIs de tipo comunes, aclara el tratamiento de problemas múltiples y orienta sobre URIs no desreferenciables |
+| 2026-09-26 | [.NET releases and support (Microsoft Learn)](https://learn.microsoft.com/en-us/dotnet/core/releases-and-support) | primaria | .NET 10 es **LTS con soporte hasta noviembre de 2028**; .NET 9 (STS) y .NET 8 (LTS) terminan en noviembre de 2026; existe la propiedad MSBuild `CheckSdkVulnerabilities` (avisa con NETSDK1239 si el SDK está fuera de soporte) |
+| 2026-09-26 | [Licensing FAQ (Lucky Penny Software)](https://luckypennysoftware.com/faq) | primaria | **MediatR 13.0.0 o superior requiere licencia comercial**; los niveles son por tamaño de equipo (Standard 1-10, Professional 11-50, Enterprise sin límite); no hace falta licencia en desarrollo, CI/CD, staging o QA, **sí en producción**; las versiones anteriores conservan MIT/Apache-2.0 y hay alternativa gratuita bajo RPL-1.5; la clave se aplica sin servidor de licencias (solo avisos en log); **FluentValidation no figura entre los paquetes con licencia comercial** |
+| 2026-09-26 | [OpenAPI Specification 3.2.1](https://spec.openapis.org/oas/v3.2.1.html) | primaria | La versión vigente de la especificación es **3.2.1, publicada el 10 de septiembre de 2026**; 3.1.2 es la anterior |
+| 2026-09-26 | [PostgreSQL Versioning Policy](https://www.postgresql.org/support/versioning/) | primaria | Soporte de 5 años por versión mayor: **16.15 → 2028-11-09**, 17.11 → 2029-11-08, 18.6 → 2030-11-14; 19 en beta (2026-09-24); se recomienda usar siempre el menor actual de la mayor elegida |
+| 2026-09-26 | xUnit (notas de versión y NuGet) | secundaria | **xUnit v3 4.0.0 (2026-08-14)** es la versión mayor actual; v2 continúa en 2.9.3 |
+| 2026-09-26 | NuGet (Npgsql.EntityFrameworkCore.PostgreSQL) | secundaria | Estable actual **10.0.3**; 11.0.0 sigue en versión preliminar |
+| 2026-09-26 | [Ley 25.326 y Decreto 1558/2001 (Argentina)](https://www.argentina.gob.ar/normativa/nacional/ley-25326-64630) | primaria | Régimen de datos personales aplicable si la operación es argentina: registro de bases, aviso a los titulares, medidas de seguridad y derechos de acceso/rectificación |
+
+**Límites de esta investigación (honestidad de evidencia):** no se pudo confirmar el umbral económico de la licencia de MediatR en la fuente consultada; no se levantó la API para leer la versión de OpenAPI que declara el documento generado; la jurisdicción legal aplicable es una decisión del Owner; las fechas de soporte de PostgreSQL corresponden a la política oficial vigente al 2026-09-26.
+
+## 18. SPEC-008 — Fase 6: reparación, Docker e integración real
+
+> Plantilla de la [[sección 13.3](#133-problem-details-rfc-9457) de la metodología](../.agents/skills/generic-sdd-agent/SKILL.md#133-plantilla-de-spec-bloque-dentro-de-sddsddmd-sección-33-lenguaje-ubicuo). **Riesgo 2:** requiere aprobación explícita del Owner (Gate 2) antes de tocar código, configuración o infraestructura.
+
+**Propósito y señal de resultado:** validar en un entorno real el arranque de la API con PostgreSQL, la aplicación de migraciones y los flujos REST principales. **Señal:** `docker compose ps` con ambos servicios en `healthy`, un smoke HTTP con los códigos esperados y las migraciones aplicadas (tablas existentes) — evidencia registrada en la sección 12.1.
+
+**Alcance:** `.dockerignore`, healthchecks y fijado de versión en `docker-compose.yml`, ejecución de `config` / `build --no-cache` / `up -d` / `ps` / smoke / `down`, aplicación de migraciones, verificación de conectividad por nombre de servicio, y reparación de los 12 warnings `SYSLIB0050` (OBS-06).
+
+**Fuera de alcance:** módulo de autenticación (fuera de alcance por la Ley), frontend, observabilidad avanzada, persistencia de auditoría y pruebas E2E automatizadas (T-032 se planifica aparte).
+
+**Requisitos**
+
+- FR-01: la imagen se construye desde cero sin caché y sin secretos incrustados.
+- FR-02: `docker compose up -d` deja `db` y `api` con healthcheck en verde.
+- FR-03: la API se conecta a PostgreSQL por el nombre de servicio `db`, nunca `localhost`.
+- FR-04: las tres migraciones se aplican y las tablas quedan disponibles.
+- FR-05: `/swagger` responde 200 y el documento OpenAPI se descarga.
+- FR-06: una lectura válida responde 200 con el DTO pactado y una entrada inválida responde 400 con `application/problem+json`.
+- FR-07: `docker compose down` y un arranque limpio posterior vuelven a funcionar.
+
+**Invariantes y errores**
+
+- INV-01: el dominio y los contratos HTTP no se modifican en esta SPEC.
+- ERR-01: si el build falla, no se continúa a `up`.
+- ERR-02: si un healthcheck falla, se detiene la secuencia y se registra el log del servicio.
+
+**Criterios de aceptación (BDD)**
+
+- CA-01: **Dado** un entorno limpio, **cuando** `docker compose build --no-cache` termina, **entonces** el código de salida es 0.
+- CA-02: **Dado** `docker compose up -d`, **cuando** `docker compose ps` muestra ambos servicios, **entonces** ambos reportan salud en menos de 120 s.
+- CA-03: **Dado** el contenedor de la API, **when** se ejecuta una consulta de lectura, **entonces** responde 200 y el cuerpo cumple el DTO documentado.
+- CA-04: **Dado** un payload inválido, **when** se envía, **entonces** responde 400 con `application/problem+json`.
+- CA-05: **Dado** un arranque limpio repetido, **when** se ejecuta `down` y luego `up -d`, **entonces** los servicios vuelven a estar saludables.
+
+**Tareas**
+
+- T-033: crear `.dockerignore` (excluir `bin/`, `obj/`, `.git/`, secretos y artefactos temporales).
+- T-034: añadir healthchecks a `docker-compose.yml` y fijar la versión de la imagen de PostgreSQL.
+- T-035: ejecutar `docker compose config`, `build --no-cache`, `up -d` y `ps`; registrar códigos de salida.
+- T-036: aplicar las migraciones y verificar las tablas creadas.
+- T-037: smoke HTTP de lectura y de error 400.
+- T-038: `docker compose down` y arranque limpio repetido.
+- T-039: reparar OBS-06 (12 warnings `SYSLIB0050`) y registrar el resultado del build.
+
+**Matriz de verificación**
+
+| Requisito | Tarea | Evidencia esperada | Estado |
+|---|---|---|---|
+| FR-01 | T-033, T-035 | Build con código de salida 0 | `[PENDIENTE]` |
+| FR-02 | T-034, T-035 | `docker compose ps` con servicios saludables | `[PENDIENTE]` |
+| FR-03 | T-035 | Log de conexión con host `db` | `[PENDIENTE]` |
+| FR-04 | T-036 | Tablas listadas tras migrar | `[PENDIENTE]` |
+| FR-05 | T-037 | HTTP 200 en `/swagger` y OpenAPI descargable | `[PENDIENTE]` |
+| FR-06 | T-037 | HTTP 200 en lectura y 400 con `problem+json` | `[PENDIENTE]` |
+| FR-07 | T-038 | Arranque limpio repetido | `[PENDIENTE]` |
+| OBS-06 | T-039 | Build sin warnings | `[PENDIENTE]` |
+
+**Riesgos de la SPEC:** si Docker no está disponible en el entorno, el estado pasa a `BLOCKED` con la instrucción exacta pendiente; las credenciales de desarrollo en claro (OBS-04) deben moverse a variables de entorno antes de cualquier entorno compartido.
+

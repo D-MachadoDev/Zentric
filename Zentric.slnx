@@ -1,7 +1,0 @@
-<Solution>
-  <Project Path="Zentric.Api/Zentric.Api.csproj" />
-  <Project Path="Zentric.Application/Zentric.Application.csproj" />
-  <Project Path="Zentric.Domain/Zentric.Domain.csproj" />
-  <Project Path="Zentric.Infrastructure/Zentric.Infrastructure.csproj" />
-  <Project Path="Zentric.Tests/Zentric.Tests.csproj" />
-</Solution>
