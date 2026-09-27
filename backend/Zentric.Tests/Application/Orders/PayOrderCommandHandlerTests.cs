@@ -9,10 +9,36 @@ using Zentric.Application.Orders.Commands;
 using Zentric.Domain.Orders;
 using Zentric.Domain.Orders.Enums;
 using Zentric.Domain.Orders.Ports;
+using Zentric.Domain.Payments.Ports;
+using Zentric.Domain.Products.ValueObjects;
 using Zentric.Tests.Application.Catalog;
 
 namespace Zentric.Tests.Application.Orders
 {
+    /// <summary>
+    /// Pasarela que aprueba siempre. Q-08: el cobro ocurre antes de marcar el
+    /// pedido como pagado, asi que los tests del handler necesitan una pasarela.
+    /// </summary>
+    public sealed class ApprovingPaymentGateway : IPaymentGateway
+    {
+        public List<Money> ChargedAmounts { get; } = new();
+
+        public Task<PaymentResult> ChargeAsync(
+            Guid orderId, Money amount, CancellationToken cancellationToken = default)
+        {
+            ChargedAmounts.Add(amount);
+            return Task.FromResult(PaymentResult.Success($"SIM-{orderId:N}"));
+        }
+    }
+
+    /// <summary>Pasarela que rechaza siempre, para probar el rechazo como resultado de negocio.</summary>
+    public sealed class DecliningPaymentGateway : IPaymentGateway
+    {
+        public Task<PaymentResult> ChargeAsync(
+            Guid orderId, Money amount, CancellationToken cancellationToken = default)
+            => Task.FromResult(PaymentResult.Rejected("insufficient-funds"));
+    }
+
     public class FakeCustomerOrderRepositoryForPay : ICustomerOrderRepository
     {
         public List<CustomerOrder> Orders { get; } = new();
@@ -43,11 +69,51 @@ namespace Zentric.Tests.Application.Orders
     public class PayOrderCommandHandlerTests
     {
         [Fact]
+        public async Task Handle_WhenGatewayDeclines_DoesNotMarkOrderAsPaid()
+        {
+            // Q-08: un rechazo es un resultado previsto de negocio, no una excepcion,
+            // y el pedido NO debe quedar pagado (seria un pedido cobrado sin cobrar).
+            var repo = new FakeCustomerOrderRepositoryForPay();
+            var uow = new FakeUnitOfWork();
+            var handler = new PayOrderCommandHandler(repo, uow, new DecliningPaymentGateway());
+
+            var order = new CustomerOrder(Guid.NewGuid());
+            order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 1, new Money(50m, "COP"));
+            order.Checkout();
+            await repo.AddAsync(order);
+
+            var result = await handler.Handle(new PayOrderCommand(order.Id), CancellationToken.None);
+
+            Assert.True(result.IsFailure);
+            Assert.Contains("declined", result.Error);
+            Assert.Equal(OrderStatus.PendingPayment, order.Status);
+        }
+
+        [Fact]
+        public async Task Handle_ChargesTheOrderTotalThroughTheGateway()
+        {
+            // El importe cobrado debe ser el total del pedido, no una unidad ni un cero.
+            var repo = new FakeCustomerOrderRepositoryForPay();
+            var gateway = new ApprovingPaymentGateway();
+            var handler = new PayOrderCommandHandler(repo, new FakeUnitOfWork(), gateway);
+
+            var order = new CustomerOrder(Guid.NewGuid());
+            order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 2, new Money(50m, "COP"));
+            order.Checkout();
+            await repo.AddAsync(order);
+
+            await handler.Handle(new PayOrderCommand(order.Id), CancellationToken.None);
+
+            Assert.Single(gateway.ChargedAmounts);
+            Assert.Equal(new Money(100m, "COP"), gateway.ChargedAmounts[0]);
+        }
+
+        [Fact]
         public async Task Handle_PendingPaymentOrder_MarksAsPaid()
         {
             var repo = new FakeCustomerOrderRepositoryForPay();
             var uow = new FakeUnitOfWork();
-            var handler = new PayOrderCommandHandler(repo, uow);
+            var handler = new PayOrderCommandHandler(repo, uow, new ApprovingPaymentGateway());
 
             var order = new CustomerOrder(Guid.NewGuid());
             order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 2, new Zentric.Domain.Products.ValueObjects.Money(50m, "COP"));
@@ -67,7 +133,7 @@ namespace Zentric.Tests.Application.Orders
         {
             var repo = new FakeCustomerOrderRepositoryForPay();
             var uow = new FakeUnitOfWork();
-            var handler = new PayOrderCommandHandler(repo, uow);
+            var handler = new PayOrderCommandHandler(repo, uow, new ApprovingPaymentGateway());
 
             var command = new PayOrderCommand(Guid.NewGuid());
             var result = await handler.Handle(command, CancellationToken.None);

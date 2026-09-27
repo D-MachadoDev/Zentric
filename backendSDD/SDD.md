@@ -300,14 +300,14 @@ Regla: si existe una prueba fallida, un endpoint simulado, una dependencia no va
 
 - **Objetivo:** PostgreSQL local + configuración de la API.
 - **Entregables:** `docker-compose.yml` (PostgreSQL 16 en 5432), cadena de conexión, esquema vía migraciones EF.
-- **Realidad:** compose y conexión existen; **las 3 migraciones nunca se aplicaron**. ⚠️ `PARTIAL`.
+- **Realidad:** ✅ `VERIFIED` el 2026-09-27: migraciones aplicadas contra PostgreSQL real (`__EFMigrationsHistory` con `InitialCreate`, `CompleteSchema`, `AddBackgroundServicesAndUpdates`, `AddVendorIdToOrderItem`, `AddVendorIdToInvoice`) y tablas verificadas por lectura directa.
 - **Gate pendiente:** `docker compose up -d db` + aplicar migraciones contra PostgreSQL real y verificar tablas.
 
 ### FASE 0C — Compose y entorno Docker
 
 - **Objetivo:** dejar el entorno listo sin exigir el build final (pertenece a la Fase 6).
 - **Entregables:** `Dockerfile` multi-stage, `.dockerignore`, compose con red/volúmenes/healthchecks.
-- **Realidad:** `Dockerfile` y compose existen con volumen persistente; sin healthchecks verificados y sin build ejecutado. ⚠️ `PARTIAL`.
+- **Realidad:** ✅ `VERIFIED` el 2026-09-27: `docker compose up --build` ejecutado, healthcheck de PostgreSQL en estado *healthy* y `GET /health` respondiendo `{"status":"healthy","database":"up"}`.
 - **Gate pendiente:** sección 11.4.
 
 ### FASE 0D — SDD de frontend
@@ -345,7 +345,7 @@ Regla: si existe una prueba fallida, un endpoint simulado, una dependencia no va
 
 - **Objetivo:** implementar la lógica de negocio orquestada.
 - **Entregables:** `InventoryReservationService` (reserva multi-bodega con fallo si no alcanza), `ReturnsApprovalService`, flujo `Cart → Checkout → Pay → Dispatch`.
-- **Realidad:** ✅ `VERIFIED` por pruebas. `[PENDIENTE]` Observación OBS-01: el orden de reserva no codifica la prioridad de [ADR-0001](Adr/0001-reserva-fragmentacion-contingencia.md) (verificación V-02, [sección 9.2](#92-verificaciones-de-consistencia-pendientes)).
+- **Realidad:** ✅ `VERIFIED` por pruebas. **OBS-01 cerrado 2026-09-27 (V-02):** la reserva ordena por `AvailableQuantity` descendente con desempate estable por `Id`, cubierta por `InventoryReservationServiceTests`.
 
 ### FASE 3B — REST, DTOs y validadores
 
@@ -401,12 +401,13 @@ Estado actual: 🟡 `NOT_STARTED`. Cada paso deja evidencia en el registro ([sec
 |---|---|---|---|---|---|
 | **E-001** | `User` | Agregado raíz | `Zentric.Domain/Users/User.cs` | ✅ Implementado — `IdentityDocument` con guarda y unicidad verificada en `CreateUserCommandHandler` (H-05 cerrado; falta re-verificar constraint en BD). Eventos de usuario aún `// TODO` | `Zentric.Tests/Users/UserTests.cs` |
 | **E-002** | `Buyer` | Agregado raíz | `Zentric.Domain/Buyers/Buyer.cs` | ⚠️ Parcial — `PaymentTokens` **eliminado** (H-03/Q-08 resueltos en código); dirección sigue como `string` (VO `Address` pendiente). Sin pruebas propias | 🟡 `[PENDIENTE]` — T-002b |
+| **E-028** | `Payment` | Agregado raíz | `Zentric.Domain/Payments/Payment.cs` | 🟡 **SIN PERSISTIR** — creado en Q-08 con `Approve` idempotente y pruebas de dominio, y **consumido por `PayOrderCommandHandler` antes de marcar el pedido como pagado**. Le falta `PaymentDbModel`, `DbSet<>` y repositorio: hoy el cobro no queda registrado. No se inventó la tabla porque la Ley no la define; queda pendiente de que el Owner la dicte | 🟡 `[PENDIENTE]` — T-009 |
 | **E-003** | `Product` | Agregado raíz | `Zentric.Domain/Products/Product.cs` | ✅ Implementado — variantes obligatorias en `Physical` (CAT-03/ADR-0003); usa `VendorId` y `ProductStatus`; `CanBeSold` con variante vendible | `Products/ProductTests.cs` |
 | **E-004** | `ProductVariant` | Entidad hija | `Zentric.Domain/Products/ProductVariant.cs` | ✅ Implementado — SKU = `VariantId`, único dentro del producto (ADR-0002) | `Products/ProductVariantTests.cs` |
-| **E-005** | `VariantAttribute` | Value Object | `Zentric.Domain/Products/ValueObjects/VariantAttribute.cs` | ✅ Implementado — `[PROPUESTO]`; detalle del modelo abierto en Q-11 ([sección 9.1](#91-preguntas-al-owner-abiertas)) | `Products/VariantAttributeTests.cs` |
+| **E-005** | `VariantAttribute` | Value Object | `Zentric.Domain/Products/ValueObjects/VariantAttribute.cs` | ✅ Implementado — Q-11 ratificada 2026-09-27: texto libre, obligatorio, máx. 50 caracteres | `Products/VariantAttributeTests.cs` |
 | **E-006** | `Money` | Value Object | `Zentric.Domain/Products/ValueObjects/Money.cs` | ✅ Implementado — aritmética homogénea de moneda | `Products/MoneyTests.cs` |
-| **E-007** | `Inventory` | Agregado raíz | `Zentric.Domain/Inventories/Inventory.cs` | ⚠️ Parcial — H-01 y H-02 **corregidos** (`DispatchStock` valida `ReservedQuantity`; `UpdateQuantities` ya no existe); queda H-06 (reloj directo) y el naming `ReciveReturnedStock` | `Inventories/InventoryTests.cs` |
-| **E-008** | `Warehouse` | Agregado raíz | `Zentric.Domain/Warehouses/Warehouse.cs` | ⚠️ Parcial — `WarehouseType` ya usa `Vendor` (C-05 parcialmente cerrada); naming residual por Q-05/Q-09 | `Warehouses/WarehouseTests.cs` |
+| **E-007** | `Inventory` | Agregado raíz | `Zentric.Domain/Inventories/Inventory.cs` | ⚠️ Parcial — H-01 y H-02 **corregidos**; Q-09 cerrado (`ReceiveReturnedStock`, antes `ReciveReturnedStock`); queda H-06 (reloj directo) | `Inventories/InventoryTests.cs` |
+| **E-008** | `Warehouse` | Agregado raíz | `Zentric.Domain/Warehouses/Warehouse.cs` | ✅ Implementado — `WarehouseType` usa `Vendor`; Q-05/Q-09 cerrados (mensajes ya en `vendor`) | `Warehouses/WarehouseTests.cs` |
 
 ### 5.3 Tabla de entidades (parte 2: E-009…E-027)
 
