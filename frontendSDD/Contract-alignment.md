@@ -197,12 +197,12 @@ Estas restricciones vienen de la Ley. El frontend debe cumplirlas **en la interf
 |---|---|
 | Estructura del frontend | Conforme (aun sin `src/`) |
 | Contrato de endpoints | 29/29 mapeados al estado real |
-| Identidad del llamante | Parcial: `X-Buyer-Id` funciona; JWT bloqueado |
+| Identidad del llamante | Cerrada: `POST /api/auth/login` emite JWT HS256 y `Authorization: Bearer` es obligatorio. `X-Buyer-Id` eliminada |
 | CORS | Resuelto y verificado |
 | Paginacion | Resuelta y verificada |
 | Reglas de la Ley en la UI | **Por definir**: las restricciones estan en 7, falta decidir como se aplican |
 | Roles | 5 roles de la Ley; los 7 del prompt no aplican |
 
-**Estado global: `READY_TO_START`.** El bloqueo que impedia hablar con la API desde el navegador (CORS) esta resuelto. La UI puede empezar con `X-Buyer-Id` y paginacion.
+**Estado global: `READY_TO_START`.** Los dos bloqueios que impedian hablar con la API desde el navegador estan resueltos y verificados: CORS (origen permitido recibe los headers) y autenticacion (`POST /api/auth/login` + `Authorization: Bearer`). La UI empieza con login, interceptor del token y paginacion.
 
-**Pendiente antes de produccion:** JWT (R-01) y reportes administrativos (R-08).
+**Pendiente antes de produccion:** autorizacion por rol (Q-21 del backend: hoy cualquier usuario autenticado puede llamar a endpoints administrativos), contrato de los `enum` en el cuerpo JSON (Q-22: viajan como entero, no como nombre) y reportes administrativos (R-08).

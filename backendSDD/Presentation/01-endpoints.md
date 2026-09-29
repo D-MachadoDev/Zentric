@@ -104,10 +104,56 @@ porque `Buyer.UserId` es 1:1 con `User.Id`.
 > El mismo mensaje para "no existe" y "no es tuyo" es deliberado: distinguirlos
 > permitiría enumerar pedidos ajenos probando GUIDs.
 
-El frontend debe enviar `X-Buyer-Id` en todas las llamadas de pedidos mientras no
-exista JWT.
+### 3.2 Autenticación JWT — implementada (`ADR-0009`)
 
-### 3.2 CORS
+| Endpoint | Método | Auth | Contrato |
+|---|---|:---:|---|
+| `/api/auth/login` | `POST` | anónimo | Body `{ email, password }` → `200 { token, expiresAt, userId, email, fullName, role }` · `400` correo inválido · `401` credenciales inválidas (mensaje único: no revela qué cuentas existen) |
+| `/api/auth/me` | `GET` | token | `200 { userId, email, fullName, role }` leído de los claims del token ya validado (no consulta la base) · `401` token ausente, forjado o caducado |
+| `/api/users` | `POST` | anónimo **solo** con `role = Buyer` | `403` para cualquier otro rol sin token de Administrador (ZENTRIC.md Dominio 3) |
+
+- **Claims emitidas:** `sub` (id del usuario y, 1:1, del comprador), `email`, `name`
+  (nombre completo) y el rol. El nombre se emite como `name`: el validador de .NET 10
+  **no** reescribe los tipos de claim entrantes, así que el controlador debe leer el
+  nombre literal que se escribió en el token. Emitirlo como `unique_name` producía una
+  API que autenticaba correctamente pero devolvía `fullName` vacío en `/auth/me`
+  (defecto corregido el 2026-09-29, verificado en Docker).
+- **Caducidad:** 60 minutos (`Jwt:ExpirationMinutes`), calculada con `IClock`
+  ([ADR-0010](../Adr/0010-relojo-como-puerto-iclock.md)), no con `DateTime.UtcNow`.
+- **Clave:** `Jwt__SigningKey` por variable de entorno; la API **no arranca** si falta o
+  si mide menos de 32 bytes. `appsettings.json` la deja vacía a propósito; solo
+  `appsettings.Development.json` lleva una clave de desarrollo explícitamente rotulada.
+- **Primer Administrador:** lo crea el arranque desde `Bootstrap__AdministratorEmail` /
+  `Bootstrap__AdministratorPassword` **solo si la base no tiene ninguno**. Es la única vía
+  por la que un rol privilegiado entra al sistema, porque el auto-registro está limitado a
+  Compradores. Retirar las variables en cuanto exista.
+
+### 3.3 Los `enum` del contrato viajan como número en el cuerpo JSON (**Q-22**)
+
+Verificado contra la API desplegada en Docker el 2026-09-29:
+
+| Petición | Respuesta |
+|---|---|
+| `POST /api/users` con `"role": "Buyer"` | `400` — `The JSON value could not be converted to CreateUserCommand` |
+| `POST /api/users` con `"role": 0` | `200` con el `Guid` del usuario |
+| `GET /api/users?role=Seller` | `200` |
+| `GET /api/users?role=1` | `200` |
+
+`System.Text.Json` no tiene configurado `JsonStringEnumConverter`, mientras que el binding
+de query sí acepta nombres. El resultado es una asimetría: **en el cuerpo se envían
+enteros, en la query se aceptan ambas formas**. Afecta a todos los enum del contrato
+(`UserRole`, y en las respuestas `OrderStatus`, `PaymentStatus`, `FulfillmentStatus`,
+`InvoiceType`).
+
+`UserRole`: `Buyer = 0`, `Seller = 1`, `Administrator = 2`, `Supervisor = 3`,
+`LogisticsOperator = 4`.
+
+Unificarlo (registro de `JsonStringEnumConverter`) cambiaría el contrato de entrada y de
+salida de todos los enum, así que queda como **Q-22** a decisión del Owner
+([SDD, sección 9.1](../SDD.md#91-preguntas-al-owner-abiertas)). Mientras tanto el frontend
+envía enteros.
+
+### 3.4 CORS
 
 Una política `Frontend` habilita el origen declarado en `Cors:AllowedOrigins`
 (`appsettings.json`, o `Cors__AllowedOrigins` por variable de entorno). Varios orígenes se
@@ -122,29 +168,20 @@ separan por comas.
 > **No se usa el comodín `*`.** El lote 6 prevé JWT, y el protocolo prohíbe combinar
 > comodín con credenciales. Los orígenes deben declararse de forma explícita.
 
-### 3.3 Autenticación JWT — **bloqueada, pendiente de decisión del Owner**
-
-No se implementó JWT a propósito, por dos razones concretas:
-
-1. **Falta el algoritmo de hash de contraseñas.** `User.PasswordHash` guarda un hash, pero
-   **no existe ningún método que lo verifique**: el sistema nunca ha validado una contraseña.
-   Crear login exige elegir el algoritmo (PBKDF2, BCrypt, Argon2) y sus parámetros.
-2. **Falta la política de identidad.** `ZENTRIC.md` Dominio 1 describe roles
-   (`Buyer`, `Seller`, `LogisticsOperator`, `Admin`, `Supervisor`) pero **no define emisión
-   de tokens, caducidad, renovación ni revocación**.
-
-Ambos son decisiones de seguridad y de negocio, no técnicas: elegirlas por cuenta propia
-sería inventar política. Cuando el Owner las dicte, el punto de conexión ya está listo:
-`HeaderBuyerAccessor` pasa a leer el claim y el resto del sistema no cambia.
-
 ---
 
 ## 4. Catálogo Detallado de Endpoints por Bounded Context (Tags de Swagger)
 
+### 3.0. Tag: `0. Autenticacion` (`/api/auth`)
+| Método | Endpoint | Tipo CQRS | Entrada / Payload | Respuestas | Descripción de Negocio e Invariantes |
+|---|---|:---:|---|---|---|
+| `POST` | `/api/auth/login` | Command | `LoginCommand` (Body: `email`, `password`) — **anónimo** | `200 OK (AuthTokenResponse)`<br>`400 Bad Request (ProblemDetails)`<br>`401 Unauthorized (ProblemDetails)` | Autentica con correo y contraseña (RG-01, [ADR-0009](../Adr/0009-autenticacion-jwt-rg01.md)). El hash se compara en el servidor contra `PBKDF2-HMAC-SHA256`. Un correo inexistente, una contraseña incorrecta y un usuario bloqueado o eliminado responden **el mismo `401`**: distinguirlos permitiría enumerar cuentas registradas. Devuelve token JWT (60 min, `IClock`), su caducidad y la identidad. |
+| `GET` | `/api/auth/me` | Query | token en cabecera | `200 OK (CurrentUserResponse)`<br>`401 Unauthorized (ProblemDetails)` | Devuelve la identidad que **declara el token ya validado** (`userId`, `email`, `fullName`, `role`); no consulta la base. Permite al cliente revalidar la sesión al arrancar sin guardar la identidad en otro sitio. |
+
 ### 3.1. Tag: `1. Usuarios y Roles` (`/api/users`)
 | Método | Endpoint | Tipo CQRS | Entrada / Payload | Respuestas | Descripción de Negocio e Invariantes |
 |---|---|:---:|---|---|---|
-| `POST` | `/api/users` | Command | `CreateUserCommand` (Body) | `200 OK (Guid)`<br>`400 Bad Request (ProblemDetails)` | Registra un nuevo usuario en el sistema. Valida unicidad de `Email` e `IdentityDocument` de forma asíncrona. Asigna roles válidos: `Buyer`, `Seller`, `Administrator`, `LogisticsOperator`, `Supervisor`. |
+| `POST` | `/api/users` | Command | `CreateUserCommand` (Body) — **anónimo solo si `role = Buyer` (`0`)** | `200 OK (Guid)`<br>`400 Bad Request (ProblemDetails)`<br>`403 Forbidden (ProblemDetails)` | Registra un nuevo usuario en el sistema. Valida unicidad de `Email` e `IdentityDocument` de forma asíncrona. Asigna roles válidos: `Buyer`, `Seller`, `Administrator`, `LogisticsOperator`, `Supervisor` (en el cuerpo JSON el rol viaja como **entero**, ver [3.3](#33-los-enum-del-contrato-viajan-como-número-en-el-cuerpo-json-q-22)). La contraseña viaja en claro y **el servidor calcula el hash**: el cliente nunca envía `PasswordHash`. Cualquier rol distinto de `Buyer` sin token de Administrador responde `403` (ZENTRIC.md Dominio 3: los vendedores no se auto-registran). |
 | `GET` | `/api/users` | Query | `role` (Query param opcional) | `200 OK (List<UserDto>)` | Lista todos los usuarios registrados, permitiendo filtrar por rol (ej. `?role=Seller` o `?role=Buyer`). |
 | `GET` | `/api/users/{id}` | Query | `id` (Path) | `200 OK (UserDto)`<br>`404 Not Found (ProblemDetails)` | Obtiene el detalle técnico y estado de un usuario por su ID. |
 

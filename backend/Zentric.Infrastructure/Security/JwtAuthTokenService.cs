@@ -17,6 +17,13 @@ namespace Zentric.Infrastructure.Security
     /// identidad de comprador, porque <c>Buyer.UserId</c> es 1:1 con
     /// <c>User.Id</c>.
     ///
+    /// El nombre se emite como <c>name</c> y no como <c>unique_name</c>: el
+    /// validador de .NET 10 (JsonWebTokenHandler) no aplica el mapeo de claims
+    /// de entrada, asi que el controlador tiene que encontrar la claim con el
+    /// nombre literal que aqui se escribe. Fue un defecto real: con
+    /// <c>unique_name</c> la API autenticaba bien pero GET /auth/me devolvia el
+    /// nombre vacio.
+    ///
     /// El reloj se recibe por constructor en vez de leerse de
     /// <see cref="DateTimeOffset.UtcNow"/> para que la caducidad sea comprobable
     /// en pruebas sin esperar una hora.
@@ -42,7 +49,7 @@ namespace Zentric.Infrastructure.Security
             {
                 new(JwtRegisteredClaimNames.Sub, userId.ToString()),
                 new(JwtRegisteredClaimNames.Email, email),
-                new(JwtRegisteredClaimNames.UniqueName, fullName),
+                new(JwtRegisteredClaimNames.Name, fullName),
                 new(ClaimTypes.Role, role.ToString()),
                 new(ClaimTypes.NameIdentifier, userId.ToString()),
             };

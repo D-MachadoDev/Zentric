@@ -78,15 +78,21 @@ namespace Zentric.Api.Controllers
         {
             var principal = User;
 
+            // Las claims se buscan primero por su nombre literal: el validador de
+            // .NET 10 no reescribe los tipos de claim entrantes, y el rol se emite
+            // con el URI de ClaimTypes.Role (ADR-0009). Ambas busquedas quedan aqui
+            // para que el contrato no dependa de que el mapeo este activo o no.
             return Ok(new CurrentUserResponse(
                 principal.FindFirst("sub")?.Value ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty,
                 principal.FindFirst(ClaimTypes.Email)?.Value
                     ?? principal.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Email)?.Value
                     ?? string.Empty,
-                principal.FindFirst(ClaimTypes.Name)?.Value
+                principal.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Name)?.Value
+                    ?? principal.FindFirst(ClaimTypes.Name)?.Value
                     ?? principal.Identity?.Name
                     ?? string.Empty,
-                principal.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty));
+                principal.FindFirst("role")?.Value
+                    ?? principal.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty));
         }
     }
 

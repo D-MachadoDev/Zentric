@@ -22,14 +22,16 @@ en [`Contract-alignment.md`](Contract-alignment.md).
 
 ### Del contrato con la API
 
-1. **Enviar `X-Buyer-Id` en todas las llamadas.** El backend no emite JWT. Sin la cabecera,
-   los endpoints que exigen identidad responden `401`.
+1. **Enviar `Authorization: Bearer {token}` en todas las llamadas.** El token se obtiene en
+   `POST /api/auth/login` y caduca a los 60 minutos. Sin token, los endpoints responden `401`.
+   La cabecera `X-Buyer-Id` **ya no existe**: escribirla no autentica a nadie.
 2. **Usar paginación en todo listado.** `page` base cero, `size` por defecto `20` y maximo `100`.
    Consumir `items`, `totalItems`, `totalPages`, `hasNext` para construir los controles.
 3. **No diferenciar "no existe" de "no es tuyo".** Ambos devuelven `404` a proposito, para no
    permitir enumerar pedidos ajenos. La UI debe mostrar "no encontrado".
-4. **Centralizar el envio de `X-Buyer-Id` y la base URL en un unico interceptor HTTP.** Asi la
-   migracion futura a JWT es un solo punto de cambio.
+4. **Centralizar el envio del token y la base URL en un unico interceptor HTTP.** El
+   interceptor guarda el token, lo adjunta a cada peticion y, ante un `401`, cierra la sesion
+   y devuelve al login. Un solo punto de cambio para renovacion o refresh futuro.
 5. **Errores con Problem Details (RFC 9457).** El backend responde con `ProblemDetails`;
    leer `detail` para el mensaje y `status` para el caso. No inventar codigos propios.
 
@@ -39,6 +41,7 @@ en [`Contract-alignment.md`](Contract-alignment.md).
 | --- | --- | --- | --- |
 | 1.0.0 | 2026-09-27 | Especificación inicial del frontend. Configuración base creada; implementación diferida. | Agente IA |
 | 1.1.0 | 2026-09-27 | Sincronizado con el backend real (29 endpoints): CORS resuelto, `X-Buyer-Id` obligatorio, paginación con `size` acotado a 100, reglas de la Ley aplicadas a la UI, R-08 (reportes) registrado. | Agente IA |
+| 1.2.0 | 2026-09-29 | Reglas 1 y 4 reescritas tras `ADR-0009`: la identidad viaja en `Authorization: Bearer` (login + 60 min) y `X-Buyer-Id` deja de existir; el interceptor pasa a guardar el token y cerrar sesión ante `401`. Registrados Q-21 (autorización por rol) y Q-22 (los `enum` viajan como entero en el cuerpo JSON) como pendientes de contrato. | Agente IA |
 
 ---
 

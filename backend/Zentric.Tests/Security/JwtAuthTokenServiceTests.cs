@@ -41,6 +41,9 @@ namespace Zentric.Tests.Security
 
             Assert.Equal(userId.ToString(), parsed.Claims.First(c => c.Type == "sub").Value);
             Assert.Equal("juan@example.com", parsed.Claims.First(c => c.Type == "email").Value);
+            // El nombre viaja como `name`: GET /auth/me lo lee con ese literal y
+            // con unique_name la respuesta salia con el nombre vacio.
+            Assert.Equal("Juan Perez", parsed.Claims.First(c => c.Type == "name").Value);
             Assert.Equal(
                 "Buyer",
                 parsed.Claims.First(c => c.Type.EndsWith("role", StringComparison.OrdinalIgnoreCase)).Value);
