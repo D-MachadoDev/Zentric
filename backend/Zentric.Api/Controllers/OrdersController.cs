@@ -1,4 +1,5 @@
 using Zentric.Application.Common.Messaging;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
 using Zentric.Application.Orders.Commands;
@@ -35,6 +36,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Carrito inicializado con éxito. Retorna el identificador (Guid) del pedido.</response>
         /// <response code="400">Error si el comprador no existe o no tiene rol de Buyer (RFC 7807 ProblemDetails).</response>
         [HttpPost("cart")]
+        [Authorize(Policy = AuthorizationPolicies.Checkout)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateCart([FromBody] CreateCartCommand command)
@@ -55,6 +57,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Ítem añadido satisfactoriamente al carrito.</response>
         /// <response code="400">Error si el carrito no está en estado Cart o si no hay stock suficiente (RFC 7807 ProblemDetails).</response>
         [HttpPost("cart/items")]
+        [Authorize(Policy = AuthorizationPolicies.Checkout)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddOrderItem([FromBody] AddOrderItemCommand command)
@@ -76,6 +79,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Checkout completado, reservas aplicadas y paquetes de fulfillment creados.</response>
         /// <response code="400">Error si el pedido está vacío, no existe o expiró la sesión (RFC 7807 ProblemDetails).</response>
         [HttpPost("{orderId}/checkout")]
+        [Authorize(Policy = AuthorizationPolicies.Checkout)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Checkout(Guid orderId)
@@ -96,6 +100,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Pago registrado y confirmado exitosamente.</response>
         /// <response code="400">Error si la orden no se encuentra en estado Checkout o ya fue pagada (RFC 7807 ProblemDetails).</response>
         [HttpPost("{orderId}/pay")]
+        [Authorize(Policy = AuthorizationPolicies.Checkout)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Pay(Guid orderId)
@@ -112,6 +117,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Detalle del pedido obtenido exitosamente.</response>
         /// <response code="404">Pedido no encontrado (RFC 7807 ProblemDetails).</response>
         [HttpGet("{id}")]
+        [Authorize(Policy = AuthorizationPolicies.OrderRead)]
         [ProducesResponseType(typeof(Zentric.Application.Orders.Queries.OrderDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetOrderById(Guid id)

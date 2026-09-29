@@ -1,5 +1,7 @@
 using Zentric.Application.Common.Messaging;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Zentric.Api.Security;
 using Zentric.Application.Warehouses.Commands;
 using Zentric.Application.Warehouses.Queries;
 
@@ -32,6 +34,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Bodega registrada con éxito. Retorna el identificador único (Guid) generado.</response>
         /// <response code="400">Error de validación si el nombre está vacío o la capacidad volumétrica es menor o igual a cero (RFC 7807 ProblemDetails).</response>
         [HttpPost]
+        [Authorize(Policy = AuthorizationPolicies.WarehouseManagement)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateWarehouse([FromBody] CreateWarehouseCommand command)
@@ -50,6 +53,7 @@ namespace Zentric.Api.Controllers
         /// <param name="vendorId">Filtro opcional por identificador único del vendedor.</param>
         /// <response code="200">Lista de bodegas obtenida exitosamente.</response>
         [HttpGet]
+        [Authorize(Policy = AuthorizationPolicies.WarehouseRead)]
         [ProducesResponseType(typeof(IReadOnlyList<WarehouseDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetWarehouses([FromQuery] Guid? vendorId = null)
         {
@@ -64,6 +68,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Detalle de la bodega obtenido exitosamente.</response>
         /// <response code="404">Bodega no encontrada (RFC 7807 ProblemDetails).</response>
         [HttpGet("{id}")]
+        [Authorize(Policy = AuthorizationPolicies.WarehouseRead)]
         [ProducesResponseType(typeof(WarehouseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetWarehouseById(Guid id)

@@ -101,6 +101,25 @@ builder.Services.AddAuthorization(options =>
     options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
+
+    // RG-03 (Q-21, ADR-0011): las politicas por rol se generan recorriendo la matriz de
+    // AuthorizationPolicies, que es la Matriz de Responsabilidades de ZENTRIC.md escrita una
+    // sola vez. No se agrega ninguna politica a mano: ponerla en el diccionario la registra
+    // aqui, la exige el [Authorize] del controlador y la aserta EndpointAuthorizationMatrixTests.
+    // Ningun acceso queda autorizado "por defecto": una politica con lista vacia de roles es
+    // identidad sola, y esa es la unica forma de que un endpoint no pida rol.
+    foreach (var rule in Zentric.Api.Security.AuthorizationPolicies.RolesByPolicy)
+    {
+        var policyBuilder = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser();
+
+        if (rule.Value.Count > 0)
+        {
+            policyBuilder = policyBuilder.RequireRole(rule.Value);
+        }
+
+        options.AddPolicy(rule.Key, policyBuilder.Build());
+    }
 });
 
 builder.Services.AddHttpContextAccessor();

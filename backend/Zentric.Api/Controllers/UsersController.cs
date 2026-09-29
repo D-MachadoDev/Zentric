@@ -1,6 +1,7 @@
 using Zentric.Application.Common.Messaging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Zentric.Api.Security;
 using Zentric.Application.Users.Commands;
 using Zentric.Application.Users.Queries;
 using Zentric.Domain.Users;
@@ -13,6 +14,11 @@ namespace Zentric.Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    // Q-21: los listados de usuario exponen PII (documento de identidad y correo), asi que la
+    // Ley los deja solo en manos del Administrador (seccion 5: "responsable de la administracion
+    // de vendedores"). El Supervisor NO los lee: su "consulta y seguimiento operativo" (seccion
+    // 5) no incluye datos personales. Cada usuario conserva su propia identidad por GET /auth/me.
+    [Authorize(Policy = AuthorizationPolicies.UserAdministration)]
     [Tags("1. Usuarios y Roles")]
     [Produces("application/json", "application/problem+json")]
     public class UsersController : ControllerBase

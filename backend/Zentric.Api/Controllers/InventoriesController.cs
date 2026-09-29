@@ -1,5 +1,7 @@
 using Zentric.Application.Common.Messaging;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Zentric.Api.Security;
 using Zentric.Application.Inventories.Commands;
 using Zentric.Application.Inventories.Queries;
 
@@ -32,6 +34,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Stock registrado con éxito. Retorna el identificador del registro de inventario (Guid).</response>
         /// <response code="400">Error si la bodega o producto no existen o las cantidades son negativas (RFC 7807 ProblemDetails).</response>
         [HttpPost("stock")]
+        [Authorize(Policy = AuthorizationPolicies.InventoryManagement)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddStock([FromBody] AddStockCommand command)
@@ -47,6 +50,7 @@ namespace Zentric.Api.Controllers
         /// <param name="variantId">Identificador único (Guid) de la variante del producto.</param>
         /// <response code="200">Lista de registros de inventario por bodega para la variante consultada.</response>
         [HttpGet("{variantId}")]
+        [Authorize(Policy = AuthorizationPolicies.InventoryRead)]
         [ProducesResponseType(typeof(IReadOnlyList<InventoryDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetInventoryByVariant(Guid variantId)
         {

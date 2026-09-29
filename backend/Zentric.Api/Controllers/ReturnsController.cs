@@ -1,5 +1,7 @@
 using Zentric.Application.Common.Messaging;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Zentric.Api.Security;
 using Zentric.Application.Returns.Commands;
 
 namespace Zentric.Api.Controllers
@@ -31,6 +33,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Solicitud de devolución radicada con éxito. Retorna el identificador (Guid).</response>
         /// <response code="400">Error si el plazo de garantía ha expirado o el producto no corresponde a la orden (RFC 7807 ProblemDetails).</response>
         [HttpPost("request")]
+        [Authorize(Policy = AuthorizationPolicies.ReturnRequest)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> RequestReturn([FromBody] RequestReturnCommand command)
@@ -52,6 +55,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Inspección física registrada con éxito.</response>
         /// <response code="400">Error si la solicitud no está en estado pendiente de inspección (RFC 7807 ProblemDetails).</response>
         [HttpPost("{id}/inspect")]
+        [Authorize(Policy = AuthorizationPolicies.ReturnInspect)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> InspectReturn(Guid id, [FromBody] InspectReturnRequestDto dto)
@@ -74,6 +78,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Devolución aprobada y reingreso a stock ejecutado exitosamente.</response>
         /// <response code="400">Error si los identificadores no coinciden o la solicitud no es aprobable (RFC 7807 ProblemDetails).</response>
         [HttpPost("{id}/approve")]
+        [Authorize(Policy = AuthorizationPolicies.ReturnApprove)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ApproveReturn(Guid id, [FromBody] ApproveReturnCommand command)
@@ -91,6 +96,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Detalle de la devolución obtenido exitosamente.</response>
         /// <response code="404">Solicitud de devolución no encontrada (RFC 7807 ProblemDetails).</response>
         [HttpGet("{id}")]
+        [Authorize(Policy = AuthorizationPolicies.ReturnRead)]
         [ProducesResponseType(typeof(Zentric.Application.Returns.Queries.ReturnRequestDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetReturnById(Guid id)

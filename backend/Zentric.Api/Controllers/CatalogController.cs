@@ -1,5 +1,7 @@
 using Zentric.Application.Common.Messaging;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Zentric.Api.Security;
 using Zentric.Application.Catalog.Commands;
 using Zentric.Application.Catalog.Queries;
 using Zentric.Application.Common.Models;
@@ -33,6 +35,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Ficha de producto creada con éxito en estado Draft. Retorna el identificador (Guid).</response>
         /// <response code="400">Error de validación si faltan dimensiones o el precio es inválido (RFC 7807 ProblemDetails).</response>
         [HttpPost("products")]
+        [Authorize(Policy = AuthorizationPolicies.ProductManagement)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateProduct([FromBody] CreateProductCommand command)
@@ -53,6 +56,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Producto publicado exitosamente.</response>
         /// <response code="400">Error si el producto no existe o ya se encuentra publicado (RFC 7807 ProblemDetails).</response>
         [HttpPost("products/{productId}/publish")]
+        [Authorize(Policy = AuthorizationPolicies.ProductManagement)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> PublishProduct(Guid productId)
@@ -71,6 +75,7 @@ namespace Zentric.Api.Controllers
         /// <param name="vendorId">Filtro opcional por identificador único del vendedor.</param>
         /// <response code="200">Lista de productos obtenida exitosamente.</response>
         [HttpGet("products")]
+        [Authorize(Policy = AuthorizationPolicies.AnyAuthenticatedUser)]
         [ProducesResponseType(typeof(IReadOnlyList<ProductDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetProducts([FromQuery] Guid? vendorId = null)
         {
@@ -88,6 +93,7 @@ namespace Zentric.Api.Controllers
         /// <param name="size">Tamaño de página (1..100, por defecto 20).</param>
         /// <response code="200">Página de productos con metadatos de paginación.</response>
         [HttpGet("products/paged")]
+        [Authorize(Policy = AuthorizationPolicies.AnyAuthenticatedUser)]
         [ProducesResponseType(typeof(PagedResult<ProductDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetProductsPaged(
             [FromQuery] Guid? vendorId = null,
@@ -104,6 +110,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Detalle del producto obtenido exitosamente.</response>
         /// <response code="404">Producto no encontrado (RFC 7807 ProblemDetails).</response>
         [HttpGet("products/{id}")]
+        [Authorize(Policy = AuthorizationPolicies.AnyAuthenticatedUser)]
         [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetProductById(Guid id)

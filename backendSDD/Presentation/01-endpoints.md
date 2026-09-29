@@ -19,10 +19,12 @@ Este documento define la especificación oficial (SSoT) de la capa de presentaci
   | --- | --- |
   | `POST /api/auth/login` | No se puede autenticar si no se puede pedir el token |
   | `POST /api/users` **sólo con `role = Buyer`** | ZENTRIC.md incluye "Registro de compradores"; sin él no existe la primera cuenta |
-  | `GET /health` | Lo invoca el healthcheck de Docker |
-- **Roles:** `UserRole` del token (`Buyer`, `Seller`, `Administrator`, `Supervisor`,
-  `LogisticsOperator`). El uso de roles para autorizar recurso a recurso (RG-03) **no está
-  implementado**: queda como Q-21 en el SDD.
+  | `GET /health` | Lo invoca el healthcheck de Docker; su `.AllowAnonymous()` es explícito porque la `FallbackPolicy` también alcanza a los endpoints mínimos |
+- **Roles (RG-03):** implementado **2026-09-29** con [ADR-0011](../Adr/0011-matriz-autorizacion-por-rol.md).
+  Cada acción declara una de las 18 políticas de `AuthorizationPolicies`, que es la Matriz de
+  Responsabilidades de ZENTRIC.md §12 escrita una sola vez; la lista completa por endpoint está en
+  [02-authorization.md](02-authorization.md). La `FallbackPolicy` exige token en todo lo demás, así
+  que una ruta sin decorar **nace cerrada**, y un rol que no entra responde `403`.
 
 > **Nota histórica:** este documento afirmaba que "las rutas estaban abiertas a nivel de
 > autorización técnica en desarrollo". Eso ya **no es cierto** y fue sustituido por la política
@@ -171,6 +173,12 @@ separan por comas.
 ---
 
 ## 4. Catálogo Detallado de Endpoints por Bounded Context (Tags de Swagger)
+
+> **Autorización:** cada una de las 30 acciones de este catálogo declara una política de
+> `AuthorizationPolicies`. La tabla endpoint → política → roles está en
+> [02-authorization.md §3](02-authorization.md#3-matriz-por-endpoint-30-acciones) y es la que se
+> verifica por reflexión en `EndpointAuthorizationMatrixTests`; este catálogo se ocupa del contrato,
+> no del permiso.
 
 ### 3.0. Tag: `0. Autenticacion` (`/api/auth`)
 | Método | Endpoint | Tipo CQRS | Entrada / Payload | Respuestas | Descripción de Negocio e Invariantes |

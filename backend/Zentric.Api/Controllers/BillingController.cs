@@ -1,5 +1,7 @@
 using Zentric.Application.Common.Messaging;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Zentric.Api.Security;
 using Zentric.Application.Billing.Commands;
 using Zentric.Application.Billing.Queries;
 
@@ -33,6 +35,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Facturación procesada y emitida con éxito. Retorna true.</response>
         /// <response code="400">Error si la orden no existe, no ha sido pagada o ya tiene facturación generada (RFC 7807 ProblemDetails).</response>
         [HttpPost("invoices/generate/{orderId}")]
+        [Authorize(Policy = AuthorizationPolicies.BillingGenerate)]
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GenerateInvoices(Guid orderId)
@@ -48,6 +51,7 @@ namespace Zentric.Api.Controllers
         /// <param name="orderId">Identificador único (Guid) del pedido pagado.</param>
         /// <response code="200">Lista de facturas del pedido obtenida exitosamente.</response>
         [HttpGet("invoices/order/{orderId}")]
+        [Authorize(Policy = AuthorizationPolicies.BillingRead)]
         [ProducesResponseType(typeof(IReadOnlyList<InvoiceDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetInvoicesByOrder(Guid orderId)
         {

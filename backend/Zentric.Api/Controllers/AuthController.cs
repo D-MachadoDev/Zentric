@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Zentric.Api.Security;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Application.Common.Messaging;
 using Zentric.Application.Users.Commands;
@@ -71,7 +72,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Identidad del token vigente.</response>
         /// <response code="401">Token ausente, invalido o caducado.</response>
         [HttpGet("me")]
-        [Authorize]
+        [Authorize(Policy = AuthorizationPolicies.AnyAuthenticatedUser)]
         [ProducesResponseType(typeof(CurrentUserResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         public IActionResult Me()

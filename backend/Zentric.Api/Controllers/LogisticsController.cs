@@ -1,5 +1,7 @@
 using Zentric.Application.Common.Messaging;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Zentric.Api.Security;
 using Zentric.Application.Logistics.Commands;
 
 namespace Zentric.Api.Controllers
@@ -31,6 +33,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Orden de fulfillment creada con éxito. Retorna el identificador (Guid).</response>
         /// <response code="400">Error si los datos de la solicitud son inválidos o la orden no existe (RFC 7807 ProblemDetails).</response>
         [HttpPost("fulfillment")]
+        [Authorize(Policy = AuthorizationPolicies.FulfillmentOperate)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateFulfillment([FromBody] CreateFulfillmentOrderCommand command)
@@ -51,6 +54,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Orden de fulfillment marcada como despachada exitosamente.</response>
         /// <response code="400">Error si la orden no existe, ya fue despachada o cancelada (RFC 7807 ProblemDetails).</response>
         [HttpPost("fulfillment/{id}/dispatch")]
+        [Authorize(Policy = AuthorizationPolicies.FulfillmentOperate)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> DispatchFulfillment(Guid id)
@@ -71,6 +75,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Cancelación procesada y reserva liberada exitosamente. Retorna el identificador (Guid).</response>
         /// <response code="400">Error si la orden de fulfillment ya fue cerrada o no existe (RFC 7807 ProblemDetails).</response>
         [HttpPost("fulfillment/cancel-ghost-stock")]
+        [Authorize(Policy = AuthorizationPolicies.FulfillmentCancelByQuiebre)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CancelGhostStock([FromBody] CancelFulfillmentOrderDueToNoStockCommand command)
@@ -87,6 +92,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Detalle de la orden de fulfillment obtenido exitosamente.</response>
         /// <response code="404">Orden de fulfillment no encontrada (RFC 7807 ProblemDetails).</response>
         [HttpGet("fulfillment/{id}")]
+        [Authorize(Policy = AuthorizationPolicies.FulfillmentRead)]
         [ProducesResponseType(typeof(Zentric.Application.Logistics.Queries.FulfillmentOrderDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetFulfillmentById(Guid id)
