@@ -1,7 +1,7 @@
 # Frontend-Role-Modules
 
 > Módulos del cliente según los roles definidos en
-> [`../ZENTRIC.md`](../ZENTRIC.md) §12 (Matriz de Responsabilidades) y RG-02.
+> [`../ZENTRIC.md`](../ZENTRIC.md#12-matriz-de-responsabilidades) (Matriz de Responsabilidades) y RG-02.
 >
 > **Los roles son cuatro:** Administrador, Vendedor, Comprador y Operador
 > logístico. Los nombres de rol del prompt de orquestación recibido
@@ -37,9 +37,10 @@ participante administrar información fuera de su rol.
 
 No requiere sesión. Es la única puerta de entrada al sistema.
 
-> **Bloqueo (R-01):** al no existir autenticación en el backend, la pantalla de
-> entrada **no valida credenciales**. Se documenta como `PROVISIONAL` y valida
-> únicamente rol e identificador de usuario, para poder operar.
+> **Resuelto (ADR-0009, 2026-09-28):** el backend **sí valida credenciales**. La pantalla
+> de acceso llama a `POST /api/auth/login`; si devuelve `401` no entra. Ya no es
+> `PROVISIONAL`: el frontend debe reemplazar la selección de rol por un login con
+> correo y contraseña, y guardar el token devuelto.
 
 ### 2.2 `modules/admin/` — Administrador
 

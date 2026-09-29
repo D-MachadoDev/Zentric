@@ -108,7 +108,7 @@ este producto**. Evidencia:
 | --- | --- |
 | Módulos `natural-customer`, `business-customer`, `teller`, `commercial`, `internal-analyst` | Roles reales: Vendedor, Comprador, Administrador, Operador logístico |
 | Préstamos, créditos, transferencias, aprobaciones de crédito | No existen en [`../ZENTRIC.md`](../ZENTRIC.md) |
-| `Authorization: Bearer <JWT>` en toda petición | El backend **no tiene JWT** ni proveedor de identidad |
+| `Authorization: Bearer <JWT>` en toda petición | **Ahora sí**: existe proveedor de identidad propio desde `ADR-0009` (JWT HS256 de 60 min). Se aplica por política de reserva |
 | Backend por defecto en `http://localhost:8080` | Puerto host real `5076`; el `8080` es interno del contenedor |
 | `backendSDD/Contract-alignment.md`, `backendSDD/Adapters/*`, `backendSDD/Backend-Cors-Security.md` | **No existen.** El equivalente vive en [`../backendSDD/Presentation/01-endpoints.md`](../backendSDD/Presentation/01-endpoints.md) |
 | SweetAlert2 obligatorio | No está en la Ley; se adopta sólo como decisión de diseño |
@@ -140,7 +140,7 @@ aplicable, pero se **sustituye todo el dominio** por el de Zentric. Implementar 
 | `domain/` (modelos y puertos) | `NOT_STARTED` | Crear según `Frontend-Architecture.md` |
 | `application/` (servicios) | `NOT_STARTED` | Crear según `Frontend-Domain-Services.md` |
 | `adapters/http` | `NOT_STARTED` | Crear según `Frontend-Adapters.md` |
-| `adapters/session` | `NOT_STARTED` | Crear; marcado `PROVISIONAL` |
+| `adapters/session` | `NOT_STARTED` | Crear: guarda el token de `POST /api/auth/login` y lo adjunta en cada petición |
 | `adapters/alert` | `NOT_STARTED` | Crear |
 | `components/` | `NOT_STARTED` | Crear según `Frontend-Design-System.md` |
 | Módulos por rol | `NOT_STARTED` | Crear según `Frontend-Role-Modules.md` |
@@ -231,4 +231,4 @@ cd frontend; npm test
 - [ ] Sin dominio ajeno (bancario) incorporado.
 
 bancarios o inventar autenticación violaría el Lenguaje Ubicuo
-([`../AGENTS.md`](../AGENTS.md) §0.4) y la regla de Cero Asunciones.
+([`../AGENTS.md`](../AGENTS.md#04-lenguaje-ubicuo-estricto-cero-sinónimos) y la regla de Cero Asunciones.

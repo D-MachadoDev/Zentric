@@ -65,6 +65,17 @@ namespace Zentric.Tests.Application.Users
         }
     }
 
+    /// <summary>
+    /// Sustituto determinista del hasher real. Las pruebas de este archivo
+    /// verifican orquestacion (unicidad, guardado), no criptografia: el
+    /// comportamiento criptografico se prueba en <c>Pbkdf2PasswordHasherTests</c>.
+    /// </summary>
+    public class FakePasswordHasher : IPasswordHasher
+    {
+        public string Hash(string password) => $"hashed::{password}";
+        public bool Verify(string password, string storedHash) => storedHash == Hash(password);
+    }
+
     public class CreateUserCommandHandlerTests
     {
         [Fact]
@@ -72,13 +83,13 @@ namespace Zentric.Tests.Application.Users
         {
             var userRepo = new FakeUserRepository();
             var uow = new FakeUnitOfWork();
-            var handler = new CreateUserCommandHandler(userRepo, uow);
+            var handler = new CreateUserCommandHandler(userRepo, uow, new FakePasswordHasher());
 
             var command = new CreateUserCommand(
                 "DOC-12345",
                 "Juan Perez",
                 "juan.perez@example.com",
-                "hashedpassword",
+                "SecretPassword1",
                 UserRole.Buyer
             );
 
@@ -90,12 +101,39 @@ namespace Zentric.Tests.Application.Users
             Assert.True(uow.SaveChangesCalled);
         }
 
+        /// <summary>
+        /// ADR-0009: el cliente ya no envia el hash, envia la contrasena. El
+        /// servidor es quien deriva el valor, asi que lo persistido nunca puede
+        /// ser la contrasena en claro.
+        /// </summary>
+        [Fact]
+        public async Task Handle_ValidCommand_PersistsHashedPasswordNotPlaintext()
+        {
+            var userRepo = new FakeUserRepository();
+            var uow = new FakeUnitOfWork();
+            var handler = new CreateUserCommandHandler(userRepo, uow, new FakePasswordHasher());
+
+            var command = new CreateUserCommand(
+                "DOC-12345",
+                "Juan Perez",
+                "juan.perez@example.com",
+                "SecretPassword1",
+                UserRole.Buyer
+            );
+
+            await handler.Handle(command, CancellationToken.None);
+
+            string stored = userRepo.Users[0].PasswordHash;
+            Assert.NotEqual("SecretPassword1", stored);
+            Assert.Equal("hashed::SecretPassword1", stored);
+        }
+
         [Fact]
         public async Task Handle_DuplicateEmail_ReturnsFailure()
         {
             var userRepo = new FakeUserRepository();
             var uow = new FakeUnitOfWork();
-            var handler = new CreateUserCommandHandler(userRepo, uow);
+            var handler = new CreateUserCommandHandler(userRepo, uow, new FakePasswordHasher());
 
             var existingUser = new User(
                 "DOC-99999",

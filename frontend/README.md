@@ -95,7 +95,7 @@ Navegador  ->  http://localhost:5173/api/...  ->  proxy  ->  http://localhost:50
 ```
 
 En cuanto el backend registre una política CORS, el proxy puede retirarse. Ver
-[`../frontendSDD/Contract-alignment.md`](../frontendSDD/Contract-alignment.md) §4.
+[`../frontendSDD/Contract-alignment.md`](../frontendSDD/Contract-alignment.md#5-cors).
 
 ---
 
@@ -103,10 +103,10 @@ En cuanto el backend registre una política CORS, el proxy puede retirarse. Ver
 
 | ID | Bloqueo | Efecto |
 | --- | --- | --- |
-| R-01 | El backend no emite JWT | No hay login real; la sesión es provisional |
+| ~~R-01~~ | ~~El backend no emite JWT~~ **RESUELTO 2026-09-28** | Existe `POST /api/auth/login` (JWT HS256). `X-Buyer-Id` eliminada. Ver `ADR-0009` |
 | R-02 | El backend no habilita CORS | Mitigado con el proxy de desarrollo |
 | R-03 | `GET /api/Logistics/fulfillment` devuelve 405 | El panel de despachos no puede listar |
 
-Mientras R-01 siga abierto, **no es posible construir una pantalla de acceso
-auténtica**. Está registrado como decisión pendiente del Owner en
-[`../frontendSDD/Frontend-SDD.md`](../frontendSDD/Frontend-SDD.md) §7.
+R-01 ya no bloquea: **sí es posible construir una pantalla de acceso** con credenciales
+reales. El flujo está documentado en
+[`../frontendSDD/Contract-alignment.md`](../frontendSDD/Contract-alignment.md#3-identidad-del-llamante---bearer-token-obligatorio).

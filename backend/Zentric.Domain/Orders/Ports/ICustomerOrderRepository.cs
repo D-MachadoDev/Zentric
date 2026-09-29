@@ -13,6 +13,13 @@ namespace Zentric.Domain.Orders.Ports
         /// </summary>
         Task<CustomerOrder?> GetByIdForBuyerAsync(
             Guid id, Guid buyerId, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Pedidos de carrito o con pago pendiente cuya ultima actividad es
+        /// anterior al umbral. T-004 (H-06/R-06): el umbral llega como
+        /// <see cref="DateTime"/> porque la columna <c>UpdatedAt</c> es sin zona
+        /// horaria en PostgreSQL; el llamante lo calcula desde
+        /// <see cref="Common.Ports.IClock"/> y esta firma no fija el reloj.
+        /// </summary>
         Task<IReadOnlyList<CustomerOrder>> GetExpiredOrdersAsync(DateTime threshold, CancellationToken cancellationToken = default);
         Task AddAsync(CustomerOrder order, CancellationToken cancellationToken = default);
         Task UpdateAsync(CustomerOrder order, CancellationToken cancellationToken = default);

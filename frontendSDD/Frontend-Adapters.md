@@ -16,7 +16,7 @@
 | --- | --- |
 | URL base | `VITE_API_BASE_URL`, defecto `http://localhost:5076` |
 | Cabeceras fijas | `Accept: application/json`, `Content-Type: application/json` |
-| Autenticación | Cabecera `X-Buyer-Id` (JWT no emitido; R-01 bloqueado). Enviar en todas las llamadas |
+| Autenticación | `Authorization: Bearer {token}` de `POST /api/auth/login`. **Obligatorio en todas las llamadas**, salvo `login` y `health`. `X-Buyer-Id` fue eliminada por `ADR-0009` y ya no autentica |
 | Correlación | **No implementada.** Propagar un id de correlación es `[PROPUESTO]`: el backend actual no lo soporta (verificado en `Program.cs`). El `traceId` de ASP.NET es lo único disponible |
 | Tiempo máximo | 15 s, con cancelación por `AbortController` |
 | Reintentos | 1 reintento sólo en `5xx` y error de red; nunca en `4xx` |
@@ -153,7 +153,7 @@ es una decisión de presentación, no de dominio. Obligatorio en:
 
 | ID | Hallazgo | Acción solicitada |
 | --- | --- | --- |
-| R-01 | No hay autenticación ni emisión de JWT | Definir esquema de identidad y claims |
+| R-01 | ~~No hay autenticación ni emisión de JWT~~ **RESUELTO 2026-09-28** | `POST /api/auth/login` emite JWT HS256; `X-Buyer-Id` eliminada. Ver `ADR-0009` |
 | R-02 | ~~No hay política CORS~~ **RESUELTO 2026-09-27** | Verificado: origen permitido recibe header, ajeno no, preflight 204 |
 | R-03 | `GET /api/Logistics/fulfillment` no admite `GET` (405) | Añadir listado o documentar el método real |
 | R-04 | No existe listado de pedidos | Añadir `GET /api/Orders` si el panel debe listar |
@@ -161,5 +161,5 @@ es una decisión de presentación, no de dominio. Obligatorio en:
 | R-06 | El alta de producto no devuelve `variantId` | Devolverlo junto al `productId` |
 | R-07 | ~~Split no implementado~~ **RESUELTO 2026-09-27** | Una factura por `VendorId`; verificado contra la base real |
 
-R-02 (CORS) esta resuelto y verificado. Mientras R-01 siga abierto, el frontend **no puede autenticarse ni
-consumir la API desde el navegador**. Se registra como bloqueo de entrega.
+**R-01 y R-02 están resueltos y verificados.** El frontend **ya puede** autenticarse y consumir
+la API desde el navegador. Quedan R-03 a R-06 como intervenciones puntuales en el backend.

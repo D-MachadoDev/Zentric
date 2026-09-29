@@ -123,7 +123,7 @@ namespace Zentric.Api.Controllers
             {
                 return Unauthorized(new ProblemDetails
                 {
-                    Detail = "Missing buyer identity. Send the X-Buyer-Id header."
+                    Detail = "Missing or invalid bearer token."
                 });
             }
 

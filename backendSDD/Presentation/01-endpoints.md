@@ -6,12 +6,27 @@ Este documento define la especificación oficial (SSoT) de la capa de presentaci
 
 ## 1. Configuración de Seguridad y Esquema Bearer (OpenAPI)
 
-Conforme a **ZENTRIC.md, sección 3.2**, los mecanismos de autenticación técnica y sesiones web están fuera del alcance funcional central inicial del dominio. Sin embargo, para permitir la integración profesional con el frontend, pruebas de integración y colecciones de Postman:
+**Actualizado 2026-09-28 (`ADR-0009`, cierra RG-01).** Ya no está "fuera de alcance": la API
+**autentica de verdad** y exige token por **política de reserva** en todo endpoint.
 
-- **Esquema de Seguridad:** `Bearer` (tipo HTTP, formato JWT).
-- **Cabecera HTTP:** `Authorization: Bearer <token>`.
-- **Swagger UI:** Dispone del botón interactivo **Authorize** configurado globalmente mediante `AddSecurityDefinition` y `AddSecurityRequirement`.
-- **Comportamiento en esta fase:** Las rutas están abiertas a nivel de autorización técnica en desarrollo para facilitar la prueba de los 10 módulos de negocio, quedando preparadas para asociar `[Authorize]` y políticas RBAC basadas en los roles de `ZENTRIC.md`, sección 5 (`Buyer`, `Vendor`, `Admin`, `LogisticsOperator`, `Supervisor`) cuando se formalice el módulo técnico de Auth.
+- **Esquema de Seguridad:** `Bearer` (tipo HTTP, formato JWT, HS256).
+- **Cabecera HTTP:** `Authorization: Bearer <token>` — obtenido en `POST /api/auth/login`.
+- **Swagger UI:** botón **Authorize** con `AddSecurityDefinition` / `AddSecurityRequirement`, ya
+  operativo: sin token, Swagger recibe `401` como cualquier otro cliente.
+- **Vida del token:** 60 minutos. **No hay token de refresco.**
+- **Endpoints anónimos** (los únicos sin token):
+  | Ruta | Por qué |
+  | --- | --- |
+  | `POST /api/auth/login` | No se puede autenticar si no se puede pedir el token |
+  | `POST /api/users` **sólo con `role = Buyer`** | ZENTRIC.md incluye "Registro de compradores"; sin él no existe la primera cuenta |
+  | `GET /health` | Lo invoca el healthcheck de Docker |
+- **Roles:** `UserRole` del token (`Buyer`, `Seller`, `Administrator`, `Supervisor`,
+  `LogisticsOperator`). El uso de roles para autorizar recurso a recurso (RG-03) **no está
+  implementado**: queda como Q-21 en el SDD.
+
+> **Nota histórica:** este documento afirmaba que "las rutas estaban abiertas a nivel de
+> autorización técnica en desarrollo". Eso ya **no es cierto** y fue sustituido por la política
+> de reserva descrita arriba.
 
 ---
 
@@ -67,13 +82,18 @@ Endpoint de referencia: `GET /api/Catalog/products/paged?vendorId={id}&page=0&si
 
 ### 3.1 Identidad del llamante y aislamiento por comprador
 
-Todavía **no hay autenticación JWT** (ver 3.2). Mientras tanto, el comprador se declara en la
-cabecera **`X-Buyer-Id`**, y el backend la resuelve en `HeaderBuyerAccessor`. Cuando exista
-JWT, ese mismo accesor pasa a leer el claim (`NameIdentifier` o `sub`) y **no cambia ningún
-otro archivo**: la cabecera queda como fallback para desarrollo.
+**Actualizado 2026-09-28 (`ADR-0009`, cierra RG-01).** La identidad viaja en un
+**token JWT** (`Authorization: Bearer {token}`) emitido por `POST /api/auth/login`.
 
-`GET /api/Orders/{id}` sí está aislado: usa `GetOrderByIdForBuyerQuery`, que filtra por
-`BuyerId` **en la consulta**, no después de leer el pedido.
+- La cabecera **`X-Buyer-Id` fue eliminada** y ya no autentica.
+- `ClaimsBuyerAccessor` lee **solo** el claim `sub` de un token ya validado por el
+  middleware; no existe ninguna vía alternativa de identidad.
+- **Política de reserva:** todo endpoint exige token, salvo `POST /api/auth/login`,
+  `POST /api/users` con `role = Buyer`, y `GET /health` (lo invoca el healthcheck de Docker).
+
+`GET /api/Orders/{id}` está aislado: usa `GetOrderByIdForBuyerQuery`, que filtra por
+`BuyerId` **en la consulta**, no después de leer el pedido. `BuyerId` sale del claim `sub`
+porque `Buyer.UserId` es 1:1 con `User.Id`.
 
 | Situación | Respuesta |
 |---|---|

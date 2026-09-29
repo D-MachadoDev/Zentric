@@ -4,9 +4,9 @@
 [![C# 13](https://img.shields.io/badge/C%23-13.0-239120?style=for-the-badge&logo=c-sharp&logoColor=white)](https://learn.microsoft.com/dotnet/csharp/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-238%20Passing%20(100%25)-brightgreen?style=for-the-badge&logo=xunit)](https://xunit.net/)
+[![Tests](https://img.shields.io/badge/Tests-334%20Passing%20(100%25)-brightgreen?style=for-the-badge&logo=xunit)](https://xunit.net/)
 [![Architecture](https://img.shields.io/badge/Architecture-Hexagonal%20%2B%20DDD%20%2B%20CQRS-orange?style=for-the-badge)](./backendSDD/02-software-architecture.md)
-[![Methodology](https://img.shields.io/badge/Methodology-SDD%20v6.0.0-blue?style=for-the-badge)](./.agents/skills/generic-sdd-agent/SKILL.md)
+[![Methodology](https://img.shields.io/badge/Methodology-SDD%20v7.0.1-blue?style=for-the-badge)](./.agents/skills/generic-sdd-agent/SKILL.md)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](./LICENSE)
 
 Núcleo de Dominio y API Central para la plataforma de comercio electrónico y marketplace **Zentric**. Diseñada bajo principios de ingeniería de software empresarial: **Arquitectura Hexagonal (Puertos y Adaptadores)**, **Domain-Driven Design (DDD)** táctico, segregación de responsabilidades con **CQRS**, y gobernada mediante **Spec-Driven Development (SDD)**.
@@ -65,14 +65,14 @@ cd backend; dotnet test Zentric.slnx
 
 ## 📖 Estructura de Especificación (SDD)
 
-El desarrollo del proyecto se rige por **Spec-Driven Development (SDD v6.0.0)**, manteniendo sincronización bidireccional entre la especificación y el código fuente:
+El desarrollo del proyecto se rige por **Spec-Driven Development (SDD v7.0.1)**, manteniendo sincronización bidireccional entre la especificación y el código fuente:
 
 ```mermaid
 flowchart TD
     B1["1. ZENTRIC.md (La Ley)<br/>Especificación funcional del cliente.<br/>Define 10 dominios y objetivos OBJ-01 a OBJ-12."]
     B2["2. Metodología SDD (SKILL.md)<br/>Metodología de ingeniería de software:<br/>freno de mano, anti-amnesia y cero asunciones."]
-    SSOT["3. Memoria Viva (backendSDD/ y AGENTS.md)<br/>33 Entidades mapeadas, 6 ADRs,<br/>especificaciones por capa y contratos OpenAPI."]
-    CODE["4. Código Implementado (.NET 10)<br/>Dominio puro, CQRS Handlers, FluentValidation,<br/>EF Core aislado y 238 pruebas xUnit."]
+    SSOT["3. Memoria Viva (backendSDD/ y AGENTS.md)<br/>33 Entidades mapeadas, 9 ADRs,<br/>especificaciones por capa y contratos OpenAPI."]
+    CODE["4. Código Implementado (.NET 10)<br/>Dominio puro, CQRS Handlers, FluentValidation,<br/>EF Core aislado y 334 pruebas xUnit."]
 
     B1 --> SSOT
     B2 --> SSOT
@@ -83,7 +83,7 @@ flowchart TD
 | :--- | :--- | :--- |
 | **Nivel 1: La Biblia (La Ley)** | [`ZENTRIC.md`](./ZENTRIC.md) | Documento funcional original. Intocable en su redacción. En su sección 3.2 excluye explícitamente bases de datos, UI y tecnologías de implementación. |
 | **Nivel 2: Addenda del Owner** | [`ADD-001` a `ADD-003`](./backendSDD/SDD.md#addendum---dictado-por-owner) | Resoluciones dictadas por el Owner ante aspectos no especificados en el documento original. |
-| **Nivel 3: Decisiones de Arquitectura** | [`ADR-0001` a `ADR-0006`](./backendSDD/Adr/) | Registros de decisiones de diseño de software (reserva atómica, VariantId, carritos, etc.). |
+| **Nivel 3: Decisiones de Arquitectura** | [`ADR-0001` a `ADR-0009`](./backendSDD/Adr/) | Registros de decisiones de diseño de software (reserva atómica, VariantId, carritos, autenticación, etc.). |
 | **Nivel 4: Memoria Viva (SSoT)** | [`backendSDD/SDD.md`](./backendSDD/SDD.md) y [`backendSDD/`](./backendSDD/) | Fuente Única de Verdad técnica que indexa modelos, invariantes, puertos y contratos. |
 | **Nivel 5: Implementación Técnica** | Código Fuente C# | Implementación concreta estructurada en 5 proyectos. |
 
@@ -174,15 +174,22 @@ Las decisiones de diseño técnico se encuentran documentadas en [`backendSDD/Ad
 | **[ADR-0004](./backendSDD/Adr/0004-estado-cancelacion-despacho.md)** | Cancelación en Despachos Logísticos | Uso del estado `Cancelled` en `FulfillmentOrder` acompañado de `CancellationReason`. |
 | **[ADR-0005](./backendSDD/Adr/0005-modelado-carrito-compras.md)** | Modelado de Carrito en `CustomerOrder` | El carrito se modela como el estado inicial (`Cart`) del agregado `CustomerOrder`. |
 | **[ADR-0006](./backendSDD/Adr/0006-resolucion-contradiccion-ley-addendum.md)** | Prevalencia Normativa de Addendum | Aplicación de la regla dictada por el Owner para la partición de facturas y despachos por vendedor. |
+| **[ADR-0007](./backendSDD/Adr/0007-dispatcher-propio-sustituye-mediatr.md)** | Dispatcher propio en lugar de MediatR | MediatR 14 se eliminó por riesgo de licencia copyleft (RPL 1.5). Se sustituyó por un dispatcher propio sin dependencias externas. |
+| **[ADR-0008](./backendSDD/Adr/0008-transportadora-y-tarifa-de-envio.md)** | Política de envío (implementación aplazada) | El Owner decidió transportadora propia, guía obligatoria, tarifa fija y pago por el cliente. **Sin implementación**: la tarifa aún no tiene cifra. |
+| **[ADR-0009](./backendSDD/Adr/0009-autenticacion-jwt-rg01.md)** | Autenticación real con JWT (RG-01) | Login con correo y contraseña, hash PBKDF2-HMAC-SHA256 calculado en el servidor y token JWT HS256 de 60 minutos. Elimina la cabecera `X-Buyer-Id`. |
 
 ---
 
 ## 🔌 Contrato de API REST y Catálogo de Endpoints
 
-La API expone **26 endpoints RESTful** organizados por Bounded Context:
+La API expone **30 endpoints RESTful** en controladores (10), más la sonda `GET /health` mapeada en `Program.cs` (**31 rutas**), organizados por Bounded Context:
+
+### Authentication (`AuthController`) — nuevo 2026-09-28
+- `POST /api/auth/login` — Autentica con correo y contraseña y devuelve el token (JWT HS256).
+- `GET /api/auth/me` — Devuelve la identidad del token vigente.
 
 ### Identity & Access (`UsersController`)
-- `POST /api/users` — Registra un usuario con rol asignado.
+- `POST /api/users` — Registra un usuario con rol asignado. **`role = Buyer` es la única excepción a RG-01**; el resto exige token de Administrador.
 - `GET /api/users` — Consulta la lista de usuarios.
 - `GET /api/users/{id}` — Consulta el detalle de un usuario por ID.
 
@@ -324,14 +331,14 @@ dotnet run --project Zentric.Api/Zentric.Api.csproj
 
 ## 🧪 Pruebas Automatizadas y Calidad
 
-El proyecto cuenta con **238 pruebas unitarias y de integración** ejecutadas con xUnit:
+El proyecto cuenta con **334 pruebas unitarias y de integración** ejecutadas con xUnit:
 
 ```bash
 cd backend; dotnet test Zentric.slnx
 ```
 
 ```text
-Passed!  - Failed: 0, Passed: 238, Skipped: 0, Total: 238, Duration: 240 ms
+Passed!  - Failed: 0, Passed: 334, Skipped: 0, Total: 334, Duration: 315 ms
 ```
 
 ### Alcance de las Pruebas:
@@ -352,10 +359,10 @@ La siguiente matriz indexa los componentes arquitectónicos y su ubicación en l
 | **Aislamiento de Persistencia** | Modelos `*DbModel` y `*Mapper` dedicados; Unit of Work. | [`Zentric.Infrastructure/Persistence/`](./backend/Zentric.Infrastructure/Persistence/) |
 | **Segregación CQRS** | Comandos y Consultas independientes; pipeline de validación. | [`Zentric.Application/`](./backend/Zentric.Application/) |
 | **Manejo de Errores** | Mapeo estructurado a RFC 7807 (Problem Details). | [`ApiControllerBase.cs`](./backend/Zentric.Api/Controllers/ApiControllerBase.cs)<br/>[`Program.cs`](./backend/Zentric.Api/Program.cs) |
-| **Cobertura de Pruebas** | Suite de 238 pruebas automatizadas cubriendo casos de éxito y borde. | [`Zentric.Tests/`](./backend/Zentric.Tests/) |
+| **Cobertura de Pruebas** | Suite de 334 pruebas automatizadas cubriendo casos de éxito y borde. | [`Zentric.Tests/`](./backend/Zentric.Tests/) |
 | **Contenerización** | Despliegue con Docker Compose (PostgreSQL 16 + API). | [`docker-compose.yml`](./docker-compose.yml)<br/>[`Dockerfile`](./backend/Dockerfile) |
 | **Documentación de API** | OpenAPI 3.0 con Swagger UI y esquema Bearer JWT. | [`Program.cs`](./backend/Zentric.Api/Program.cs)<br/>[`backendSDD/Presentation/01-endpoints.md`](./backendSDD/Presentation/01-endpoints.md) |
-| **Decisiones Técnicas** | Registro de 6 ADRs documentados bajo formato MADR. | [`backendSDD/Adr/`](./backendSDD/Adr/) |
+| **Decisiones Técnicas** | Registro de 9 ADRs documentados bajo formato MADR. | [`backendSDD/Adr/`](./backendSDD/Adr/) |
 
 ---
 

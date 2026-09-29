@@ -56,24 +56,43 @@ Recuento verificado sobre los controladores reales.
 
 ---
 
-## 3. Identidad del llamante — `X-Buyer-Id` (OBLIGATORIO)
+## 3. Identidad del llamante — Bearer token (OBLIGATORIO)
 
-`[CONFIRMADO]` **El backend NO emite JWT.** La identidad viaja en la cabecera
-**`X-Buyer-Id`**, resuelta por `HeaderBuyerAccessor`.
+`[CONFIRMADO]` **Cambiado el 2026-09-28 por `ADR-0009`.** El backend **sí emite JWT** ahora, y
+la cabecera `X-Buyer-Id` **fue eliminada**: escribirla ya no autentica a nadie.
 
 | Situación | Respuesta observada |
 | --- | --- |
-| Dueño del pedido + `X-Buyer-Id` válido | `200 OK` |
-| Comprador distinto al dueño | `404 Not Found` |
-| Sin cabecera y sin identidad | `401 Unauthorized` |
+| Token válido + dueño del pedido | `200 OK` |
+| Token válido + comprador distinto al dueño | `404 Not Found` |
+| Sin token, o token caducado o forjado | `401 Unauthorized` |
+| Solo la cabecera antigua `X-Buyer-Id` | `401 Unauthorized` (ya no sirve) |
 
 > El mismo mensaje para "no existe" y "no es tuyo" es deliberado: distinguirlos
 > permitiría enumerar pedidos ajenos probando GUIDs. **El frontend no debe
 > diferenciar esos casos en la interfaz.**
 
-**Regla:** enviar `X-Buyer-Id` en **todas** las llamadas, no solo en pedidos.
-Conviene centralizarlo en el interceptor HTTP, para que la migración a JWT sea de
-un solo punto.
+**Regla:** enviar `Authorization: Bearer {token}` en **todas** las llamadas, salvo `POST /api/auth/login`
+y `GET /health`. Centralizarlo en el interceptor HTTP.
+
+### Ciclo de vida de la sesión
+
+1. `POST /api/auth/login` con `{ "email": ..., "password": ... }` → `200` con
+   `{ token, expiresAt, userId, email, fullName, role }`.
+2. Guardar el token y adjuntarlo como `Bearer` en cada petición.
+3. Al recibir `401`, cerrar sesión y volver al login. **No hay token de refresco**:
+   la vida es de 60 minutos y entonces toca autenticarse de nuevo.
+4. `GET /api/auth/me` devuelve la identidad del token vigente sin consultar la base;
+   sirve para restaurar la sesión al abrir la aplicación.
+
+### Auto-registro
+
+`POST /api/users` es el **único** endpoint de negocio sin token, y solo si el `role` es `Buyer`:
+la Ley incluye "Registro de compradores" en el alcance. Cualquier otro rol responde `403`
+salvo que quien llame sea un `Administrator` autenticado (ZENTRIC.md, Dominio 3).
+
+**El frontend debe montar la pantalla de acceso sobre este flujo**, ya que R-01
+("el backend no emite JWT") quedó cerrado.
 
 ---
 
