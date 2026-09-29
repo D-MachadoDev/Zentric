@@ -39,7 +39,7 @@ ninguna decisión de negocio vuelve a leer `DateTime.UtcNow` a escondidas.
 | `SystemClock` | `Zentric.Infrastructure/Common/SystemClock.cs` | Adaptador de producción; singleton sin estado que delega en `DateTimeOffset.UtcNow` |
 | Registro | `Program.cs` (Composition Root), `AddSingleton<IClock, SystemClock>()` | Único punto donde se elige el reloj; `AGENTS.md` sección 6 |
 | `ManualClock` | `Zentric.Tests/Security/ManualClock.cs` | Reloj falso: `UtcNow` es lo que el test diga; `Advance(TimeSpan)` **solo avanza** |
-| Consumidores | `CheckoutTimeoutService` (umbral PED-01), `JwtAuthTokenService` (claim `exp`) | Reciben `IClock` por constructor |
+| Consumidores | `CheckoutTimeoutService` (umbral PED-01) recibe `IClock` por constructor; `JwtAuthTokenService` (claim `exp`) recibe `Func<DateTimeOffset>`, que el Composition Root resuelve contra ese mismo `IClock` | Un adaptador de dominio no necesita saber que existe un reloj: le basta el instante |
 
 Detalles que no son ornamentales:
 
@@ -63,7 +63,8 @@ Detalles que no son ornamentales:
 - PED-01 es verificable: `CartExpirationTests` congeló el tiempo y quedó fijo el borde —
   carrito fresco no expira, 16 minutos sí, **15 exactos no** (el filtro usa `<` estricto),
   pedido pagado nunca se barre.
-- La caducidad del token se podrá probar sin esperar una hora.
+- La caducidad del token ya se comprueba sin esperar: `JwtAuthTokenServiceTests` fija el
+  reloj en `10:00` y exige `exp` en `11:00`.
 - Ninguna prueba vuelve a depender de la hora del ejecutor ni de cuánto tarde el proceso en
   crear un objeto.
 - `Zentric.Domain` sigue sin `PackageReference` alguno: el puerto es código propio.
