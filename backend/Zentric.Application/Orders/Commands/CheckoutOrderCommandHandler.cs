@@ -38,7 +38,10 @@ namespace Zentric.Application.Orders.Commands
 
         public async Task<Result<bool>> Handle(CheckoutOrderCommand request, CancellationToken cancellationToken)
         {
-            var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+            // Q-21b: el carrito se carga con el filtro por comprador; el de otro
+            // comprador se trata igual que uno inexistente.
+            var order = await _orderRepository.GetByIdForBuyerAsync(
+                request.OrderId, request.BuyerId, cancellationToken);
             if (order == null)
             {
                 return Result<bool>.Failure($"Order with ID {request.OrderId} not found.");

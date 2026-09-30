@@ -191,7 +191,7 @@ namespace Zentric.Tests.UseCases
         {
             var (mediator, _) = BuildMediator();
 
-            var result = await mediator.Send(new AddOrderItemCommand(Guid.NewGuid(), Guid.NewGuid(), FakeProductRepository.VendorIdUnderTest, 0, 10m, "COP"));
+            var result = await mediator.Send(new AddOrderItemCommand(Guid.NewGuid(), Guid.NewGuid(), FakeProductRepository.VendorIdUnderTest, 0, 10m, "COP", Guid.NewGuid()));
 
             Assert.True(result.IsFailure);
             Assert.Contains("Quantity must be greater than zero.", result.Error);
@@ -202,7 +202,7 @@ namespace Zentric.Tests.UseCases
         {
             var (mediator, _) = BuildMediator();
 
-            var result = await mediator.Send(new AddOrderItemCommand(Guid.NewGuid(), Guid.NewGuid(), FakeProductRepository.VendorIdUnderTest, 1, 10m, "COP"));
+            var result = await mediator.Send(new AddOrderItemCommand(Guid.NewGuid(), Guid.NewGuid(), FakeProductRepository.VendorIdUnderTest, 1, 10m, "COP", Guid.NewGuid()));
 
             Assert.True(result.IsFailure);
             Assert.Equal("Order not found.", result.Error);
@@ -214,12 +214,13 @@ namespace Zentric.Tests.UseCases
             // Regresión H-09: antes, la excepción del agregado se capturaba con un
             // catch (Exception) genérico; ahora el fallo previsible se informa como Result.
             var (mediator, orders) = BuildMediator();
-            var order = new CustomerOrder(Guid.NewGuid());
+            var buyerId = Guid.NewGuid();
+            var order = new CustomerOrder(buyerId);
             order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 1, new Money(10, "COP"));
             order.Checkout();
             orders.Seed(order);
 
-            var result = await mediator.Send(new AddOrderItemCommand(order.Id, Guid.NewGuid(), FakeProductRepository.VendorIdUnderTest, 1, 10m, "COP"));
+            var result = await mediator.Send(new AddOrderItemCommand(order.Id, Guid.NewGuid(), FakeProductRepository.VendorIdUnderTest, 1, 10m, "COP", buyerId));
 
             Assert.True(result.IsFailure);
             Assert.Equal("Items can only be added while the order is in the Cart status.", result.Error);
@@ -230,11 +231,12 @@ namespace Zentric.Tests.UseCases
         public async Task Send_AddOrderItemCommandWhenOrderIsInCart_AddsItemAndPersists()
         {
             var (mediator, orders) = BuildMediator();
-            var order = new CustomerOrder(Guid.NewGuid());
+            var buyerId = Guid.NewGuid();
+            var order = new CustomerOrder(buyerId);
             orders.Seed(order);
             var variantId = Guid.NewGuid();
 
-            var result = await mediator.Send(new AddOrderItemCommand(order.Id, variantId, FakeProductRepository.VendorIdUnderTest, 2, 15m, "cop"));
+            var result = await mediator.Send(new AddOrderItemCommand(order.Id, variantId, FakeProductRepository.VendorIdUnderTest, 2, 15m, "cop", buyerId));
 
             Assert.True(result.IsSuccess);
             Assert.Equal(1, orders.UpdateCalls);
@@ -252,6 +254,25 @@ namespace Zentric.Tests.UseCases
 
             Assert.True(result.IsFailure);
             Assert.Equal("Vendor ID is required.", result.Error);
+        }
+
+        [Fact]
+        public async Task Send_AddOrderItemCommandForAnotherBuyersCart_ReturnsNotFoundAndPersistsNothing()
+        {
+            // Q-21b: el carrito ajeno se trata como inexistente. Antes, cualquier
+            // comprador podia agregar items al de otro con solo conocer su GUID.
+            var (mediator, orders) = BuildMediator();
+            var ownerId = Guid.NewGuid();
+            var order = new CustomerOrder(ownerId);
+            orders.Seed(order);
+
+            var result = await mediator.Send(new AddOrderItemCommand(
+                order.Id, Guid.NewGuid(), FakeProductRepository.VendorIdUnderTest, 1, 10m, "COP", Guid.NewGuid()));
+
+            Assert.True(result.IsFailure);
+            Assert.Equal("Order not found.", result.Error);
+            Assert.Equal(0, orders.UpdateCalls);
+            Assert.Empty(order.Items);
         }
     }
 }

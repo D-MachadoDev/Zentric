@@ -16,10 +16,12 @@ namespace Zentric.Api.Controllers
     public class ReturnsController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly ICurrentUserAccessor _currentUser;
 
-        public ReturnsController(IMediator mediator)
+        public ReturnsController(IMediator mediator, ICurrentUserAccessor currentUser)
         {
             _mediator = mediator;
+            _currentUser = currentUser;
         }
 
         /// <summary>
@@ -29,16 +31,23 @@ namespace Zentric.Api.Controllers
         /// Valida que el pedido se encuentre debidamente entregado y que la solicitud esté dentro
         /// del período legal de garantía del producto según las reglas de negocio de ZENTRIC.md.
         /// </remarks>
-        /// <param name="command">Datos de la devolución (OrderId, ProductId, Motivo y Detalle).</param>
+        /// <param name="command">Datos de la devolución (OrderId, ProductId, Motivo y Detalle). Un BuyerId en el cuerpo se descarta: la identidad la fija el token (Q-21b).</param>
         /// <response code="200">Solicitud de devolución radicada con éxito. Retorna el identificador (Guid).</response>
-        /// <response code="400">Error si el plazo de garantía ha expirado o el producto no corresponde a la orden (RFC 7807 ProblemDetails).</response>
+        /// <response code="400">Error si el plazo de garantía ha expirado, el producto no corresponde a la orden o el pedido no pertenece al llamante (RFC 7807 ProblemDetails).</response>
+        /// <response code="401">Token ausente o inválido.</response>
         [HttpPost("request")]
         [Authorize(Policy = AuthorizationPolicies.ReturnRequest)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> RequestReturn([FromBody] RequestReturnCommand command)
         {
-            var result = await _mediator.Send(command);
+            var userId = _currentUser.UserId;
+            if (userId is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            // Q-21b: la identidad la fija el token, no el cuerpo; el handler
+            // verifica que el pedido a devolver sea del llamante.
+            var result = await _mediator.Send(command with { BuyerId = userId.Value });
             if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
             return Ok(result.Value);
         }

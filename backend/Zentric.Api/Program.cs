@@ -128,7 +128,7 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<Zentric.Api.Security.ICurrentBuyerAccessor, Zentric.Api.Security.ClaimsBuyerAccessor>();
+builder.Services.AddScoped<Zentric.Api.Security.ICurrentUserAccessor, Zentric.Api.Security.ClaimsUserAccessor>();
 
 // Puerto de credenciales y emision de token. Los adaptadores son
 // intercambiables: cambiar el algoritmo de hash o el formato del token no exige

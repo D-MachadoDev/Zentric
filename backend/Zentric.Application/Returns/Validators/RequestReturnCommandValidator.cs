@@ -26,6 +26,12 @@ namespace Zentric.Application.Returns.Validators
             RuleFor(command => command.ProductType)
                 .IsInEnum()
                 .WithMessage("Valid ProductType is required.");
+
+            // Q-21b: identidad derivada del token por el controlador; el handler
+            // la usa para verificar la propiedad del pedido.
+            RuleFor(command => command.BuyerId)
+                .NotEmpty()
+                .WithMessage("BuyerId is required.");
         }
     }
 }

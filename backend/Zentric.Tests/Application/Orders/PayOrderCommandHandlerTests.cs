@@ -113,12 +113,13 @@ namespace Zentric.Tests.Application.Orders
             var handler = new PayOrderCommandHandler(
                 repo, new FakeUnitOfWork(), new ApprovingPaymentGateway(), receipts);
 
-            var order = new CustomerOrder(Guid.NewGuid());
+            var buyerId = Guid.NewGuid();
+            var order = new CustomerOrder(buyerId);
             order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 2, new Money(50m, "COP"));
             order.Checkout();
             await repo.AddAsync(order);
 
-            var result = await handler.Handle(new PayOrderCommand(order.Id), CancellationToken.None);
+            var result = await handler.Handle(new PayOrderCommand(order.Id, buyerId), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
             var receipt = Assert.Single(receipts.Receipts);
@@ -136,12 +137,13 @@ namespace Zentric.Tests.Application.Orders
             var handler = new PayOrderCommandHandler(
                 repo, new FakeUnitOfWork(), new DecliningPaymentGateway(), receipts);
 
-            var order = new CustomerOrder(Guid.NewGuid());
+            var buyerId = Guid.NewGuid();
+            var order = new CustomerOrder(buyerId);
             order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 1, new Money(50m, "COP"));
             order.Checkout();
             await repo.AddAsync(order);
 
-            await handler.Handle(new PayOrderCommand(order.Id), CancellationToken.None);
+            await handler.Handle(new PayOrderCommand(order.Id, buyerId), CancellationToken.None);
 
             var receipt = Assert.Single(receipts.Receipts);
             Assert.Equal(PaymentStatus.Declined, receipt.Status);
@@ -156,12 +158,13 @@ namespace Zentric.Tests.Application.Orders
             var uow = new FakeUnitOfWork();
             var handler = new PayOrderCommandHandler(repo, uow, new DecliningPaymentGateway(), new FakePaymentReceiptRepository());
 
-            var order = new CustomerOrder(Guid.NewGuid());
+            var buyerId = Guid.NewGuid();
+            var order = new CustomerOrder(buyerId);
             order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 1, new Money(50m, "COP"));
             order.Checkout();
             await repo.AddAsync(order);
 
-            var result = await handler.Handle(new PayOrderCommand(order.Id), CancellationToken.None);
+            var result = await handler.Handle(new PayOrderCommand(order.Id, buyerId), CancellationToken.None);
 
             Assert.True(result.IsFailure);
             Assert.Contains("declined", result.Error);
@@ -176,12 +179,13 @@ namespace Zentric.Tests.Application.Orders
             var gateway = new ApprovingPaymentGateway();
             var handler = new PayOrderCommandHandler(repo, new FakeUnitOfWork(), gateway, new FakePaymentReceiptRepository());
 
-            var order = new CustomerOrder(Guid.NewGuid());
+            var buyerId = Guid.NewGuid();
+            var order = new CustomerOrder(buyerId);
             order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 2, new Money(50m, "COP"));
             order.Checkout();
             await repo.AddAsync(order);
 
-            await handler.Handle(new PayOrderCommand(order.Id), CancellationToken.None);
+            await handler.Handle(new PayOrderCommand(order.Id, buyerId), CancellationToken.None);
 
             Assert.Single(gateway.ChargedAmounts);
             Assert.Equal(new Money(100m, "COP"), gateway.ChargedAmounts[0]);
@@ -194,12 +198,13 @@ namespace Zentric.Tests.Application.Orders
             var uow = new FakeUnitOfWork();
             var handler = new PayOrderCommandHandler(repo, uow, new ApprovingPaymentGateway(), new FakePaymentReceiptRepository());
 
-            var order = new CustomerOrder(Guid.NewGuid());
+            var buyerId = Guid.NewGuid();
+            var order = new CustomerOrder(buyerId);
             order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 2, new Zentric.Domain.Products.ValueObjects.Money(50m, "COP"));
             order.Checkout(); // Moves Cart -> PendingPayment
             await repo.AddAsync(order);
 
-            var command = new PayOrderCommand(order.Id);
+            var command = new PayOrderCommand(order.Id, buyerId);
             var result = await handler.Handle(command, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
@@ -214,11 +219,38 @@ namespace Zentric.Tests.Application.Orders
             var uow = new FakeUnitOfWork();
             var handler = new PayOrderCommandHandler(repo, uow, new ApprovingPaymentGateway(), new FakePaymentReceiptRepository());
 
-            var command = new PayOrderCommand(Guid.NewGuid());
+            var command = new PayOrderCommand(Guid.NewGuid(), Guid.NewGuid());
             var result = await handler.Handle(command, CancellationToken.None);
 
             Assert.True(result.IsFailure);
             Assert.Contains("not found", result.Error);
+        }
+
+        [Fact]
+        public async Task Handle_ForeignBuyer_CannotPayAnotherBuyersOrder()
+        {
+            // Q-21b: sin el filtro por comprador, cualquier Buyer podia disparar
+            // el cobro de un pedido ajeno con solo conocer su GUID. El intento
+            // debe responder igual que un pedido inexistente ("not found"), el
+            // pedido debe seguir sin pagar y la pasarela sin ser invocada.
+            var repo = new FakeCustomerOrderRepositoryForPay();
+            var uow = new FakeUnitOfWork();
+            var gateway = new ApprovingPaymentGateway();
+            var handler = new PayOrderCommandHandler(repo, uow, gateway, new FakePaymentReceiptRepository());
+
+            var ownerId = Guid.NewGuid();
+            var order = new CustomerOrder(ownerId);
+            order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 1, new Money(50m, "COP"));
+            order.Checkout();
+            await repo.AddAsync(order);
+
+            var result = await handler.Handle(new PayOrderCommand(order.Id, Guid.NewGuid()), CancellationToken.None);
+
+            Assert.True(result.IsFailure);
+            Assert.Contains("not found", result.Error);
+            Assert.Equal(OrderStatus.PendingPayment, order.Status);
+            Assert.Empty(gateway.ChargedAmounts);
+            Assert.False(uow.SaveChangesCalled);
         }
     }
 }
