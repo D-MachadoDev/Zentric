@@ -37,7 +37,8 @@ function Login([string]$email, [string]$password) {
     return ($json.Content | ConvertFrom-Json).token
 }
 
-function CreateUser([string]$token, [string]$email, [string]$fullName, [string]$document, [int]$role) {
+function CreateUser([string]$token, [string]$email, [string]$fullName, [string]$document, [string]$role) {
+    # Q-22 (ADR-0012): el rol viaja por nombre ("Seller"), no por entero. Un entero responde 400.
     $body = @{ email = $email; fullName = $fullName; identityDocument = $document; password = $pass; role = $role } | ConvertTo-Json
     $headers = @{}
     if ($token) { $headers['Authorization'] = "Bearer $token" }
@@ -53,7 +54,8 @@ function Status([string]$method, [string]$path, [string]$token, [string]$body = 
     return (Invoke-WebRequest @params).StatusCode
 }
 
-# Alta de un usuario por rol. Enum UserRole: Buyer=0, Seller=1, Administrator=2, Supervisor=3, LogisticsOperator=4
+# Alta de un usuario por rol. Nombres exactos de UserRole: Buyer, Seller, Administrator,
+# Supervisor, LogisticsOperator (Q-22: ya no se envia el entero 0..4).
 $adminToken = Login $AdminEmail $AdminPassword
 $created = [ordered]@{
     Buyer      = "${suite}.buyer@q21.test"
@@ -61,7 +63,7 @@ $created = [ordered]@{
     Operator   = "${suite}.op@q21.test"
     Supervisor = "${suite}.sup@q21.test"
 }
-$roleOf = @{ Buyer = 0; Seller = 1; Operator = 4; Supervisor = 3 }
+$roleOf = @{ Buyer = 'Buyer'; Seller = 'Seller'; Operator = 'LogisticsOperator'; Supervisor = 'Supervisor' }
 $i = 0
 foreach ($key in $created.Keys) {
     $i++
@@ -127,17 +129,37 @@ foreach ($case in $cases) {
     '{0,-5} {1,-11} {2,-45} esperado {3,-8} -> {4}  {5}' -f $case.m, $case.who, $case.p, $case.exp, $actual, $(if ($ok) { 'OK' } else { 'FALLO' })
 }
 
-# Unica excepcion a RG-01 (auto-registro de Comprador) y su contra-prueba
+# Unica excepcion a RG-01 (auto-registro de Comprador) y su contra-prueba. Los dos body llevan
+# el rol por nombre, que desde Q-22 es la unica forma valida de escribirlo.
 $anonBuyer = "${suite}.anon@q21.test"
 $anonSeller = "${suite}.anonseller@q21.test"
-$c1 = CreateUser $null $anonBuyer 'Compra Anonima' "Q21-$suite-a1" 0
-$c2 = CreateUser $null $anonSeller 'Vendedor Anonimo' "Q21-$suite-a2" 1
-'POST  (anonimo)   /api/users role=Buyer                   esperado 200      -> {0}  {1}' -f $c1, $(if ($c1 -eq 200) {'OK'} else {'FALLO'})
-'POST  (anonimo)   /api/users role=Seller                  esperado 403      -> {0}  {1}' -f $c2, $(if ($c2 -eq 403) {'OK'} else {'FALLO'})
-if ($c1 -ne 200 -or $c2 -ne 403) { $fallos++ }
+$c1 = CreateUser $null $anonBuyer 'Compra Anonima' "Q21-$suite-a1" 'Buyer'
+$c2 = CreateUser $null $anonSeller 'Vendedor Anonimo' "Q21-$suite-a2" 'Seller'
+'POST  (anonimo)   /api/users "role":"Buyer"                 esperado 200      -> {0}  {1}' -f $c1, $(if ($c1 -eq 200) {'OK'} else {'FALLO'})
+'POST  (anonimo)   /api/users "role":"Seller"                esperado 403      -> {0}  {1}' -f $c2, $(if ($c2 -eq 403) {'OK'} else {'FALLO'})
+if ($c1 -ne 200) { $fallos++ }
+if ($c2 -ne 403) { $fallos++ }
 
-"TOTAL DE COMPROBACIONES: $($cases.Count + 2) | FALLOS: $fallos"
-@($created.Values) + @($anonBuyer, $anonSeller) | Set-Content "$env:TEMP\q21-emails.txt"
+# Q-22 (ADR-0012, forma estricta dictada por el Owner): el cuerpo JSON de un enum solo admite el
+# nombre. El entero deja de ser un valor valido (400), y el nombre debe seguir funcionando de
+# punta a punta: si el registro no estuviera cableado al contrato, estas tres lineas lo delatan.
+$q22Integer = "{""identityDocument"":""Q21-$suite-n1"",""fullName"":""Contrato Entero"",""email"":""$suite.num@q21.test"",""password"":""$pass"",""role"":2}"
+$c3 = Status 'POST' '/api/users' $adminToken $q22Integer
+'POST  Admin       /api/users "role":2 (entero)              esperado 400      -> {0}  {1}' -f $c3, $(if ($c3 -eq 400) {'OK'} else {'FALLO'})
+$c4 = CreateUser $adminToken "${suite}.q22@q21.test" 'Contrato Nombre' "Q21-$suite-n2" 'Administrator'
+'POST  Admin       /api/users "role":"Administrator"         esperado 200      -> {0}  {1}' -f $c4, $(if ($c4 -eq 200) {'OK'} else {'FALLO'})
+$q22Lower = "{""identityDocument"":""Q21-$suite-n3"",""fullName"":""Contrato Minuscula"",""email"":""$suite.low@q21.test"",""password"":""$pass"",""role"":""supervisor""}"
+$c5 = Status 'POST' '/api/users' $adminToken $q22Lower
+'POST  Admin       /api/users "role":"supervisor"            esperado 200      -> {0}  {1}' -f $c5, $(if ($c5 -eq 200) {'OK'} else {'FALLO'})
+if ($c3 -ne 400) { $fallos++ }
+if ($c4 -ne 200) { $fallos++ }
+if ($c5 -ne 200) { $fallos++ }
+
+"TOTAL DE COMPROBACIONES: $($cases.Count + 5) | FALLOS: $fallos"
 "Limpieza de los usuarios de esta corrida: docker exec zentric-postgres psql -U postgres -d ZentricDb -c 'DELETE FROM ""Users"" WHERE ""Email"" LIKE ''%q21.test%'';'"
-if ($fallos -gt 0) { exit 1 }
+
+# Se sale SIEMPRE con un codigo explicito: sin esto, cuando no hay fallos el script no ejecuta
+# ningun exit y $LASTEXITCODE conserva el valor del ultimo comando externo de la sesion, que es
+# como CI se traga un verde inventado (pasó el 2026-09-29: 0 fallos con exit code 1 heredado).
+exit $fallos
 

@@ -42,6 +42,7 @@ en [`Contract-alignment.md`](Contract-alignment.md).
 | 1.0.0 | 2026-09-27 | Especificación inicial del frontend. Configuración base creada; implementación diferida. | Agente IA |
 | 1.1.0 | 2026-09-27 | Sincronizado con el backend real (29 endpoints): CORS resuelto, `X-Buyer-Id` obligatorio, paginación con `size` acotado a 100, reglas de la Ley aplicadas a la UI, R-08 (reportes) registrado. | Agente IA |
 | 1.2.0 | 2026-09-29 | Reglas 1 y 4 reescritas tras `ADR-0009`: la identidad viaja en `Authorization: Bearer` (login + 60 min) y `X-Buyer-Id` deja de existir; el interceptor pasa a guardar el token y cerrar sesión ante `401`. Registrados Q-21 (autorización por rol) y Q-22 (los `enum` viajan como entero en el cuerpo JSON) como pendientes de contrato. | Agente IA |
+| 1.3.0 | 2026-09-29 | Cerrados los dos pendientes de contrato: Q-21 (autorización por rol, `ADR-0011`) y Q-22 (`ADR-0012`: los `enum` del cuerpo JSON viajan **solo por nombre**; un entero responde `400`). `Frontend-Adapters.md` §3.2 reescrito con constantes de texto y los valores correctos del dominio — los números que publicaba no existían (`Buyer: 2` no es Buyer, que es `0`) y no incluían `Supervisor` ni `Cancelled`. Queda abierto Q-21b (propiedad del recurso en lecturas), que bloquea exponer listados. | Agente IA |
 
 ---
 

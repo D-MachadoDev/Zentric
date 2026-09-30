@@ -130,30 +130,32 @@ porque `Buyer.UserId` es 1:1 con `User.Id`.
   por la que un rol privilegiado entra al sistema, porque el auto-registro está limitado a
   Compradores. Retirar las variables en cuanto exista.
 
-### 3.3 Los `enum` del contrato viajan como número en el cuerpo JSON (**Q-22**)
+### 3.3 Los `enum` del contrato viajan como nombre en el cuerpo JSON (**Q-22 cerrada, ADR-0012**)
 
-Verificado contra la API desplegada en Docker el 2026-09-29:
+Desde el 2026-09-29 el cuerpo JSON **solo acepta el nombre** del enum (`"Buyer"`, `"Physical"`,
+`"Pending"`). Un entero en un campo de enum responde `400`. Registrado en
+`Zentric.Api/Contracts/EnumJsonContract.cs` — `JsonStringEnumConverter` con
+`allowIntegerValues: false` — y verificado contra la API desplegada en Docker:
 
 | Petición | Respuesta |
 |---|---|
-| `POST /api/users` con `"role": "Buyer"` | `400` — `The JSON value could not be converted to CreateUserCommand` |
-| `POST /api/users` con `"role": 0` | `200` con el `Guid` del usuario |
-| `GET /api/users?role=Seller` | `200` |
-| `GET /api/users?role=1` | `200` |
+| `POST /api/users` con `"role": "Buyer"` (anónimo) | `200` con el `Guid` del usuario |
+| `POST /api/users` con `"role":"supervisor"` en minúsculas y token de Administrador | `200` — la lectura no distingue mayúsculas |
+| `POST /api/users` con `"role": 2` y token de Administrador | `400` con `$.role: The JSON value could not be converted…` |
+| `GET /api/users?role=Seller` y `?role=1` | `200` — el binding de query sigue aceptando ambas formas |
 
-`System.Text.Json` no tiene configurado `JsonStringEnumConverter`, mientras que el binding
-de query sí acepta nombres. El resultado es una asimetría: **en el cuerpo se envían
-enteros, en la query se aceptan ambas formas**. Afecta a todos los enum del contrato
-(`UserRole`, y en las respuestas `OrderStatus`, `PaymentStatus`, `FulfillmentStatus`,
-`InvoiceType`).
+Las respuestas **ya** devolvían el nombre (`order.Status.ToString()`), así que la decisión no cambió
+la salida: alineó la entrada con lo que la salida y la query ya decían. Los enum que entran por
+cuerpo son `UserRole` (registro de usuario), `ProductType` (producto y devolución) y
+`WarehouseType` (bodega).
 
-`UserRole`: `Buyer = 0`, `Seller = 1`, `Administrator = 2`, `Supervisor = 3`,
-`LogisticsOperator = 4`.
+`UserRole`: `Buyer`, `Seller`, `Administrator`, `Supervisor`, `LogisticsOperator`. Los índices
+`0..4` existen en el enum C# pero **no** forman parte del contrato REST.
 
-Unificarlo (registro de `JsonStringEnumConverter`) cambiaría el contrato de entrada y de
-salida de todos los enum, así que queda como **Q-22** a decisión del Owner
-([SDD, sección 9.1](../SDD.md#91-preguntas-al-owner-abiertas)). Mientras tanto el frontend
-envía enteros.
+Cobertura: 5 pruebas en `Zentric.Tests/Presentation/EnumJsonContractTests.cs` (sobre la tubería
+real de MVC, con prueba de mutación) y 3 comprobaciones HTTP en
+`backend/scripts/authorization-smoke.ps1`. Decisión y alternativas descartadas:
+[ADR-0012](../Adr/0012-contrato-json-de-los-enum-por-nombre.md).
 
 ### 3.4 CORS
 
@@ -189,7 +191,7 @@ separan por comas.
 ### 3.1. Tag: `1. Usuarios y Roles` (`/api/users`)
 | Método | Endpoint | Tipo CQRS | Entrada / Payload | Respuestas | Descripción de Negocio e Invariantes |
 |---|---|:---:|---|---|---|
-| `POST` | `/api/users` | Command | `CreateUserCommand` (Body) — **anónimo solo si `role = Buyer` (`0`)** | `200 OK (Guid)`<br>`400 Bad Request (ProblemDetails)`<br>`403 Forbidden (ProblemDetails)` | Registra un nuevo usuario en el sistema. Valida unicidad de `Email` e `IdentityDocument` de forma asíncrona. Asigna roles válidos: `Buyer`, `Seller`, `Administrator`, `LogisticsOperator`, `Supervisor` (en el cuerpo JSON el rol viaja como **entero**, ver [3.3](#33-los-enum-del-contrato-viajan-como-número-en-el-cuerpo-json-q-22)). La contraseña viaja en claro y **el servidor calcula el hash**: el cliente nunca envía `PasswordHash`. Cualquier rol distinto de `Buyer` sin token de Administrador responde `403` (ZENTRIC.md Dominio 3: los vendedores no se auto-registran). |
+| `POST` | `/api/users` | Command | `CreateUserCommand` (Body) — **anónimo solo si `role = "Buyer"`** | `200 OK (Guid)`<br>`400 Bad Request (ProblemDetails)`<br>`403 Forbidden (ProblemDetails)` | Registra un nuevo usuario en el sistema. Valida unicidad de `Email` e `IdentityDocument` de forma asíncrona. Asigna roles válidos: `Buyer`, `Seller`, `Administrator`, `LogisticsOperator`, `Supervisor` (en el cuerpo JSON el rol viaja como **nombre**, ver [3.3](#33-los-enum-del-contrato-viajan-como-nombre-en-el-cuerpo-json-q-22-cerrada-adr-0012)). La contraseña viaja en claro y **el servidor calcula el hash**: el cliente nunca envía `PasswordHash`. Cualquier rol distinto de `Buyer` sin token de Administrador responde `403` (ZENTRIC.md Dominio 3: los vendedores no se auto-registran). |
 | `GET` | `/api/users` | Query | `role` (Query param opcional) | `200 OK (List<UserDto>)` | Lista todos los usuarios registrados, permitiendo filtrar por rol (ej. `?role=Seller` o `?role=Buyer`). |
 | `GET` | `/api/users/{id}` | Query | `id` (Path) | `200 OK (UserDto)`<br>`404 Not Found (ProblemDetails)` | Obtiene el detalle técnico y estado de un usuario por su ID. |
 

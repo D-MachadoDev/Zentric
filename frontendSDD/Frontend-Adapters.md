@@ -75,15 +75,32 @@ const id = JSON.parse(raw) as string; // -> "3de3d5d4-…"
 Aplicar `readGuid(response)` en `createUser`, `createWarehouse`, `createProduct`,
 `addStock`, `createCart`, `createFulfillment` y `requestReturn`.
 
-### 3.2 Enums como números
+### 3.2 Enums como nombres (cerrado 2026-09-29, `ADR-0012`)
 
-Los enums viajan como enteros. El cliente los convierte con **constantes
-explícitas**, nunca con índices literales, para sobrevivir a cambios de orden:
+`[CONFIRMADO]` El cuerpo JSON **solo acepta el nombre** del enum (`"Seller"`, `"Physical"`). Enviar
+un entero responde `400`. Las respuestas ya devolvían el nombre, así que entrada y salida hablan
+igual. Las constantes del cliente son literales de texto, nunca índices numéricos:
 
 ```ts
-export const UserRole = { Seller: 1, Buyer: 2, Admin: 3, LogisticsOperator: 4 } as const;
-export const OrderStatus = { Cart: 0, PendingPayment: 1, Paid: 2, Dispatched: 3, Delivered: 4 } as const;
+export const UserRole = {
+  Buyer: 'Buyer', Seller: 'Seller', Administrator: 'Administrator',
+  Supervisor: 'Supervisor', LogisticsOperator: 'LogisticsOperator',
+} as const;
+export const OrderStatus = {
+  Cart: 'Cart', PendingPayment: 'PendingPayment', Paid: 'Paid',
+  Dispatched: 'Dispatched', Delivered: 'Delivered', Cancelled: 'Cancelled',
+} as const;
 ```
+
+> **Este bloque estaba mal antes de 2026-09-29.** Decía `Seller: 1, Buyer: 2, Admin: 3`, que no
+> corresponde a ningún valor real del dominio (`Buyer=0, Seller=1, Administrator=2, Supervisor=3,
+> LogisticsOperator=4`), omitía `Supervisor` en `UserRole` y `Cancelled` en `OrderStatus`. Si se
+> hubiera coded con esos números, los altares habrían creado el rol equivocado en silencio.
+
+Un nombre mal escrito no degrada a un valor por defecto: la petición cae en `400` con
+`ProblemDetails` citando la ruta JSON (`$.role`). La lectura **no** distingue mayúsculas
+(`"seller"` funciona, verificado), pero el cliente manda el nombre exacto para que log y contrato
+coincidan.
 
 ### 3.3 `variantId` versus `productId` (riesgo FR-03)
 

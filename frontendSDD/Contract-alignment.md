@@ -205,4 +205,6 @@ Estas restricciones vienen de la Ley. El frontend debe cumplirlas **en la interf
 
 **Estado global: `READY_TO_START`.** Los dos bloqueios que impedian hablar con la API desde el navegador estan resueltos y verificados: CORS (origen permitido recibe los headers) y autenticacion (`POST /api/auth/login` + `Authorization: Bearer`). La UI empieza con login, interceptor del token y paginacion.
 
-**Pendiente antes de produccion:** autorizacion por rol (Q-21 del backend: hoy cualquier usuario autenticado puede llamar a endpoints administrativos), contrato de los `enum` en el cuerpo JSON (Q-22: viajan como entero, no como nombre) y reportes administrativos (R-08).
+**Cerrado desde el alineamiento original:** autorizacion por rol (Q-21 del backend → `ADR-0011`, 2026-09-29: 18 politicas, `FallbackPolicy` fail-closed, verificado con tokens de los cinco roles) y contrato de los `enum` en el cuerpo JSON (Q-22 → `ADR-0012`, 2026-09-29: **viajan por nombre**, el cliente manda `"Seller"` y nunca `1`; ver `Frontend-Adapters.md` §3.2, que tenia los valores numericos mal).
+
+**Pendiente antes de produccion:** propiedad del recurso en las lecturas (Q-21b del backend: hoy un Comprador con el GUID correcto puede leer facturas o pedidos ajenos, y sin ese dictamen el frontend no puede exponer listados sin riesgo de exponer datos de otros) y reportes administrativos (R-08).

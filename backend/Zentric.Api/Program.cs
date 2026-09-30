@@ -10,10 +10,15 @@ using Zentric.Application.Common.Messaging;
 
 using Microsoft.OpenApi;
 using System.Reflection;
+using Zentric.Api.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// Q-22 (ADR-0012): el contrato de los enum va por nombre y solo por nombre. El Owner dicto la
+// forma estricta, asi que un cuerpo con "role": 2 responde 400 en lugar de colarse como
+// Administrador. Las salidas ya devolvian nombres y la query ya los aceptaba; el cuerpo era lo
+// unico que hablaba en numeros. Todo el contrato vive en EnumJsonContract.
+builder.Services.AddControllers().AddZentricEnumContract();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
