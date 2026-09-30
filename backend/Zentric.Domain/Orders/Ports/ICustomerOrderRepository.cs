@@ -13,6 +13,16 @@ namespace Zentric.Domain.Orders.Ports
         /// </summary>
         Task<CustomerOrder?> GetByIdForBuyerAsync(
             Guid id, Guid buyerId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Busca un pedido verificando que contenga al menos una linea del
+        /// vendedor indicado (Q-21b). Devuelve null si el pedido no existe o si
+        /// el vendedor no participa, de modo que el llamante no pueda distinguir
+        /// "no existe" de "no es suyo".
+        /// </summary>
+        Task<CustomerOrder?> GetByIdForVendorAsync(
+            Guid id, Guid vendorId, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Pedidos de carrito o con pago pendiente cuya ultima actividad es
         /// anterior al umbral. T-004 (H-06/R-06): el umbral llega como

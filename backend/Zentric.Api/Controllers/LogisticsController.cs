@@ -16,10 +16,12 @@ namespace Zentric.Api.Controllers
     public class LogisticsController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly ICurrentUserAccessor _currentUser;
 
-        public LogisticsController(IMediator mediator)
+        public LogisticsController(IMediator mediator, ICurrentUserAccessor currentUser)
         {
             _mediator = mediator;
+            _currentUser = currentUser;
         }
 
         /// <summary>
@@ -88,16 +90,28 @@ namespace Zentric.Api.Controllers
         /// <summary>
         /// Obtiene el estado, vendedor, pedido y paquetes de envío de una orden de fulfillment por su identificador.
         /// </summary>
+        /// <remarks>
+        /// Q-21b: el Comprador solo ve despachos de pedidos propios y el
+        /// Vendedor solo los suyos; el Operador, el Administrador y el Supervisor
+        /// leen sin filtro de dueño. Un despacho ajeno responde 404, igual que
+        /// uno inexistente.
+        /// </remarks>
         /// <param name="id">Identificador único (Guid) de la orden de fulfillment.</param>
         /// <response code="200">Detalle de la orden de fulfillment obtenido exitosamente.</response>
-        /// <response code="404">Orden de fulfillment no encontrada (RFC 7807 ProblemDetails).</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        /// <response code="404">Orden de fulfillment no encontrada o ajena al llamante (RFC 7807 ProblemDetails).</response>
         [HttpGet("fulfillment/{id}")]
         [Authorize(Policy = AuthorizationPolicies.FulfillmentRead)]
         [ProducesResponseType(typeof(Zentric.Application.Logistics.Queries.FulfillmentOrderDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetFulfillmentById(Guid id)
         {
-            var result = await _mediator.Send(new Zentric.Application.Logistics.Queries.GetFulfillmentByIdQuery(id));
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var result = await _mediator.Send(new Zentric.Application.Logistics.Queries.GetFulfillmentByIdQuery(id, userId.Value, role.Value));
             if (result.IsFailure) return NotFound(new ProblemDetails { Detail = result.Error });
             return Ok(result.Value);
         }

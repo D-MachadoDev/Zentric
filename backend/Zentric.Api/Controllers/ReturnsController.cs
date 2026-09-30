@@ -101,16 +101,28 @@ namespace Zentric.Api.Controllers
         /// <summary>
         /// Obtiene el estado, motivo y dictamen de inspección de una solicitud de devolución por su identificador.
         /// </summary>
+        /// <remarks>
+        /// Q-21b: el Comprador solo ve devoluciones de pedidos propios y el
+        /// Vendedor solo las de productos suyos; el Operador, el Administrador y
+        /// el Supervisor leen sin filtro de dueño. Una devolución ajena responde
+        /// 404, igual que una inexistente.
+        /// </remarks>
         /// <param name="id">Identificador único (Guid) de la solicitud de devolución.</param>
         /// <response code="200">Detalle de la devolución obtenido exitosamente.</response>
-        /// <response code="404">Solicitud de devolución no encontrada (RFC 7807 ProblemDetails).</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        /// <response code="404">Solicitud de devolución no encontrada o ajena al llamante (RFC 7807 ProblemDetails).</response>
         [HttpGet("{id}")]
         [Authorize(Policy = AuthorizationPolicies.ReturnRead)]
         [ProducesResponseType(typeof(Zentric.Application.Returns.Queries.ReturnRequestDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetReturnById(Guid id)
         {
-            var result = await _mediator.Send(new Zentric.Application.Returns.Queries.GetReturnByIdQuery(id));
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var result = await _mediator.Send(new Zentric.Application.Returns.Queries.GetReturnByIdQuery(id, userId.Value, role.Value));
             if (result.IsFailure) return NotFound(new ProblemDetails { Detail = result.Error });
             return Ok(result.Value);
         }

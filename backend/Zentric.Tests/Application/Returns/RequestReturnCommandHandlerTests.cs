@@ -68,6 +68,10 @@ namespace Zentric.Tests.Application.Returns
             Guid id, Guid buyerId, CancellationToken cancellationToken = default)
             => Task.FromResult(Orders.FirstOrDefault(o => o.Id == id && o.BuyerId == buyerId));
 
+        public Task<CustomerOrder?> GetByIdForVendorAsync(
+            Guid id, Guid vendorId, CancellationToken cancellationToken = default)
+            => Task.FromResult(Orders.FirstOrDefault(o => o.Id == id && o.Items.Any(i => i.VendorId == vendorId)));
+
         public Task<IReadOnlyList<CustomerOrder>> GetExpiredOrdersAsync(
             DateTime threshold, CancellationToken cancellationToken = default)
             => Task.FromResult((IReadOnlyList<CustomerOrder>)Array.Empty<CustomerOrder>());

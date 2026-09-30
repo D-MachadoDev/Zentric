@@ -42,6 +42,17 @@ namespace Zentric.Tests.UseCases
             return Task.FromResult(order);
         }
 
+        public Task<CustomerOrder?> GetByIdForVendorAsync(
+            Guid id, Guid vendorId, CancellationToken cancellationToken = default)
+        {
+            // Q-21b: mismo filtro-en-consulta que el repositorio real.
+            var order = _orders.TryGetValue(id, out var found)
+                && found.Items.Any(i => i.VendorId == vendorId)
+                ? found
+                : null;
+            return Task.FromResult(order);
+        }
+
         public Task<CustomerOrder?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
                 => Task.FromResult(_orders.TryGetValue(id, out var order) ? order : null);
 

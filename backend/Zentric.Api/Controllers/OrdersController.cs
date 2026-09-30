@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
 using Zentric.Application.Orders.Commands;
 using Zentric.Application.Orders.Queries;
+using Zentric.Domain.Users.Enums;
 
 namespace Zentric.Api.Controllers
 {
@@ -139,31 +140,58 @@ namespace Zentric.Api.Controllers
         }
 
         /// <summary>
-        /// Obtiene el estado actual, comprador, total e ítems detallados de un pedido por su identificador único.
+        /// Obtiene el estado actual, total e ítems de un pedido por su identificador único.
         /// </summary>
+        /// <remarks>
+        /// Q-21b: la respuesta depende del rol. El Comprador recibe su pedido
+        /// completo; el Vendedor recibe la vista filtrada (solo sus líneas y su
+        /// subtotal, sin datos de otros vendedores); el Operador, el
+        /// Administrador y el Supervisor leen sin filtro de dueño. Un pedido
+        /// ajeno responde 404, igual que uno inexistente.
+        /// </remarks>
         /// <param name="id">Identificador único (Guid) del pedido.</param>
-        /// <response code="200">Detalle del pedido obtenido exitosamente.</response>
-        /// <response code="404">Pedido no encontrado (RFC 7807 ProblemDetails).</response>
+        /// <response code="200">Detalle del pedido obtenido exitosamente (OrderDto o SellerOrderViewDto según el rol).</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        /// <response code="404">Pedido no encontrado o ajeno al llamante (RFC 7807 ProblemDetails).</response>
         [HttpGet("{id}")]
         [Authorize(Policy = AuthorizationPolicies.OrderRead)]
         [ProducesResponseType(typeof(Zentric.Application.Orders.Queries.OrderDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(Zentric.Application.Orders.Queries.SellerOrderViewDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetOrderById(Guid id)
         {
             // Sin usuario identificado no se sirve el pedido: no hay forma de
             // saber si es suyo. Ver ZENTRIC.md Dominio 2.
-            var buyerId = _currentUser.UserId;
-            if (!buyerId.HasValue)
-            {
-                return Unauthorized(new ProblemDetails
-                {
-                    Detail = "Missing or invalid bearer token."
-                });
-            }
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return MissingIdentity();
 
-            var result = await _mediator.Send(new GetOrderByIdForBuyerQuery(id, buyerId.Value));
-            if (result.IsFailure) return NotFound(new ProblemDetails { Detail = result.Error });
-            return Ok(result.Value);
+            // Q-21b: cada rol lee lo suyo; el Operador, el Administrador y el
+            // Supervisor leen sin filtro de dueno (dictado de Q-21 + dictamen).
+            switch (role.Value)
+            {
+                case UserRole.Buyer:
+                {
+                    var buyerResult = await _mediator.Send(new GetOrderByIdForBuyerQuery(id, userId.Value));
+                    if (buyerResult.IsFailure) return NotFound(new ProblemDetails { Detail = buyerResult.Error });
+                    return Ok(buyerResult.Value);
+                }
+
+                case UserRole.Seller:
+                {
+                    var sellerResult = await _mediator.Send(new GetOrderByIdForSellerQuery(id, userId.Value));
+                    if (sellerResult.IsFailure) return NotFound(new ProblemDetails { Detail = sellerResult.Error });
+                    return Ok(sellerResult.Value);
+                }
+
+                default:
+                {
+                    var result = await _mediator.Send(new GetOrderByIdQuery(id));
+                    if (result.IsFailure) return NotFound(new ProblemDetails { Detail = result.Error });
+                    return Ok(result.Value);
+                }
+            }
         }
 
         /// <summary>
