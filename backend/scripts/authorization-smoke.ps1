@@ -133,7 +133,7 @@ $cases = @(
     @{ m='POST'; p='/api/logistics/fulfillment';          b='{}';             who='Seller';     exp='abierto' }
     @{ m='POST'; p='/api/logistics/fulfillment';          b='{}';             who='Buyer';      exp='403' }
     @{ m='POST'; p='/api/logistics/fulfillment/cancel-ghost-stock'; b='{}';   who='Seller';     exp='abierto' }
-    @{ m='POST'; p='/api/logistics/fulfillment/cancel-ghost-stock'; b='{}';   who='Operator';   exp='403' }
+    @{ m='POST'; p='/api/logistics/fulfillment/cancel-ghost-stock'; b='{}';   who='Operator';   exp='abierto' }  # Q-21c: el Operador detecta el faltante en bodega y puede reportarlo
     @{ m='POST'; p="/api/billing/invoices/generate/$guid";                    who='Admin';      exp='abierto' }
     @{ m='POST'; p="/api/billing/invoices/generate/$guid";                    who='Seller';     exp='403' }
     @{ m='GET';  p='/api/auth/me';                                            who='Operator';   exp='200' }

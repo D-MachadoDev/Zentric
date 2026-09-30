@@ -128,9 +128,16 @@ namespace Zentric.Api.Security
         /// [CONFIRMADO] ADDENDUM Dominio 8 estado 5: "Cancelado por Quiebre: cancelacion
         /// unilateral DEL VENDEDOR por falta fisica de stock".
         ///
-        /// [ABIERTO Q-21c] En la practica el faltante lo detecta quien esta en la bodega
-        /// (Operador Logistico), pero la Ley nombra solo al Vendedor. Sin dictamen el conjunto
-        /// queda en Vendedor, que es la lectura mas cerrada.
+        /// [DICTADO Q-21c, Owner 2026-09-29] Se abre al Operador Logistico. El
+        /// ADDENDUM asigna la cancelacion al Vendedor como responsable comercial, pero
+        /// el faltante lo detecta quien esta en la bodega. Leer al Operador como quien
+        /// obra en nombre del vendedor alli es lo unico que deja la regla operable: el
+        /// Operador ya crea despachos, ingresa stock, inspecciona devoluciones y
+        /// despacha (FulfillmentOperate, InventoryManagement, ReturnInspect), y sin esta
+        /// apertura podia preparar, recibir y enviar un paquete pero no reportar que la
+        /// mercancia no esta. No es una cancelacion silenciosa: el comando reconcilia el
+        /// stock fantasma y crea la devolucion obligatoria, que queda en el historial del
+        /// pedido y genera el credito al comprador.
         /// </summary>
         public const string FulfillmentCancelByQuiebre = "Zentric.FulfillmentCancelByQuiebre";
 
@@ -262,7 +269,7 @@ namespace Zentric.Api.Security
 
                     [FulfillmentOperate] = new[] { Role(UserRole.Seller), Role(UserRole.LogisticsOperator) },
 
-                    [FulfillmentCancelByQuiebre] = new[] { Role(UserRole.Seller) },
+                    [FulfillmentCancelByQuiebre] = new[] { Role(UserRole.Seller), Role(UserRole.LogisticsOperator) },
 
                     [FulfillmentRead] = new[]
                     {

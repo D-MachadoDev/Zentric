@@ -34,15 +34,15 @@ ADDENDUM; `[INFERIDO]` = la Ley no lo explicita y se deduce de una definición d
 | `InventoryManagement` | Seller, LogisticsOperator | `[CONFIRMADO]` §12 "Administración Inventario: Vendedor y Operador Logístico" |
 | `InventoryRead` | Seller, LogisticsOperator | `[INFERIDO]` espejo de la escritura: quien administra el inventario lo lee |
 | `Checkout` | Buyer | `[CONFIRMADO]` §5: el Comprador es quien adquiere productos |
-| `OrderRead` | los cinco roles | `[CONFIRMADO]` §12 "Gestión de Pedidos" con palomita en los cinco |
+| `OrderRead` | los cinco roles | `[CONFIRMADO]` §5: el Administrador "responsable de la administración" y el Supervisor de "consulta y seguimiento operativo" **leen**; `[CONFIRMADO]` §12 "Gestión de Pedidos" con palomita en Comprador, Vendedor y Op. Logístico. La Matriz §12 tiene **cuatro columnas** (deja en blanco la del Admin) y no incluye al Supervisor: la lectura de ambos es el **dictamen del Owner de 2026-09-29** (opción A de Q-21), no el texto de la tabla |
 | `FulfillmentOperate` | Seller, LogisticsOperator | `[CONFIRMADO]` ADDENDUM Dominio 8: el fulfillment deriva del pedido y se ejecuta en bodega |
-| `FulfillmentCancelByQuiebre` | Seller | `[CONFIRMADO]` ADDENDUM Dominio 8 estado 5. `[ABIERTO Q-21c]`: en la práctica el faltante lo detecta el Operador en bodega |
-| `FulfillmentRead` | los cinco roles | `[CONFIRMADO]` mismo fundamento que `OrderRead`: el número de guía interesa a todas las partes |
+| `FulfillmentCancelByQuiebre` | Seller, LogisticsOperator | `[CONFIRMADO]` ADDENDUM Dominio 8 estado 5 lo asigna al Vendedor; `[DICTADO Q-21c, 2026-09-29]` se abre al Operador, que es quien detecta el faltante en bodega. Ver [ADR-0014](../Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md) |
+| `FulfillmentRead` | los cinco roles | `[INFERIDO]` mismo fundamento que `OrderRead`: el número de guía interesa a todas las partes, incluida la trazabilidad que es el objeto del Supervisor |
 | `ReturnRequest` | Buyer | `[CONFIRMADO]` §12 "Gestión Reembolsos" en Comprador; ADDENDUM Dominio 10 abre el flujo con la solicitud |
 | `ReturnInspect` | LogisticsOperator | `[CONFIRMADO]` ADDENDUM Dominio 10: "el operador logístico inspecciona" |
 | `ReturnApprove` | Seller | `[CONFIRMADO]` ADDENDUM Dominio 10: la inspección favorable "requiere la aprobación del Vendedor". **El Admin no aprueba** ([ADR-0006](../Adr/0006-resolucion-contradiccion-ley-addendum.md) resuelve la colisión a favor del ADDENDUM) |
-| `ReturnRead` | los cinco roles | `[CONFIRMADO]` + `[INFERIDO]` por "consulta y seguimiento operativo" (§5) |
-| `BillingGenerate` | Administrator | `[ABIERTO Q-21d]` ADDENDUM Dominio 9 describe los tres documentos pero no dice quién los emite; la Matriz §12 da facturación solo al Admin |
+| `ReturnRead` | los cinco roles | `[INFERIDO]` §5: el Supervisor es "perfil de consulta y seguimiento operativo", que es exactamente esto. No es una palomita de §12 (esa matriz no tiene columna de Supervisor) |
+| `BillingGenerate` | Administrator | `[DICTADO Q-21d, 2026-09-29]` el ADDENDUM Dominio 9 describe los tres documentos pero no nombra emisor; se decide que solo el Administrador los emite, porque el `ZentricDetail` es "control de plataforma". Emitirlo el Vendedor exigiría **partir el caso de uso** en dos, no cambiar una política. Ver [ADR-0014](../Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md) |
 | `BillingRead` | Buyer, Seller, Administrator, Supervisor | `[CONFIRMADO]` ADDENDUM Dominio 9 asigna un destinatario a cada documento; el Operador no factura ni consume factura |
 
 ## 3. Matriz por endpoint (30 acciones)
@@ -71,7 +71,7 @@ ADDENDUM; `[INFERIDO]` = la Ley no lo explicita y se deduce de una definición d
 | `GET` | `/api/orders/{id}` | `OrderRead` | los cinco *(+ comprobación de propiedad, §5)* |
 | `POST` | `/api/logistics/fulfillment` | `FulfillmentOperate` | Seller, Op. Logístico |
 | `POST` | `/api/logistics/fulfillment/{id}/dispatch` | `FulfillmentOperate` | Seller, Op. Logístico |
-| `POST` | `/api/logistics/fulfillment/cancel-ghost-stock` | `FulfillmentCancelByQuiebre` | Seller |
+| `POST` | `/api/logistics/fulfillment/cancel-ghost-stock` | `FulfillmentCancelByQuiebre` | Seller, Op. Logístico *(Q-21c)* |
 | `GET` | `/api/logistics/fulfillment/{id}` | `FulfillmentRead` | los cinco |
 | `POST` | `/api/returns/request` | `ReturnRequest` | Buyer |
 | `POST` | `/api/returns/{id}/inspect` | `ReturnInspect` | Op. Logístico |
@@ -165,7 +165,7 @@ recurso**: la propiedad se comprueba además del rol, con la identidad del token
 | `POST /api/Inventories/stock` | `403` | Su producto **y** su bodega | Sin filtro | `403` |
 | `POST /api/Catalog/products` | `403` | Se registra a su nombre (el `vendorId` del cuerpo se descarta) | `403` | `403` |
 | `POST /api/Logistics/fulfillment` | `403` | Solo a su nombre | Sin filtro | `403` |
-| `POST /api/Logistics/fulfillment/{id}/dispatch`, `/cancel-ghost-stock` | `403` | Solo sus despachos | Despachar sin filtro; **cancelar `403`** (Q-21c abierta) | `403` |
+| `POST /api/Logistics/fulfillment/{id}/dispatch`, `/cancel-ghost-stock` | `403` | Solo sus despachos | Sin filtro (Q-21c: el Operador reporta el faltante que detecta) | `403` |
 
 `—` = el rol no entra por la matriz de §2, así que responde `403` antes de llegar a la propiedad.
 
@@ -187,9 +187,9 @@ esta matriz en cuatro puntos. Se reportan aquí; el documento del cliente no se 
 | Punto | El documento de frontend dice | La matriz aplica | Base |
 |---|---|---|---|
 | Aprobación de devoluciones | módulo de **Administrador** → `POST /api/Returns/{id}/approve` (línea 54; fila "Devoluciones | ✔ (reembolso)" bajo Admin) | solo **Vendedor** | ADDENDUM Dominio 10 + [ADR-0006](../Adr/0006-resolucion-contradiccion-ley-addendum.md): el ADDENDUM tiene la última palabra |
-| Emisión de facturas | módulo de **Vendedor** → `POST /api/Billing/invoices/generate` (línea 68) | solo **Administrador** | Matriz §12; el ADDENDUM Dominio 9 no asigna la emisión → **Q-21d** |
+| Emisión de facturas | módulo del **Comprador** → `POST /api/Billing/invoices/generate` (línea 68) | solo **Administrador** | **Resuelto por Q-21d** (2026-09-29): el botón va en el módulo del **Administrador**. Corregido el documento del cliente. Ver [ADR-0014](../Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md) |
 | Solicitud de devolución | "Comprador, Admin" (línea 96) | solo **Comprador** | §12 "Gestión Reembolsos" solo en Comprador |
-| Cantidad de roles | "Los roles son **cuatro**: Administrador, Vendedor, Comprador y Operador" (línea 6) | `UserRole` tiene **cinco**: falta `Supervisor`, que en el backend tiene lectura y **ningún módulo** en el frontend | ZENTRIC.md §5 y §12 sí listan Supervisor → **Q-21e** |
+| Cantidad de roles | "Los roles son **cuatro**: Administrador, Vendedor, Comprador y Operador" (línea 6) | `UserRole` tiene **cinco**: incluye `Supervisor`, de solo lectura y **sin módulo propio** en el frontend | **Resuelto por Q-21e** (2026-09-29): el Supervisor se queda, es de consulta y seguimiento, y el documento pasa a cinco roles |
 
 **Consecuencia práctica para el frontend:** los botones de los puntos 1 y 3 responden `403` con
 los roles que ahí se muestran. O se corrige el documento de frontend, o el Owner dicta que la Ley

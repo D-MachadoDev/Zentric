@@ -190,6 +190,22 @@ namespace Zentric.Tests.Presentation
         }
 
         /// <summary>
+        /// Criterio del dictamen Q-21c (Owner, 2026-09-29): el Operador Logistico
+        /// detecta el faltante en bodega, asi que puede reportarlo. El Vendedor sigue
+        /// dentro porque el ADDENDUM Dominio 8 le asigna la cancelacion. Sin esta
+        /// asercion, quitar al Operador devolveria al flujo a un estado que la Ley
+        /// describe pero que nadie podria ejecutar.
+        /// </summary>
+        [Fact]
+        public void CancelByQuiebre_DictatedQ21c_KeepsSellerAndLogisticsOperator()
+        {
+            IReadOnlyList<string> allowed = AuthorizationPolicies.RolesByPolicy[AuthorizationPolicies.FulfillmentCancelByQuiebre];
+
+            Assert.Contains(UserRole.Seller.ToString(), allowed);
+            Assert.Contains(UserRole.LogisticsOperator.ToString(), allowed);
+        }
+
+        /// <summary>
         /// Criterio anti-error de dedo: todo rol escrito en la matriz tiene que existir en el
         /// enum <see cref="UserRole"/>. La claim <c>role</c> del token sale de ese enum, asi que
         /// un nombre inexistente seria un 403 permanente e inexplicable.

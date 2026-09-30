@@ -3,10 +3,18 @@
 > Módulos del cliente según los roles definidos en
 > [`../ZENTRIC.md`](../ZENTRIC.md#12-matriz-de-responsabilidades) (Matriz de Responsabilidades) y RG-02.
 >
-> **Los roles son cuatro:** Administrador, Vendedor, Comprador y Operador
-> logístico. Los nombres de rol del prompt de orquestación recibido
+> **Los roles son cinco:** Administrador, Vendedor, Comprador, Operador
+> logístico y **Supervisor**. Los nombres de rol del prompt de orquestación recibido
 > (`natural-customer`, `teller`, `commercial`, `internal-analyst`) no existen en
 > esta Ley y no se usan.
+>
+> `[ADDENDUM - DICTADO POR OWNER, 2026-09-29]` Este documento declaraba **cuatro**
+> roles y omitía al Supervisor, que `ZENTRIC.md` §5 sí define y que el backend
+> implementa como perfil de **consulta y seguimiento operativo**: puede leer
+> pedidos, despachos, devoluciones y facturas, y no puede escribir en ninguna
+> parte. La omisión era de este documento, no de la Ley. El Supervisor **no tiene
+> módulo propio**: usa las pantallas compartidas de solo lectura (§2.6). Ver
+> `backendSDD/Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md`.
 
 ---
 
@@ -53,6 +61,17 @@ No requiere sesión. Es la única puerta de entrada al sistema.
 | `/bodegas/nueva` | Alta de bodega | `POST /api/Warehouses` |
 | `/devoluciones` | Gestión de reembolsos | `POST /api/Returns/{id}/approve` |
 
+**Facturación** (`[ADDENDUM - DICTADO POR OWNER, 2026-09-29]`, antes estaba en el
+módulo del Comprador): la emisión de facturas es un acto de la plataforma —el
+backend emite la Factura Maestra, el Detalle Zentric con la comisión y una factura
+por vendedor—, así que el botón vive aquí y **solo** el Administrador puede
+pulsarlo. El endpoint además rechaza un pedido no pagado y un pedido ya
+facturado.
+
+| Ruta | Contenido | Endpoints |
+| --- | --- | --- |
+| `/pedidos/:id/facturar` | Emisión de las facturas del pedido | `POST /api/Billing/invoices/generate/{orderId}` |
+
 **Panel:** cuatro indicadores (usuarios, bodegas, productos, estado de la base) con
 esqueleto de carga, estado vacío y reintento.
 
@@ -65,7 +84,12 @@ esqueleto de carga, estado vacío y reintento.
 | `/` | Panel del comprador | `GET /api/Catalog/products` |
 | `/catalogo` | Catálogo con variantes | `GET /api/Catalog/products` |
 | `/carrito` | Carrito y checkout | `POST /api/Orders/cart`, `POST /cart/items`, `POST /checkout` |
-| `/pedidos/:id` | Detalle, pago y facturas | `GET /api/Orders/{id}`, `POST /pay`, `POST /Billing/invoices/generate` |
+| `/pedidos/:id` | Detalle y pago | `GET /api/Orders/{id}`, `POST /pay` |
+
+> `[ADDENDUM - DICTADO POR OWNER, 2026-09-29]` Esta fila incluía
+> `POST /api/Billing/invoices/generate`, que devolvía `403` a este rol: el
+> comprador no emite sus propias facturas. Ese endpoint se movió al módulo del
+> **Administrador** (§2.2).
 
 **Reglas de UI aplicadas:**
 - El checkout **no** replica la reserva: la muestra después de la respuesta.
@@ -80,7 +104,15 @@ esqueleto de carga, estado vacío y reintento.
 | --- | --- | --- |
 | `/` | Panel de despachos | `GET /api/Logistics/fulfillment` (bloqueado por R-03) |
 | `/despachos/:id` | Detalle y despacho | `POST /api/Logistics/fulfillment/{id}/dispatch` |
+| `/despachos/:id/quiebre` | Reporte de quiebre de stock | `POST /api/Logistics/fulfillment/cancel-ghost-stock` |
 | `/devoluciones` | Inspección de devoluciones | `POST /api/Returns/{id}/inspect` |
+
+> `[ADDENDUM - DICTADO POR OWNER, 2026-09-29]` El reporte de quiebre estaba
+> documentado en las reglas de UI pero devolvía `403` a este rol: solo el
+> Vendedor podía ejecutarlo, y el Vendedor no está en la bodega. Ahora el
+> Operador puede reportarlo, porque es quien encuentra el faltante. La
+> cancelación no es silenciosa: genera la devolución obligatoria y el crédito
+> al comprador. Ver `backendSDD/Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md`.
 
 **Reglas de UI aplicadas:**
 - La cancelación por quiebre de stock requiere confirmación explícita
@@ -95,6 +127,13 @@ esqueleto de carga, estado vacío y reintento.
 | `/pedidos/:id` | Todos | Detalle del pedido, sólo lectura |
 | `/devoluciones/nueva` | Comprador, Admin | Solicitud de devolución |
 | `/configuracion` | Todos | Preferencias de sesión y cierre |
+
+> **Supervisor.** `[ADDENDUM - DICTADO POR OWNER, 2026-09-29]` Es el quinto rol y
+> no tiene módulo propio: entra por estas pantallas compartidas, todas de solo
+> lectura. El backend le permite leer pedidos, despachos, devoluciones y
+> facturas, y ninguna escritura. Si en el futuro quiere un panel propio, hará
+> falta un endpoint de **listado** de pedidos o despachos, que hoy no existe
+> (R-03: solo hay detalle por identificador).
 
 **Prohibición en la UI (ADDENDUM Dominio 10):** si el producto es `Digital`, la
 opción de solicitar devolución **no se muestra**. No es una validación: es la

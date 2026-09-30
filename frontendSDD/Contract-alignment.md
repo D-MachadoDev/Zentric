@@ -218,4 +218,13 @@ Estas restricciones vienen de la Ley. El frontend debe cumplirlas **en la interf
 | `GET /api/Warehouses?vendorId=` | El Vendedor ve solo las suyas; pedir las de otro → `400` (no es una lista filtrada) |
 | `401` / `404` | `403` = tu rol no entra. `404` = no existe **o no es tuyo**: la UI debe tratarlo como "no disponible", no reintentar |
 
+**Cerrado 2026-09-29: tres enmiendas a la matriz de roles (Q-21c, Q-21d, Q-21e → `ADR-0014`).** Los tres dictámenes del Owner en una sola ronda, con los documentos del cliente corregidos por addendum:
+
+| Cambio | Detalle |
+|---|---|
+| El Operador reporta el quiebre de stock | `POST /api/Logistics/fulfillment/cancel-ghost-stock` ya no devuelve `403` al Operador: quien encuentra el faltante en bodega puede reportarlo. Se añade `/despachos/:id/quiebre` al módulo de logística (§2.5) |
+| **El botón de facturación se muda al módulo del Administrador** | Estaba en el del **Comprador** (línea 68), que recibía `403`. Vive en `/pedidos/:id/facturar` (§2.2) y solo el Administrador puede pulsarlo |
+| La facturación ya no se puede duplicar | El endpoint rechaza con `400` un pedido **no pagado** y un pedido **ya facturado**. Un doble clic ya no genera dos veces las tres facturas: hay que manejar el `400` en la UI |
+| **Son cinco roles** | El documento declaraba cuatro. El `Supervisor` se queda, es de solo lectura y **no tiene módulo propio**: usa las pantallas compartidas. Si algún día quiere panel propio, falta un endpoint de listado (R-03) |
+
 **Pendiente antes de produccion:** reportes administrativos (R-08).

@@ -244,7 +244,7 @@ separan por comas.
 |---|---|:---:|---|---|---|
 | `POST` | `/api/logistics/fulfillment` | Command | `CreateFulfillmentOrderCommand` (Body) | `200 OK (Guid)`<br>`400 Bad Request (ProblemDetails)` | Crea una orden de preparación y empaque para los ítems pertenecientes a un vendedor y bodega específica. |
 | `POST` | `/api/logistics/fulfillment/{id}/dispatch` | Command | `id` (Path) | `200 OK`<br>`400 Bad Request (ProblemDetails)` | Marca el paquete como `Dispatched` y descuenta formalmente el stock reservado de la bodega. |
-| `POST` | `/api/logistics/fulfillment/cancel-ghost-stock` | Command | `CancelFulfillmentOrderDueToNoStockCommand` (Body) | `200 OK (Guid)`<br>`400 Bad Request (ProblemDetails)` | Reporta faltante físico en bodega (stock fantasma), cancela la orden de fulfillment y libera la reserva de existencias. |
+| `POST` | `/api/logistics/fulfillment/cancel-ghost-stock` | Command | `CancelFulfillmentOrderDueToNoStockCommand` (Body) | `200 OK (Guid)`<br>`400 Bad Request (ProblemDetails)` | Reporta faltante físico en bodega (stock fantasma), cancela la orden de fulfillment, libera la reserva de existencias y **origina la devolución obligatoria** con crédito al comprador. Ejecutable por el Vendedor y por el Operador Logístico ([Q-21c](Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md)), porque es quien está en la bodega. |
 | `GET` | `/api/logistics/fulfillment/{id}` | Query | `id` (Path) | `200 OK (FulfillmentOrderDto)`<br>`404 Not Found (ProblemDetails)` | Consulta el estado del despacho logístico, paquetes y números de guía (`TrackingNumber`). |
 
 ---
@@ -262,7 +262,7 @@ separan por comas.
 ### 3.8. Tag: `8. Facturación y Liquidación` (`/api/billing`)
 | Método | Endpoint | Tipo CQRS | Entrada / Payload | Respuestas | Descripción de Negocio e Invariantes |
 |---|---|:---:|---|---|---|
-| `POST` | `/api/billing/invoices/generate/{orderId}` | Command | `orderId` (Path) | `200 OK (bool)`<br>`400 Bad Request (ProblemDetails)` | Emite la Factura Maestra consolidada para el comprador, el detalle de comisión tecnológica para Zentric (`ZentricDetail`) y las facturas split para cada vendedor. |
+| `POST` | `/api/billing/invoices/generate/{orderId}` | Command | `orderId` (Path) | `200 OK (bool)`<br>`400 Bad Request (ProblemDetails)` | Emite la Factura Maestra consolidada para el comprador, el detalle de comisión tecnológica para Zentric (`ZentricDetail`) y las facturas split para cada vendedor. **Solo el Administrador** ([Q-21d](Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md)). Rechaza con `400` si el pedido no está pagado o si ya fue facturado: un segundo clic no puede duplicar la facturación. |
 | `GET` | `/api/billing/invoices/order/{orderId}` | Query | `orderId` (Path) | `200 OK (List<InvoiceDto>)` | Consulta todas las facturas emitidas asociadas a un pedido pagado. |
 
 ---
