@@ -54,27 +54,51 @@ function Status([string]$method, [string]$path, [string]$token, [string]$body = 
     return (Invoke-WebRequest @params).StatusCode
 }
 
+# Q-21b: hace falta el CUERPO de la respuesta, no solo el codigo. "Order not found."
+# y "not found" son precisamente la prueba de que el filtro de dueno actuo (un fallo
+# de validacion devolveria otro mensaje, y el test pasaria por el motivo equivocado).
+function Http([string]$method, [string]$path, [string]$token, [string]$body = '') {
+    $headers = @{}
+    if ($token) { $headers['Authorization'] = "Bearer $token" }
+    $params = @{ Uri = "$base$path"; Method = $method; Headers = $headers; SkipHttpErrorCheck = $true }
+    if ($body) { $params['ContentType'] = 'application/json'; $params['Body'] = $body }
+    $res = Invoke-WebRequest @params
+    return @{ code = $res.StatusCode; body = $res.Content }
+}
+
+function MeId([string]$token) {
+    return (Http 'GET' '/api/auth/me' $token).body | ConvertFrom-Json | Select-Object -ExpandProperty userId
+}
+
 # Alta de un usuario por rol. Nombres exactos de UserRole: Buyer, Seller, Administrator,
 # Supervisor, LogisticsOperator (Q-22: ya no se envia el entero 0..4).
 $adminToken = Login $AdminEmail $AdminPassword
 $created = [ordered]@{
     Buyer      = "${suite}.buyer@q21.test"
+    Buyer2     = "${suite}.buyer2@q21.test"  # segundo comprador: prueba la propiedad cruzada (Q-21b)
     Seller     = "${suite}.seller@q21.test"
+    Seller2    = "${suite}.seller2@q21.test" # segundo vendedor: mismo motivo
     Operator   = "${suite}.op@q21.test"
     Supervisor = "${suite}.sup@q21.test"
 }
-$roleOf = @{ Buyer = 'Buyer'; Seller = 'Seller'; Operator = 'LogisticsOperator'; Supervisor = 'Supervisor' }
+$roleOf = @{ Buyer = 'Buyer'; Buyer2 = 'Buyer'; Seller = 'Seller'; Seller2 = 'Seller'; Operator = 'LogisticsOperator'; Supervisor = 'Supervisor' }
+# El nombre necesita al menos DOS palabras, de dos caracteres o mas y sin digitos
+# (FullName); incumplirlo responderia 400 por un motivo que no tiene que ver con lo
+# que este smoke prueba.
+$nameOf = @{ Buyer = 'Comprador Uno'; Buyer2 = 'Comprador Dos'; Seller = 'Vendedor Uno'; Seller2 = 'Vendedor Dos'; Operator = 'Operador Logistico'; Supervisor = 'Super Uno' }
 $i = 0
 foreach ($key in $created.Keys) {
     $i++
-    $code = CreateUser $adminToken $created[$key] "Prueba $key" "Q21-$suite-$i" $roleOf[$key]
+    $code = CreateUser $adminToken $created[$key] $nameOf[$key] "Q21-$suite-$i" $roleOf[$key]
     Write-Host "alta $key -> HTTP $code"
 }
 
 $tok = @{
     Admin      = $adminToken
     Buyer      = Login $created['Buyer'] $pass
+    Buyer2     = Login $created['Buyer2'] $pass
     Seller     = Login $created['Seller'] $pass
+    Seller2    = Login $created['Seller2'] $pass
     Operator   = Login $created['Operator'] $pass
     Supervisor = Login $created['Supervisor'] $pass
 }
@@ -155,11 +179,148 @@ if ($c3 -ne 400) { $fallos++ }
 if ($c4 -ne 200) { $fallos++ }
 if ($c5 -ne 200) { $fallos++ }
 
-"TOTAL DE COMPROBACIONES: $($cases.Count + 5) | FALLOS: $fallos"
+# ------------------------------------------------------------------ Q-21b: propiedad del recurso (ADR-0013)
+# Se construye un pedido real de punta a punta y se comprueba, contra HTTP real, que
+#   1) solo el dueno ve y opera su pedido, y que los ajenos responden 404;
+#   2) el vendedor queda encerrado en su VendorId (= su User.Id) aunque el cuerpo diga otro;
+#   3) cada rol ve solo el stock, las bodegas y las facturas que le tocan.
+$q21bFallos = 0
+$q21bTotal  = 0
+function Q21b([string]$label, [bool]$ok, [string]$observed) {
+    $script:q21bTotal++
+    if (-not $ok) { $script:q21bFallos++ }
+    '{0,-58} {1,-6} {2}' -f $label, $(if ($ok) { 'OK' } else { 'FALLO' }), $observed
+}
+
+$buyerMe  = MeId $tok['Buyer']
+$buyer2Me = MeId $tok['Buyer2']
+$sellerMe = MeId $tok['Seller']
+
+# --- El vendedor queda encerrado en su VendorId: el cuerpo dice uno FALSO a proposito.
+$wrongVendor = [guid]::NewGuid().ToString()
+$productJson = @{
+    name = 'Producto Q21b'; description = 'Alta de prueba de propiedad'
+    priceAmount = 10000; priceCurrency = 'COP'; vendorId = $wrongVendor; type = 'Physical'
+    variants = @(@{ sku = "Q21B-$suite"; attributes = @(@{ name = 'Color'; value = 'Azul' }) })
+} | ConvertTo-Json -Depth 6
+$product   = Http 'POST' '/api/Catalog/products' $tok['Seller'] $productJson
+$productId = ''
+$variantId = ''
+$owner     = ''
+if ($product.code -eq 200) {
+    $productId = $product.body | ConvertFrom-Json
+    $read = (Http 'GET' "/api/Catalog/products/$productId" $tok['Seller']).body | ConvertFrom-Json
+    $owner     = $read.vendorId
+    $variantId = $read.variants[0].id
+}
+Q21b 'alta de producto: el VendorId sale del token' ($owner -eq $sellerMe) "vendorId=$owner"
+Q21b 'alta de producto: se descarta el VendorId del cuerpo' ($owner -ne '' -and $owner -ne $wrongVendor) "el cuerpo pedia $wrongVendor"
+
+# --- Bodegas: el vendedor solo lista y usa la suya.
+$ownWh   = Http 'POST' '/api/warehouses' $tok['Admin'] (@{ name = "Bodega Q21b $suite propia"; location = 'Bogota'; capacity = 100; type = 'Vendor'; vendorId = $sellerMe } | ConvertTo-Json)
+$otherWh = Http 'POST' '/api/warehouses' $tok['Admin'] (@{ name = "Bodega Q21b $suite ajena"; location = 'Medellin'; capacity = 100; type = 'Vendor'; vendorId = $buyer2Me } | ConvertTo-Json)
+$ownWhId   = $ownWh.body   | ConvertFrom-Json
+$otherWhId = $otherWh.body | ConvertFrom-Json
+
+$stockOwn = Http 'POST' '/api/Inventories/stock' $tok['Seller'] (@{ variantId = $variantId; warehouseId = $ownWhId; quantity = 5 } | ConvertTo-Json)
+Q21b 'stock del producto propio en bodega propia' ($stockOwn.code -eq 200) "HTTP $($stockOwn.code) $($stockOwn.body)"
+$stockOther = Http 'POST' '/api/Inventories/stock' $tok['Seller'] (@{ variantId = $variantId; warehouseId = $otherWhId; quantity = 5 } | ConvertTo-Json)
+Q21b 'stock en bodega ajena rechazado' ($stockOther.code -eq 400 -and $stockOther.body -match 'not found') "HTTP $($stockOther.code) $($stockOther.body)"
+$stockForeign = Http 'POST' '/api/Inventories/stock' $tok['Seller2'] (@{ variantId = $variantId; warehouseId = $ownWhId; quantity = 5 } | ConvertTo-Json)
+Q21b 'otro vendedor no ingresa el stock de otro' ($stockForeign.code -eq 400 -and $stockForeign.body -match 'not found') "HTTP $($stockForeign.code) $($stockForeign.body)"
+
+$invOwn = Http 'GET' "/api/Inventories/$variantId" $tok['Seller']
+Q21b 'el vendedor lee el stock de su producto' ($invOwn.code -eq 200) "HTTP $($invOwn.code)"
+$invUnknown = Http 'GET' "/api/Inventories/$guid" $tok['Seller']
+Q21b 'variante ajena o inexistente -> 404' ($invUnknown.code -eq 404) "HTTP $($invUnknown.code)"
+
+$whList   = Http 'GET' '/api/warehouses' $tok['Seller']
+$ownCount = 0
+if ($whList.code -eq 200) {
+    $ownCount = @(($whList.body | ConvertFrom-Json) | Where-Object { $_.vendorId -eq $sellerMe }).Count
+}
+Q21b 'listado de bodegas: solo las suyas' ($whList.code -eq 200 -and $ownCount -eq 1) "propias=$ownCount HTTP $($whList.code)"
+$whForeign = Http 'GET' "/api/warehouses?vendorId=$buyer2Me" $tok['Seller']
+Q21b 'pedir bodegas de otro vendedor -> 400' ($whForeign.code -eq 400) "HTTP $($whForeign.code)"
+$whByIdForeign = Http 'GET' "/api/warehouses/$otherWhId" $tok['Seller']
+Q21b 'bodega ajena por id -> 404' ($whByIdForeign.code -eq 404) "HTTP $($whByIdForeign.code)"
+
+# --- Pedido: solo su dueno lo ve y lo opera.
+$cart    = Http 'POST' '/api/orders/cart' $tok['Buyer']
+$orderId = $cart.body | ConvertFrom-Json
+Q21b 'alta de carrito sin cuerpo (identidad del token)' ($cart.code -eq 200) "HTTP $($cart.code)"
+
+$itemJson = @{ orderId = $orderId; variantId = $variantId; vendorId = $sellerMe; quantity = 2; unitPrice = 10000; currency = 'COP' } | ConvertTo-Json
+$item = Http 'POST' '/api/orders/cart/items' $tok['Buyer'] $itemJson
+Q21b 'agregar item al carrito propio' ($item.code -eq 200) "HTTP $($item.code) $($item.body)"
+$stealItem = Http 'POST' '/api/orders/cart/items' $tok['Buyer2'] $itemJson
+Q21b 'otro comprador no agrega items al carrito ajeno' ($stealItem.code -eq 400 -and $stealItem.body -match 'not found') "HTTP $($stealItem.code) $($stealItem.body)"
+
+$checkout = Http 'POST' "/api/orders/$orderId/checkout" $tok['Buyer']
+Q21b 'checkout propio' ($checkout.code -eq 200) "HTTP $($checkout.code) $($checkout.body)"
+$stealCheckout = Http 'POST' "/api/orders/$orderId/checkout" $tok['Buyer2']
+Q21b 'otro comprador no hace checkout ajeno' ($stealCheckout.code -eq 400 -and $stealCheckout.body -match 'not found') "HTTP $($stealCheckout.code) $($stealCheckout.body)"
+
+$pay = Http 'POST' "/api/orders/$orderId/pay" $tok['Buyer']
+Q21b 'pago propio' ($pay.code -eq 200) "HTTP $($pay.code) $($pay.body)"
+$stealPay = Http 'POST' "/api/orders/$orderId/pay" $tok['Buyer2']
+Q21b 'otro comprador no paga un pedido ajeno' ($stealPay.code -eq 400 -and $stealPay.body -match 'not found') "HTTP $($stealPay.code) $($stealPay.body)"
+
+Q21b 'el dueno lee su pedido' ((Http 'GET' "/api/orders/$orderId" $tok['Buyer']).code -eq 200) ''
+Q21b 'otro comprador -> 404' ((Http 'GET' "/api/orders/$orderId" $tok['Buyer2']).code -eq 404) ''
+Q21b 'administrador lee sin filtro (repara el 404 de Q-21)' ((Http 'GET' "/api/orders/$orderId" $tok['Admin']).code -eq 200) ''
+Q21b 'operador lee sin filtro' ((Http 'GET' "/api/orders/$orderId" $tok['Operator']).code -eq 200) ''
+Q21b 'supervisor lee sin filtro' ((Http 'GET' "/api/orders/$orderId" $tok['Supervisor']).code -eq 200) ''
+
+$view     = Http 'GET' "/api/orders/$orderId" $tok['Seller']
+$viewOk   = $false
+$viewInfo = "HTTP $($view.code)"
+if ($view.code -eq 200) {
+    $v = $view.body | ConvertFrom-Json
+    $viewOk = ($null -ne $v.vendorSubtotal) -and (@($v.items).Count -eq 1)
+    $viewInfo = "items=$(@($v.items).Count) subtotal=$($v.vendorSubtotal) totalPedido=$($v.totalAmount)"
+}
+Q21b 'el vendedor ve la vista filtrada, sin el total ajeno' $viewOk $viewInfo
+
+$cart2    = Http 'POST' '/api/orders/cart' $tok['Buyer2']
+$order2Id = $cart2.body | ConvertFrom-Json
+Q21b 'el vendedor no lee un pedido en el que no participa' ((Http 'GET' "/api/orders/$order2Id" $tok['Seller']).code -eq 404) ''
+
+# --- Facturas: cada rol ve solo las suyas (P3).
+$gen = Http 'POST' "/api/billing/invoices/generate/$orderId" $tok['Admin']
+Q21b 'emision de facturas por el Administrador' ($gen.code -eq 200) "HTTP $($gen.code) $($gen.body)"
+
+$invCount = @{}
+foreach ($who in @('Buyer', 'Seller', 'Admin')) {
+    $r = Http 'GET' "/api/billing/invoices/order/$orderId" $tok[$who]
+    $invCount[$who] = if ($r.code -eq 200) { @($r.body | ConvertFrom-Json).Count } else { -1 }
+}
+Q21b 'el comprador ve solo su Factura Maestra' ($invCount['Buyer'] -eq 1) "facturas=$($invCount['Buyer'])"
+Q21b 'el vendedor ve solo su factura de vendedor' ($invCount['Seller'] -eq 1) "facturas=$($invCount['Seller'])"
+Q21b 'el administrador ve todas (incluida la de plataforma)' ($invCount['Admin'] -eq 3) "facturas=$($invCount['Admin'])"
+$invForeign = Http 'GET' "/api/billing/invoices/order/$orderId" $tok['Buyer2']
+Q21b 'facturas de un pedido ajeno -> 404' ($invForeign.code -eq 404) "HTTP $($invForeign.code)"
+
+# --- Devoluciones: se radican sobre pedidos propios y las aprueba su vendedor.
+$retJson = @{ customerOrderId = $orderId; variantId = $variantId; warehouseId = $ownWhId; quantity = 1; productType = 'Physical' } | ConvertTo-Json
+$ret    = Http 'POST' '/api/returns/request' $tok['Buyer'] $retJson
+$retId  = if ($ret.code -eq 200) { $ret.body | ConvertFrom-Json } else { '' }
+Q21b 'devolucion sobre pedido propio' ($ret.code -eq 200) "HTTP $($ret.code) $($ret.body)"
+$retForeign = Http 'POST' '/api/returns/request' $tok['Buyer2'] $retJson
+Q21b 'devolucion sobre pedido ajeno rechazada' ($retForeign.code -eq 400 -and $retForeign.body -match 'not found') "HTTP $($retForeign.code) $($retForeign.body)"
+
+$approveJson = @{ returnRequestId = $retId; isSameWarehouseAndVendor = $true } | ConvertTo-Json
+$approve = Http 'POST' "/api/returns/$retId/approve" $tok['Seller'] $approveJson
+Q21b 'el vendedor del producto aprueba la devolucion' ($approve.code -eq 200) "HTTP $($approve.code) $($approve.body)"
+$approveForeign = Http 'POST' "/api/returns/$retId/approve" $tok['Seller2'] $approveJson
+Q21b 'otro vendedor no aprueba la devolucion' ($approveForeign.code -eq 400 -and $approveForeign.body -match 'not found') "HTTP $($approveForeign.code) $($approveForeign.body)"
+
+"TOTAL DE COMPROBACIONES: $($cases.Count + 5 + $q21bTotal) | FALLOS: $($fallos + $q21bFallos)"
 "Limpieza de los usuarios de esta corrida: docker exec zentric-postgres psql -U postgres -d ZentricDb -c 'DELETE FROM ""Users"" WHERE ""Email"" LIKE ''%q21.test%'';'"
+"El bloque Q-21b deja ademas datos de demo (1 producto con variante, 2 bodegas, 2 carritos, 1 pedido pagado con sus facturas y 1 devolucion). La base es desechable: docker compose down -v"
 
 # Se sale SIEMPRE con un codigo explicito: sin esto, cuando no hay fallos el script no ejecuta
 # ningun exit y $LASTEXITCODE conserva el valor del ultimo comando externo de la sesion, que es
 # como CI se traga un verde inventado (pasó el 2026-09-29: 0 fallos con exit code 1 heredado).
-exit $fallos
+exit ($fallos + $q21bFallos)
 

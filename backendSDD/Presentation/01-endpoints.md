@@ -225,13 +225,17 @@ separan por comas.
 ---
 
 ### 3.5. Tag: `5. Carrito y Órdenes` (`/api/orders`)
+> **Propiedad del recurso (Q-21b, `ADR-0013`):** las filas marcadas con ⚠️ cambian de contrato o
+> de comportamiento con el dictamen del 2026-09-29. El detalle por rol está en
+> [02-authorization.md §5](02-authorization.md#5-propiedad-del-recurso-confirmado-q-21b-2026-09-29-adr-0013).
+
 | Método | Endpoint | Tipo CQRS | Entrada / Payload | Respuestas | Descripción de Negocio e Invariantes |
 |---|---|:---:|---|---|---|
-| `POST` | `/api/orders/cart` | Command | `CreateCartCommand` (Body) | `200 OK (Guid)`<br>`400 Bad Request (ProblemDetails)` | Inicializa una orden de compra en estado inicial `Cart` vinculada a un comprador (`BuyerId`). |
-| `POST` | `/api/orders/cart/items` | Command | `AddOrderItemCommand` (Body) | `200 OK`<br>`400 Bad Request (ProblemDetails)` | Añade un producto al carrito verificando previamente existencias suficientes en el inventario disponible. |
-| `POST` | `/api/orders/{orderId}/checkout` | Command | `orderId` (Path) | `200 OK`<br>`400 Bad Request (ProblemDetails)` | Cierra el carrito, reserva el stock en bodega, inicia el temporizador de expiración de 15 minutos y genera paquetes (`FulfillmentOrders`) agrupados por `VendorId`. |
-| `POST` | `/api/orders/{orderId}/pay` | Command | `orderId` (Path) | `200 OK`<br>`400 Bad Request (ProblemDetails)` | Confirma la transacción económica exitosa, pasando el pedido a `Paid` y consolidando la reserva para despacho físico. |
-| `GET` | `/api/orders/{id}` | Query | `id` (Path) | `200 OK (OrderDto)`<br>`404 Not Found (ProblemDetails)` | Consulta el estado del pedido (`Cart`, `PendingPayment`, `Paid`), total cancelado e ítems individuales. |
+| `POST` | `/api/orders/cart` | Command | **Sin cuerpo** ⚠️ | `200 OK (Guid)`<br>`401 Unauthorized` | Inicializa una orden en estado `Cart` del **comprador del token**. Ya no acepta `buyerId`: un carrito a nombre de otro es imposible por contrato |
+| `POST` | `/api/orders/cart/items` | Command | `AddOrderItemCommand` (Body) — el `BuyerId` del cuerpo se descarta ⚠️ | `200 OK`<br>`400 Bad Request`<br>`401 Unauthorized` | Añade un producto al carrito verificando existencias. El carrito debe ser del llamante: si no, `400` con "Order not found." |
+| `POST` | `/api/orders/{orderId}/checkout` | Command | `orderId` (Path) | `200 OK`<br>`400 Bad Request`<br>`401 Unauthorized` | Cierra el carrito, reserva el stock, activa la ventana de 15 minutos y genera despachos agrupados por `VendorId`. Solo sobre un pedido propio ⚠️ |
+| `POST` | `/api/orders/{orderId}/pay` | Command | `orderId` (Path) | `200 OK`<br>`400 Bad Request`<br>`401 Unauthorized` | Cobra y consolida la reserva, pasando el pedido a `Paid`. Solo sobre un pedido propio ⚠️ |
+| `GET` | `/api/orders/{id}` | Query | `id` (Path) | `200 OK (OrderDto \| SellerOrderViewDto)` ⚠️<br>`401 Unauthorized`<br>`404 Not Found` | La **forma depende del rol**: el Vendedor recibe la vista filtrada (sus líneas y su subtotal, sin `buyerId` ni total completo); los demás, el pedido completo. Un pedido ajeno responde `404` como uno inexistente |
 
 ---
 

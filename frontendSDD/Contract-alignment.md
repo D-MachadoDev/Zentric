@@ -207,4 +207,15 @@ Estas restricciones vienen de la Ley. El frontend debe cumplirlas **en la interf
 
 **Cerrado desde el alineamiento original:** autorizacion por rol (Q-21 del backend → `ADR-0011`, 2026-09-29: 18 politicas, `FallbackPolicy` fail-closed, verificado con tokens de los cinco roles) y contrato de los `enum` en el cuerpo JSON (Q-22 → `ADR-0012`, 2026-09-29: **viajan por nombre**, el cliente manda `"Seller"` y nunca `1`; ver `Frontend-Adapters.md` §3.2, que tenia los valores numericos mal).
 
-**Pendiente antes de produccion:** propiedad del recurso en las lecturas (Q-21b del backend: hoy un Comprador con el GUID correcto puede leer facturas o pedidos ajenos, y sin ese dictamen el frontend no puede exponer listados sin riesgo de exponer datos de otros) y reportes administrativos (R-08).
+**Cerrado 2026-09-29: propiedad del recurso (Q-21b → `ADR-0013`).** Es el bloque que faltaba para exponer listados. Lo que cambia **para el cliente**:
+
+| Cambio | Detalle |
+|---|---|
+| `POST /api/orders/cart` **sin cuerpo** | El comprador sale del token. Dejar de mandar `buyerId` |
+| `POST /api/Catalog/products` | El `vendorId` del cuerpo **se descarta**: el producto queda a nombre del vendedor autenticado |
+| `GET /api/Orders/{id}` **cambia de forma según el rol** | Comprador y Admin/Supervisor/Operador reciben `OrderDto`; el **Vendedor** recibe `SellerOrderViewDto` (`id`, `status`, `currency`, `items` solo suyos, `vendorSubtotal`, `createdAt`: **sin** `buyerId` ni `totalAmount`). Hay que ramificar por rol, no un tipo único |
+| `GET /api/Billing/invoices/order/{orderId}` | El Comprador ve **solo su Factura Maestra**; el Vendedor solo su factura de vendedor; Admin/Supervisor todas |
+| `GET /api/Warehouses?vendorId=` | El Vendedor ve solo las suyas; pedir las de otro → `400` (no es una lista filtrada) |
+| `401` / `404` | `403` = tu rol no entra. `404` = no existe **o no es tuyo**: la UI debe tratarlo como "no disponible", no reintentar |
+
+**Pendiente antes de produccion:** reportes administrativos (R-08).

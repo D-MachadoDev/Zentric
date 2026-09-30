@@ -108,24 +108,74 @@ Las comprobaciones del fuego real que mas valen:
 | `POST /api/users` anónimo con `role = Buyer` | `200` (única excepción a RG-01, Dominio 3) |
 | `POST /api/users` anónimo con `role = Seller` | `403` |
 
+**Propiedad del recurso (Q-21b, `ADR-0013`): 33 comprobaciones adicionales**, ejecutadas en la
+misma corrida. El smoke construye un pedido real de punta a punta (producto → bodega → stock →
+carrito → ítem → checkout → pago → facturas → devolución → aprobación) con **dos** compradores y
+**dos** vendedores, y comprueba que:
+
+| Comprobación | Resultado |
+|---|---|
+| `POST /api/Catalog/products` con un `vendorId` **falso** en el cuerpo | El producto queda atribuido al vendedor del token; el `vendorId` del cuerpo se descarta |
+| Stock en bodega ajena / producto de otro | `400` con el mensaje de "no existe" |
+| Listado de bodegas del Vendedor | Solo las suyas; pedir las de otro → `400`; leer por id → `404` |
+| Otro comprador mete ítems, hace checkout o paga el pedido ajeno | `400` con "Order not found."; añadir/leer el pedido → `404` |
+| `GET /api/orders/{id}` con Admin, Operador y Supervisor | `200` (esto **repara** el 404 que la matriz de Q-21 no contemplaba) |
+| `GET /api/orders/{id}` con Vendedor | Vista filtrada: `items=1`, `subtotal=20000`, sin total del pedido |
+| Facturas del pedido por rol | Comprador 1 (Maestra), Vendedor 1 (la suya), Administrador 3 (con plataforma); para otro comprador → `404` |
+| Devolución sobre pedido ajeno | `400` "Order not found." |
+| Aprobación de la devolución | El vendedor del producto → `200`; otro vendedor → `400` "Return request not found." |
+
+> El smoke mira el **cuerpo** de la respuesta en estas comprobaciones, no solo el código: un
+> `400` por otra causa (validación, payload) haría pasar la prueba por el motivo equivocado, que
+> es justo lo que pasó con un nombre de prueba inválido en la primera ejecución.
+
 > Leer `400`/`404` como "autorizado" es correcto **en este smoke**: las peticiones viajan con
 > cuerpo vacío o con un GUID inexistente a propósito. Lo que se afirma es que la petición
 > **no** fue detenida por autorización.
 
-## 5. Lo que esta matriz **no** cubre
+## 5. Propiedad del recurso (`[CONFIRMADO]` Q-21b, 2026-09-29, `ADR-0013`)
 
-- **Propiedad del recurso.** `OrderRead`, `ReturnRead` y `BillingRead` responden por **rol**, no
-  por dueño: hoy un Comprador autenticado puede consultar
-  `GET /api/billing/invoices/order/{orderId}` de un pedido ajeno. La única comprobación de
-  propiedad vigente es la de `GET /api/orders/{id}`, que lee el `sub` del token y responde `404`
-  si el pedido no es suyo ([01-endpoints.md, §3.1](01-endpoints.md)). Extenderla al resto es
-  **Q-21b**.
-- **Filtrado de listados.** `GET /api/warehouses?vendorId=` acepta el `vendorId` que traiga el
-  llamante: la matriz deja entrar al Vendedor pero no lo encierra en sus propias bodegas.
-  Mismo caso, **Q-21b**.
-- **Escrituras con identidad ajena.** Un Vendedor que envíe el `vendorId` de otro en el cuerpo
-  puede registrar producto ajeno mientras el caso de uso no valide la pertenencia. Es la misma
-  **Q-21b** vista desde la escritura.
+La matriz de §2 responde **qué puede hacer** cada rol. Esta sección responde **sobre qué
+recurso**: la propiedad se comprueba además del rol, con la identidad del token (`sub`).
+
+| Regla | Enunciado |
+|---|---|
+| 7 | **Solo Comprador y Vendedor llevan filtro de dueño.** Operador, Administrador y Supervisor no: para ellos el recurso no tiene dueño o su función es transversal |
+| 8 | **La identidad sale del token, nunca del cuerpo.** `POST /api/orders/cart` no acepta `buyerId` y `POST /api/Catalog/products` descarta el `vendorId` que venga en el cuerpo |
+| 9 | **Un recurso ajeno responde `404`** con el mismo mensaje que uno inexistente. `403` sigue significando "tu rol no entra" |
+| 10 | **El `VendorId` de un vendedor es su `User.Id`** (convención ratificada, sin entidad `Vendor`) |
+| 11 | **El dueño del stock es el dueño del producto**, no el de la bodega: el Vendedor ve sus bienes estén donde estén |
+
+### 5.1 Endpoint por endpoint
+
+| Endpoint | Comprador | Vendedor | Operador | Admin / Supervisor |
+|---|---|---|---|---|
+| `GET /api/orders/{id}` | Su pedido (`OrderDto`) | Pedidos donde tiene líneas, **vista filtrada** (`SellerOrderViewDto`: estado, sus líneas, su subtotal; sin `buyerId`, sin total completo) | Sin filtro | Sin filtro |
+| `GET /api/billing/invoices/order/{orderId}` | Solo la Factura Maestra de un pedido propio | Solo sus facturas de vendedor | — (política no le alcanza) | Todas |
+| `GET /api/returns/{id}` | Devoluciones de pedidos propios | Devoluciones de productos suyos | Sin filtro | Sin filtro |
+| `GET /api/logistics/fulfillment/{id}` | Despachos de pedidos propios | Despachos de su `VendorId` | Sin filtro | Sin filtro |
+| `GET /api/warehouses` | — (política) | Solo las suyas; pedir las de otro → `400` | Sin filtro | Sin filtro |
+| `GET /api/warehouses/{id}` | — | Las suyas; ajena → `404` | Sin filtro | Sin filtro |
+| `GET /api/Inventories/{variantId}` | — (política) | Stock de sus productos; variante ajena → `404` | Sin filtro | — (política) |
+| `POST /api/orders/cart` | Su carrito (identidad del token) | `403` | `403` | `403` |
+| `POST /api/orders/cart/items`, `/checkout`, `/pay` | Su pedido; el ajeno responde `not found` | `403` | `403` | `403` |
+| `POST /api/returns/request` | Su pedido | `403` | `403` | `403` |
+| `POST /api/returns/{id}/approve` | `403` | Aprobar solo devoluciones de sus productos | `403` | `403` |
+| `POST /api/returns/{id}/inspect` | `403` | `403` | Sin filtro | `403` |
+| `POST /api/Inventories/stock` | `403` | Su producto **y** su bodega | Sin filtro | `403` |
+| `POST /api/Catalog/products` | `403` | Se registra a su nombre (el `vendorId` del cuerpo se descarta) | `403` | `403` |
+| `POST /api/Logistics/fulfillment` | `403` | Solo a su nombre | Sin filtro | `403` |
+| `POST /api/Logistics/fulfillment/{id}/dispatch`, `/cancel-ghost-stock` | `403` | Solo sus despachos | Despachar sin filtro; **cancelar `403`** (Q-21c abierta) | `403` |
+
+`—` = el rol no entra por la matriz de §2, así que responde `403` antes de llegar a la propiedad.
+
+### 5.2 Dónde vive la comprobación
+
+- `ICurrentUserAccessor` (`Zentric.Api/Security/ClaimsUserAccessor.cs`) resuelve el `sub`; los
+  controladores componen el comando o la consulta con esa identidad.
+- El filtro va en el handler o en el repositorio, **nunca en el controlador**, y dentro de la
+  consulta (`GetByIdForBuyerAsync`, `GetByIdForVendorAsync`).
+- Razón completa, alternativas descartadas y consecuencias: [ADR-0013](../Adr/0013-propiedad-del-recurso-por-rol.md).
 
 
 

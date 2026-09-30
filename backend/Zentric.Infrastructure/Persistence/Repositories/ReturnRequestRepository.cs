@@ -21,7 +21,13 @@ namespace Zentric.Infrastructure.Persistence.Repositories
 
         public async Task<ReturnRequest?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // AsNoTracking: la lectura devuelve un objeto de dominio independiente.
+            // Si la fila quedara rastreada, el Update posterior (que adjunta un
+            // DbModel nuevo con la misma clave) fallaria con "another instance
+            // with the same key value is already being tracked" y la devolucion
+            // no se podria aprobar. Verificado en Docker el 2026-09-29 (H-15).
             var dbModel = await _dbContext.ReturnRequests
+                .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
             return dbModel == null ? null : ReturnRequestMapper.ToDomain(dbModel);
         }
