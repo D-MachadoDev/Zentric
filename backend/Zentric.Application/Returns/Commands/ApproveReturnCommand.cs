@@ -42,7 +42,7 @@ namespace Zentric.Application.Returns.Commands
             var returnReq = await _returnRepository.GetByIdAsync(request.ReturnRequestId, cancellationToken);
             if (returnReq == null)
             {
-                return Result<bool>.Failure("Return request not found.");
+                return Result<bool>.NotFound("Return request not found.");
             }
 
             // Q-21b: la aprobacion es del vendedor del producto devuelto
@@ -51,7 +51,7 @@ namespace Zentric.Application.Returns.Commands
             var product = await _productRepository.GetByVariantIdAsync(returnReq.VariantId, cancellationToken);
             if (product == null || product.VendorId != request.CallerId)
             {
-                return Result<bool>.Failure("Return request not found.");
+                return Result<bool>.NotFound("Return request not found.");
             }
 
             try

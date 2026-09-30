@@ -5,6 +5,8 @@ using Zentric.Api.Security;
 using Zentric.Application.Inventories.Commands;
 using Zentric.Application.Inventories.Queries;
 
+using Zentric.Api.Contracts;
+
 namespace Zentric.Api.Controllers
 {
     /// <summary>
@@ -48,7 +50,7 @@ namespace Zentric.Api.Controllers
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
             var result = await _mediator.Send(command with { CallerId = userId.Value, CallerRole = role.Value });
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
 
@@ -76,7 +78,7 @@ namespace Zentric.Api.Controllers
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
             var result = await _mediator.Send(new GetInventoryByVariantQuery(variantId, userId.Value, role.Value));
-            if (result.IsFailure) return NotFound(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
     }

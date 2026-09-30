@@ -5,6 +5,8 @@ using Zentric.Api.Security;
 using Zentric.Application.Warehouses.Commands;
 using Zentric.Application.Warehouses.Queries;
 
+using Zentric.Api.Contracts;
+
 namespace Zentric.Api.Controllers
 {
     /// <summary>
@@ -42,7 +44,7 @@ namespace Zentric.Api.Controllers
         public async Task<IActionResult> CreateWarehouse([FromBody] CreateWarehouseCommand command)
         {
             var result = await _mediator.Send(command);
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
 
@@ -69,7 +71,7 @@ namespace Zentric.Api.Controllers
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
             var result = await _mediator.Send(new GetWarehousesQuery(vendorId, userId.Value, role.Value));
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
 
@@ -92,7 +94,7 @@ namespace Zentric.Api.Controllers
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
             var result = await _mediator.Send(new GetWarehouseByIdQuery(id, userId.Value, role.Value));
-            if (result.IsFailure) return NotFound(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
     }

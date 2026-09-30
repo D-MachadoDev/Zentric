@@ -14,6 +14,8 @@
 #
 # "abierto" en la salida = el rol SI puede llamar: la peticion viaja con cuerpo vacio o con un GUID
 # inexistente a proposito, asi que se espera 400/404 (paso la barrera de autorizacion), no 401/403.
+# Q-21b: un recurso ausente o ajeno responde 404 en lecturas Y en escrituras (dictamen del Owner);
+# un 400 aqui significa que el recurso existe pero incumple una regla de negocio.
 param(
     [string] $BaseUrl = 'http://localhost:5076',
     [string] $AdminEmail = $env:BOOTSTRAP_ADMIN_EMAIL,
@@ -225,9 +227,9 @@ $otherWhId = $otherWh.body | ConvertFrom-Json
 $stockOwn = Http 'POST' '/api/Inventories/stock' $tok['Seller'] (@{ variantId = $variantId; warehouseId = $ownWhId; quantity = 5 } | ConvertTo-Json)
 Q21b 'stock del producto propio en bodega propia' ($stockOwn.code -eq 200) "HTTP $($stockOwn.code) $($stockOwn.body)"
 $stockOther = Http 'POST' '/api/Inventories/stock' $tok['Seller'] (@{ variantId = $variantId; warehouseId = $otherWhId; quantity = 5 } | ConvertTo-Json)
-Q21b 'stock en bodega ajena rechazado' ($stockOther.code -eq 400 -and $stockOther.body -match 'not found') "HTTP $($stockOther.code) $($stockOther.body)"
+Q21b 'stock en bodega ajena rechazado -> 404' ($stockOther.code -eq 404 -and $stockOther.body -match 'not found') "HTTP $($stockOther.code) $($stockOther.body)"
 $stockForeign = Http 'POST' '/api/Inventories/stock' $tok['Seller2'] (@{ variantId = $variantId; warehouseId = $ownWhId; quantity = 5 } | ConvertTo-Json)
-Q21b 'otro vendedor no ingresa el stock de otro' ($stockForeign.code -eq 400 -and $stockForeign.body -match 'not found') "HTTP $($stockForeign.code) $($stockForeign.body)"
+Q21b 'otro vendedor no ingresa el stock de otro -> 404' ($stockForeign.code -eq 404 -and $stockForeign.body -match 'not found') "HTTP $($stockForeign.code) $($stockForeign.body)"
 
 $invOwn = Http 'GET' "/api/Inventories/$variantId" $tok['Seller']
 Q21b 'el vendedor lee el stock de su producto' ($invOwn.code -eq 200) "HTTP $($invOwn.code)"
@@ -254,17 +256,17 @@ $itemJson = @{ orderId = $orderId; variantId = $variantId; vendorId = $sellerMe;
 $item = Http 'POST' '/api/orders/cart/items' $tok['Buyer'] $itemJson
 Q21b 'agregar item al carrito propio' ($item.code -eq 200) "HTTP $($item.code) $($item.body)"
 $stealItem = Http 'POST' '/api/orders/cart/items' $tok['Buyer2'] $itemJson
-Q21b 'otro comprador no agrega items al carrito ajeno' ($stealItem.code -eq 400 -and $stealItem.body -match 'not found') "HTTP $($stealItem.code) $($stealItem.body)"
+Q21b 'otro comprador no agrega items al carrito ajeno -> 404' ($stealItem.code -eq 404 -and $stealItem.body -match 'not found') "HTTP $($stealItem.code) $($stealItem.body)"
 
 $checkout = Http 'POST' "/api/orders/$orderId/checkout" $tok['Buyer']
 Q21b 'checkout propio' ($checkout.code -eq 200) "HTTP $($checkout.code) $($checkout.body)"
 $stealCheckout = Http 'POST' "/api/orders/$orderId/checkout" $tok['Buyer2']
-Q21b 'otro comprador no hace checkout ajeno' ($stealCheckout.code -eq 400 -and $stealCheckout.body -match 'not found') "HTTP $($stealCheckout.code) $($stealCheckout.body)"
+Q21b 'otro comprador no hace checkout ajeno -> 404' ($stealCheckout.code -eq 404 -and $stealCheckout.body -match 'not found') "HTTP $($stealCheckout.code) $($stealCheckout.body)"
 
 $pay = Http 'POST' "/api/orders/$orderId/pay" $tok['Buyer']
 Q21b 'pago propio' ($pay.code -eq 200) "HTTP $($pay.code) $($pay.body)"
 $stealPay = Http 'POST' "/api/orders/$orderId/pay" $tok['Buyer2']
-Q21b 'otro comprador no paga un pedido ajeno' ($stealPay.code -eq 400 -and $stealPay.body -match 'not found') "HTTP $($stealPay.code) $($stealPay.body)"
+Q21b 'otro comprador no paga un pedido ajeno -> 404' ($stealPay.code -eq 404 -and $stealPay.body -match 'not found') "HTTP $($stealPay.code) $($stealPay.body)"
 
 Q21b 'el dueno lee su pedido' ((Http 'GET' "/api/orders/$orderId" $tok['Buyer']).code -eq 200) ''
 Q21b 'otro comprador -> 404' ((Http 'GET' "/api/orders/$orderId" $tok['Buyer2']).code -eq 404) ''
@@ -307,13 +309,13 @@ $ret    = Http 'POST' '/api/returns/request' $tok['Buyer'] $retJson
 $retId  = if ($ret.code -eq 200) { $ret.body | ConvertFrom-Json } else { '' }
 Q21b 'devolucion sobre pedido propio' ($ret.code -eq 200) "HTTP $($ret.code) $($ret.body)"
 $retForeign = Http 'POST' '/api/returns/request' $tok['Buyer2'] $retJson
-Q21b 'devolucion sobre pedido ajeno rechazada' ($retForeign.code -eq 400 -and $retForeign.body -match 'not found') "HTTP $($retForeign.code) $($retForeign.body)"
+Q21b 'devolucion sobre pedido ajeno rechazada -> 404' ($retForeign.code -eq 404 -and $retForeign.body -match 'not found') "HTTP $($retForeign.code) $($retForeign.body)"
 
 $approveJson = @{ returnRequestId = $retId; isSameWarehouseAndVendor = $true } | ConvertTo-Json
 $approve = Http 'POST' "/api/returns/$retId/approve" $tok['Seller'] $approveJson
 Q21b 'el vendedor del producto aprueba la devolucion' ($approve.code -eq 200) "HTTP $($approve.code) $($approve.body)"
 $approveForeign = Http 'POST' "/api/returns/$retId/approve" $tok['Seller2'] $approveJson
-Q21b 'otro vendedor no aprueba la devolucion' ($approveForeign.code -eq 400 -and $approveForeign.body -match 'not found') "HTTP $($approveForeign.code) $($approveForeign.body)"
+Q21b 'otro vendedor no aprueba la devolucion -> 404' ($approveForeign.code -eq 404 -and $approveForeign.body -match 'not found') "HTTP $($approveForeign.code) $($approveForeign.body)"
 
 "TOTAL DE COMPROBACIONES: $($cases.Count + 5 + $q21bTotal) | FALLOS: $($fallos + $q21bFallos)"
 "Limpieza de los usuarios de esta corrida: docker exec zentric-postgres psql -U postgres -d ZentricDb -c 'DELETE FROM ""Users"" WHERE ""Email"" LIKE ''%q21.test%'';'"

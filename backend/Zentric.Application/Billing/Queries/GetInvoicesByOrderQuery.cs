@@ -50,7 +50,7 @@ namespace Zentric.Application.Billing.Queries
                         request.OrderId, request.CallerId, cancellationToken);
                     if (order == null)
                     {
-                        return Result<IReadOnlyList<InvoiceDto>>.Failure("Order not found.");
+                        return Result<IReadOnlyList<InvoiceDto>>.NotFound("Order not found.");
                     }
 
                     invoices = invoices.Where(i => i.Type == InvoiceType.Master).ToList();

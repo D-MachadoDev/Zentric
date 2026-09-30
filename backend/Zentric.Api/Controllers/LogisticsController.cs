@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
 using Zentric.Application.Logistics.Commands;
 
+using Zentric.Api.Contracts;
+
 namespace Zentric.Api.Controllers
 {
     /// <summary>
@@ -47,7 +49,7 @@ namespace Zentric.Api.Controllers
             // Q-21b: el Vendedor solo crea despachos a su nombre; el Operador
             // puede crearlos para cualquier vendedor.
             var result = await _mediator.Send(command with { CallerId = userId.Value, CallerRole = role.Value });
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
 
@@ -73,7 +75,7 @@ namespace Zentric.Api.Controllers
 
             // Q-21b: el Vendedor solo despacha los suyos; el Operador, cualquiera.
             var result = await _mediator.Send(new DispatchFulfillmentCommand(id, userId.Value, role.Value));
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok();
         }
 
@@ -100,7 +102,7 @@ namespace Zentric.Api.Controllers
             // Q-21b: con la politica solo-Seller vigente, el despacho ajeno se
             // trata como inexistente (Q-21c sigue abierta).
             var result = await _mediator.Send(command with { CallerId = userId.Value, CallerRole = role.Value });
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
 
@@ -129,7 +131,7 @@ namespace Zentric.Api.Controllers
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
             var result = await _mediator.Send(new Zentric.Application.Logistics.Queries.GetFulfillmentByIdQuery(id, userId.Value, role.Value));
-            if (result.IsFailure) return NotFound(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
     }

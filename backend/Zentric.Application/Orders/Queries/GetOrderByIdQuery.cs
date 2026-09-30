@@ -46,7 +46,7 @@ namespace Zentric.Application.Orders.Queries
             {
                 // Mismo mensaje para "no existe" y "es de otro": filtrar esa
                 // diferencia permitiria enumerar pedidos ajenos probando GUIDs.
-                return Result<OrderDto>.Failure("Order not found.");
+                return Result<OrderDto>.NotFound("Order not found.");
             }
 
             var dto = new OrderDto(
@@ -85,7 +85,7 @@ namespace Zentric.Application.Orders.Queries
             var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
             if (order == null)
             {
-                return Result<OrderDto>.Failure("Order not found.");
+                return Result<OrderDto>.NotFound("Order not found.");
             }
 
             var dto = new OrderDto(

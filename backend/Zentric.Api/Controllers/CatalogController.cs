@@ -6,6 +6,8 @@ using Zentric.Application.Catalog.Commands;
 using Zentric.Application.Catalog.Queries;
 using Zentric.Application.Common.Models;
 
+using Zentric.Api.Contracts;
+
 namespace Zentric.Api.Controllers
 {
     /// <summary>
@@ -51,7 +53,7 @@ namespace Zentric.Api.Controllers
             // descarta: registrar producto a nombre de otro corromperia el split
             // de facturacion (Q-18) y no se podria corregir despues.
             var result = await _mediator.Send(command with { VendorId = userId.Value });
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
 
@@ -72,7 +74,7 @@ namespace Zentric.Api.Controllers
         public async Task<IActionResult> PublishProduct(Guid productId)
         {
             var result = await _mediator.Send(new PublishProductCommand(productId));
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok();
         }
 
@@ -126,7 +128,7 @@ namespace Zentric.Api.Controllers
         public async Task<IActionResult> GetProductById(Guid id)
         {
             var result = await _mediator.Send(new GetProductByIdQuery(id));
-            if (result.IsFailure) return NotFound(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
     }

@@ -41,7 +41,7 @@ namespace Zentric.Application.Orders.Commands
                 request.OrderId, request.BuyerId, cancellationToken);
             if (order == null)
             {
-                return Result<bool>.Failure($"Order with ID {request.OrderId} not found.");
+                return Result<bool>.NotFound($"Order with ID {request.OrderId} not found.");
             }
 
             // Q-08: primero se cobra, y solo si la pasarela aprueba se marca el

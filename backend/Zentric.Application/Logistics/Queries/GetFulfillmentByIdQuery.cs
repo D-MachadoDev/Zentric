@@ -42,7 +42,7 @@ namespace Zentric.Application.Logistics.Queries
             var fulfillment = await _fulfillmentRepository.GetByIdAsync(request.Id, cancellationToken);
             if (fulfillment == null)
             {
-                return Result<FulfillmentOrderDto>.Failure("Fulfillment order not found.");
+                return Result<FulfillmentOrderDto>.NotFound("Fulfillment order not found.");
             }
 
             // Q-21b: la visibilidad depende del rol. Un recurso ajeno responde
@@ -57,7 +57,7 @@ namespace Zentric.Application.Logistics.Queries
 
             if (!isVisible)
             {
-                return Result<FulfillmentOrderDto>.Failure("Fulfillment order not found.");
+                return Result<FulfillmentOrderDto>.NotFound("Fulfillment order not found.");
             }
 
             var dto = new FulfillmentOrderDto(

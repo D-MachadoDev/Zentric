@@ -23,7 +23,7 @@ namespace Zentric.Application.Returns.Commands
             var returnReq = await _repository.GetByIdAsync(request.ReturnRequestId, cancellationToken);
             if (returnReq == null)
             {
-                return Result<bool>.Failure("Return request not found.");
+                return Result<bool>.NotFound("Return request not found.");
             }
 
             try

@@ -208,6 +208,20 @@ builder.Services.AddCors(options =>
 });
 var app = builder.Build();
 
+// Las migraciones se aplican al arrancar. Sin esto, `docker compose down -v` (documentado
+// como "volumen de datos limpio") dejaba la base SIN TABLAS: el compose solo levanta
+// PostgreSQL y la API, y ningun otro paso creaba el esquema. Se limita a Desarrollo
+// porque en produccion aplicar el esquema al arrancar oculta el control de cambios.
+//
+// El Administrador inicial NO se crea aqui: lo hace el bloque de bootstrap de mas abajo,
+// que ademas evita duplicarlo en cada reinicio.
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ZentricDbContext>();
+    await db.Database.MigrateAsync();
+}
+
 // Configure the HTTP request pipeline.
 app.UseSwagger();
 app.UseSwaggerUI(c =>

@@ -5,6 +5,8 @@ using Zentric.Api.Security;
 using Zentric.Application.Billing.Commands;
 using Zentric.Application.Billing.Queries;
 
+using Zentric.Api.Contracts;
+
 namespace Zentric.Api.Controllers
 {
     /// <summary>
@@ -43,7 +45,7 @@ namespace Zentric.Api.Controllers
         public async Task<IActionResult> GenerateInvoices(Guid orderId)
         {
             var result = await _mediator.Send(new GenerateInvoicesCommand(orderId));
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
 
@@ -72,7 +74,7 @@ namespace Zentric.Api.Controllers
 
             // Q-21b: la visibilidad de cada factura depende del rol (ver el handler).
             var result = await _mediator.Send(new GetInvoicesByOrderQuery(orderId, userId.Value, role.Value));
-            if (result.IsFailure) return NotFound(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
     }

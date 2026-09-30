@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
 using Zentric.Application.Returns.Commands;
 
+using Zentric.Api.Contracts;
+
 namespace Zentric.Api.Controllers
 {
     /// <summary>
@@ -48,7 +50,7 @@ namespace Zentric.Api.Controllers
             // Q-21b: la identidad la fija el token, no el cuerpo; el handler
             // verifica que el pedido a devolver sea del llamante.
             var result = await _mediator.Send(command with { BuyerId = userId.Value });
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
 
@@ -70,7 +72,7 @@ namespace Zentric.Api.Controllers
         public async Task<IActionResult> InspectReturn(Guid id, [FromBody] InspectReturnRequestDto dto)
         {
             var result = await _mediator.Send(new InspectReturnCommand(id, dto.IsGoodCondition));
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok();
         }
 
@@ -100,7 +102,7 @@ namespace Zentric.Api.Controllers
 
             // Q-21b: la aprobacion es del vendedor del producto devuelto.
             var result = await _mediator.Send(command with { CallerId = userId.Value, CallerRole = role.Value });
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok();
         }
 
@@ -129,7 +131,7 @@ namespace Zentric.Api.Controllers
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
             var result = await _mediator.Send(new Zentric.Application.Returns.Queries.GetReturnByIdQuery(id, userId.Value, role.Value));
-            if (result.IsFailure) return NotFound(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
     }

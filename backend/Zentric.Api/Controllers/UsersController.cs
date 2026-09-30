@@ -7,6 +7,8 @@ using Zentric.Application.Users.Queries;
 using Zentric.Domain.Users;
 using Zentric.Domain.Users.Enums;
 
+using Zentric.Api.Contracts;
+
 namespace Zentric.Api.Controllers
 {
     /// <summary>
@@ -76,7 +78,7 @@ namespace Zentric.Api.Controllers
             }
 
             var result = await _mediator.Send(command);
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
 
@@ -114,7 +116,7 @@ namespace Zentric.Api.Controllers
         public async Task<IActionResult> GetUserById(Guid id)
         {
             var result = await _mediator.Send(new GetUserByIdQuery(id));
-            if (result.IsFailure) return NotFound(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
     }

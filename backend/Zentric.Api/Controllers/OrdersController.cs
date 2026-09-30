@@ -6,6 +6,8 @@ using Zentric.Application.Orders.Commands;
 using Zentric.Application.Orders.Queries;
 using Zentric.Domain.Users.Enums;
 
+using Zentric.Api.Contracts;
+
 namespace Zentric.Api.Controllers
 {
     /// <summary>
@@ -50,7 +52,7 @@ namespace Zentric.Api.Controllers
             if (userId is null) return MissingIdentity();
 
             var result = await _mediator.Send(new CreateCartCommand(userId.Value));
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
 
@@ -79,7 +81,7 @@ namespace Zentric.Api.Controllers
             // traiga el cliente se descarta antes de llegar al caso de uso, y el
             // handler verifica la propiedad del pedido contra este mismo valor.
             var result = await _mediator.Send(command with { BuyerId = userId.Value });
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok();
         }
 
@@ -107,7 +109,7 @@ namespace Zentric.Api.Controllers
 
             // Q-21b: el checkout solo opera sobre pedidos propios.
             var result = await _mediator.Send(new CheckoutOrderCommand(orderId, userId.Value));
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok();
         }
 
@@ -135,7 +137,7 @@ namespace Zentric.Api.Controllers
             // Q-21b: nadie paga un pedido ajeno; el filtro por comprador viaja a
             // la consulta del handler.
             var result = await _mediator.Send(new PayOrderCommand(orderId, userId.Value));
-            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
+            if (result.IsFailure) return result.ToProblem();
             return Ok();
         }
 
@@ -174,21 +176,21 @@ namespace Zentric.Api.Controllers
                 case UserRole.Buyer:
                 {
                     var buyerResult = await _mediator.Send(new GetOrderByIdForBuyerQuery(id, userId.Value));
-                    if (buyerResult.IsFailure) return NotFound(new ProblemDetails { Detail = buyerResult.Error });
+                    if (buyerResult.IsFailure) return buyerResult.ToProblem();
                     return Ok(buyerResult.Value);
                 }
 
                 case UserRole.Seller:
                 {
                     var sellerResult = await _mediator.Send(new GetOrderByIdForSellerQuery(id, userId.Value));
-                    if (sellerResult.IsFailure) return NotFound(new ProblemDetails { Detail = sellerResult.Error });
+                    if (sellerResult.IsFailure) return sellerResult.ToProblem();
                     return Ok(sellerResult.Value);
                 }
 
                 default:
                 {
                     var result = await _mediator.Send(new GetOrderByIdQuery(id));
-                    if (result.IsFailure) return NotFound(new ProblemDetails { Detail = result.Error });
+                    if (result.IsFailure) return result.ToProblem();
                     return Ok(result.Value);
                 }
             }

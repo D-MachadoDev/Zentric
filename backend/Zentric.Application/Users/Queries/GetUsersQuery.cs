@@ -52,7 +52,7 @@ namespace Zentric.Application.Users.Queries
             var user = await _userRepository.GetByIdAsync(request.Id);
             if (user == null)
             {
-                return Result<UserDto>.Failure("User not found.");
+                return Result<UserDto>.NotFound("User not found.");
             }
 
             var dto = new UserDto(

@@ -29,7 +29,7 @@ namespace Zentric.Application.Billing.Commands
             var order = await _orderRepository.GetByIdAsync(request.CustomerOrderId, cancellationToken);
             if (order == null)
             {
-                return Result<bool>.Failure("Order not found.");
+                return Result<bool>.NotFound("Order not found.");
             }
 
             // Q-21d (dictamen del Owner 2026-09-29): estas dos guardas ya las prometia la

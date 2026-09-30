@@ -42,13 +42,13 @@ namespace Zentric.Application.Logistics.Commands
         public async Task<Result<bool>> Handle(CancelFulfillmentOrderDueToNoStockCommand request, CancellationToken cancellationToken)
         {
             var order = await _fulfillmentRepository.GetByIdAsync(request.FulfillmentOrderId, cancellationToken);
-            if (order == null) return Result<bool>.Failure("Fulfillment order not found.");
+            if (order == null) return Result<bool>.NotFound("Fulfillment order not found.");
 
             // Q-21b: el vendedor no cancela el despacho de otro (politica
             // solo-Seller, ver Q-21c). El mensaje es el de "no existe".
             if (request.CallerRole == UserRole.Seller && order.VendorId != request.CallerId)
             {
-                return Result<bool>.Failure("Fulfillment order not found.");
+                return Result<bool>.NotFound("Fulfillment order not found.");
             }
 
             try

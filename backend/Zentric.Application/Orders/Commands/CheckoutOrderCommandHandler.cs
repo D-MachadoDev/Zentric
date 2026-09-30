@@ -44,7 +44,7 @@ namespace Zentric.Application.Orders.Commands
                 request.OrderId, request.BuyerId, cancellationToken);
             if (order == null)
             {
-                return Result<bool>.Failure($"Order with ID {request.OrderId} not found.");
+                return Result<bool>.NotFound($"Order with ID {request.OrderId} not found.");
             }
 
             try
@@ -62,7 +62,7 @@ namespace Zentric.Application.Orders.Commands
                     var product = await _productRepository.GetByVariantIdAsync(item.VariantId, cancellationToken);
                     if (product == null)
                     {
-                        return Result<bool>.Failure($"Product for variant {item.VariantId} not found.");
+                        return Result<bool>.NotFound($"Product for variant {item.VariantId} not found.");
                     }
 
                     if (!itemsByVendor.ContainsKey(product.VendorId))

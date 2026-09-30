@@ -216,7 +216,15 @@ Estas restricciones vienen de la Ley. El frontend debe cumplirlas **en la interf
 | `GET /api/Orders/{id}` **cambia de forma según el rol** | Comprador y Admin/Supervisor/Operador reciben `OrderDto`; el **Vendedor** recibe `SellerOrderViewDto` (`id`, `status`, `currency`, `items` solo suyos, `vendorSubtotal`, `createdAt`: **sin** `buyerId` ni `totalAmount`). Hay que ramificar por rol, no un tipo único |
 | `GET /api/Billing/invoices/order/{orderId}` | El Comprador ve **solo su Factura Maestra**; el Vendedor solo su factura de vendedor; Admin/Supervisor todas |
 | `GET /api/Warehouses?vendorId=` | El Vendedor ve solo las suyas; pedir las de otro → `400` (no es una lista filtrada) |
-| `401` / `404` | `403` = tu rol no entra. `404` = no existe **o no es tuyo**: la UI debe tratarlo como "no disponible", no reintentar |
+| `401` / `403` / `404` | `403` = tu rol no entra. `404` = no existe **o no es tuyo**, **también en las escrituras** (Q-21b, cerrado 2026-09-29): la UI debe tratarlo como "no disponible", no reintentar y no mostrar un error de formulario |
+
+> **`404` también llega por escritura.** Antes, agregar un ítem a un carrito ajeno o pagar un pedido
+> ajeno devolvía `400`; ahora devuelven `404`, igual que las lecturas. El frontend tiene **un solo
+> código** para "no disponible": si la UI solo miraba el `400`, estas acciones pasan a verse como
+> errores de validación en lugar de "este recurso no es tuyo".
+>
+> **Siguen siendo `400` a propósito** (el recurso existe, el filtro no): pedir bodegas de otro
+> vendedor, o crear un despacho a nombre de otro. Ahí sí es un error de la petición.
 
 **Cerrado 2026-09-29: tres enmiendas a la matriz de roles (Q-21c, Q-21d, Q-21e → `ADR-0014`).** Los tres dictámenes del Owner en una sola ronda, con los documentos del cliente corregidos por addendum:
 

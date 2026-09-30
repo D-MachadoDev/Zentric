@@ -66,7 +66,7 @@ namespace Zentric.Application.Catalog.Queries
             var p = await _productRepository.GetByIdAsync(request.Id, cancellationToken);
             if (p == null)
             {
-                return Result<ProductDto>.Failure("Product not found.");
+                return Result<ProductDto>.NotFound("Product not found.");
             }
 
             var dto = new ProductDto(

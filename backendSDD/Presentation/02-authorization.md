@@ -158,7 +158,7 @@ recurso**: la propiedad se comprueba además del rol, con la identidad del token
 | `GET /api/warehouses/{id}` | — | Las suyas; ajena → `404` | Sin filtro | Sin filtro |
 | `GET /api/Inventories/{variantId}` | — (política) | Stock de sus productos; variante ajena → `404` | Sin filtro | — (política) |
 | `POST /api/orders/cart` | Su carrito (identidad del token) | `403` | `403` | `403` |
-| `POST /api/orders/cart/items`, `/checkout`, `/pay` | Su pedido; el ajeno responde `not found` | `403` | `403` | `403` |
+| `POST /api/orders/cart/items`, `/checkout`, `/pay` | Su pedido; el ajeno responde `404` | `403` | `403` | `403` |
 | `POST /api/returns/request` | Su pedido | `403` | `403` | `403` |
 | `POST /api/returns/{id}/approve` | `403` | Aprobar solo devoluciones de sus productos | `403` | `403` |
 | `POST /api/returns/{id}/inspect` | `403` | `403` | Sin filtro | `403` |
@@ -176,6 +176,28 @@ recurso**: la propiedad se comprueba además del rol, con la identidad del token
 - El filtro va en el handler o en el repositorio, **nunca en el controlador**, y dentro de la
   consulta (`GetByIdForBuyerAsync`, `GetByIdForVendorAsync`).
 - Razón completa, alternativas descartadas y consecuencias: [ADR-0013](../Adr/0013-propiedad-del-recurso-por-rol.md).
+
+### 5.3 Código de respuesta: `404` también en las escrituras
+
+**Dictamen del Owner del 2026-09-29.** Un recurso ausente o ajeno responde **`404` en lecturas y en
+escrituras**, con el mismo mensaje en ambos casos ("no existe" y "es de otro" son indistinguibles
+para quien pregunta). Un `400` significa que el recurso **existe** pero incumple una regla de
+negocio.
+
+| Situación | Código | Ejemplo |
+|---|---|---|
+| No existe, o es de otro | `404` | `POST /api/orders/{id}/pay` sobre el pedido de otro comprador |
+| Existe, pero viola una regla | `400` | `POST /api/orders/cart/items` con el carrito ya pagado |
+| El rol no entra por la matriz | `403` | Operador intentando aprobar una devolución |
+
+**Excepciones deliberadas que siguen en `400`:** no son un recurso ausente, son un **filtro que
+contradice al llamante**, y devolver en silencio los recursos propios haría que el filtro pedido y
+el aplicado fueran distintos sin decirlo: `GET /api/warehouses?vendorId=` de otro vendedor y
+`POST /api/logistics/fulfillment` a nombre de otro.
+
+**Dónde se decide:** `ErrorKind` (`Application/Common/Models/Result.cs`) clasifica el fallo y
+`ResultMapping.ToProblem()` (`Api/Contracts/ResultMapping.cs`) lo traduce. Ningún controlador elige
+el código a mano, y `ResultMappingTests` falla si alguien lo hace.
 
 
 

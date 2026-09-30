@@ -46,7 +46,7 @@ namespace Zentric.Application.Orders.Queries
             {
                 // Mismo mensaje para "no existe" y "no participo": distinguirlos
                 // permitiria enumerar pedidos ajenos probando GUIDs.
-                return Result<SellerOrderViewDto>.Failure("Order not found.");
+                return Result<SellerOrderViewDto>.NotFound("Order not found.");
             }
 
             var vendorItems = order.Items

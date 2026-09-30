@@ -82,9 +82,10 @@ ingresa stock solo de sus productos y solo en sus bodegas. El Operador ingresa y
 toda la red.
 
 El resto de los sub-puntos de P4: el Vendedor crea y despacha solo sus despachos; cancela por
-quiebre solo los suyos (la **política sigue siendo solo-Vendedor**, Q-21c sigue abierta); el
-Operador inspecciona cualquier devolución. `POST /api/Catalog/products` deja de aceptar el
-vendedor en el cuerpo: lo toma del token.
+quiebre solo los suyos (Q-21c, cerrado el 2026-09-29 en
+[ADR-0014](0014-enmiendas-a-la-matriz-de-autorizacion.md), que abre además esa cancelación al
+Operador Logístico); el Operador inspecciona cualquier devolución. `POST /api/Catalog/products`
+deja de aceptar el vendedor en el cuerpo: lo toma del token.
 
 ## Dónde vive la comprobación
 
@@ -97,6 +98,39 @@ vendedor en el cuerpo: lo toma del token.
   materializarse.
 - **Respuesta:** `404` para un recurso que es de otro, con el mismo mensaje que el de uno
   inexistente, para no permitir enumeración por GUID. `403` sigue reservada al rol.
+
+### Q-21b, cierre del contrato HTTP (dictamen del Owner, 2026-09-29)
+
+La regla anterior se aplicaba en las lecturas, pero **las escrituras seguían respondiendo `400`**
+aunque devolvieran el mismo mensaje "not found" (17 llamadas a `BadRequest` frente a 8 a
+`NotFound` en los controladores). El objetivo de seguridad se cumplía —el mensaje era idéntico,
+así que nadie podía enumerar GUID ajenos—, pero el contrato era incoherente: el mismo caso
+("este recurso no es tuyo") contestaba 404 o 400 según el endpoint.
+
+**Decisión: un recurso ausente o ajeno responde `404` en lecturas y en escrituras.** Para poder
+hacerlo sin adivinar, el fallo se clasifica:
+
+| Pieza | Papel |
+|---|---|
+| `ErrorKind` (`Application/Common/Models/Result.cs`) | `Validation` (→400) o `NotFound` (→404) |
+| `Result.NotFound(...)` | 30 sitios de `Application` que declaran "no existe / es de otro" |
+| `ResultMapping.ToProblem()` (`Api/Contracts/`) | Traduce el fallo a `400` o `404` en un único sitio |
+
+**Por qué no leer el mensaje para decidir:** habría que hacer `if (error.Contains("not found"))`,
+que se rompe en cuanto un mensaje cambia de redacción y mezcla dos conceptos que el dominio sí
+distingue. La clasificación va en el `Result`, que es donde ya vive la decisión de negocio.
+
+**Qué se queda en `400` a propósito** (no es un recurso ausente, es un filtro que contradice al
+llamante): `GET /api/warehouses?vendorId=` de otro vendedor, y `POST /api/logistics/fulfillment`
+de otro. Devolver en silencio los recursos propios haría que el filtro pedido y el aplicado
+fueran distintos sin decirlo.
+
+**Blindaje** (`ResultMappingTests`): una prueba escanea los controladores y falla si alguien
+escribe `return BadRequest(...)` o `return NotFound(...)` a mano sobre un `Result`. Se verificó
+con prueba de mutación (reintroducir el `BadRequest` en `UsersController` → `Failed: 1`, con el
+archivo y la línea en el mensaje). Esa prueba además detectó un error real durante el trabajo: al
+revertir una mutación con `git checkout` se revirtió también la conversión, y el archivo volvió
+al patrón viejo sin que nadie lo notara.
 
 ## Alternativas de ingeniería descartadas
 

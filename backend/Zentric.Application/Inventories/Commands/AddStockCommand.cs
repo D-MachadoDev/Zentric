@@ -51,13 +51,13 @@ namespace Zentric.Application.Inventories.Commands
                 var product = await _productRepository.GetByVariantIdAsync(request.VariantId, cancellationToken);
                 if (product == null || product.VendorId != request.CallerId)
                 {
-                    return Result<Guid>.Failure($"Variant {request.VariantId} not found.");
+                    return Result<Guid>.NotFound($"Variant {request.VariantId} not found.");
                 }
 
                 var warehouse = await _warehouseRepository.GetByIdAsync(request.WarehouseId, cancellationToken);
                 if (warehouse == null || warehouse.VendorId != request.CallerId)
                 {
-                    return Result<Guid>.Failure($"Warehouse {request.WarehouseId} not found.");
+                    return Result<Guid>.NotFound($"Warehouse {request.WarehouseId} not found.");
                 }
             }
 

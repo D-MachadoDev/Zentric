@@ -41,7 +41,7 @@ namespace Zentric.Application.Returns.Commands
                 request.CustomerOrderId, request.BuyerId, cancellationToken);
             if (order == null)
             {
-                return Result<Guid>.Failure("Order not found.");
+                return Result<Guid>.NotFound("Order not found.");
             }
 
             try

@@ -46,7 +46,7 @@ namespace Zentric.Application.Returns.Queries
             var ret = await _returnRepository.GetByIdAsync(request.Id, cancellationToken);
             if (ret == null)
             {
-                return Result<ReturnRequestDto>.Failure("Return request not found.");
+                return Result<ReturnRequestDto>.NotFound("Return request not found.");
             }
 
             // Q-21b: la visibilidad depende del rol. Un recurso ajeno responde
@@ -61,7 +61,7 @@ namespace Zentric.Application.Returns.Queries
 
             if (!isVisible)
             {
-                return Result<ReturnRequestDto>.Failure("Return request not found.");
+                return Result<ReturnRequestDto>.NotFound("Return request not found.");
             }
 
             var dto = new ReturnRequestDto(

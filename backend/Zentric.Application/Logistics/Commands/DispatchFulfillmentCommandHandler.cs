@@ -27,14 +27,14 @@ namespace Zentric.Application.Logistics.Commands
             var fulfillmentOrder = await _fulfillmentOrderRepository.GetByIdAsync(request.FulfillmentOrderId, cancellationToken);
             if (fulfillmentOrder == null)
             {
-                return Result<bool>.Failure($"FulfillmentOrder with ID {request.FulfillmentOrderId} not found.");
+                return Result<bool>.NotFound($"FulfillmentOrder with ID {request.FulfillmentOrderId} not found.");
             }
 
             // Q-21b: el vendedor no despacha el paquete de otro. El mensaje es el
             // de "no existe" para no confirmar que ese despacho existe.
             if (request.CallerRole == UserRole.Seller && fulfillmentOrder.VendorId != request.CallerId)
             {
-                return Result<bool>.Failure($"FulfillmentOrder with ID {request.FulfillmentOrderId} not found.");
+                return Result<bool>.NotFound($"FulfillmentOrder with ID {request.FulfillmentOrderId} not found.");
             }
 
             try

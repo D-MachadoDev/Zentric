@@ -75,13 +75,13 @@ namespace Zentric.Application.Warehouses.Queries
             var w = await _warehouseRepository.GetByIdAsync(request.Id, cancellationToken);
             if (w == null)
             {
-                return Result<WarehouseDto>.Failure("Warehouse not found.");
+                return Result<WarehouseDto>.NotFound("Warehouse not found.");
             }
 
             // Q-21b: la bodega de otro vendedor se trata como inexistente.
             if (request.CallerRole == UserRole.Seller && w.VendorId != request.CallerId)
             {
-                return Result<WarehouseDto>.Failure("Warehouse not found.");
+                return Result<WarehouseDto>.NotFound("Warehouse not found.");
             }
 
             return Result<WarehouseDto>.Success(WarehouseMapper.ToDto(w));

@@ -4,7 +4,7 @@
 [![C# 13](https://img.shields.io/badge/C%23-13.0-239120?style=for-the-badge&logo=c-sharp&logoColor=white)](https://learn.microsoft.com/dotnet/csharp/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-334%20Passing%20(100%25)-brightgreen?style=for-the-badge&logo=xunit)](https://xunit.net/)
+[![Tests](https://img.shields.io/badge/Tests-399%20Passing%20(100%25)-brightgreen?style=for-the-badge&logo=xunit)](https://xunit.net/)
 [![Architecture](https://img.shields.io/badge/Architecture-Hexagonal%20%2B%20DDD%20%2B%20CQRS-orange?style=for-the-badge)](./backendSDD/02-software-architecture.md)
 [![Methodology](https://img.shields.io/badge/Methodology-SDD%20v7.0.1-blue?style=for-the-badge)](./.agents/skills/generic-sdd-agent/SKILL.md)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](./LICENSE)
@@ -71,8 +71,8 @@ El desarrollo del proyecto se rige por **Spec-Driven Development (SDD v7.0.1)**,
 flowchart TD
     B1["1. ZENTRIC.md (La Ley)<br/>Especificación funcional del cliente.<br/>Define 10 dominios y objetivos OBJ-01 a OBJ-12."]
     B2["2. Metodología SDD (SKILL.md)<br/>Metodología de ingeniería de software:<br/>freno de mano, anti-amnesia y cero asunciones."]
-    SSOT["3. Memoria Viva (backendSDD/ y AGENTS.md)<br/>33 Entidades mapeadas, 9 ADRs,<br/>especificaciones por capa y contratos OpenAPI."]
-    CODE["4. Código Implementado (.NET 10)<br/>Dominio puro, CQRS Handlers, FluentValidation,<br/>EF Core aislado y 334 pruebas xUnit."]
+    SSOT["3. Memoria Viva (backendSDD/ y AGENTS.md)<br/>33 Entidades mapeadas, 14 ADRs,<br/>especificaciones por capa y contratos OpenAPI."]
+    CODE["4. Código Implementado (.NET 10)<br/>Dominio puro, CQRS Handlers, FluentValidation,<br/>EF Core aislado y 399 pruebas xUnit."]
 
     B1 --> SSOT
     B2 --> SSOT
@@ -331,14 +331,14 @@ dotnet run --project Zentric.Api/Zentric.Api.csproj
 
 ## 🧪 Pruebas Automatizadas y Calidad
 
-El proyecto cuenta con **334 pruebas unitarias y de integración** ejecutadas con xUnit:
+El proyecto cuenta con **399 pruebas unitarias y de integración** ejecutadas con xUnit:
 
 ```bash
 cd backend; dotnet test Zentric.slnx
 ```
 
 ```text
-Passed!  - Failed: 0, Passed: 334, Skipped: 0, Total: 334, Duration: 315 ms
+Passed!  - Failed: 0, Passed: 399, Skipped: 0, Total: 399, Duration: 315 ms
 ```
 
 ### Alcance de las Pruebas:
@@ -359,10 +359,10 @@ La siguiente matriz indexa los componentes arquitectónicos y su ubicación en l
 | **Aislamiento de Persistencia** | Modelos `*DbModel` y `*Mapper` dedicados; Unit of Work. | [`Zentric.Infrastructure/Persistence/`](./backend/Zentric.Infrastructure/Persistence/) |
 | **Segregación CQRS** | Comandos y Consultas independientes; pipeline de validación. | [`Zentric.Application/`](./backend/Zentric.Application/) |
 | **Manejo de Errores** | Mapeo estructurado a RFC 7807 (Problem Details). | [`ApiControllerBase.cs`](./backend/Zentric.Api/Controllers/ApiControllerBase.cs)<br/>[`Program.cs`](./backend/Zentric.Api/Program.cs) |
-| **Cobertura de Pruebas** | Suite de 334 pruebas automatizadas cubriendo casos de éxito y borde. | [`Zentric.Tests/`](./backend/Zentric.Tests/) |
+| **Cobertura de Pruebas** | Suite de 399 pruebas automatizadas cubriendo casos de éxito y borde. | [`Zentric.Tests/`](./backend/Zentric.Tests/) |
 | **Contenerización** | Despliegue con Docker Compose (PostgreSQL 16 + API). | [`docker-compose.yml`](./docker-compose.yml)<br/>[`Dockerfile`](./backend/Dockerfile) |
 | **Documentación de API** | OpenAPI 3.0 con Swagger UI y esquema Bearer JWT. | [`Program.cs`](./backend/Zentric.Api/Program.cs)<br/>[`backendSDD/Presentation/01-endpoints.md`](./backendSDD/Presentation/01-endpoints.md) |
-| **Decisiones Técnicas** | Registro de 9 ADRs documentados bajo formato MADR. | [`backendSDD/Adr/`](./backendSDD/Adr/) |
+| **Decisiones Técnicas** | Registro de 14 ADRs documentados bajo formato MADR. | [`backendSDD/Adr/`](./backendSDD/Adr/) |
 
 ---
 

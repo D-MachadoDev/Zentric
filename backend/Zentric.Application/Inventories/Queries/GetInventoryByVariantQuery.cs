@@ -44,7 +44,7 @@ namespace Zentric.Application.Inventories.Queries
                 var product = await _productRepository.GetByVariantIdAsync(request.VariantId, cancellationToken);
                 if (product == null || product.VendorId != request.CallerId)
                 {
-                    return Result<IReadOnlyList<InventoryDto>>.Failure("Variant not found.");
+                    return Result<IReadOnlyList<InventoryDto>>.NotFound("Variant not found.");
                 }
             }
 

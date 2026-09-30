@@ -81,3 +81,40 @@ docker compose down
 # Apagar y reiniciar volumen de datos limpio
 docker compose down -v
 ```
+
+### 2.1 El esquema se crea solo (verificado 2026-09-30)
+
+`docker compose down -v` borra el volumen entero: **no solo los datos, también las tablas.** Antes de
+que la API aplicara las migraciones al arrancar, el comando prometía un "volumen de datos limpio"
+y en realidad dejaba una base **sin ninguna tabla**, porque el compose solo levanta PostgreSQL y
+ningún otro paso creaba el esquema. Quien lo ejecutara después tendría que acordarse de correr
+`dotnet ef database update` a mano.
+
+Ahora `Program.cs` aplica las migraciones al arrancar, **solo en `Development`**, justo después de
+`builder.Build()` y antes de registrar los endpoints:
+
+```csharp
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ZentricDbContext>();
+    await db.Database.MigrateAsync();
+}
+```
+
+Se limita a Desarrollo a propósito: en producción, aplicar el esquema al arrancar escondería el
+control de cambios detrás de un despliegue. El Administrador inicial **no** se crea aquí, sino en
+el bloque de bootstrap de `Program.cs`, que además evita duplicarlo en cada reinicio.
+
+**Verificado sobre una base creada desde cero** (`down -v` y `up -d db` y `up -d api`): **15
+tablas** creadas, **7 migraciones** aplicadas en `__EFMigrationsHistory` y un único usuario, el
+`admin@zentric.local` del bootstrap. El smoke de autorización corrió después sobre esa base limpia
+con **69/69 comprobaciones y 0 fallos**.
+
+> **Trampa al refrescar en local:** `docker compose up -d --force-recreate` **no** actualiza el
+> código, porque reutiliza la imagen ya construida. La API corre desde `/app` (no de
+> `/app/publish`, que es el directorio intermedio del `Dockerfile`). Para probar cambios sin
+> reconstruir la imagen:
+> `dotnet publish backend/Zentric.Api -c Release -o <dir>` y después
+> `docker cp <dir>/. zentric-api:/app` + `docker restart zentric-api`.
+
