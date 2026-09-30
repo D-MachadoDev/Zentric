@@ -93,7 +93,13 @@ namespace Zentric.Api.Controllers
         public async Task<IActionResult> ApproveReturn(Guid id, [FromBody] ApproveReturnCommand command)
         {
             if (id != command.ReturnRequestId) return BadRequest(new ProblemDetails { Detail = "El identificador de ruta no coincide con el cuerpo del comando." });
-            var result = await _mediator.Send(command);
+
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            // Q-21b: la aprobacion es del vendedor del producto devuelto.
+            var result = await _mediator.Send(command with { CallerId = userId.Value, CallerRole = role.Value });
             if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
             return Ok();
         }

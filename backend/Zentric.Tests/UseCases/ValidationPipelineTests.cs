@@ -261,7 +261,7 @@ namespace Zentric.Tests.UseCases
         {
             var (mediator, _) = BuildMediator();
 
-            var result = await mediator.Send(new CreateFulfillmentOrderCommand(Guid.NewGuid(), Guid.Empty));
+            var result = await mediator.Send(new CreateFulfillmentOrderCommand(Guid.NewGuid(), Guid.Empty, Guid.NewGuid(), Zentric.Domain.Users.Enums.UserRole.Administrator));
 
             Assert.True(result.IsFailure);
             Assert.Equal("Vendor ID is required.", result.Error);

@@ -40,7 +40,13 @@ namespace Zentric.Api.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateFulfillment([FromBody] CreateFulfillmentOrderCommand command)
         {
-            var result = await _mediator.Send(command);
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            // Q-21b: el Vendedor solo crea despachos a su nombre; el Operador
+            // puede crearlos para cualquier vendedor.
+            var result = await _mediator.Send(command with { CallerId = userId.Value, CallerRole = role.Value });
             if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
             return Ok(result.Value);
         }
@@ -61,7 +67,12 @@ namespace Zentric.Api.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> DispatchFulfillment(Guid id)
         {
-            var result = await _mediator.Send(new DispatchFulfillmentCommand(id));
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            // Q-21b: el Vendedor solo despacha los suyos; el Operador, cualquiera.
+            var result = await _mediator.Send(new DispatchFulfillmentCommand(id, userId.Value, role.Value));
             if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
             return Ok();
         }
@@ -82,7 +93,13 @@ namespace Zentric.Api.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CancelGhostStock([FromBody] CancelFulfillmentOrderDueToNoStockCommand command)
         {
-            var result = await _mediator.Send(command);
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            // Q-21b: con la politica solo-Seller vigente, el despacho ajeno se
+            // trata como inexistente (Q-21c sigue abierta).
+            var result = await _mediator.Send(command with { CallerId = userId.Value, CallerRole = role.Value });
             if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
             return Ok(result.Value);
         }

@@ -15,6 +15,10 @@ namespace Zentric.Application.Inventories.Validators
 
             RuleFor(x => x.Quantity)
                 .GreaterThan(0).WithMessage("Quantity must be greater than zero.");
+
+            // Q-21b: identidad derivada del token por el controlador.
+            RuleFor(x => x.CallerId)
+                .NotEmpty().WithMessage("CallerId is required.");
         }
     }
 }

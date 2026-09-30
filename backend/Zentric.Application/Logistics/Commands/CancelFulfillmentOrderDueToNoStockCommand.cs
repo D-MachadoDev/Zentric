@@ -6,10 +6,23 @@ using Zentric.Domain.Inventories.Ports;
 using Zentric.Domain.Returns.Ports;
 using Zentric.Domain.Returns;
 using Zentric.Domain.Products.Enums;
+using Zentric.Domain.Users.Enums;
 
 namespace Zentric.Application.Logistics.Commands
 {
-    public record CancelFulfillmentOrderDueToNoStockCommand(Guid FulfillmentOrderId, Guid VariantId, Guid WarehouseId, int QuantityToCancel) : IRequest<Result<bool>>;
+    /// <summary>
+    /// Cancela un despacho por quiebre de stock fantasma. Q-21b: la politica sigue
+    /// siendo solo-Seller (Q-21c continua abierta), asi que el despacho ajeno se
+    /// trata como inexistente; si el Owner abre la politica al Operador, este
+    /// pasara sin comprobacion, como corresponde a su rol transversal.
+    /// </summary>
+    public record CancelFulfillmentOrderDueToNoStockCommand(
+        Guid FulfillmentOrderId,
+        Guid VariantId,
+        Guid WarehouseId,
+        int QuantityToCancel,
+        Guid CallerId,
+        UserRole CallerRole) : IRequest<Result<bool>>;
 
     public class CancelFulfillmentOrderDueToNoStockCommandHandler : IRequestHandler<CancelFulfillmentOrderDueToNoStockCommand, Result<bool>>
     {
@@ -30,6 +43,13 @@ namespace Zentric.Application.Logistics.Commands
         {
             var order = await _fulfillmentRepository.GetByIdAsync(request.FulfillmentOrderId, cancellationToken);
             if (order == null) return Result<bool>.Failure("Fulfillment order not found.");
+
+            // Q-21b: el vendedor no cancela el despacho de otro (politica
+            // solo-Seller, ver Q-21c). El mensaje es el de "no existe".
+            if (request.CallerRole == UserRole.Seller && order.VendorId != request.CallerId)
+            {
+                return Result<bool>.Failure("Fulfillment order not found.");
+            }
 
             try
             {

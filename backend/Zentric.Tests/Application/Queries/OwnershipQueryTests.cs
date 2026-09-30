@@ -5,11 +5,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Zentric.Application.Billing.Queries;
+using Zentric.Application.Inventories.Queries;
 using Zentric.Application.Logistics.Queries;
 using Zentric.Application.Orders.Queries;
 using Zentric.Application.Returns.Queries;
+using Zentric.Application.Warehouses.Queries;
 using Zentric.Domain.Billing;
 using Zentric.Domain.Billing.Ports;
+using Zentric.Domain.Inventories;
+using Zentric.Domain.Inventories.Ports;
 using Zentric.Domain.Logistics;
 using Zentric.Domain.Logistics.Ports;
 using Zentric.Domain.Orders;
@@ -21,6 +25,9 @@ using Zentric.Domain.Products.ValueObjects;
 using Zentric.Domain.Returns;
 using Zentric.Domain.Returns.Ports;
 using Zentric.Domain.Users.Enums;
+using Zentric.Domain.Warehouses;
+using Zentric.Domain.Warehouses.Enum;
+using Zentric.Domain.Warehouses.Ports;
 
 namespace Zentric.Tests.Application.Queries
 {
@@ -376,6 +383,192 @@ namespace Zentric.Tests.Application.Queries
             Assert.True(asOwner.IsSuccess);
             Assert.True(asOther.IsFailure);
             Assert.True(asOperator.IsSuccess);
+        }
+        private sealed class FakeOwnershipWarehouseRepository : IWarehouseRepository
+        {
+            public List<Warehouse> Warehouses { get; } = new();
+
+            public Task<Warehouse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+                => Task.FromResult(Warehouses.FirstOrDefault(w => w.Id == id));
+
+            public Task<IReadOnlyList<Warehouse>> GetAllAsync(Guid? vendorId = null, CancellationToken cancellationToken = default)
+                => Task.FromResult<IReadOnlyList<Warehouse>>(
+                    vendorId.HasValue
+                        ? Warehouses.Where(w => w.VendorId == vendorId.Value).ToList()
+                        : Warehouses.ToList());
+
+            public Task AddAsync(Warehouse warehouse, CancellationToken cancellationToken = default)
+            {
+                Warehouses.Add(warehouse);
+                return Task.CompletedTask;
+            }
+
+            public Task UpdateAsync(Warehouse warehouse, CancellationToken cancellationToken = default)
+                => Task.CompletedTask;
+        }
+
+        private sealed class FakeOwnershipInventoryRepository : IInventoryRepository
+        {
+            public List<Inventory> Inventories { get; } = new();
+
+            public Task<Inventory?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+                => Task.FromResult(Inventories.FirstOrDefault(i => i.Id == id));
+
+            public Task<Inventory?> GetByVariantAndWarehouseAsync(Guid variantId, Guid warehouseId, CancellationToken cancellationToken = default)
+                => Task.FromResult(Inventories.FirstOrDefault(i => i.VariantId == variantId && i.WarehouseId == warehouseId));
+
+            public Task<IEnumerable<Inventory>> GetByVariantIdAsync(Guid variantId, CancellationToken cancellationToken = default)
+                => Task.FromResult<IEnumerable<Inventory>>(Inventories.Where(i => i.VariantId == variantId).ToList());
+
+            public Task<int> GetTotalAvailableStockAsync(Guid variantId, CancellationToken cancellationToken = default)
+                => Task.FromResult(Inventories.Where(i => i.VariantId == variantId).Sum(i => i.AvailableQuantity));
+
+            public Task AddAsync(Inventory inventory, CancellationToken cancellationToken = default)
+            {
+                Inventories.Add(inventory);
+                return Task.CompletedTask;
+            }
+
+            public Task UpdateAsync(Inventory inventory, CancellationToken cancellationToken = default)
+                => Task.CompletedTask;
+        }
+        // ---- Bodegas encerradas en el vendedor ----
+
+        [Fact]
+        public async Task SellerListsOnlyOwnWarehouses()
+        {
+            // Q-21b: antes, el Vendedor veia todas las bodegas del sistema y podia
+            // filtrar por el vendorId de otro.
+            var vendorId = Guid.NewGuid();
+            var warehouses = new FakeOwnershipWarehouseRepository();
+            warehouses.Warehouses.Add(new Warehouse("Mia", "Bogota", 100, WarehouseType.Vendor, vendorId));
+            warehouses.Warehouses.Add(new Warehouse("Ajena", "Medellin", 100, WarehouseType.Vendor, Guid.NewGuid()));
+            var handler = new GetWarehousesQueryHandler(warehouses);
+
+            var result = await handler.Handle(
+                new GetWarehousesQuery(null, vendorId, UserRole.Seller), CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            var warehouse = Assert.Single(result.Value);
+            Assert.Equal("Mia", warehouse.Name);
+        }
+
+        [Fact]
+        public async Task SellerAskingForAnotherVendorsWarehouses_IsRejected()
+        {
+            // Q-21b: pedir el listado de otro vendedor responde 400 en vez de
+            // devolver en silencio las propias.
+            var warehouses = new FakeOwnershipWarehouseRepository();
+            warehouses.Warehouses.Add(new Warehouse("Mia", "Bogota", 100, WarehouseType.Vendor, Guid.NewGuid()));
+            var handler = new GetWarehousesQueryHandler(warehouses);
+
+            var result = await handler.Handle(
+                new GetWarehousesQuery(Guid.NewGuid(), Guid.NewGuid(), UserRole.Seller), CancellationToken.None);
+
+            Assert.True(result.IsFailure);
+            Assert.Contains("their own warehouses", result.Error);
+        }
+
+        [Fact]
+        public async Task OperatorListsAllWarehouses()
+        {
+            // Q-21b: el Operador trabaja sobre toda la red logistica.
+            var warehouses = new FakeOwnershipWarehouseRepository();
+            warehouses.Warehouses.Add(new Warehouse("A", "Bogota", 100, WarehouseType.Vendor, Guid.NewGuid()));
+            warehouses.Warehouses.Add(new Warehouse("B", "Medellin", 100, WarehouseType.Vendor, Guid.NewGuid()));
+            var handler = new GetWarehousesQueryHandler(warehouses);
+
+            var result = await handler.Handle(
+                new GetWarehousesQuery(null, Guid.NewGuid(), UserRole.LogisticsOperator), CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal(2, result.Value.Count);
+        }
+
+        [Fact]
+        public async Task SellerCannotReadAnotherVendorsWarehouseById()
+        {
+            var warehouses = new FakeOwnershipWarehouseRepository();
+            var foreign = new Warehouse("Ajena", "Medellin", 100, WarehouseType.Vendor, Guid.NewGuid());
+            warehouses.Warehouses.Add(foreign);
+            var handler = new GetWarehouseByIdQueryHandler(warehouses);
+
+            var result = await handler.Handle(
+                new GetWarehouseByIdQuery(foreign.Id, Guid.NewGuid(), UserRole.Seller), CancellationToken.None);
+
+            Assert.True(result.IsFailure);
+            Assert.Equal("Warehouse not found.", result.Error);
+        }
+
+        [Fact]
+        public async Task SellerReadsOwnWarehouseById()
+        {
+            var vendorId = Guid.NewGuid();
+            var warehouses = new FakeOwnershipWarehouseRepository();
+            var own = new Warehouse("Mia", "Bogota", 100, WarehouseType.Vendor, vendorId);
+            warehouses.Warehouses.Add(own);
+            var handler = new GetWarehouseByIdQueryHandler(warehouses);
+
+            var result = await handler.Handle(
+                new GetWarehouseByIdQuery(own.Id, vendorId, UserRole.Seller), CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal("Mia", result.Value.Name);
+        }
+        // ---- Inventario por dueno de producto ----
+
+        [Fact]
+        public async Task SellerSeesStockOfOwnProductInAnyWarehouse()
+        {
+            // Q-21b: el dueno del stock es el dueno del producto; sus bienes se leen
+            // aunque esten en la bodega de otro (hub del Marketplace incluida).
+            var vendorId = Guid.NewGuid();
+            var variantId = Guid.NewGuid();
+            var products = new FakeProductRepository();
+            products.ByVariant[variantId] = new Product("P", "D", new Money(1m, "COP"), vendorId, ProductType.Digital, null);
+            var inventories = new FakeOwnershipInventoryRepository();
+            inventories.Inventories.Add(new Inventory(variantId, Guid.NewGuid(), 10, 0, 0, 0));
+            var handler = new GetInventoryByVariantQueryHandler(inventories, products);
+
+            var result = await handler.Handle(
+                new GetInventoryByVariantQuery(variantId, vendorId, UserRole.Seller), CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            Assert.Single(result.Value);
+        }
+
+        [Fact]
+        public async Task SellerCannotReadStockOfAnotherSellersProduct()
+        {
+            var variantId = Guid.NewGuid();
+            var products = new FakeProductRepository();
+            products.ByVariant[variantId] = new Product("P", "D", new Money(1m, "COP"), Guid.NewGuid(), ProductType.Digital, null);
+            var inventories = new FakeOwnershipInventoryRepository();
+            inventories.Inventories.Add(new Inventory(variantId, Guid.NewGuid(), 10, 0, 0, 0));
+            var handler = new GetInventoryByVariantQueryHandler(inventories, products);
+
+            var result = await handler.Handle(
+                new GetInventoryByVariantQuery(variantId, Guid.NewGuid(), UserRole.Seller), CancellationToken.None);
+
+            Assert.True(result.IsFailure);
+            Assert.Equal("Variant not found.", result.Error);
+        }
+
+        [Fact]
+        public async Task OperatorReadsStockOfAnyProduct()
+        {
+            var variantId = Guid.NewGuid();
+            var products = new FakeProductRepository();
+            products.ByVariant[variantId] = new Product("P", "D", new Money(1m, "COP"), Guid.NewGuid(), ProductType.Digital, null);
+            var inventories = new FakeOwnershipInventoryRepository();
+            inventories.Inventories.Add(new Inventory(variantId, Guid.NewGuid(), 10, 0, 0, 0));
+            var handler = new GetInventoryByVariantQueryHandler(inventories, products);
+
+            var result = await handler.Handle(
+                new GetInventoryByVariantQuery(variantId, Guid.NewGuid(), UserRole.LogisticsOperator), CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            Assert.Single(result.Value);
         }
     }
 }

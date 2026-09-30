@@ -18,6 +18,11 @@ namespace Zentric.Application.Logistics.Validators
             RuleFor(command => command.VendorId)
                 .NotEmpty()
                 .WithMessage("Vendor ID is required.");
+
+            // Q-21b: identidad derivada del token por el controlador.
+            RuleFor(command => command.CallerId)
+                .NotEmpty()
+                .WithMessage("CallerId is required.");
         }
     }
 }

@@ -17,10 +17,12 @@ namespace Zentric.Api.Controllers
     public class WarehousesController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly ICurrentUserAccessor _currentUser;
 
-        public WarehousesController(IMediator mediator)
+        public WarehousesController(IMediator mediator, ICurrentUserAccessor currentUser)
         {
             _mediator = mediator;
+            _currentUser = currentUser;
         }
 
         /// <summary>
@@ -48,16 +50,26 @@ namespace Zentric.Api.Controllers
         /// Obtiene la lista de bodegas físicas, con filtro opcional por vendedor.
         /// </summary>
         /// <remarks>
-        /// Permite consultar todas las bodegas activas o filtrar únicamente las pertenecientes a un vendedor (VendorId).
+        /// Q-21b: el Vendedor queda encerrado en sus propias bodegas; pedir las de
+        /// otro vendedor responde 400. El Operador y el Administrador listan todas.
         /// </remarks>
         /// <param name="vendorId">Filtro opcional por identificador único del vendedor.</param>
         /// <response code="200">Lista de bodegas obtenida exitosamente.</response>
+        /// <response code="400">El vendedor pide bodegas de otro vendedor (RFC 7807 ProblemDetails).</response>
+        /// <response code="401">Token ausente o inválido.</response>
         [HttpGet]
         [Authorize(Policy = AuthorizationPolicies.WarehouseRead)]
         [ProducesResponseType(typeof(IReadOnlyList<WarehouseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetWarehouses([FromQuery] Guid? vendorId = null)
         {
-            var result = await _mediator.Send(new GetWarehousesQuery(vendorId));
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var result = await _mediator.Send(new GetWarehousesQuery(vendorId, userId.Value, role.Value));
+            if (result.IsFailure) return BadRequest(new ProblemDetails { Detail = result.Error });
             return Ok(result.Value);
         }
 
@@ -66,14 +78,20 @@ namespace Zentric.Api.Controllers
         /// </summary>
         /// <param name="id">Identificador único (Guid) de la bodega.</param>
         /// <response code="200">Detalle de la bodega obtenido exitosamente.</response>
-        /// <response code="404">Bodega no encontrada (RFC 7807 ProblemDetails).</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        /// <response code="404">Bodega no encontrada o de otro vendedor (RFC 7807 ProblemDetails).</response>
         [HttpGet("{id}")]
         [Authorize(Policy = AuthorizationPolicies.WarehouseRead)]
         [ProducesResponseType(typeof(WarehouseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetWarehouseById(Guid id)
         {
-            var result = await _mediator.Send(new GetWarehouseByIdQuery(id));
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var result = await _mediator.Send(new GetWarehouseByIdQuery(id, userId.Value, role.Value));
             if (result.IsFailure) return NotFound(new ProblemDetails { Detail = result.Error });
             return Ok(result.Value);
         }
