@@ -86,6 +86,8 @@ namespace Zentric.Tests.Presentation
                 ["ReturnsController.RequestReturn"] = AuthorizationPolicies.ReturnRequest,
                 ["ReturnsController.InspectReturn"] = AuthorizationPolicies.ReturnInspect,
                 ["ReturnsController.ApproveReturn"] = AuthorizationPolicies.ReturnApprove,
+                ["ReturnsController.RejectReturn"] = AuthorizationPolicies.ReturnApprove,
+                ["ReturnsController.RefundReturn"] = AuthorizationPolicies.ReturnRefund,
                 ["ReturnsController.GetReturnById"] = AuthorizationPolicies.ReturnRead,
 
                 // 8. Facturacion (ADDENDUM Dominio 9).

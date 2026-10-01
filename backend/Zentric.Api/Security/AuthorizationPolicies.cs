@@ -198,6 +198,21 @@ namespace Zentric.Api.Security
         public const string ReturnApprove = "Zentric.ReturnApprove";
 
         /// <summary>
+        /// Emision del reembolso de una devolucion ya aprobada.
+        ///
+        /// [DICTADO Q-24, Owner 2026-10-01] Solo el Administrador.
+        ///
+        /// El ADDENDUM Dominio 10 lista "Reembolsada" como estado, pero no dice quien lo ejecuta. Se
+        /// decide el Administrador por separacion de poderes: el Vendedor es quien aprueba que el
+        /// producto vuelva al stock, y si ademas liberara el dinero concentraria las dos decisiones
+        /// sobre la misma operacion. Ademas es dinero que sale de la plataforma, que es exactamente
+        /// el criterio con el que ADR-0014 dejo la emision de facturas.
+        ///
+        /// Deliberadamente distinta de <see cref="ReturnApprove"/>, que sigue siendo solo-Seller.
+        /// </summary>
+        public const string ReturnRefund = "Zentric.ReturnRefund";
+
+        /// <summary>
         /// Consulta del estado de una devolucion.
         ///
         /// [CONFIRMADO] Participan los tres actores del flujo: Comprador que la solicita,
@@ -309,6 +324,16 @@ namespace Zentric.Api.Security
                     [ReturnInspect] = new[] { Role(UserRole.LogisticsOperator) },
 
                     [ReturnApprove] = new[] { Role(UserRole.Seller) },
+
+                    // Rechazo: reutiliza ReturnApprove a proposito. Quien puede aprobar puede
+                    // rechazar; separarlos no aporta nada porque es la misma decision (ADDENDUM
+                    // Dominio 10 asigna la decision al Vendedor).
+
+                    // Reembolso: dinero que sale de la plataforma, solo Administrador.
+                    // [DICTADO Q-24, Owner 2026-10-01] Separacion de poderes: el Vendedor aprueba
+                    // el reingreso del producto pero no libera el dinero. Mismo criterio que la
+                    // emision de facturas, que ADR-0014 dejo en el Administrador.
+                    [ReturnRefund] = new[] { Role(UserRole.Administrator) },
 
                     [ReturnRead] = new[]
                     {

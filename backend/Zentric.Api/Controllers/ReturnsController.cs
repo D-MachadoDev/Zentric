@@ -107,6 +107,63 @@ namespace Zentric.Api.Controllers
         }
 
         /// <summary>
+        /// Rechaza una solicitud de devolución (estado Rechazada).
+        /// </summary>
+        /// <remarks>
+        /// ADDENDUM Dominio 10. Lo decide el mismo Vendedor que aprueba, porque es la misma decisión
+        /// negada y la Ley le asigna esa decisión. Una devolución no solicitada, ya aprobada o ya
+        /// reembolsada no se puede rechazar: el ciclo solo avanza hacia adelante.
+        /// </remarks>
+        /// <param name="id">Identificador único de la solicitud de devolución.</param>
+        /// <response code="200">Devolución rechazada exitosamente.</response>
+        /// <response code="400">Error si la solicitud no está en estado Solicitada (RFC 7807 ProblemDetails).</response>
+        /// <response code="404">Solicitud inexistente o de otro vendedor (RFC 7807 ProblemDetails).</response>
+        [HttpPost("{id}/reject")]
+        [Authorize(Policy = AuthorizationPolicies.ReturnApprove)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RejectReturn(Guid id)
+        {
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var result = await _mediator.Send(new RejectReturnCommand(id, userId.Value, role.Value));
+            if (result.IsFailure) return result.ToProblem();
+            return Ok();
+        }
+
+        /// <summary>
+        /// Emite el reembolso de una devolución ya aprobada (estado Reembolsada).
+        /// </summary>
+        /// <remarks>
+        /// ADDENDUM Dominio 10. Solo el Administrador (dictamen del Owner 2026-10-01). No basta con
+        /// cambiar el estado: el caso de uso acredita también el comprobante de pago del pedido, en
+        /// la misma transacción, para que nunca exista una devolución "Reembolsada" sin dinero
+        /// entregado al comprador.
+        /// </remarks>
+        /// <param name="id">Identificador único de la solicitud de devolución.</param>
+        /// <response code="200">Reembolso emitido exitosamente.</response>
+        /// <response code="400">Error si la devolución no está aprobada o el pedido no tiene comprobante (RFC 7807 ProblemDetails).</response>
+        /// <response code="403">El rol del llamante no es Administrador.</response>
+        [HttpPost("{id}/refund")]
+        [Authorize(Policy = AuthorizationPolicies.ReturnRefund)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> RefundReturn(Guid id)
+        {
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var result = await _mediator.Send(new RefundReturnCommand(id, userId.Value, role.Value));
+            if (result.IsFailure) return result.ToProblem();
+            return Ok();
+        }
+
+        /// <summary>
         /// Obtiene el estado, motivo y dictamen de inspección de una solicitud de devolución por su identificador.
         /// </summary>
         /// <remarks>
