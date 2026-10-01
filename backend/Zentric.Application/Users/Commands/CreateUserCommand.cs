@@ -12,7 +12,7 @@ namespace Zentric.Application.Users.Commands
         string IdentityDocument,
         string FullName,
         string Email,
-        string PasswordHash,
+        string Password,
         UserRole Role
     ) : IRequest<Result<Guid>>;
 
@@ -20,11 +20,16 @@ namespace Zentric.Application.Users.Commands
     {
         private readonly IUserRepository _userRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IPasswordHasher _passwordHasher;
 
-        public CreateUserCommandHandler(IUserRepository userRepository, IUnitOfWork unitOfWork)
+        public CreateUserCommandHandler(
+            IUserRepository userRepository,
+            IUnitOfWork unitOfWork,
+            IPasswordHasher passwordHasher)
         {
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
+            _passwordHasher = passwordHasher;
         }
 
         public async Task<Result<Guid>> Handle(CreateUserCommand request, CancellationToken cancellationToken)
@@ -51,7 +56,7 @@ namespace Zentric.Application.Users.Commands
                     request.IdentityDocument,
                     fullName,
                     emailVo,
-                    request.PasswordHash,
+                    _passwordHasher.Hash(request.Password),
                     request.Role
                 );
 

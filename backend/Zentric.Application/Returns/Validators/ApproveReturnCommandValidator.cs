@@ -10,6 +10,11 @@ namespace Zentric.Application.Returns.Validators
             RuleFor(command => command.ReturnRequestId)
                 .NotEmpty()
                 .WithMessage("ReturnRequest ID is required.");
+
+            // Q-21b: identidad derivada del token por el controlador.
+            RuleFor(command => command.CallerId)
+                .NotEmpty()
+                .WithMessage("CallerId is required.");
         }
     }
 }

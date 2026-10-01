@@ -9,10 +9,10 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.12" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="Testcontainers.PostgreSql" Version="4.15.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
   </ItemGroup>
@@ -26,6 +26,15 @@
     <ProjectReference Include="..\Zentric.Domain\Zentric.Domain.csproj" />
     <!-- Necesaria para probar los mappers de persistencia (Q-18: VendorId en factura). -->
     <ProjectReference Include="..\Zentric.Infrastructure\Zentric.Infrastructure.csproj" />
+    <!--
+      Necesaria para la matriz de autorizacion (Q-21): EndpointAuthorizationMatrixTests refleja
+      sobre los controladores de Zentric.Api para comprobar que cada endpoint declara la politica
+      que dicta la Ley. Es la unica forma de que la Matriz de Responsabilidades sea un test y no
+      una promesa. El FrameworkReference se declara explicito porque el proyecto de pruebas usa
+      el Sdk generico y necesita los atributos de ASP.NET Core para leer la metadata.
+    -->
+    <ProjectReference Include="..\Zentric.Api\Zentric.Api.csproj" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
 </Project>

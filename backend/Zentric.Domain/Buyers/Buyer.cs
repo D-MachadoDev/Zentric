@@ -76,8 +76,6 @@ public sealed class Buyer
 
             _additionalAddresses.Add(address);
             UpdatedAt = DateTime.UtcNow;
-
-            // TODO: Domain event BuyerAdditionalAddressAdded
         }
 
         public void RemoveAdditionalAddress(Address address)
@@ -88,8 +86,6 @@ public sealed class Buyer
             }
 
             UpdatedAt = DateTime.UtcNow;
-
-            // TODO: Domain event BuyerAdditionalAddressRemoved
         }
 
         public void UpdateMainAddress(Address newAddress)
@@ -101,39 +97,6 @@ public sealed class Buyer
 
             MainAddress = newAddress;
             UpdatedAt = DateTime.UtcNow;
-
-            // TODO: Domain event BuyerMainAddressUpdated
         }
-
-        public void SuspendCommerceActivity()
-        {
-
-            if (!IsActiveForCommerce)
-            {
-                throw new InvalidOperationException("Buyer is already inactive for commerce.");
-            }
-
-            IsActiveForCommerce = false;
-            UpdatedAt = DateTime.UtcNow;
-
-            // TODO: Domain event BuyerCommerceSuspended
-        }
-        public void ResumeCommerceActivity()
-        {
-            if (IsActiveForCommerce)
-            {
-                throw new InvalidOperationException("Buyer is already active for commerce.");
-            }
-
-            IsActiveForCommerce = true;
-            UpdatedAt = DateTime.UtcNow;
-
-            // TODO: Domain event BuyerCommerceResumed
-        }
-
-        
-
-        
-
     }
 }

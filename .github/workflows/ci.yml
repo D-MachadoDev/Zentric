@@ -23,9 +23,23 @@ jobs:
       run: dotnet restore Zentric.slnx
     - name: Build
       # Advertencia: se convierte en error. El objetivo de la rama es 0 warnings.
-      run: dotnet build Zentric.slnx --no-restore -warnaserror
+      # -nodeReuse:false apaga la reutilizacion de nodos de MSBuild: los nodos retienen los
+      # DLL de salida y una compilacion colgada deja el siguiente build esperando un
+      # fichero que ya no puede escribir. En CI es tiempo desperdiciado: nunca se reutiliza.
+      run: dotnet build Zentric.slnx --no-restore -warnaserror -nodeReuse:false
     - name: Test
-      run: dotnet test Zentric.slnx --no-build --verbosity normal
+      # timeout-minutes y --blame-hang-timeout convierte un cuelgue en un fallo rapido y con
+      # diagnostico, en lugar de una pipeline que se queda esperando hasta que GitHub la corta
+      # sin explicar nada. El limite es holgado (una corrida sana tarda ~20 s).
+      timeout-minutes: 10
+      run: >-
+        dotnet test Zentric.slnx --no-build --verbosity normal
+        --blame-hang-timeout 5m --blame-hang-dump-type none
+    - name: Apagar servidores de compilacion
+      # Los servidores de MSBuild y Roslyn quedan vivos entre pasos y pueden retener ficheros.
+      # Apagarlos deja el runner limpio para el siguiente job.
+      if: always()
+      run: dotnet build-server shutdown
 
   frontend:
     name: Frontend (Node)

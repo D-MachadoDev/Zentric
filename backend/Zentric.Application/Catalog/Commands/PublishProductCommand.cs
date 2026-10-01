@@ -26,7 +26,7 @@ namespace Zentric.Application.Catalog.Commands
             var product = await _repository.GetByIdAsync(request.ProductId, cancellationToken);
             if (product == null)
             {
-                return Result.Failure("Product not found.");
+                return Result.NotFound("Product not found.");
             }
 
             product.Publish();

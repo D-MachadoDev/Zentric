@@ -49,8 +49,8 @@ namespace Zentric.Tests.Application.Orders
         [Fact]
         public async Task Handle_WhenOrderDoesNotExist_ReturnsFailure()
         {
-            var command = new CheckoutOrderCommand(Guid.NewGuid());
-            _orderRepoMock.Setup(r => r.GetByIdAsync(command.OrderId, It.IsAny<CancellationToken>()))
+            var command = new CheckoutOrderCommand(Guid.NewGuid(), Guid.NewGuid());
+            _orderRepoMock.Setup(r => r.GetByIdForBuyerAsync(command.OrderId, command.BuyerId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((CustomerOrder)null!);
 
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -74,9 +74,9 @@ namespace Zentric.Tests.Application.Orders
             order.AddItem(variantId1, vendor1Id, 2, new Money(10, "COP"));
             order.AddItem(variantId2, vendor2Id, 1, new Money(20, "COP"));
 
-            var command = new CheckoutOrderCommand(order.Id);
+            var command = new CheckoutOrderCommand(order.Id, buyerId);
 
-            _orderRepoMock.Setup(r => r.GetByIdAsync(command.OrderId, It.IsAny<CancellationToken>()))
+            _orderRepoMock.Setup(r => r.GetByIdForBuyerAsync(command.OrderId, command.BuyerId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(order);
 
             // Mock Inventories
@@ -112,6 +112,42 @@ namespace Zentric.Tests.Application.Orders
             
             _orderRepoMock.Verify(r => r.UpdateAsync(order, It.IsAny<CancellationToken>()), Times.Once);
             _uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_ForeignBuyer_CannotCheckoutAnotherBuyersCart()
+        {
+            // Q-21b: el handler carga el carrito con el filtro por comprador, asi
+            // que el de otro comprador no se materializa y el intento responde
+            // "not found" sin reservar stock ni crear fulfillments.
+            var command = new CheckoutOrderCommand(Guid.NewGuid(), Guid.NewGuid());
+            _orderRepoMock.Setup(r => r.GetByIdForBuyerAsync(command.OrderId, command.BuyerId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((CustomerOrder)null!);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.False(result.IsSuccess);
+            Assert.Contains("not found", result.Error);
+            _fulfillmentRepoMock.Verify(r => r.AddAsync(It.IsAny<FulfillmentOrder>(), It.IsAny<CancellationToken>()), Times.Never);
+            _uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        /// <summary>
+        /// Criterio (dictamen del Owner sobre Q-21b): un recurso que es de otro se
+        /// declara NotFound, no un fallo de validacion. Es lo que hace que la capa HTTP
+        /// responda 404 y no 400, y por tanto que el cliente no pueda distinguir "no
+        /// existe" de "es de otro" por el codigo de estado.
+        /// </summary>
+        [Fact]
+        public async Task Handle_ForeignCart_IsClassifiedAsNotFoundNotValidation()
+        {
+            var command = new CheckoutOrderCommand(Guid.NewGuid(), Guid.NewGuid());
+            _orderRepoMock.Setup(r => r.GetByIdForBuyerAsync(command.OrderId, command.BuyerId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((CustomerOrder)null!);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.Equal(Zentric.Application.Common.Models.ErrorKind.NotFound, result.ErrorKind);
         }
     }
 }

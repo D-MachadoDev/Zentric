@@ -98,8 +98,6 @@ namespace Zentric.Domain.Users
 
             Email = newEmail;
             UpdatedAt = DateTime.UtcNow;
-
-            // TODO: Domain event UserEmailChanged
         }
 
         public void UpdatePasswordHash(string newPasswordHash)
@@ -142,8 +140,6 @@ namespace Zentric.Domain.Users
 
             Status = UserStatus.Blocked;
             UpdatedAt = DateTime.UtcNow;
-
-            // TODO: Domain event UserBlocked
         }
 
         public void Activate()
@@ -160,8 +156,6 @@ namespace Zentric.Domain.Users
 
             Status = UserStatus.Active;
             UpdatedAt = DateTime.UtcNow;
-
-            // TODO: Domain event UserActivated
         }
 
         public void UpdateRole(UserRole newRole)
@@ -205,8 +199,6 @@ namespace Zentric.Domain.Users
             DeletedAt = DateTime.UtcNow;
             Status = UserStatus.Deleted;
             UpdatedAt = DeletedAt.Value;
-
-            // TODO: Domain event UserDeleted
         }
 
         public void Restore()
@@ -231,8 +223,6 @@ namespace Zentric.Domain.Users
             DeletedAt = DateTime.UtcNow;
             Status = UserStatus.Deleted;
             UpdatedAt = DeletedAt.Value;
-
-            // TODO: Domain event UserDeletedByAdmin
         }
     }
 }

@@ -11,8 +11,10 @@ Opera principalmente en el **Ordering Context** para cancelar el pedido, e **Inv
 - **Output:** `Result` (Total de carritos liberados).
 
 ## 4. Flujo Lógico y Reglas ([PED-01](../06-business-rules.md))
-1. Consultar el repositorio por todos los agregados `CustomerOrder` que estén en estado `Cart` o `PendingPayment` y cuya propiedad `UpdatedAt` demuestre una antigüedad mayor al umbral del sistema (**15 minutos** estándar).
-2. Iterar sobre los pedidos expirados encontrados:
+1. El umbral se calcula desde el reloj inyectado (`IClock`, T-004): `ahora - 15 minutos`.
+   Nunca desde `DateTime.UtcNow` leído en secreto; así el barrido es determinista en pruebas.
+2. Consultar el repositorio por todos los agregados `CustomerOrder` que estén en estado `Cart` o `PendingPayment` y cuya propiedad `UpdatedAt` demuestre una antigüedad mayor al umbral del sistema (**15 minutos** estándar).
+3. Iterar sobre los pedidos expirados encontrados:
    - Identificar las cantidades exactas y bodegas que fueron reservadas en el paso inicial de compra.
    - Invocar el método `InventoryItem.Release(qty)` para cada ítem. Esto resta la cantidad de `ReservedQuantity` y la suma de vuelta a `AvailableQuantity`.
    - Modificar el estado del `CustomerOrder` a `Cancelled`.
@@ -20,3 +22,10 @@ Opera principalmente en el **Ordering Context** para cancelar el pedido, e **Inv
 
 ## 5. Eventos Emitidos
 - `CartExpiredDomainEvent`: Anuncia a otros contextos (ej. Notificaciones) que el carrito del usuario fue cancelado por tiempo excedido.
+
+## 6. Cómo se verifica sin esperar 15 minutos (T-004; H-06/R-06)
+La suite congela el tiempo con `ManualClock` (`Zentric.Tests/Security`) y reproduce el
+criterio exacto del worker —estados `Cart`/`PendingPayment` más `UpdatedAt < umbral`—
+en `Zentric.Tests/Orders/CartExpirationTests`: carrito fresco no expira, carrito de 16
+minutos expira, carrito en el borde exacto de 15 minutos no expira, y un pedido pagado
+nunca expira aunque pasen horas.

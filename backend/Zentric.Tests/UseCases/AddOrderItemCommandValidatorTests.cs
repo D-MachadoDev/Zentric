@@ -14,7 +14,7 @@ namespace Zentric.Tests.UseCases
         private readonly AddOrderItemCommandValidator _validator = new();
 
         private static AddOrderItemCommand ValidCommand() =>
-            new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 2, 19.99m, "COP");
+            new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 2, 19.99m, "COP", Guid.NewGuid());
 
         [Fact]
         public void Validate_ValidCommand_IsValid()
@@ -108,6 +108,19 @@ namespace Zentric.Tests.UseCases
             var result = _validator.Validate(command);
 
             Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_EmptyBuyerId_ReturnsError()
+        {
+            // Q-21b: la identidad la fija el token; esta regla es defensa en
+            // profundidad para que un comando mal compuesto nunca llegue al handler.
+            var command = ValidCommand() with { BuyerId = Guid.Empty };
+
+            var result = _validator.Validate(command);
+
+            Assert.False(result.IsValid);
+            Assert.Contains(result.Errors, error => error.ErrorMessage == "BuyerId is required.");
         }
     }
 }

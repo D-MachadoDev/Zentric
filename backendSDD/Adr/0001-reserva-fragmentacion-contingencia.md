@@ -35,8 +35,19 @@ Se adopta el modelo **híbrido (A3)**:
    bodega. El envío **no** se divide.
 2. **Umbral exacto de la excepción:** solo si **ninguna** bodega individual cubre
    la cantidad solicitada, se permite fraccionar la reserva entre varias bodegas,
-   ordenadas de mayor a menor stock disponible y respetando la prioridad de bodega
-   `Marketplace` sobre `Vendor` ([invariante 2](../Domain/04-invariants-and-rules.md)).
+   ordenadas de mayor a menor stock disponible.
+
+   > **Corrección 2026-09-30 (V-02, dictamen del Owner: "el código está bien,
+   > se cambia la especificación").** Este punto ordenaba además las bodegas
+   > "respetando la prioridad de bodega `Marketplace` sobre `Vendor`". Esa
+   > preferencia **se retira**: el agregado `Inventory` no transporta el tipo de
+   > bodega, de modo que la regla era inaplicable y el servicio ha funcionado
+   > desde siempre con el orden por mayor stock. Con `VendorId = User.Id`
+   > (Q-21b, P1) el dueño del stock es el dueño del **producto**, de modo que el
+   > tipo de bodega no identifica un origen de mercancía distinto, sino quién
+   > opera el almacén; priorizar por él habría alterado el resultado sin alterar
+   > la propiedad. Fuente de verdad vigente:
+   > `Zentric.Domain/Inventories/Services/InventoryReservationService.cs`.
 3. **Fallo y compensación:** si la suma de todas las bodegas es menor que la
    cantidad solicitada, la operación falla y se liberan las reservas parciales
    calculadas en esa misma transacción (rollback virtual).

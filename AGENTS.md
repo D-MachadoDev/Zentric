@@ -8,13 +8,13 @@
 En este proyecto aplicamos **Spec-Driven Development (SDD)**. La documentación en la carpeta `/SDD` es la **Fuente Única de Verdad (Single Source of Truth - SSoT)**.
 
 ### 0.0 Skill de ingeniería SDD (obligatoria)
-*   La metodología operativa de todo agente en este repositorio vive en lageneric-sdd-agenteric-sdsddric-sdd-agent v6.0.0** (documento único):
-    - Fuente de verdad versionadageneric-sdd-agenteric-sddsddls/generic-sdd-agent/SKILL.md (v6.0.0, monolítico; **ya no usa references/**).
-    - Copia instageneric-sdd-agenteric-sdd-sdd automática: %USERPROFILE%\.agents\skills\generic-sdd-agent\ (regenerar con .agents/skills/generic-sdd-agent/scripts/sync-skill.ps1; **no editar la copia a mano**).
-    - Overlay del repositorio: integrado en **este [AGENTS.md](AGENTS.md)** ([:0](AGENTS.md#0-enrutador-y-principios-de-spec-driven-development-sdd)–[:8](AGENTS.md#8-checklist-de-dgeneric-sdd-agenteric-sdd-asddminado-dod-para-agentes)) más el contexto persistente de [backendSDD/SDD.md](backendSDD/SDD.md).
+*   La metodología operativa de todo agente en este repositorio vive en la **skill `generic-sdd-agent` v7.0.1** (documento único):
+    - Fuente de verdad versionada: [`.agents/skills/generic-sdd-agent/SKILL.md`](.agents/skills/generic-sdd-agent/SKILL.md) (v7.0.1, monolítico; **ya no usa `references/`**).
+    - Copia instalada automática: `%USERPROFILE%\.agents\skills\generic-sdd-agent\` (regenerar con `.agents/skills/generic-sdd-agent/scripts/sync-skill.ps1`; **no editar la copia a mano**).
+    - Overlay del repositorio: integrado en **este [AGENTS.md](AGENTS.md)** ([sección 0](AGENTS.md#0-enrutador-y-principios-de-spec-driven-development-sdd)–[sección 8](AGENTS.md#8-checklist-de-definicion-de-terminado-dod-para-agentes)) más el contexto persistente de [backendSDD/SDD.md](backendSDD/SDD.md).
 *   **Contexto persistente (huella mínima):** [AGENTS.md](AGENTS.md) (contrato operativo) + [backendSDD/SDD.md](backendSDD/SDD.md) (memoria viva: mapa de entidades, decisiones/ADDENDA, verificación, riesgos y estado). [backendSDD/SDD.md](backendSDD/SDD.md) **no duplica** las specs: las indexa y apunta a ellas.
-*   Cuando exista conflicto, la prioridad es: decisión del owner → [AGENTS.md](AGENTS.md) → [ZENTRIC.md](/ZENTRIC.md)) (Ley) → resto de backendSDD/ → skill.
-*   generic-sdd-agent.md (raíz, v2.0.0) quedó **superseded** y fue **ELIMINADO el 2026-09-18** por autorización del Owner (el propio archivo pedía autorización para su eliminación). La skill **v6.0.0** es el único punto de entrada metodológico vigente.
+*   Cuando exista conflicto, la prioridad es: decisión del Owner → [AGENTS.md](AGENTS.md) → [ZENTRIC.md](ZENTRIC.md) (Ley) → resto de backendSDD/ → skill.
+*   `generic-sdd-agent.md` (raíz, v2.0.0) quedó **superseded** y fue **ELIMINADO el 2026-09-18** por autorización del Owner (el propio archivo pedía autorización para su eliminación). La skill **v7.0.1** es el único punto de entrada metodológico vigente.
 
 ### 0.1 Consulta Obligatoria Antes de Codificar
 Antes de generar o modificar código, el agente **DEBE** consultar la documentación correspondiente en `/SDD`:

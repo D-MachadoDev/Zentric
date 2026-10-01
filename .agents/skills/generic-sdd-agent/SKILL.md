@@ -1,34 +1,23 @@
 ---
 name: generic-sdd-agent
-version: 7.0.0
+version: 7.0.1
 language: es
-scope: universal — cualquier software, lenguaje, dominio, tamaño o madurez; desde una pregunta hasta la operación
-ssot-default: AGENTS.md (contrato del repo) + SDD/SDD.md (memoria viva). Si el repo declara otra SSoT, se respeta y no se crea una paralela
-description: >
-  Agente universal para pensar, entender, diseñar, construir, corregir, explicar,
-  revisar y operar software. Puede trabajar desde una pregunta, una pantalla, una
-  idea vaga, código, un repositorio, un error, una arquitectura, un ticket, una
-  especificación o un objetivo de aprendizaje.
-  Es aplicable a cualquier lenguaje, framework, plataforma, dominio, tamaño o
-  madurez de proyecto: scripts, APIs, interfaces, apps móviles, web, escritorio,
-  juegos, automatizaciones, IA, LLMs, agentes, bots, visión por computadora,
-  cámaras, RAG, herramientas CLI, librerías, infraestructura, integraciones,
-  seguridad, datos, sistemas embebidos, investigación técnica y prototipos.
-  No presupone que el trabajo sea un producto comercial, tenga mercado, usuarios
-  externos, deuda técnica, despliegue, métricas de negocio, arquitectura existente
-  ni intención de producción. Adapta el proceso a la intención explícita del usuario
-  y a la evidencia disponible. Al abrirse en un proyecto (aunque el usuario solo
-  salude) reconoce el repositorio, crea o valida sus dos archivos de contexto
-  (AGENTS.md y SDD/SDD.md) y mantiene un mapa completo de entidades para no
-  olvidar nada. Activación breve: "/sdd <tarea>" o lenguaje natural.
-  Triggers universales: código, repo, archivo, pantalla, UI, error, bug, prueba,
-  test, build, lint, tipo, dependencia, API, endpoint, contrato, evento, base de
-  datos, migración, refactor, seguridad, incidente, deploy, documentación,
-  arquitectura, integración, performance, accesibilidad, observabilidad, revisión,
-  auditoría, mapa, entidades, spec, especificación, requisitos, tareas, adr.
-  Triggers contextuales (solo si el usuario los menciona): idea, viabilidad,
-  producto, MVP, usuarios, competencia, mercado, pricing, cumplimiento regulatorio,
-  gdpr, hipaa, pci, sox.
+description: >-
+  Agente universal de ingenieria de software (SDD). Usala cuando haya que
+  entender, disenar, construir, corregir, revisar, documentar u operar
+  software en cualquier lenguaje, plataforma, dominio o madurez: script,
+  API, interfaz, app movil, escritorio, datos, IA, automatizacion,
+  integracion o infraestructura. Activala con "/sdd <tarea>" o en lenguaje
+  natural ante: repo, AGENTS.md, SDD/SDD.md, spec, requisitos, tareas, mapa
+  de entidades, arquitectura, diseno, bug, error, prueba, test, build,
+  refactor, dependencia, migracion, seguridad, rendimiento, auditoria o deploy.
+  Impone un proceso verificable: leer el contexto del repo antes de opinar,
+  separar evidencia de inferencia y propuesta, no inventar requisitos, pedir
+  autorizacion antes de editar y demostrar cada afirmacion con su comando.
+  NO la actives para charla general, diseno visual detallado (impeccable),
+  causa raiz de un bug aislado (systematic-debugging) ni para escribir
+  skills (writing-skills).
+---
 
 ### Qué significa "verificable" en esta skill (leer antes que nada)
 
@@ -49,8 +38,6 @@ un significado estricto y operativo, no una aspiración:
 Un tablero lleno de marcas verdes sin comando es peor que uno vacío: induce a
 no verificar. El color de una casilla no es evidencia; el comando que la produjo,
 sí.
-
----
 
 # SDD Universal Software Copilot — v7.0.0
 

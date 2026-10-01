@@ -66,7 +66,10 @@ namespace Zentric.Tests.Application.Queries
             var repo = new FakeWarehouseQueryRepo(new List<Warehouse> { warehouse });
             var handler = new GetWarehousesQueryHandler(repo);
 
-            var result = await handler.Handle(new GetWarehousesQuery(), CancellationToken.None);
+            // Q-21b: sin filtro de dueno para Operador/Administrador; el
+            // encerramiento del Vendedor se prueba en OwnershipQueryTests.
+            var result = await handler.Handle(
+                new GetWarehousesQuery(null, Guid.NewGuid(), UserRole.Administrator), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
             Assert.Single(result.Value);
@@ -80,9 +83,12 @@ namespace Zentric.Tests.Application.Queries
             var warehouseId = Guid.NewGuid();
             var inv = new Inventory(variantId, warehouseId, availableQuantity: 50, reservedQuantity: 10, damagedQuantity: 2, usedQuantity: 5);
             var repo = new FakeInventoryQueryRepo(new List<Inventory> { inv });
-            var handler = new GetInventoryByVariantQueryHandler(repo);
+            var handler = new GetInventoryByVariantQueryHandler(repo, new FakeProductQueryRepo());
 
-            var result = await handler.Handle(new GetInventoryByVariantQuery(variantId), CancellationToken.None);
+            // Operador: sin filtro de dueno (Q-21b); el Vendedor se prueba en
+            // OwnershipQueryTests.
+            var result = await handler.Handle(
+                new GetInventoryByVariantQuery(variantId, Guid.NewGuid(), UserRole.LogisticsOperator), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
             Assert.Single(result.Value);
@@ -116,6 +122,27 @@ namespace Zentric.Tests.Application.Queries
             Task.FromResult<IReadOnlyList<Warehouse>>(vendorId.HasValue ? _warehouses.Where(w => w.VendorId == vendorId.Value).ToList() : _warehouses.ToList());
         public Task AddAsync(Warehouse warehouse, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task UpdateAsync(Warehouse warehouse, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    internal class FakeProductQueryRepo : IProductRepository
+    {
+        public List<Product> Products { get; } = new();
+
+        public Task<Product?> GetByVariantIdAsync(Guid variantId, CancellationToken cancellationToken = default)
+            => Task.FromResult(Products.FirstOrDefault(p => p.VendorId != Guid.Empty));
+
+        public Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+            => Task.FromResult(Products.FirstOrDefault());
+
+        public Task<IReadOnlyList<Product>> GetAllAsync(Guid? vendorId = null, CancellationToken cancellationToken = default)
+            => Task.FromResult((IReadOnlyList<Product>)Products.ToList());
+
+        public Task<(IReadOnlyList<Product> Items, int TotalItems)> GetPagedAsync(
+            Guid? vendorId, int skip, int take, CancellationToken cancellationToken = default)
+            => Task.FromResult(((IReadOnlyList<Product>)Products.Skip(skip).Take(take).ToList(), Products.Count));
+
+        public Task AddAsync(Product product, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task UpdateAsync(Product product, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
     internal class FakeInventoryQueryRepo : IInventoryRepository

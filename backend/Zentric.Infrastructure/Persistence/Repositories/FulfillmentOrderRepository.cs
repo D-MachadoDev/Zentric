@@ -19,7 +19,12 @@ namespace Zentric.Infrastructure.Persistence.Repositories
 
         public async Task<FulfillmentOrder?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // AsNoTracking: la lectura devuelve un objeto de dominio independiente.
+            // Con la fila rastreada, el Update posterior adjuntaria un segundo
+            // instancia con la misma clave y el despacho no se podria persistir
+            // (H-15, mismo fallo que en devoluciones).
             var dbModel = await _dbContext.FulfillmentOrders
+                .AsNoTracking()
                 .Include(o => o.Shipments)
                 .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
             return dbModel == null ? null : FulfillmentOrderMapper.ToDomain(dbModel);

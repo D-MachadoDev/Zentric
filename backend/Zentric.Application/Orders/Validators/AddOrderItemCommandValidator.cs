@@ -36,6 +36,12 @@ namespace Zentric.Application.Orders.Validators
             RuleFor(command => command.Currency)
                 .Must(currency => currency is null || currency.Trim().Length == 3)
                 .WithMessage("Currency must be a valid ISO 4217 code, for example COP.");
+
+            // Q-21b: la identidad la fija el controlador desde el token; la regla
+            // es defensa en profundidad, igual que las demas.
+            RuleFor(command => command.BuyerId)
+                .NotEmpty()
+                .WithMessage("BuyerId is required.");
         }
     }
 }

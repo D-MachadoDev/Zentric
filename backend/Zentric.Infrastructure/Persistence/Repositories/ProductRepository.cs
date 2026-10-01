@@ -20,7 +20,11 @@ namespace Zentric.Infrastructure.Persistence.Repositories
 
         public async Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // AsNoTracking por el mismo motivo que los listados de este repositorio
+            // y que CustomerOrderRepository: el Update posterior adjunta un DbModel
+            // nuevo y chocaria con la fila rastreada (H-15).
             var dbModel = await _dbContext.Products
+                .AsNoTracking()
                 .Include(p => p.Variants)
                 .ThenInclude(v => v.Attributes)
                 .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
@@ -30,6 +34,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
         public async Task<Product?> GetByVariantIdAsync(Guid variantId, CancellationToken cancellationToken = default)
         {
             var dbModel = await _dbContext.Products
+                .AsNoTracking()
                 .Include(p => p.Variants)
                 .ThenInclude(v => v.Attributes)
                 .FirstOrDefaultAsync(p => p.Variants.Any(v => v.Id == variantId), cancellationToken);

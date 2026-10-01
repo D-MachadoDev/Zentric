@@ -56,24 +56,43 @@ Recuento verificado sobre los controladores reales.
 
 ---
 
-## 3. Identidad del llamante — `X-Buyer-Id` (OBLIGATORIO)
+## 3. Identidad del llamante — Bearer token (OBLIGATORIO)
 
-`[CONFIRMADO]` **El backend NO emite JWT.** La identidad viaja en la cabecera
-**`X-Buyer-Id`**, resuelta por `HeaderBuyerAccessor`.
+`[CONFIRMADO]` **Cambiado el 2026-09-28 por `ADR-0009`.** El backend **sí emite JWT** ahora, y
+la cabecera `X-Buyer-Id` **fue eliminada**: escribirla ya no autentica a nadie.
 
 | Situación | Respuesta observada |
 | --- | --- |
-| Dueño del pedido + `X-Buyer-Id` válido | `200 OK` |
-| Comprador distinto al dueño | `404 Not Found` |
-| Sin cabecera y sin identidad | `401 Unauthorized` |
+| Token válido + dueño del pedido | `200 OK` |
+| Token válido + comprador distinto al dueño | `404 Not Found` |
+| Sin token, o token caducado o forjado | `401 Unauthorized` |
+| Solo la cabecera antigua `X-Buyer-Id` | `401 Unauthorized` (ya no sirve) |
 
 > El mismo mensaje para "no existe" y "no es tuyo" es deliberado: distinguirlos
 > permitiría enumerar pedidos ajenos probando GUIDs. **El frontend no debe
 > diferenciar esos casos en la interfaz.**
 
-**Regla:** enviar `X-Buyer-Id` en **todas** las llamadas, no solo en pedidos.
-Conviene centralizarlo en el interceptor HTTP, para que la migración a JWT sea de
-un solo punto.
+**Regla:** enviar `Authorization: Bearer {token}` en **todas** las llamadas, salvo `POST /api/auth/login`
+y `GET /health`. Centralizarlo en el interceptor HTTP.
+
+### Ciclo de vida de la sesión
+
+1. `POST /api/auth/login` con `{ "email": ..., "password": ... }` → `200` con
+   `{ token, expiresAt, userId, email, fullName, role }`.
+2. Guardar el token y adjuntarlo como `Bearer` en cada petición.
+3. Al recibir `401`, cerrar sesión y volver al login. **No hay token de refresco**:
+   la vida es de 60 minutos y entonces toca autenticarse de nuevo.
+4. `GET /api/auth/me` devuelve la identidad del token vigente sin consultar la base;
+   sirve para restaurar la sesión al abrir la aplicación.
+
+### Auto-registro
+
+`POST /api/users` es el **único** endpoint de negocio sin token, y solo si el `role` es `Buyer`:
+la Ley incluye "Registro de compradores" en el alcance. Cualquier otro rol responde `403`
+salvo que quien llame sea un `Administrator` autenticado (ZENTRIC.md, Dominio 3).
+
+**El frontend debe montar la pantalla de acceso sobre este flujo**, ya que R-01
+("el backend no emite JWT") quedó cerrado.
 
 ---
 
@@ -178,12 +197,42 @@ Estas restricciones vienen de la Ley. El frontend debe cumplirlas **en la interf
 |---|---|
 | Estructura del frontend | Conforme (aun sin `src/`) |
 | Contrato de endpoints | 29/29 mapeados al estado real |
-| Identidad del llamante | Parcial: `X-Buyer-Id` funciona; JWT bloqueado |
+| Identidad del llamante | Cerrada: `POST /api/auth/login` emite JWT HS256 y `Authorization: Bearer` es obligatorio. `X-Buyer-Id` eliminada |
 | CORS | Resuelto y verificado |
 | Paginacion | Resuelta y verificada |
 | Reglas de la Ley en la UI | **Por definir**: las restricciones estan en 7, falta decidir como se aplican |
 | Roles | 5 roles de la Ley; los 7 del prompt no aplican |
 
-**Estado global: `READY_TO_START`.** El bloqueo que impedia hablar con la API desde el navegador (CORS) esta resuelto. La UI puede empezar con `X-Buyer-Id` y paginacion.
+**Estado global: `READY_TO_START`.** Los dos bloqueios que impedian hablar con la API desde el navegador estan resueltos y verificados: CORS (origen permitido recibe los headers) y autenticacion (`POST /api/auth/login` + `Authorization: Bearer`). La UI empieza con login, interceptor del token y paginacion.
 
-**Pendiente antes de produccion:** JWT (R-01) y reportes administrativos (R-08).
+**Cerrado desde el alineamiento original:** autorizacion por rol (Q-21 del backend → `ADR-0011`, 2026-09-29: 18 politicas, `FallbackPolicy` fail-closed, verificado con tokens de los cinco roles) y contrato de los `enum` en el cuerpo JSON (Q-22 → `ADR-0012`, 2026-09-29: **viajan por nombre**, el cliente manda `"Seller"` y nunca `1`; ver `Frontend-Adapters.md` §3.2, que tenia los valores numericos mal).
+
+**Cerrado 2026-09-29: propiedad del recurso (Q-21b → `ADR-0013`).** Es el bloque que faltaba para exponer listados. Lo que cambia **para el cliente**:
+
+| Cambio | Detalle |
+|---|---|
+| `POST /api/orders/cart` **sin cuerpo** | El comprador sale del token. Dejar de mandar `buyerId` |
+| `POST /api/Catalog/products` | El `vendorId` del cuerpo **se descarta**: el producto queda a nombre del vendedor autenticado |
+| `GET /api/Orders/{id}` **cambia de forma según el rol** | Comprador y Admin/Supervisor/Operador reciben `OrderDto`; el **Vendedor** recibe `SellerOrderViewDto` (`id`, `status`, `currency`, `items` solo suyos, `vendorSubtotal`, `createdAt`: **sin** `buyerId` ni `totalAmount`). Hay que ramificar por rol, no un tipo único |
+| `GET /api/Billing/invoices/order/{orderId}` | El Comprador ve **solo su Factura Maestra**; el Vendedor solo su factura de vendedor; Admin/Supervisor todas |
+| `GET /api/Warehouses?vendorId=` | El Vendedor ve solo las suyas; pedir las de otro → `400` (no es una lista filtrada) |
+| `401` / `403` / `404` | `403` = tu rol no entra. `404` = no existe **o no es tuyo**, **también en las escrituras** (Q-21b, cerrado 2026-09-29): la UI debe tratarlo como "no disponible", no reintentar y no mostrar un error de formulario |
+
+> **`404` también llega por escritura.** Antes, agregar un ítem a un carrito ajeno o pagar un pedido
+> ajeno devolvía `400`; ahora devuelven `404`, igual que las lecturas. El frontend tiene **un solo
+> código** para "no disponible": si la UI solo miraba el `400`, estas acciones pasan a verse como
+> errores de validación en lugar de "este recurso no es tuyo".
+>
+> **Siguen siendo `400` a propósito** (el recurso existe, el filtro no): pedir bodegas de otro
+> vendedor, o crear un despacho a nombre de otro. Ahí sí es un error de la petición.
+
+**Cerrado 2026-09-29: tres enmiendas a la matriz de roles (Q-21c, Q-21d, Q-21e → `ADR-0014`).** Los tres dictámenes del Owner en una sola ronda, con los documentos del cliente corregidos por addendum:
+
+| Cambio | Detalle |
+|---|---|
+| El Operador reporta el quiebre de stock | `POST /api/Logistics/fulfillment/cancel-ghost-stock` ya no devuelve `403` al Operador: quien encuentra el faltante en bodega puede reportarlo. Se añade `/despachos/:id/quiebre` al módulo de logística (§2.5) |
+| **El botón de facturación se muda al módulo del Administrador** | Estaba en el del **Comprador** (línea 68), que recibía `403`. Vive en `/pedidos/:id/facturar` (§2.2) y solo el Administrador puede pulsarlo |
+| La facturación ya no se puede duplicar | El endpoint rechaza con `400` un pedido **no pagado** y un pedido **ya facturado**. Un doble clic ya no genera dos veces las tres facturas: hay que manejar el `400` en la UI |
+| **Son cinco roles** | El documento declaraba cuatro. El `Supervisor` se queda, es de solo lectura y **no tiene módulo propio**: usa las pantallas compartidas. Si algún día quiere panel propio, falta un endpoint de listado (R-03) |
+
+**Pendiente antes de produccion:** reportes administrativos (R-08).

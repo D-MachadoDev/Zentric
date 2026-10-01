@@ -22,6 +22,13 @@ RUN dotnet publish "Zentric.Api.csproj" -c Release -o /app/publish /p:UseAppHost
 
 # ---- Runtime stage ----
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+# curl solo para el healthcheck de compose: sondea /health sin ejecutar el
+# host de .NET una segunda vez (la orden anterior, `dotnet ... --health`,
+# arrancaba otra copia de la API en el mismo puerto y fallaba con
+# "address already in use", dejando el contenedor como `unhealthy` para siempre).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 EXPOSE 8080
 COPY --from=build /app/publish .

@@ -2,6 +2,7 @@ using Zentric.Application.Common.Messaging;
 using Zentric.Application.Common.Models;
 using Zentric.Application.Common.Ports;
 using Zentric.Domain.Billing.Ports;
+using Zentric.Domain.Orders.Enums;
 using Zentric.Domain.Orders.Ports;
 using Zentric.Domain.Billing;
 using Zentric.Domain.Products.ValueObjects;
@@ -28,7 +29,23 @@ namespace Zentric.Application.Billing.Commands
             var order = await _orderRepository.GetByIdAsync(request.CustomerOrderId, cancellationToken);
             if (order == null)
             {
-                return Result<bool>.Failure("Order not found.");
+                return Result<bool>.NotFound("Order not found.");
+            }
+
+            // Q-21d (dictamen del Owner 2026-09-29): estas dos guardas ya las prometia la
+            // spec de este endpoint y no existian. Sin ellas, un segundo clic en
+            // "facturar" -o un reintento del frontend- duplicaba las tres facturas del
+            // pedido, y se podia facturar un carrito que nadie ha pagado.
+            if (order.Status is not (OrderStatus.Paid or OrderStatus.Dispatched or OrderStatus.Delivered))
+            {
+                return Result<bool>.Failure(
+                    $"Order with ID {order.Id} has not been paid: invoices are only issued once the payment is confirmed.");
+            }
+
+            var alreadyIssued = await _invoiceRepository.GetByOrderIdAsync(order.Id, cancellationToken);
+            if (alreadyIssued.Count > 0)
+            {
+                return Result<bool>.Failure($"Invoices have already been issued for order {order.Id}.");
             }
 
             // Q-15 (dictamen del Owner 2026-09-27): reparto ratificado 5% plataforma /

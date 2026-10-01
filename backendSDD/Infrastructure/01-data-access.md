@@ -54,11 +54,20 @@ Para cumplir estrictamente con [AGENTS.md:2.1](../../AGENTS.md#21-regla-de-depen
 - `DomainEventDispatcher`: Publica los eventos de dominio (`IDomainEvent`) a través del mediador tras guardar los cambios exitosamente en la base de datos.
 
 ## 6. Estrategia de Migraciones
-Las migraciones se generan usando `Zentric.Api` como Composition Root (Startup Project). 
-- **Migraciones registradas:**
+Las migraciones se generan usando `Zentric.Api` como Composition Root (Startup Project). La API las
+aplica sola al arrancar en `Development` (`MigrateAsync` en `Program.cs`), de modo que un entorno
+nuevo no necesita pasos manuales. Ver
+[02-containerization-and-deployment.md §2.1](02-containerization-and-deployment.md#21-el-esquema-se-crea-solo-verificado-2026-09-30).
+- **Migraciones registradas (7, todas aplicadas):**
   1. `20260918192602_InitialCreate`: Esquema base relacional.
-  2. `20260918193539_CompleteSchema`: Tablas de todos los 9 agregados.
+  2. `20260918193539_CompleteSchema`: Tablas de todos los agregados.
   3. `20260920003544_AddBackgroundServicesAndUpdates`: Ajustes de índices y compatibilidad.
+  4. `20260927024942_AddVendorIdToOrderItem`: El `VendorId` del vendedor en la línea de pedido
+     (convención `VendorId = User.Id` de Q-21b, P1).
+  5. `20260927050316_AddVendorIdToInvoice`: El mismo `VendorId` en la factura de vendedor.
+  6. `20260927150213_AddPaymentReceipts`: Comprobantes de pago (pasarela simulada, Q-08).
+  7. `20260927151056_SplitBuyerAddressIntoColumns`: Dirección principal en columnas propias en
+     lugar de el array de direcciones.
 
 ## 7. Estado de Desviaciones Históricas
 

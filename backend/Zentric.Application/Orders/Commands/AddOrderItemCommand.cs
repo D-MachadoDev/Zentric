@@ -17,6 +17,11 @@ namespace Zentric.Application.Orders.Commands
     /// vendedor. Se valida contra el producto para no aceptar un vendedor
     /// arbitrario del cliente, y se persiste en la linea para que la factura
     /// refleje quien vendio en el momento de la compra.
+    ///
+    /// Q-21b: <paramref name="BuyerId"/> es la identidad del llamante derivada
+    /// del token (el controlador descarta el valor que venga en el cuerpo). El
+    /// handler carga el pedido con el filtro por comprador, de modo que un
+    /// carrito ajeno responde "Order not found.".
     /// </summary>
     public record AddOrderItemCommand(
         Guid OrderId,
@@ -24,7 +29,8 @@ namespace Zentric.Application.Orders.Commands
         Guid VendorId,
         int Quantity,
         decimal UnitPrice,
-        string Currency) : IRequest<Result>;
+        string Currency,
+        Guid BuyerId) : IRequest<Result>;
 
     public class AddOrderItemCommandHandler : IRequestHandler<AddOrderItemCommand, Result>
     {
@@ -47,10 +53,13 @@ namespace Zentric.Application.Orders.Commands
 
         public async Task<Result> Handle(AddOrderItemCommand request, CancellationToken cancellationToken)
         {
-            var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+            // Q-21b: el pedido se carga con el filtro por comprador; un carrito
+            // ajeno se trata igual que uno inexistente.
+            var order = await _orderRepository.GetByIdForBuyerAsync(
+                request.OrderId, request.BuyerId, cancellationToken);
             if (order == null)
             {
-                return Result.Failure("Order not found.");
+                return Result.NotFound("Order not found.");
             }
 
             if (order.Status != OrderStatus.Cart)
@@ -64,7 +73,7 @@ namespace Zentric.Application.Orders.Commands
             var product = await _productRepository.GetByVariantIdAsync(request.VariantId, cancellationToken);
             if (product == null)
             {
-                return Result.Failure($"Product for variant {request.VariantId} not found.");
+                return Result.NotFound($"Product for variant {request.VariantId} not found.");
             }
 
             if (product.VendorId != request.VendorId)

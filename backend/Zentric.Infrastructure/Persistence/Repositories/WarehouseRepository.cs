@@ -20,7 +20,11 @@ namespace Zentric.Infrastructure.Persistence.Repositories
 
         public async Task<Warehouse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // AsNoTracking, igual que el listado de este repositorio y por el mismo
+            // motivo que en los demas: el Update posterior adjunta un DbModel nuevo
+            // y chocaria con la fila rastreada (H-15).
             var dbModel = await _dbContext.Warehouses
+                .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
             return dbModel == null ? null : WarehouseMapper.ToDomain(dbModel);
         }

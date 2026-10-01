@@ -7,7 +7,12 @@ using Zentric.Domain.Payments.Ports;
 
 namespace Zentric.Application.Orders.Commands
 {
-    public record PayOrderCommand(Guid OrderId) : IRequest<Result<bool>>;
+    /// <summary>
+    /// Cobra y marca como pagado un pedido. Q-21b: <paramref name="BuyerId"/>
+    /// viaja para que el handler cargue el pedido con el filtro por comprador:
+    /// nadie paga un pedido ajeno.
+    /// </summary>
+    public record PayOrderCommand(Guid OrderId, Guid BuyerId) : IRequest<Result<bool>>;
 
     public class PayOrderCommandHandler : IRequestHandler<PayOrderCommand, Result<bool>>
     {
@@ -30,10 +35,13 @@ namespace Zentric.Application.Orders.Commands
 
         public async Task<Result<bool>> Handle(PayOrderCommand request, CancellationToken cancellationToken)
         {
-            var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+            // Q-21b: el pedido se carga con el filtro por comprador; el de otro
+            // comprador se trata igual que uno inexistente.
+            var order = await _orderRepository.GetByIdForBuyerAsync(
+                request.OrderId, request.BuyerId, cancellationToken);
             if (order == null)
             {
-                return Result<bool>.Failure($"Order with ID {request.OrderId} not found.");
+                return Result<bool>.NotFound($"Order with ID {request.OrderId} not found.");
             }
 
             // Q-08: primero se cobra, y solo si la pasarela aprueba se marca el

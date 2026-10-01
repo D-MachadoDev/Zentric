@@ -38,11 +38,25 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=ZentricDb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+      # Clave de firma de los tokens (ADR-0009). Sin ella la API no arranca:
+      # es preferible a firmar con un secreto por defecto.
+      Jwt__Issuer: zentric-api
+      Jwt__Audience: zentric-client
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:-zentric-dev-only-signing-key-cambiar-en-produccion-000}
+      # Alta del primer Administrador (solo si no existe ninguno). Es la unica
+      # via por la que un rol privilegiado entra al sistema: el auto-registro
+      # anonimo esta limitado a Compradores (ZENTRIC.md, Dominio 3).
+      # Retirar estas variables en cuanto el Administrador exista.
+      Bootstrap__AdministratorEmail: ${BOOTSTRAP_ADMIN_EMAIL:-admin@zentric.local}
+      Bootstrap__AdministratorPassword: ${BOOTSTRAP_ADMIN_PASSWORD:-AdminLocal12345}
     ports:
       - "5076:8080"
     healthcheck:
-      # Sondea /health, que ademas verifica la conectividad con PostgreSQL.
-      test: ["CMD-SHELL", "dotnet /app/Zentric.Api.dll --no-build --health || exit 1"]
+      # Sondea /health (verifica el proceso y la conectividad con PostgreSQL).
+      # Se usa curl y no una segunda invocacion de `dotnet`, porque esta ultima
+      # intentaba arrancar otra copia de la API en el puerto 8080 y fallaba con
+      # "address already in use", dejando el servicio como unhealthy para siempre.
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 5

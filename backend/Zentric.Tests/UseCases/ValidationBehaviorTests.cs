@@ -43,7 +43,7 @@ namespace Zentric.Tests.UseCases
             var handlerInvoked = false;
 
             var result = await behavior.Handle(
-                new AddOrderItemCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 0, 10m, "COP"),
+                new AddOrderItemCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 0, 10m, "COP", Guid.NewGuid()),
                 () =>
                 {
                     handlerInvoked = true;

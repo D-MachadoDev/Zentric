@@ -188,8 +188,6 @@ namespace Zentric.Domain.Products
             Description = description.Trim();
             Price = price;
             UpdatedAt = DateTime.UtcNow;
-
-            // TODO: Domain event ProductUpdated
         }
 
         public void UpdatePrice(Money newPrice)
@@ -203,8 +201,6 @@ namespace Zentric.Domain.Products
 
             Price = newPrice;
             UpdatedAt = DateTime.UtcNow;
-
-            // TODO: Domain event ProductPriceUpdated
         }
 
         public void UpdateType(ProductType newType)
@@ -230,42 +226,6 @@ namespace Zentric.Domain.Products
             UpdatedAt = DateTime.UtcNow;
         }
         
-        public void UpdateName(string newName)
-        {
-            if (IsDeleted)
-            {
-                throw new InvalidOperationException("Cannot update the name of a deleted product.");
-            }
-
-            if (string.IsNullOrWhiteSpace(newName))
-            {
-                throw new ArgumentException("Product name cannot be empty.", nameof(newName));
-            }
-
-            Name = newName.Trim();
-            UpdatedAt = DateTime.UtcNow;
-
-            // TODO: Domain event ProductNameUpdated
-        }
-
-        public void UpdateDescription(string newDescription)
-        {
-            if (IsDeleted)
-            {
-                throw new InvalidOperationException("Cannot update the description of a deleted product.");
-            }
-
-            if (string.IsNullOrWhiteSpace(newDescription))
-            {
-                throw new ArgumentException("Product description cannot be empty.", nameof(newDescription));
-            }
-
-            Description = newDescription.Trim();
-            UpdatedAt = DateTime.UtcNow;
-
-            // TODO: Domain event ProductDescriptionUpdated
-        }
-
         public void Publish()
         {
             if (IsDeleted)
@@ -280,8 +240,6 @@ namespace Zentric.Domain.Products
 
             Status = ProductStatus.Published;
             UpdatedAt = DateTime.UtcNow;
-
-            // TODO: Domain event ProductPublished
         }
 
         public void Suspend()
@@ -298,8 +256,6 @@ namespace Zentric.Domain.Products
 
             Status = ProductStatus.Suspended;
             UpdatedAt = DateTime.UtcNow;
-
-            // TODO: Domain event ProductSuspended
         }
 
         public void Delete()
@@ -312,8 +268,6 @@ namespace Zentric.Domain.Products
             DeletedAt = DateTime.UtcNow;
             Status = ProductStatus.Discontinued;
             UpdatedAt = DeletedAt.Value;
-
-            // TODO: Domain event ProductDeleted
         }
 
         public void Restore()
@@ -326,8 +280,6 @@ namespace Zentric.Domain.Products
             DeletedAt = null;
             Status = ProductStatus.Published;
             UpdatedAt = DateTime.UtcNow;
-
-            // TODO: Domain event ProductRestored
         }
     }
 }

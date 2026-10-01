@@ -16,7 +16,7 @@
 | --- | --- |
 | URL base | `VITE_API_BASE_URL`, defecto `http://localhost:5076` |
 | Cabeceras fijas | `Accept: application/json`, `Content-Type: application/json` |
-| Autenticación | Cabecera `X-Buyer-Id` (JWT no emitido; R-01 bloqueado). Enviar en todas las llamadas |
+| Autenticación | `Authorization: Bearer {token}` de `POST /api/auth/login`. **Obligatorio en todas las llamadas**, salvo `login` y `health`. `X-Buyer-Id` fue eliminada por `ADR-0009` y ya no autentica |
 | Correlación | **No implementada.** Propagar un id de correlación es `[PROPUESTO]`: el backend actual no lo soporta (verificado en `Program.cs`). El `traceId` de ASP.NET es lo único disponible |
 | Tiempo máximo | 15 s, con cancelación por `AbortController` |
 | Reintentos | 1 reintento sólo en `5xx` y error de red; nunca en `4xx` |
@@ -75,15 +75,32 @@ const id = JSON.parse(raw) as string; // -> "3de3d5d4-…"
 Aplicar `readGuid(response)` en `createUser`, `createWarehouse`, `createProduct`,
 `addStock`, `createCart`, `createFulfillment` y `requestReturn`.
 
-### 3.2 Enums como números
+### 3.2 Enums como nombres (cerrado 2026-09-29, `ADR-0012`)
 
-Los enums viajan como enteros. El cliente los convierte con **constantes
-explícitas**, nunca con índices literales, para sobrevivir a cambios de orden:
+`[CONFIRMADO]` El cuerpo JSON **solo acepta el nombre** del enum (`"Seller"`, `"Physical"`). Enviar
+un entero responde `400`. Las respuestas ya devolvían el nombre, así que entrada y salida hablan
+igual. Las constantes del cliente son literales de texto, nunca índices numéricos:
 
 ```ts
-export const UserRole = { Seller: 1, Buyer: 2, Admin: 3, LogisticsOperator: 4 } as const;
-export const OrderStatus = { Cart: 0, PendingPayment: 1, Paid: 2, Dispatched: 3, Delivered: 4 } as const;
+export const UserRole = {
+  Buyer: 'Buyer', Seller: 'Seller', Administrator: 'Administrator',
+  Supervisor: 'Supervisor', LogisticsOperator: 'LogisticsOperator',
+} as const;
+export const OrderStatus = {
+  Cart: 'Cart', PendingPayment: 'PendingPayment', Paid: 'Paid',
+  Dispatched: 'Dispatched', Delivered: 'Delivered', Cancelled: 'Cancelled',
+} as const;
 ```
+
+> **Este bloque estaba mal antes de 2026-09-29.** Decía `Seller: 1, Buyer: 2, Admin: 3`, que no
+> corresponde a ningún valor real del dominio (`Buyer=0, Seller=1, Administrator=2, Supervisor=3,
+> LogisticsOperator=4`), omitía `Supervisor` en `UserRole` y `Cancelled` en `OrderStatus`. Si se
+> hubiera coded con esos números, los altares habrían creado el rol equivocado en silencio.
+
+Un nombre mal escrito no degrada a un valor por defecto: la petición cae en `400` con
+`ProblemDetails` citando la ruta JSON (`$.role`). La lectura **no** distingue mayúsculas
+(`"seller"` funciona, verificado), pero el cliente manda el nombre exacto para que log y contrato
+coincidan.
 
 ### 3.3 `variantId` versus `productId` (riesgo FR-03)
 
@@ -153,7 +170,7 @@ es una decisión de presentación, no de dominio. Obligatorio en:
 
 | ID | Hallazgo | Acción solicitada |
 | --- | --- | --- |
-| R-01 | No hay autenticación ni emisión de JWT | Definir esquema de identidad y claims |
+| R-01 | ~~No hay autenticación ni emisión de JWT~~ **RESUELTO 2026-09-28** | `POST /api/auth/login` emite JWT HS256; `X-Buyer-Id` eliminada. Ver `ADR-0009` |
 | R-02 | ~~No hay política CORS~~ **RESUELTO 2026-09-27** | Verificado: origen permitido recibe header, ajeno no, preflight 204 |
 | R-03 | `GET /api/Logistics/fulfillment` no admite `GET` (405) | Añadir listado o documentar el método real |
 | R-04 | No existe listado de pedidos | Añadir `GET /api/Orders` si el panel debe listar |
@@ -161,5 +178,5 @@ es una decisión de presentación, no de dominio. Obligatorio en:
 | R-06 | El alta de producto no devuelve `variantId` | Devolverlo junto al `productId` |
 | R-07 | ~~Split no implementado~~ **RESUELTO 2026-09-27** | Una factura por `VendorId`; verificado contra la base real |
 
-R-02 (CORS) esta resuelto y verificado. Mientras R-01 siga abierto, el frontend **no puede autenticarse ni
-consumir la API desde el navegador**. Se registra como bloqueo de entrega.
+**R-01 y R-02 están resueltos y verificados.** El frontend **ya puede** autenticarse y consumir
+la API desde el navegador. Quedan R-03 a R-06 como intervenciones puntuales en el backend.

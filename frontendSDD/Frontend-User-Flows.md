@@ -39,9 +39,10 @@
 **Observables:** esqueleto durante la carga · ruta activa resaltada · nombre del
 rol visible en el encabezado · acción de cierre de sesión.
 
-> **Restricción vigente (R-01):** no hay validación de contraseña porque el backend
-> no emite credenciales. La pantalla lo declara explícitamente para no engañar al
-> operador.
+> **Cambio de flujo (`ADR-0009`, 2026-09-28):** la pantalla de acceso **sí valida
+> credenciales** ahora. El flujo correcto es: `POST /api/auth/login` con correo y
+> contraseña → `200` guarda el token → `401` muestra el error y no entra. Reemplaza la
+> selección de rol por credenciales reales.
 
 ---
 

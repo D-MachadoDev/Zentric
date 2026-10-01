@@ -19,7 +19,10 @@ namespace Zentric.Infrastructure.Persistence.Repositories
 
         public async Task<Invoice?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // AsNoTracking, igual que el listado por pedido de este repositorio y
+            // por el mismo motivo que en los demas (H-15).
             var dbModel = await _dbContext.Invoices
+                .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
             return dbModel == null ? null : InvoiceMapper.ToDomain(dbModel);
         }

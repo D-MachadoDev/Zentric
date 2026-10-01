@@ -22,14 +22,16 @@ en [`Contract-alignment.md`](Contract-alignment.md).
 
 ### Del contrato con la API
 
-1. **Enviar `X-Buyer-Id` en todas las llamadas.** El backend no emite JWT. Sin la cabecera,
-   los endpoints que exigen identidad responden `401`.
+1. **Enviar `Authorization: Bearer {token}` en todas las llamadas.** El token se obtiene en
+   `POST /api/auth/login` y caduca a los 60 minutos. Sin token, los endpoints responden `401`.
+   La cabecera `X-Buyer-Id` **ya no existe**: escribirla no autentica a nadie.
 2. **Usar paginación en todo listado.** `page` base cero, `size` por defecto `20` y maximo `100`.
    Consumir `items`, `totalItems`, `totalPages`, `hasNext` para construir los controles.
 3. **No diferenciar "no existe" de "no es tuyo".** Ambos devuelven `404` a proposito, para no
    permitir enumerar pedidos ajenos. La UI debe mostrar "no encontrado".
-4. **Centralizar el envio de `X-Buyer-Id` y la base URL en un unico interceptor HTTP.** Asi la
-   migracion futura a JWT es un solo punto de cambio.
+4. **Centralizar el envio del token y la base URL en un unico interceptor HTTP.** El
+   interceptor guarda el token, lo adjunta a cada peticion y, ante un `401`, cierra la sesion
+   y devuelve al login. Un solo punto de cambio para renovacion o refresh futuro.
 5. **Errores con Problem Details (RFC 9457).** El backend responde con `ProblemDetails`;
    leer `detail` para el mensaje y `status` para el caso. No inventar codigos propios.
 
@@ -39,6 +41,11 @@ en [`Contract-alignment.md`](Contract-alignment.md).
 | --- | --- | --- | --- |
 | 1.0.0 | 2026-09-27 | Especificación inicial del frontend. Configuración base creada; implementación diferida. | Agente IA |
 | 1.1.0 | 2026-09-27 | Sincronizado con el backend real (29 endpoints): CORS resuelto, `X-Buyer-Id` obligatorio, paginación con `size` acotado a 100, reglas de la Ley aplicadas a la UI, R-08 (reportes) registrado. | Agente IA |
+| 1.2.0 | 2026-09-29 | Reglas 1 y 4 reescritas tras `ADR-0009`: la identidad viaja en `Authorization: Bearer` (login + 60 min) y `X-Buyer-Id` deja de existir; el interceptor pasa a guardar el token y cerrar sesión ante `401`. Registrados Q-21 (autorización por rol) y Q-22 (los `enum` viajan como entero en el cuerpo JSON) como pendientes de contrato. | Agente IA |
+| 1.3.0 | 2026-09-29 | Cerrados los dos pendientes de contrato: Q-21 (autorización por rol, `ADR-0011`) y Q-22 (`ADR-0012`: los `enum` del cuerpo JSON viajan **solo por nombre**; un entero responde `400`). `Frontend-Adapters.md` §3.2 reescrito con constantes de texto y los valores correctos del dominio — los números que publicaba no existían (`Buyer: 2` no es Buyer, que es `0`) y no incluían `Supervisor` ni `Cancelled`. Queda abierto Q-21b (propiedad del recurso en lecturas), que bloquea exponer listados. | Agente IA |
+| 1.4.0 | 2026-09-29 | **Q-21b cerrado (`ADR-0013`): propiedad del recurso.** Ya no bloquea exponer listados. Cambios de contrato para el cliente: `POST /api/orders/cart` **sin cuerpo** (el comprador sale del token), `POST /api/Catalog/products` **descarta el `vendorId` del cuerpo**, `GET /api/Orders/{id}` **devuelve una forma distinta al Vendedor** (`SellerOrderViewDto`: sus líneas y su subtotal, sin `buyerId` ni total ajeno), facturas por rol (el Comprador solo ve su Factura Maestra), `GET /api/Warehouses?vendorId=` de otro vendedor responde `400`, y `404` significa "no existe **o no es tuyo**". Detalle en `Contract-alignment.md`. | Agente IA |
+| 1.5.0 | 2026-09-29 | **Q-21c, Q-21d y Q-21e cerrados (`ADR-0014`): tres enmiendas a la matriz de roles.** `Frontend-Role-Modules.md` corregido con addendum del Owner: el botón de facturación pasa del módulo del **Comprador** (donde recibía `403`) al del **Administrador** (`/pedidos/:id/facturar`), y el documento pasa de cuatro a **cinco roles** — el `Supervisor` se queda, es de solo lectura y no tiene módulo propio, usa las pantallas compartidas. El Operador Logístico ya puede reportar quiebre de stock (`/despachos/:id/quiebre`). La emisión de facturas **rechaza con `400` los pedidos no pagados y los ya facturados**, así que la UI debe tratar ese `400` como "ya no se puede emitir". | Agente IA |
+| 1.6.0 | 2026-09-30 | **Cierre del contrato HTTP de Q-21b: `404` también en las escrituras.** Agregar un ítem a un carrito ajeno, hacer checkout, pagar, pedir devolución sobre pedido ajeno, aprobar o ingresar stock de otro pasaban a `400`; ahora responden **`404`**, igual que las lecturas, con el mismo mensaje ("no existe" y "es de otro" siguen siendo indistinguibles). **La UI debe tratar el `404` como "no disponible" tanto en lecturas como en acciones**, y no como un error de formulario. Se mantienen en `400` los dos casos en que el recurso **existe** pero el filtro o el cuerpo contradicen al llamante: pedir bodegas de otro vendedor y crear un despacho a nombre de otro. Detalle en `Contract-alignment.md` y [ADR-0013](../backendSDD/Adr/0013-propiedad-del-recurso-por-rol.md). | Agente IA |
 
 ---
 
@@ -108,7 +115,7 @@ este producto**. Evidencia:
 | --- | --- |
 | Módulos `natural-customer`, `business-customer`, `teller`, `commercial`, `internal-analyst` | Roles reales: Vendedor, Comprador, Administrador, Operador logístico |
 | Préstamos, créditos, transferencias, aprobaciones de crédito | No existen en [`../ZENTRIC.md`](../ZENTRIC.md) |
-| `Authorization: Bearer <JWT>` en toda petición | El backend **no tiene JWT** ni proveedor de identidad |
+| `Authorization: Bearer <JWT>` en toda petición | **Ahora sí**: existe proveedor de identidad propio desde `ADR-0009` (JWT HS256 de 60 min). Se aplica por política de reserva |
 | Backend por defecto en `http://localhost:8080` | Puerto host real `5076`; el `8080` es interno del contenedor |
 | `backendSDD/Contract-alignment.md`, `backendSDD/Adapters/*`, `backendSDD/Backend-Cors-Security.md` | **No existen.** El equivalente vive en [`../backendSDD/Presentation/01-endpoints.md`](../backendSDD/Presentation/01-endpoints.md) |
 | SweetAlert2 obligatorio | No está en la Ley; se adopta sólo como decisión de diseño |
@@ -140,7 +147,7 @@ aplicable, pero se **sustituye todo el dominio** por el de Zentric. Implementar 
 | `domain/` (modelos y puertos) | `NOT_STARTED` | Crear según `Frontend-Architecture.md` |
 | `application/` (servicios) | `NOT_STARTED` | Crear según `Frontend-Domain-Services.md` |
 | `adapters/http` | `NOT_STARTED` | Crear según `Frontend-Adapters.md` |
-| `adapters/session` | `NOT_STARTED` | Crear; marcado `PROVISIONAL` |
+| `adapters/session` | `NOT_STARTED` | Crear: guarda el token de `POST /api/auth/login` y lo adjunta en cada petición |
 | `adapters/alert` | `NOT_STARTED` | Crear |
 | `components/` | `NOT_STARTED` | Crear según `Frontend-Design-System.md` |
 | Módulos por rol | `NOT_STARTED` | Crear según `Frontend-Role-Modules.md` |
@@ -231,4 +238,4 @@ cd frontend; npm test
 - [ ] Sin dominio ajeno (bancario) incorporado.
 
 bancarios o inventar autenticación violaría el Lenguaje Ubicuo
-([`../AGENTS.md`](../AGENTS.md) §0.4) y la regla de Cero Asunciones.
+([`../AGENTS.md`](../AGENTS.md#04-lenguaje-ubicuo-estricto-cero-sinónimos) y la regla de Cero Asunciones.

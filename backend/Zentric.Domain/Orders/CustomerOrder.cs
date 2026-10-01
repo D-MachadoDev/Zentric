@@ -116,6 +116,13 @@ namespace Zentric.Domain.Orders
                 throw new InvalidOperationException("Cannot checkout an empty cart.");
             }
 
+            // T-004 (H-06/R-06): la caducidad es una regla de negocio y vive aqui, no
+            // en el lector del carrito. La ventana reglamentaria es PED-01
+            // (15 minutos): el umbral lo calcula quien llama con un IClock (ver
+            // CheckoutTimeoutService) y Checkout solo decide si ya expiro con el
+            // instante que el propio agregado conoce. Asi la caducidad se
+            // comprueba moviendo el reloj, no la suite. Ver
+            // backendSDD/Domain/services/checkout-timeout-service.md.
             if (DateTime.UtcNow - CreatedAt > TimeSpan.FromMinutes(15))
             {
                 throw new InvalidOperationException("Cart reservation has expired (15-minute timeout).");

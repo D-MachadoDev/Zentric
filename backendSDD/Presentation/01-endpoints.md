@@ -6,12 +6,29 @@ Este documento define la especificación oficial (SSoT) de la capa de presentaci
 
 ## 1. Configuración de Seguridad y Esquema Bearer (OpenAPI)
 
-Conforme a **ZENTRIC.md, sección 3.2**, los mecanismos de autenticación técnica y sesiones web están fuera del alcance funcional central inicial del dominio. Sin embargo, para permitir la integración profesional con el frontend, pruebas de integración y colecciones de Postman:
+**Actualizado 2026-09-28 (`ADR-0009`, cierra RG-01).** Ya no está "fuera de alcance": la API
+**autentica de verdad** y exige token por **política de reserva** en todo endpoint.
 
-- **Esquema de Seguridad:** `Bearer` (tipo HTTP, formato JWT).
-- **Cabecera HTTP:** `Authorization: Bearer <token>`.
-- **Swagger UI:** Dispone del botón interactivo **Authorize** configurado globalmente mediante `AddSecurityDefinition` y `AddSecurityRequirement`.
-- **Comportamiento en esta fase:** Las rutas están abiertas a nivel de autorización técnica en desarrollo para facilitar la prueba de los 10 módulos de negocio, quedando preparadas para asociar `[Authorize]` y políticas RBAC basadas en los roles de `ZENTRIC.md`, sección 5 (`Buyer`, `Vendor`, `Admin`, `LogisticsOperator`, `Supervisor`) cuando se formalice el módulo técnico de Auth.
+- **Esquema de Seguridad:** `Bearer` (tipo HTTP, formato JWT, HS256).
+- **Cabecera HTTP:** `Authorization: Bearer <token>` — obtenido en `POST /api/auth/login`.
+- **Swagger UI:** botón **Authorize** con `AddSecurityDefinition` / `AddSecurityRequirement`, ya
+  operativo: sin token, Swagger recibe `401` como cualquier otro cliente.
+- **Vida del token:** 60 minutos. **No hay token de refresco.**
+- **Endpoints anónimos** (los únicos sin token):
+  | Ruta | Por qué |
+  | --- | --- |
+  | `POST /api/auth/login` | No se puede autenticar si no se puede pedir el token |
+  | `POST /api/users` **sólo con `role = Buyer`** | ZENTRIC.md incluye "Registro de compradores"; sin él no existe la primera cuenta |
+  | `GET /health` | Lo invoca el healthcheck de Docker; su `.AllowAnonymous()` es explícito porque la `FallbackPolicy` también alcanza a los endpoints mínimos |
+- **Roles (RG-03):** implementado **2026-09-29** con [ADR-0011](../Adr/0011-matriz-autorizacion-por-rol.md).
+  Cada acción declara una de las 18 políticas de `AuthorizationPolicies`, que es la Matriz de
+  Responsabilidades de ZENTRIC.md §12 escrita una sola vez; la lista completa por endpoint está en
+  [02-authorization.md](02-authorization.md). La `FallbackPolicy` exige token en todo lo demás, así
+  que una ruta sin decorar **nace cerrada**, y un rol que no entra responde `403`.
+
+> **Nota histórica:** este documento afirmaba que "las rutas estaban abiertas a nivel de
+> autorización técnica en desarrollo". Eso ya **no es cierto** y fue sustituido por la política
+> de reserva descrita arriba.
 
 ---
 
@@ -67,13 +84,18 @@ Endpoint de referencia: `GET /api/Catalog/products/paged?vendorId={id}&page=0&si
 
 ### 3.1 Identidad del llamante y aislamiento por comprador
 
-Todavía **no hay autenticación JWT** (ver 3.2). Mientras tanto, el comprador se declara en la
-cabecera **`X-Buyer-Id`**, y el backend la resuelve en `HeaderBuyerAccessor`. Cuando exista
-JWT, ese mismo accesor pasa a leer el claim (`NameIdentifier` o `sub`) y **no cambia ningún
-otro archivo**: la cabecera queda como fallback para desarrollo.
+**Actualizado 2026-09-28 (`ADR-0009`, cierra RG-01).** La identidad viaja en un
+**token JWT** (`Authorization: Bearer {token}`) emitido por `POST /api/auth/login`.
 
-`GET /api/Orders/{id}` sí está aislado: usa `GetOrderByIdForBuyerQuery`, que filtra por
-`BuyerId` **en la consulta**, no después de leer el pedido.
+- La cabecera **`X-Buyer-Id` fue eliminada** y ya no autentica.
+- `ClaimsBuyerAccessor` lee **solo** el claim `sub` de un token ya validado por el
+  middleware; no existe ninguna vía alternativa de identidad.
+- **Política de reserva:** todo endpoint exige token, salvo `POST /api/auth/login`,
+  `POST /api/users` con `role = Buyer`, y `GET /health` (lo invoca el healthcheck de Docker).
+
+`GET /api/Orders/{id}` está aislado: usa `GetOrderByIdForBuyerQuery`, que filtra por
+`BuyerId` **en la consulta**, no después de leer el pedido. `BuyerId` sale del claim `sub`
+porque `Buyer.UserId` es 1:1 con `User.Id`.
 
 | Situación | Respuesta |
 |---|---|
@@ -84,10 +106,58 @@ otro archivo**: la cabecera queda como fallback para desarrollo.
 > El mismo mensaje para "no existe" y "no es tuyo" es deliberado: distinguirlos
 > permitiría enumerar pedidos ajenos probando GUIDs.
 
-El frontend debe enviar `X-Buyer-Id` en todas las llamadas de pedidos mientras no
-exista JWT.
+### 3.2 Autenticación JWT — implementada (`ADR-0009`)
 
-### 3.2 CORS
+| Endpoint | Método | Auth | Contrato |
+|---|---|:---:|---|
+| `/api/auth/login` | `POST` | anónimo | Body `{ email, password }` → `200 { token, expiresAt, userId, email, fullName, role }` · `400` correo inválido · `401` credenciales inválidas (mensaje único: no revela qué cuentas existen) |
+| `/api/auth/me` | `GET` | token | `200 { userId, email, fullName, role }` leído de los claims del token ya validado (no consulta la base) · `401` token ausente, forjado o caducado |
+| `/api/users` | `POST` | anónimo **solo** con `role = Buyer` | `403` para cualquier otro rol sin token de Administrador (ZENTRIC.md Dominio 3) |
+
+- **Claims emitidas:** `sub` (id del usuario y, 1:1, del comprador), `email`, `name`
+  (nombre completo) y el rol. El nombre se emite como `name`: el validador de .NET 10
+  **no** reescribe los tipos de claim entrantes, así que el controlador debe leer el
+  nombre literal que se escribió en el token. Emitirlo como `unique_name` producía una
+  API que autenticaba correctamente pero devolvía `fullName` vacío en `/auth/me`
+  (defecto corregido el 2026-09-29, verificado en Docker).
+- **Caducidad:** 60 minutos (`Jwt:ExpirationMinutes`), calculada con `IClock`
+  ([ADR-0010](../Adr/0010-relojo-como-puerto-iclock.md)), no con `DateTime.UtcNow`.
+- **Clave:** `Jwt__SigningKey` por variable de entorno; la API **no arranca** si falta o
+  si mide menos de 32 bytes. `appsettings.json` la deja vacía a propósito; solo
+  `appsettings.Development.json` lleva una clave de desarrollo explícitamente rotulada.
+- **Primer Administrador:** lo crea el arranque desde `Bootstrap__AdministratorEmail` /
+  `Bootstrap__AdministratorPassword` **solo si la base no tiene ninguno**. Es la única vía
+  por la que un rol privilegiado entra al sistema, porque el auto-registro está limitado a
+  Compradores. Retirar las variables en cuanto exista.
+
+### 3.3 Los `enum` del contrato viajan como nombre en el cuerpo JSON (**Q-22 cerrada, ADR-0012**)
+
+Desde el 2026-09-29 el cuerpo JSON **solo acepta el nombre** del enum (`"Buyer"`, `"Physical"`,
+`"Pending"`). Un entero en un campo de enum responde `400`. Registrado en
+`Zentric.Api/Contracts/EnumJsonContract.cs` — `JsonStringEnumConverter` con
+`allowIntegerValues: false` — y verificado contra la API desplegada en Docker:
+
+| Petición | Respuesta |
+|---|---|
+| `POST /api/users` con `"role": "Buyer"` (anónimo) | `200` con el `Guid` del usuario |
+| `POST /api/users` con `"role":"supervisor"` en minúsculas y token de Administrador | `200` — la lectura no distingue mayúsculas |
+| `POST /api/users` con `"role": 2` y token de Administrador | `400` con `$.role: The JSON value could not be converted…` |
+| `GET /api/users?role=Seller` y `?role=1` | `200` — el binding de query sigue aceptando ambas formas |
+
+Las respuestas **ya** devolvían el nombre (`order.Status.ToString()`), así que la decisión no cambió
+la salida: alineó la entrada con lo que la salida y la query ya decían. Los enum que entran por
+cuerpo son `UserRole` (registro de usuario), `ProductType` (producto y devolución) y
+`WarehouseType` (bodega).
+
+`UserRole`: `Buyer`, `Seller`, `Administrator`, `Supervisor`, `LogisticsOperator`. Los índices
+`0..4` existen en el enum C# pero **no** forman parte del contrato REST.
+
+Cobertura: 5 pruebas en `Zentric.Tests/Presentation/EnumJsonContractTests.cs` (sobre la tubería
+real de MVC, con prueba de mutación) y 3 comprobaciones HTTP en
+`backend/scripts/authorization-smoke.ps1`. Decisión y alternativas descartadas:
+[ADR-0012](../Adr/0012-contrato-json-de-los-enum-por-nombre.md).
+
+### 3.4 CORS
 
 Una política `Frontend` habilita el origen declarado en `Cors:AllowedOrigins`
 (`appsettings.json`, o `Cors__AllowedOrigins` por variable de entorno). Varios orígenes se
@@ -102,29 +172,26 @@ separan por comas.
 > **No se usa el comodín `*`.** El lote 6 prevé JWT, y el protocolo prohíbe combinar
 > comodín con credenciales. Los orígenes deben declararse de forma explícita.
 
-### 3.3 Autenticación JWT — **bloqueada, pendiente de decisión del Owner**
-
-No se implementó JWT a propósito, por dos razones concretas:
-
-1. **Falta el algoritmo de hash de contraseñas.** `User.PasswordHash` guarda un hash, pero
-   **no existe ningún método que lo verifique**: el sistema nunca ha validado una contraseña.
-   Crear login exige elegir el algoritmo (PBKDF2, BCrypt, Argon2) y sus parámetros.
-2. **Falta la política de identidad.** `ZENTRIC.md` Dominio 1 describe roles
-   (`Buyer`, `Seller`, `LogisticsOperator`, `Admin`, `Supervisor`) pero **no define emisión
-   de tokens, caducidad, renovación ni revocación**.
-
-Ambos son decisiones de seguridad y de negocio, no técnicas: elegirlas por cuenta propia
-sería inventar política. Cuando el Owner las dicte, el punto de conexión ya está listo:
-`HeaderBuyerAccessor` pasa a leer el claim y el resto del sistema no cambia.
-
 ---
 
 ## 4. Catálogo Detallado de Endpoints por Bounded Context (Tags de Swagger)
 
+> **Autorización:** cada una de las 30 acciones de este catálogo declara una política de
+> `AuthorizationPolicies`. La tabla endpoint → política → roles está en
+> [02-authorization.md §3](02-authorization.md#3-matriz-por-endpoint-30-acciones) y es la que se
+> verifica por reflexión en `EndpointAuthorizationMatrixTests`; este catálogo se ocupa del contrato,
+> no del permiso.
+
+### 3.0. Tag: `0. Autenticacion` (`/api/auth`)
+| Método | Endpoint | Tipo CQRS | Entrada / Payload | Respuestas | Descripción de Negocio e Invariantes |
+|---|---|:---:|---|---|---|
+| `POST` | `/api/auth/login` | Command | `LoginCommand` (Body: `email`, `password`) — **anónimo** | `200 OK (AuthTokenResponse)`<br>`400 Bad Request (ProblemDetails)`<br>`401 Unauthorized (ProblemDetails)` | Autentica con correo y contraseña (RG-01, [ADR-0009](../Adr/0009-autenticacion-jwt-rg01.md)). El hash se compara en el servidor contra `PBKDF2-HMAC-SHA256`. Un correo inexistente, una contraseña incorrecta y un usuario bloqueado o eliminado responden **el mismo `401`**: distinguirlos permitiría enumerar cuentas registradas. Devuelve token JWT (60 min, `IClock`), su caducidad y la identidad. |
+| `GET` | `/api/auth/me` | Query | token en cabecera | `200 OK (CurrentUserResponse)`<br>`401 Unauthorized (ProblemDetails)` | Devuelve la identidad que **declara el token ya validado** (`userId`, `email`, `fullName`, `role`); no consulta la base. Permite al cliente revalidar la sesión al arrancar sin guardar la identidad en otro sitio. |
+
 ### 3.1. Tag: `1. Usuarios y Roles` (`/api/users`)
 | Método | Endpoint | Tipo CQRS | Entrada / Payload | Respuestas | Descripción de Negocio e Invariantes |
 |---|---|:---:|---|---|---|
-| `POST` | `/api/users` | Command | `CreateUserCommand` (Body) | `200 OK (Guid)`<br>`400 Bad Request (ProblemDetails)` | Registra un nuevo usuario en el sistema. Valida unicidad de `Email` e `IdentityDocument` de forma asíncrona. Asigna roles válidos: `Buyer`, `Seller`, `Administrator`, `LogisticsOperator`, `Supervisor`. |
+| `POST` | `/api/users` | Command | `CreateUserCommand` (Body) — **anónimo solo si `role = "Buyer"`** | `200 OK (Guid)`<br>`400 Bad Request (ProblemDetails)`<br>`403 Forbidden (ProblemDetails)` | Registra un nuevo usuario en el sistema. Valida unicidad de `Email` e `IdentityDocument` de forma asíncrona. Asigna roles válidos: `Buyer`, `Seller`, `Administrator`, `LogisticsOperator`, `Supervisor` (en el cuerpo JSON el rol viaja como **nombre**, ver [3.3](#33-los-enum-del-contrato-viajan-como-nombre-en-el-cuerpo-json-q-22-cerrada-adr-0012)). La contraseña viaja en claro y **el servidor calcula el hash**: el cliente nunca envía `PasswordHash`. Cualquier rol distinto de `Buyer` sin token de Administrador responde `403` (ZENTRIC.md Dominio 3: los vendedores no se auto-registran). |
 | `GET` | `/api/users` | Query | `role` (Query param opcional) | `200 OK (List<UserDto>)` | Lista todos los usuarios registrados, permitiendo filtrar por rol (ej. `?role=Seller` o `?role=Buyer`). |
 | `GET` | `/api/users/{id}` | Query | `id` (Path) | `200 OK (UserDto)`<br>`404 Not Found (ProblemDetails)` | Obtiene el detalle técnico y estado de un usuario por su ID. |
 
@@ -158,13 +225,17 @@ sería inventar política. Cuando el Owner las dicte, el punto de conexión ya e
 ---
 
 ### 3.5. Tag: `5. Carrito y Órdenes` (`/api/orders`)
+> **Propiedad del recurso (Q-21b, `ADR-0013`):** las filas marcadas con ⚠️ cambian de contrato o
+> de comportamiento con el dictamen del 2026-09-29. El detalle por rol está en
+> [02-authorization.md §5](02-authorization.md#5-propiedad-del-recurso-confirmado-q-21b-2026-09-29-adr-0013).
+
 | Método | Endpoint | Tipo CQRS | Entrada / Payload | Respuestas | Descripción de Negocio e Invariantes |
 |---|---|:---:|---|---|---|
-| `POST` | `/api/orders/cart` | Command | `CreateCartCommand` (Body) | `200 OK (Guid)`<br>`400 Bad Request (ProblemDetails)` | Inicializa una orden de compra en estado inicial `Cart` vinculada a un comprador (`BuyerId`). |
-| `POST` | `/api/orders/cart/items` | Command | `AddOrderItemCommand` (Body) | `200 OK`<br>`400 Bad Request (ProblemDetails)` | Añade un producto al carrito verificando previamente existencias suficientes en el inventario disponible. |
-| `POST` | `/api/orders/{orderId}/checkout` | Command | `orderId` (Path) | `200 OK`<br>`400 Bad Request (ProblemDetails)` | Cierra el carrito, reserva el stock en bodega, inicia el temporizador de expiración de 15 minutos y genera paquetes (`FulfillmentOrders`) agrupados por `VendorId`. |
-| `POST` | `/api/orders/{orderId}/pay` | Command | `orderId` (Path) | `200 OK`<br>`400 Bad Request (ProblemDetails)` | Confirma la transacción económica exitosa, pasando el pedido a `Paid` y consolidando la reserva para despacho físico. |
-| `GET` | `/api/orders/{id}` | Query | `id` (Path) | `200 OK (OrderDto)`<br>`404 Not Found (ProblemDetails)` | Consulta el estado del pedido (`Cart`, `PendingPayment`, `Paid`), total cancelado e ítems individuales. |
+| `POST` | `/api/orders/cart` | Command | **Sin cuerpo** ⚠️ | `200 OK (Guid)`<br>`401 Unauthorized` | Inicializa una orden en estado `Cart` del **comprador del token**. Ya no acepta `buyerId`: un carrito a nombre de otro es imposible por contrato |
+| `POST` | `/api/orders/cart/items` | Command | `AddOrderItemCommand` (Body) — el `BuyerId` del cuerpo se descarta ⚠️ | `200 OK`<br>`400 Bad Request`<br>`401 Unauthorized` | Añade un producto al carrito verificando existencias. El carrito debe ser del llamante: si no, `400` con "Order not found." |
+| `POST` | `/api/orders/{orderId}/checkout` | Command | `orderId` (Path) | `200 OK`<br>`400 Bad Request`<br>`401 Unauthorized` | Cierra el carrito, reserva el stock, activa la ventana de 15 minutos y genera despachos agrupados por `VendorId`. Solo sobre un pedido propio ⚠️ |
+| `POST` | `/api/orders/{orderId}/pay` | Command | `orderId` (Path) | `200 OK`<br>`400 Bad Request`<br>`401 Unauthorized` | Cobra y consolida la reserva, pasando el pedido a `Paid`. Solo sobre un pedido propio ⚠️ |
+| `GET` | `/api/orders/{id}` | Query | `id` (Path) | `200 OK (OrderDto \| SellerOrderViewDto)` ⚠️<br>`401 Unauthorized`<br>`404 Not Found` | La **forma depende del rol**: el Vendedor recibe la vista filtrada (sus líneas y su subtotal, sin `buyerId` ni total completo); los demás, el pedido completo. Un pedido ajeno responde `404` como uno inexistente |
 
 ---
 
@@ -173,7 +244,7 @@ sería inventar política. Cuando el Owner las dicte, el punto de conexión ya e
 |---|---|:---:|---|---|---|
 | `POST` | `/api/logistics/fulfillment` | Command | `CreateFulfillmentOrderCommand` (Body) | `200 OK (Guid)`<br>`400 Bad Request (ProblemDetails)` | Crea una orden de preparación y empaque para los ítems pertenecientes a un vendedor y bodega específica. |
 | `POST` | `/api/logistics/fulfillment/{id}/dispatch` | Command | `id` (Path) | `200 OK`<br>`400 Bad Request (ProblemDetails)` | Marca el paquete como `Dispatched` y descuenta formalmente el stock reservado de la bodega. |
-| `POST` | `/api/logistics/fulfillment/cancel-ghost-stock` | Command | `CancelFulfillmentOrderDueToNoStockCommand` (Body) | `200 OK (Guid)`<br>`400 Bad Request (ProblemDetails)` | Reporta faltante físico en bodega (stock fantasma), cancela la orden de fulfillment y libera la reserva de existencias. |
+| `POST` | `/api/logistics/fulfillment/cancel-ghost-stock` | Command | `CancelFulfillmentOrderDueToNoStockCommand` (Body) | `200 OK (Guid)`<br>`400 Bad Request (ProblemDetails)` | Reporta faltante físico en bodega (stock fantasma), cancela la orden de fulfillment, libera la reserva de existencias y **origina la devolución obligatoria** con crédito al comprador. Ejecutable por el Vendedor y por el Operador Logístico ([Q-21c](Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md)), porque es quien está en la bodega. |
 | `GET` | `/api/logistics/fulfillment/{id}` | Query | `id` (Path) | `200 OK (FulfillmentOrderDto)`<br>`404 Not Found (ProblemDetails)` | Consulta el estado del despacho logístico, paquetes y números de guía (`TrackingNumber`). |
 
 ---
@@ -191,7 +262,7 @@ sería inventar política. Cuando el Owner las dicte, el punto de conexión ya e
 ### 3.8. Tag: `8. Facturación y Liquidación` (`/api/billing`)
 | Método | Endpoint | Tipo CQRS | Entrada / Payload | Respuestas | Descripción de Negocio e Invariantes |
 |---|---|:---:|---|---|---|
-| `POST` | `/api/billing/invoices/generate/{orderId}` | Command | `orderId` (Path) | `200 OK (bool)`<br>`400 Bad Request (ProblemDetails)` | Emite la Factura Maestra consolidada para el comprador, el detalle de comisión tecnológica para Zentric (`ZentricDetail`) y las facturas split para cada vendedor. |
+| `POST` | `/api/billing/invoices/generate/{orderId}` | Command | `orderId` (Path) | `200 OK (bool)`<br>`400 Bad Request (ProblemDetails)` | Emite la Factura Maestra consolidada para el comprador, el detalle de comisión tecnológica para Zentric (`ZentricDetail`) y las facturas split para cada vendedor. **Solo el Administrador** ([Q-21d](Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md)). Rechaza con `400` si el pedido no está pagado o si ya fue facturado: un segundo clic no puede duplicar la facturación. |
 | `GET` | `/api/billing/invoices/order/{orderId}` | Query | `orderId` (Path) | `200 OK (List<InvoiceDto>)` | Consulta todas las facturas emitidas asociadas a un pedido pagado. |
 
 ---
