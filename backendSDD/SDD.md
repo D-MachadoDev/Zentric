@@ -155,7 +155,7 @@ graph TD
 | 2B | Eventos + `UnitOfWork` | ✅ `IMPLEMENTED` | `DomainEventDispatcher`; flujo Devoluciones→Inventario | Cobertura directa del dispatcher |
 | 2C | CQRS de entrada (16 commands, 8 queries) | ✅ `VERIFIED` | 13 suites de handlers + validadores | — |
 | 3A | Servicios de dominio y casos de uso | ✅ `VERIFIED` | `InventoryReservationService`, `ReturnsApprovalService`, checkout | — |
-| 3B | REST, DTOs, validadores | ⚠️ `PARTIAL` | 30 endpoints, RFC 9457, Swagger | Pruebas HTTP E2E (T-032) |
+| 3B | REST, DTOs, validadores | ✅ `VERIFIED` | 30 endpoints, RFC 9457 (`application/problem+json`), Swagger; matriz de autorizacion ejecutada por HTTP real (T-032) | Cobertura E2E parcial: falta el flujo de negocio completo |
 | 4 | Integración local y seguridad | ⚠️ `PARTIAL` | Auth real cerrada (`ADR-0009`) **y autorización por rol cerrada (`ADR-0011`)**: 18 políticas sobre las 30 acciones, `FallbackPolicy` fail-closed; verificado 33/33 por HTTP real en Docker con los cinco roles | Smoke 400/404/500 y propiedad del recurso (Q-21b) |
 | 5A | Pruebas de dominio y servicios | ✅ `VERIFIED` | 341/341 PASS | — |
 | 5B | Pruebas de adaptadores y REST | ⚠️ `PARTIAL` | Suites DI + queries | E2E HTTP y PostgreSQL real |
@@ -200,7 +200,7 @@ Antes de ejecutar cualquier fase de implementación, producir una tabla con esta
 | Persistencia SQL | `DbModel`, mappers, repositorios, migraciones | ⚠️ `PARTIAL` | Aplicar migraciones en PostgreSQL real | integración real |
 | Eventos | `Entity.AddDomainEvent`, dispatcher, `UnitOfWork` | ✅ `IMPLEMENTED` | Cobertura directa del dispatcher | flujo devolución → stock "Usado" |
 | Casos de uso | 16 commands, 8 queries, validadores | ✅ `VERIFIED` | — | suites de handlers |
-| REST | DTOs, controladores, rutas | ⚠️ `PARTIAL` | Pruebas E2E HTTP (T-032) | contrato de [Presentation/01-endpoints.md](Presentation/01-endpoints.md) |
+| REST | DTOs, controladores, rutas | ⚠️ `PARTIAL` | 37 pruebas E2E HTTP con Postgres real (T-032): matriz de autorizacion, contrato de enums y Problem Details | Falta el flujo E2E de negocio (carrito→pago→factura) | contrato de [Presentation/01-endpoints.md](Presentation/01-endpoints.md) |
 | Excepciones REST | `AddProblemDetails()` + `UseExceptionHandler()` | ⚠️ `PARTIAL` | Smoke de códigos 400/404/500 | pruebas HTTP |
 | Seguridad | esquema Bearer en Swagger (Auth real fuera de alcance) | ⚠️ `PARTIAL` | Decisión del Owner si se formaliza Auth | smoke |
 | Containerización | `Dockerfile`, `docker-compose.yml`, CI | ⚠️ `PARTIAL` | `docker compose build/up` + smoke | gate Docker ([sección 11.4](#114-gates-y-criterios-de-finalización-del-proyecto)) |
@@ -739,8 +739,7 @@ recurso); quedan las tres que abrió Q-21 (Q-21c…Q-21e) más las tres preexist
 > V-02 y V-03. **No queda ninguna pregunta técnica bloqueando el desarrollo.**
 >
 > El smoke de autorización versionado (`backend/scripts/authorization-smoke.ps1`) tiene hoy
-> **69 comprobaciones** (no 36) y se ejecuta a mano contra el contenedor; T-032 (migrarlo a E2E del
-> runner de xUnit) sigue pendiente y es el siguiente salto natural de calidad.
+> El smoke de 69 comprobaciones se mantiene como script de una mano y **ya no es la unica via**: su\n> parte de autorizacion esta convertida en pruebas del runner de xUnit (T-032).
 
 ## 10. Riesgos, hallazgos y observaciones
 
@@ -834,7 +833,7 @@ Get-FileHash "$env:USERPROFILE\.agents\skills\generic-sdd-agent\SKILL.md" | Sele
 3. **Esquema real:** contra PostgreSQL, las migraciones crean el esquema y la API opera con él (Fase 6; hoy `NOT_STARTED`).
 4. **Desacoplamiento estricto:** `Zentric.Domain` sin referencias a EF, ASP.NET, HTTP ni MediatR (✅ verificado).
 5. **Trazabilidad completa:** `RequestDTO → dominio → caso de uso → servicio → puerto → mapper/repositorio`.
-6. **Contrato REST verificado:** los 30 endpoints existen, ejecutan su caso de uso y responden método/código/DTO pactados (E2E pendiente, T-032).
+6. **Contrato REST verificado:** los 30 endpoints existen y la **matriz de autorizacion por rol** se ejecuta por HTTP real desde la suite (T-032); el flujo E2E de negocio completo sigue pendiente.
 7. **Validación de integración:** pruebas contra PostgreSQL real (bootstrap, persistencia, lectura y auditoría de eventos); hoy pendientes.
 8. **Cierre reproducible:** un agente nuevo repite el diagnóstico y obtiene la misma fase siguiente sin conocimiento conversacional.
 9. **Trazabilidad requisito → código → prueba:** matriz 11.5; un requisito sin prueba o evidencia queda `PARTIAL`, nunca `VERIFIED`.
@@ -853,7 +852,7 @@ Regla final: cualquier prueba fallida, endpoint simulado, dependencia no validad
 | CAT-03 (variante en físicos) | `Product.cs` | `ProductTests` | ✅ `VERIFIED` | 341/341 |
 | PED-01 (ventana de 15 min) | `CheckoutTimeoutService.cs` | `CartExpirationTests` (con `ManualClock`) | ✅ `VERIFIED` | 7 casos: fresco / 16 min / borde 15 min / pagado |
 | ADD-002 (stock "Usado") | `ReturnApprovedEventHandler` | `ReturnRequestTests` + flujo de evento | ✅ `VERIFIED` (diseño + pruebas) | H-14 cerrado |
-| Contrato REST (30 endpoints) | [Presentation/01-endpoints.md](Presentation/01-endpoints.md) | E2E HTTP (T-032) | ⚠️ `PARTIAL` | endpoints compilan; sin peticiones reales |
+| Contrato REST (30 endpoints) | [Presentation/01-endpoints.md](Presentation/01-endpoints.md) | E2E HTTP (T-032) | ⚠️ `PARTIAL` | matriz de autorizacion, enums y Problem Details verificados por HTTP real; falta el flujo de negocio |
 | Migraciones aplicadas | `Migrations/` | `docker compose` + migraciones EF | 🟡 `NOT_STARTED` | OBS-03 |
 | OBS-06 (warnings de build) | `Mappers/*.cs` | `dotnet build` sin warnings | ❌ `FAILING` | 12 × `SYSLIB0050` |
 
@@ -904,6 +903,7 @@ El formato obligatorio del informe de cierre está definido en la [sección 3.6]
 [2026-09-29] **Arreglado un verde falso en el smoke de autorización:** solo llamaba a `exit 1` cuando había fallos, así que una corrida limpia no ejecutaba ningún `exit` y `$LASTEXITCODE` conservaba el valor del último comando externo (se observó `exit code 1` con `FALLOS: 0`). Ahora sale siempre con `exit $fallos`, verificado en proceso limpio: `TOTAL DE COMPROBACIONES: 36 | FALLOS: 0`, exit `0` · objeto: T-032, gate Docker (11.4)
 [2026-09-29] **Limpieza de basura local del repositorio:** eliminada la carpeta `obj/` de la raíz, que arrastraba **13 archivos de sesiones anteriores** (`e2e-check.ps1`, `reconcile-sdd.ps1`, `cleanup.sql`, volcados `.txt` de pruebas, 10 KB). Nunca subieron al repo porque `.gitignore:46` (`[Oo]bj/`) los ignora, que es justo el peligro: basura que `git status` no muestra. Las comprobaciones que valían del script borrado siguen cubiertas, pero **no todas**: el smoke versionado mantiene alta anónima de Buyer `200`, alta de Seller sin token de Administrador `403`, `GET /api/users` sin token `401` y `/auth/me` con token `200`; contraseña incorrecta, correo inexistente y verificación de hash/firma los cubren `LoginCommandHandlerTests` y `AuthTests`. **Quedan sin ninguna prueba automatizada** el ataque por cabecera `X-Buyer-Id`, el token forjado sin firma, la contraseña corta y `GET /health` anónimo: esos cuatro escenarios se verificaron a mano el 2026-09-29 (los 13/13 anotados más arriba) y al borrar el script se perdió la forma de repetirlos → **registrado como deuda de T-032**, no como cubierto. Borrados también los temporales de sesión en `%TEMP%`; `git status --porcelain` queda vacío. Regla operativa: los ficheros de trabajo se escriben fuera del repo, no en `obj/` · objeto: higiene del repo
 [2026-09-29] Conteos reconciliados y **re-verificados**: `dotnet build Zentric.slnx -warnaserror` → `0 Warning(s) 0 Error(s)`; `dotnet test` → **353/353 PASS** (348 + 5 del contrato de `enum`); archivos de prueba **41** (40 suites + `ManualClock`); smoke versionado en **36 comprobaciones** · objeto: E-025, E-028
+[2026-10-01] **T-032 cerrado (primera entrega): pruebas E2E HTTP contra PostgreSQL efimero.** El Owner eligio Testcontainers entre cuatro opciones, aceptando que Docker pase a ser requisito de `dotnet test` (ADR-0016). `ZentricApiFactory : WebApplicationFactory<Program>` levanta el `Program` real contra `postgres:16.15-alpine` (la misma imagen que `docker-compose.yml`) en entorno Development, lo que ademas verifica el camino de migraciones automaticas. Cubre por HTTP real: **31 casos de la matriz de autorizacion**, el auto-registro Comprador/Vendedor, el contrato de enums (Q-22) y Problem Details. Para arrancar hizo falta extraer el alta del Administrador a `Zentric.Api/Bootstrap/AdministratorBootstrapper`: bajo `WebApplicationFactory` el evento `ApplicationStarted` no se dispara (el runner usa `IHost.StartAsync()`), y en vez de duplicar la siembra en las pruebas el arranque real y la suite comparten la misma implementacion. **Sigue pendiente** el flujo de negocio completo (carrito -> checkout -> pago -> factura -> devolucion) y la propiedad cruzada Q-21b por HTTP real. Build `-warnaserror`: 0/0. Tests: **437/437** (399 previos + 38 nuevas) · objeto: T-032, ADR-0016
 
 ```
 

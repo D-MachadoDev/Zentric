@@ -1,6 +1,5 @@
 using Zentric.Application.Common.Messaging;
 using Microsoft.AspNetCore.Mvc;
-using Zentric.Application.Common.Models;
 
 namespace Zentric.Api.Controllers
 {
@@ -11,34 +10,11 @@ namespace Zentric.Api.Controllers
         private IMediator? _mediator;
         protected IMediator Mediator => _mediator ??= HttpContext.RequestServices.GetRequiredService<IMediator>();
 
-        protected IActionResult HandleResult(Result result)
-        {
-            if (result.IsSuccess)
-            {
-                return Ok();
-            }
-
-            return BadRequest(new ProblemDetails
-            {
-                Title = "A business rule was violated",
-                Detail = result.Error,
-                Status = StatusCodes.Status400BadRequest
-            });
-        }
-
-        protected IActionResult HandleResult<T>(Result<T> result)
-        {
-            if (result.IsSuccess)
-            {
-                return Ok(result.Value);
-            }
-
-            return BadRequest(new ProblemDetails
-            {
-                Title = "A business rule was violated",
-                Detail = result.Error,
-                Status = StatusCodes.Status400BadRequest
-            });
-        }
+        // No hay HandleResult aqui a proposito. Existio hasta el 2026-10-01 y era codigo muerto:
+        // ningun controlador lo usaba, los 27 fallos de la capa de presentacion pasan por
+        // ResultMapping.ToProblem(). Ademas estaba mal: leia result.IsSuccess pero ignoraba
+        // result.ErrorKind y devolvia siempre 400, asi que un NotFound que hubiera pasado por ahi
+        // habria respondido 400 en vez de 404, rompiendo el contrato de Q-21b. Se elimino para que
+        // no vuelva a temptar a quien lo use creyendo que es la via correcta.
     }
 }
