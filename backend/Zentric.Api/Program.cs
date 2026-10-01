@@ -18,7 +18,13 @@ var builder = WebApplication.CreateBuilder(args);
 // forma estricta, asi que un cuerpo con "role": 2 responde 400 en lugar de colarse como
 // Administrador. Las salidas ya devolvian nombres y la query ya los aceptaba; el cuerpo era lo
 // unico que hablaba en numeros. Todo el contrato vive en EnumJsonContract.
-builder.Services.AddControllers().AddZentricEnumContract();
+//
+// El contrato de error va aqui y no en ToProblem() porque 19 puntos de la capa de presentacion
+// construyen el error a mano: arreglar solo el mapa deja 18 sin corregir.
+builder.Services
+    .AddControllers()
+    .AddZentricEnumContract()
+    .AddProblemDetailsContract();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -272,58 +278,17 @@ app.MapGet("/health", async (Zentric.Infrastructure.Persistence.ZentricDbContext
 .AllowAnonymous()
 .WithName("Health");
 
-// Alta del primer Administrador.
-//
-// Sin esto el sistema no arranca de forma utilizable: el auto-registro anonimo
-// solo permite crear Compradores (ZENTRIC.md, Dominio 3), y un Comprador no
-// puede crear al Administrador. Es la unica via por la que un rol privilegiado
-// entra al sistema, y por eso exige configuracion explicita: si no se defines
-// Bootstrap__*, no se crea nadie.
-//
-// Solo actua cuando NO existe ningun usuario con rol Administrador, de modo
-// que un despliegue no duplica el administrador en cada reinicio.
+// Alta del primer Administrador. Solo actua cuando NO existe ningun usuario con rol
+// Administrador, de modo que un despliegue no duplica el administrador en cada reinicio.
+// La implementacion vive en AdministratorBootstrapper porque las pruebas E2E la ejecutan
+// de forma explicita: bajo WebApplicationFactory este evento no se dispara.
 app.Lifetime.ApplicationStarted.Register(() =>
-{
-    var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Zentric.Bootstrap");
-    var config = app.Configuration;
-
-    string email = config["Bootstrap:AdministratorEmail"] ?? string.Empty;
-    string password = config["Bootstrap:AdministratorPassword"] ?? string.Empty;
-
-    if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-    {
-        logger.LogWarning(
-            "No se creo el administrador inicial: faltan Bootstrap:AdministratorEmail o Bootstrap:AdministratorPassword. Solo podran registrarse Compradores.");
-        return;
-    }
-
-    using var scope = app.Services.CreateScope();
-    var users = scope.ServiceProvider.GetRequiredService<Zentric.Domain.Users.Ports.IUserRepository>();
-    var hasher = scope.ServiceProvider.GetRequiredService<Zentric.Domain.Users.Ports.IPasswordHasher>();
-    var unitOfWork = scope.ServiceProvider.GetRequiredService<Zentric.Application.Common.Ports.IUnitOfWork>();
-
-    var existing = users.GetAllAsync(Zentric.Domain.Users.Enums.UserRole.Administrator)
-        .GetAwaiter()
-        .GetResult();
-
-    if (existing.Count > 0)
-    {
-        logger.LogInformation("Ya existe un Administrador; no se crea otro.");
-        return;
-    }
-
-    var admin = new Zentric.Domain.Users.User(
-        config["Bootstrap:AdministratorIdentityDocument"] ?? "DOC-BOOTSTRAP-0001",
-        new Zentric.Domain.Users.ValueObjects.FullName(config["Bootstrap:AdministratorFullName"] ?? "Administrador Inicial"),
-        new Zentric.Domain.Users.ValueObjects.Email(email),
-        hasher.Hash(password),
-        Zentric.Domain.Users.Enums.UserRole.Administrator);
-
-    users.AddAsync(admin).GetAwaiter().GetResult();
-    unitOfWork.SaveChangesAsync().GetAwaiter().GetResult();
-
-    logger.LogWarning("Administrador inicial creado con el correo {Email}. Cambie la contrasena y retire Bootstrap__* de la configuracion.", email);
-});
+    Zentric.Api.Bootstrap.AdministratorBootstrapper.Run(app.Services, app.Configuration));
 
 app.MapControllers();
 app.Run();
+
+// T-032: WebApplicationFactory solo puede reutilizar este arranque si la clase Program es
+// visible desde fuera del ensamblado. No cambia el comportamiento: solo abre la puerta a las
+// pruebas E2E HTTP, que levantan la API real contra un PostgreSQL efimero (Testcontainers).
+public partial class Program { }
