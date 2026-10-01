@@ -55,6 +55,46 @@ namespace Zentric.Tests.E2E
         public string TokenOf(string actor) =>
             actor == "Anonymous" ? string.Empty : Get()[actor].Token;
 
+        /// <summary>
+        /// <summary>
+        /// Siembra los actores sin bloquear el hilo.
+        ///
+        /// Existe como camino ASINCRONO a proposito. La version sincrona hace
+        /// <c>GetAwaiter().GetResult()</c> sobre trabajo real de HTTP y de base de datos, y eso
+        /// bloquea un hilo del pool mientras espera. Con las 399 pruebas unitarias corriendo en
+        /// paralelo, el pool se agota, las peticiones HTTP no llegan a ejecutarse y la suite
+        /// completa se queda colgada. Se comprobo: la suite E2E sola pasaba en 20 s y la suite
+        /// entera se colgaba.
+        ///
+        /// Awaitar esto una vez al principio de cada prueba deja la siembra cacheada, y a partir de
+        /// ahi <see cref="ClientFor"/> ya no bloquea nada.
+        /// </summary>
+        public async Task EnsureSeededAsync()
+        {
+            if (_cached is not null)
+            {
+                return;
+            }
+
+            await _gate.WaitAsync().ConfigureAwait(false);
+
+            try
+            {
+                _cached ??= await SeedAsync().ConfigureAwait(false);
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+
+        /// <summary>Token del actor por correo. Lo usan los pasos del escenario, que ya conocen el correo del
+        /// que esta actuando y no el rol logico: "el comprador" y "este comprador" son cosas
+        /// distintas cuando hay dos compradores sembrados.
+        /// </summary>
+        public string TokenFor(string email) =>
+            Get().Values.First(actor => actor.Email == email).Token;
+
         /// <summary>Devuelve un <see cref="HttpClient"/> ya autenticado con el token del actor.</summary>
         public HttpClient ClientFor(string actor)
         {

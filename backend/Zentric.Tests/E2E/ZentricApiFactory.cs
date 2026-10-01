@@ -76,6 +76,15 @@ namespace Zentric.Tests.E2E
         /// </summary>
         public ApiActors Actors => _actors ??= new ApiActors(this);
 
+        private PaidOrderScenario? _paidOrder;
+
+        /// <summary>
+        /// Escenario de negocio completo (producto, stock, carrito, pago, facturas y devolucion).
+        /// Perezoso como los actores y por el mismo motivo: se siembra una sola vez para toda la
+        /// suite, y varias pruebas leen el mismo pedido pagado.
+        /// </summary>
+        public PaidOrderScenario PaidOrder => _paidOrder ??= new PaidOrderScenario(Actors);
+
         /// <inheritdoc />
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {

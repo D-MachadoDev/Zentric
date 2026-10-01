@@ -81,3 +81,34 @@ un Comprador, un segundo Comprador, dos Vendedores, Operador y Supervisor.
 opción. Si Docker no está accesible, el arnés falla **en el constructor**, con un mensaje explícito,
 y no dentro de una prueba concreta a medias: un fallo silencioso aquí volvería a ser el mismo
 verde falso que ya se corrigió una vez en el smoke.
+## Apendice: dos fallos de infraestructura encontrados al ejecutar esto
+
+Ninguno de los dos es un defecto del producto; los dos hacen que la suite parezca verde cuando
+no lo es, o que se quede colgada sin decir por que. Se dejan escritos porque vuelven.
+
+### 1. Bloqueo de hilos al sembrar (corregido)
+
+Sintoma: la suite E2E **sola** pasaba en 20 s, pero la suite **completa** se colgaba. Con 399
+pruebas unitarias en paralelo, el pool de hilos se agota.
+
+Causa: `PaidOrderScenario.Get()` y `ApiActors.Get()` hacian
+`SeedAsync().GetAwaiter().GetResult()`, es decir **async sobre sincrono**: ocupaban un hilo del
+pool mientras esperaban trabajo real de HTTP y PostgreSQL. Con suficiente carga, las peticiones
+nunca llegaban a ejecutarse y la corrida se quedaba esperando.
+
+Arreglo: `GetAsync()` y `EnsureSeededAsync()` son async de verdad, sin blocking. La siembra sigue
+siendo perezosa y unica, pero ya no sujeta un hilo mientras trabaja.
+
+### 2. Nodos de MSBuild reteniendo los DLL (corregido)
+
+Sintoma: `dotnet build` se quedaba parado en `Zentric.Api` sin llegar a `Zentric.Tests`.
+
+Causa: los servidores de MSBuild y Roslyn arrancan con `nodeReuse:true`, y **sobreviven al
+proceso que los lanzo**. Cuatro workers llevaban horas vivos reteniendo los DLL de salida; la
+compilacion siguiente esperaba un fichero que ya no podia escribir.
+
+Arreglo: `dotnet build-server shutdown` deja el entorno limpio, y la CI deja de depender de el:
+`dotnet build ... -nodeReuse:false` (en CI nunca se reutiliza un nodo), `timeout-minutes` y
+`--blame-hang-timeout` en las pruebas, y un paso `if: always()` que apaga los servidores.
+
+Leccion: un cuelgue de build no es un problema de codigo hasta que se mira quien lo bloquea.
