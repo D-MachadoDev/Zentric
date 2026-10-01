@@ -15,7 +15,9 @@ namespace Zentric.Domain.Inventories
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
         public DateTime? DeletedAt { get; private set; }
-        public bool IsDeleted => DeletedAt.HasValue; //?  Si yo no quiero vender(Zentric) mas iphones en la bodega tal softDeleted
+        // Soft delete: la fila sigue existiendo para el historico (pedidos que la
+        // consumieron), pero deja de contar como existencia disponible.
+        public bool IsDeleted => DeletedAt.HasValue;
 
         private Inventory()
         {
