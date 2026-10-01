@@ -15,7 +15,7 @@ namespace Zentric.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Tags("8. Facturación y Liquidación")]
-    [Produces("application/json", "application/problem+json")]
+    [Produces("application/json")]
     public class BillingController : ControllerBase
     {
         private readonly IMediator _mediator;

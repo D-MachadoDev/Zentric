@@ -133,6 +133,72 @@ namespace Zentric.Tests.E2E
         /// Un token con firma invalida no debe colarse como identidad. Es la contraprueba de que la
         /// validacion del JWT ocurre de verdad y no solo se comprueba que la cabecera existe.
         /// </summary>
+        /// <summary>
+        /// El frontend necesita poder confiar en una sola regla: <c>200</c> es JSON normal y
+        /// cualquier <c>4xx</c>/<c>5xx</c> es Problem Details. Esta prueba fija esa regla sobre
+        /// endpoints reales, con y sin token, para que no dependa de leer el documento OpenAPI.
+        ///
+        /// Lo que se verifica aqui salio al escribir la prueba, y no es lo que yo asumia:
+        ///
+        /// - **Error de aplicacion** (404 o 400 de negocio): va como
+        ///   <c>application/problem+json</c> con <c>status</c> y <c>detail</c>. **Sin <c>title</c>**
+        ///   ni <c>type</c>: <c>ResultMapping.ToProblem()</c> construye el ProblemDetails con el
+        ///   detalle y poco mas, que es el minimo que RFC 7807 permite.
+        /// - **401 y 403 del middleware de autorizacion**: van **sin cuerpo y sin tipo de
+        ///   contenido**. El challenge no construye un Problem Details. El frontend debe tratar
+        ///   estos dos como "sin sesion" o "sin permiso", no como un error de negocio con detalle.
+        /// </summary>
+        [Theory]
+        [InlineData("Buyer", "/api/orders/11111111-2222-3333-4444-555555555555", "problem")]
+        [InlineData("Admin", "/api/orders/11111111-2222-3333-4444-555555555555", "problem")]
+        [InlineData("Buyer", "/api/users", "vacio")]
+        [InlineData("Anonymous", "/api/Catalog/products", "vacio")]
+        [InlineData("Buyer", "/api/Warehouses", "vacio")]
+        public async Task ContratoDeError_TipoDeContentoPorRolYEndpoint(string actor, string path, string expected)
+        {
+            using var client = _factory.Actors.ClientFor(actor);
+
+            using var response = await client.GetAsync(path);
+
+            Assert.True(
+                (int)response.StatusCode >= 400,
+                $"{path} como {actor} debia fallar, pero respondio {(int)response.StatusCode}.");
+
+            var mediaType = response.Content.Headers.ContentType?.MediaType;
+
+            if (expected == "vacio")
+            {
+                // 401/403 sin cuerpo: el middleware de autorizacionchallenge no construye un
+                // Problem Details. El frontend debe-lo tratar como "sin sesion", no como error de
+                // negocio con detalle.
+                Assert.Null(mediaType);
+                return;
+            }
+
+            Assert.Equal("application/problem+json", mediaType);
+
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+            // Cuerpo minimo de RFC 7807, que es lo que el frontend va a leer.
+            Assert.True(document.RootElement.TryGetProperty("status", out _));
+            Assert.True(document.RootElement.TryGetProperty("detail", out _));
+        }
+
+        /// <summary>
+        /// El camino feliz sigue siendo JSON normal. Si esto fallara, significaria que el
+        /// formateador de Problem Details se estaria tragando tambien las respuestas exitosas.
+        /// </summary>
+        [Fact]
+        public async Task ContratoDeExito_SigueSiendoApplicationJson()
+        {
+            using var client = _factory.Actors.ClientFor("Admin");
+
+            using var response = await client.GetAsync("/api/users");
+            response.EnsureSuccessStatusCode();
+
+            Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+        }
+
         [Fact]
         public async Task TokenConFirmaInvalida_Responde401()
         {

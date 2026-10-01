@@ -14,7 +14,7 @@ namespace Zentric.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Tags("7. Devoluciones y Garantías")]
-    [Produces("application/json", "application/problem+json")]
+    [Produces("application/json")]
     public class ReturnsController : ControllerBase
     {
         private readonly IMediator _mediator;

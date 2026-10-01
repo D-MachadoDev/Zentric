@@ -16,7 +16,7 @@ namespace Zentric.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Tags("0. Autenticacion")]
-    [Produces("application/json", "application/problem+json")]
+    [Produces("application/json")]
     public class AuthController : ControllerBase
     {
         private readonly IMediator _mediator;

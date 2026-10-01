@@ -14,7 +14,8 @@ namespace Zentric.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Tags("6. Logística y Despacho")]
-    [Produces("application/json", "application/problem+json")]
+
+    [Produces("application/json")]
     public class LogisticsController : ControllerBase
     {
         private readonly IMediator _mediator;
