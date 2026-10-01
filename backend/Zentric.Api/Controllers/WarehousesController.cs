@@ -15,7 +15,7 @@ namespace Zentric.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Tags("2. Bodegas")]
-    [Produces("application/json", "application/problem+json")]
+    [Produces("application/json")]
     public class WarehousesController : ControllerBase
     {
         private readonly IMediator _mediator;

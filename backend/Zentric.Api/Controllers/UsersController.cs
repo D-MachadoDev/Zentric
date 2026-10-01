@@ -22,7 +22,7 @@ namespace Zentric.Api.Controllers
     // 5) no incluye datos personales. Cada usuario conserva su propia identidad por GET /auth/me.
     [Authorize(Policy = AuthorizationPolicies.UserAdministration)]
     [Tags("1. Usuarios y Roles")]
-    [Produces("application/json", "application/problem+json")]
+    [Produces("application/json")]
     public class UsersController : ControllerBase
     {
         private readonly IMediator _mediator;

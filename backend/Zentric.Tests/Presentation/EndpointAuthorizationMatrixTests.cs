@@ -76,7 +76,9 @@ namespace Zentric.Tests.Presentation
 
                 // 6. Logistica (ADDENDUM Dominio 8).
                 ["LogisticsController.CreateFulfillment"] = AuthorizationPolicies.FulfillmentOperate,
+                ["LogisticsController.PackFulfillment"] = AuthorizationPolicies.FulfillmentOperate,
                 ["LogisticsController.DispatchFulfillment"] = AuthorizationPolicies.FulfillmentOperate,
+                ["LogisticsController.DeliverFulfillment"] = AuthorizationPolicies.FulfillmentDeliver,
                 ["LogisticsController.CancelGhostStock"] = AuthorizationPolicies.FulfillmentCancelByQuiebre,
                 ["LogisticsController.GetFulfillmentById"] = AuthorizationPolicies.FulfillmentRead,
 
@@ -84,6 +86,8 @@ namespace Zentric.Tests.Presentation
                 ["ReturnsController.RequestReturn"] = AuthorizationPolicies.ReturnRequest,
                 ["ReturnsController.InspectReturn"] = AuthorizationPolicies.ReturnInspect,
                 ["ReturnsController.ApproveReturn"] = AuthorizationPolicies.ReturnApprove,
+                ["ReturnsController.RejectReturn"] = AuthorizationPolicies.ReturnApprove,
+                ["ReturnsController.RefundReturn"] = AuthorizationPolicies.ReturnRefund,
                 ["ReturnsController.GetReturnById"] = AuthorizationPolicies.ReturnRead,
 
                 // 8. Facturacion (ADDENDUM Dominio 9).

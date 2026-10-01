@@ -14,7 +14,8 @@ namespace Zentric.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Tags("6. Logística y Despacho")]
-    [Produces("application/json", "application/problem+json")]
+
+    [Produces("application/json")]
     public class LogisticsController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -80,6 +81,63 @@ namespace Zentric.Api.Controllers
         }
 
         /// <summary>
+        /// Marca la orden de fulfillment como empacada (PendingPack → Packed).
+        /// </summary>
+        /// <remarks>
+        /// ADDENDUM Dominio 8, estado 2: "Empacado: Listo para recolección". Sin este paso el ciclo
+        /// no avanzaba: <c>Dispatch()</c> exige estar Packed, de modo que un paquete creado
+        /// directamente en Pendiente de Empaque no podia despacharse por HTTP.
+        /// </remarks>
+        /// <param name="id">Identificador único de la orden de fulfillment a empacar.</param>
+        /// <response code="200">Orden de fulfillment marcada como empacada exitosamente.</response>
+        /// <response code="400">Error si la orden ya fue empacada, despachada o cancelada (RFC 7807 ProblemDetails).</response>
+        /// <response code="404">Orden de fulfillment inexistente o ajena al vendedor (RFC 7807 ProblemDetails).</response>
+        [HttpPost("fulfillment/{id}/pack")]
+        [Authorize(Policy = AuthorizationPolicies.FulfillmentOperate)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> PackFulfillment(Guid id)
+        {
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            // Q-21b: el Vendedor solo empaca los suyos; el Operador empaca cualquiera.
+            var result = await _mediator.Send(new PackFulfillmentCommand(id, userId.Value, role.Value));
+            if (result.IsFailure) return result.ToProblem();
+            return Ok();
+        }
+
+        /// <summary>
+        /// Confirma la entrega de la orden de fulfillment (Dispatched → Delivered).
+        /// </summary>
+        /// <remarks>
+        /// ADDENDUM Dominio 8, estado 4: "Entregado: Recibido por el comprador". Solo el Operador
+        /// Logistico puede ejecutarla (dictamen del Owner 2026-10-01); el Comprador y el Vendedor
+        /// la consultan pero no la cierran.
+        /// </remarks>
+        /// <param name="id">Identificador único de la orden de fulfillment entregada.</param>
+        /// <response code="200">Entrega confirmada exitosamente.</response>
+        /// <response code="400">Error si la orden no está despachada o ya fue entregada (RFC 7807 ProblemDetails).</response>
+        /// <response code="403">El rol del llamante no es Operador Logistico.</response>
+        [HttpPost("fulfillment/{id}/deliver")]
+        [Authorize(Policy = AuthorizationPolicies.FulfillmentDeliver)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> DeliverFulfillment(Guid id)
+        {
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var result = await _mediator.Send(new DeliverFulfillmentCommand(id, userId.Value, role.Value));
+            if (result.IsFailure) return result.ToProblem();
+            return Ok();
+        }
+
+        /// <summary>
         /// Cancela una orden de fulfillment debido a stock fantasma o faltante físico no hallado en bodega.
         /// </summary>
         /// <remarks>
@@ -99,8 +157,9 @@ namespace Zentric.Api.Controllers
             var role = User.GetUserRole();
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
-            // Q-21b: con la politica solo-Seller vigente, el despacho ajeno se
-            // trata como inexistente (Q-21c sigue abierta).
+            // Q-21b: el despacho ajeno se trata como inexistente. El Operador tambien puede
+            // reportar el faltante: Q-21c esta DICTADA (ADR-0014) y abre la politica
+            // al Operador, no solo al Vendedor.
             var result = await _mediator.Send(command with { CallerId = userId.Value, CallerRole = role.Value });
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
