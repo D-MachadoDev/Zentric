@@ -706,7 +706,7 @@ Estado actual: 🟡 `NOT_STARTED`. Cada paso deja evidencia en el registro ([sec
 |---|---|---|
 | **Q-06** | Documentación de `Domain/` consolidadas; se corrigieron contra el código los nombres de método que no existían (`Lock()`→`Block()`) | `backendSDD/Domain/01-domain-overview.md` ahora es índice |
 | **Q-17** | Resuelta como efecto de Q-16: la lista blanca rechaza `"USD"` y `"ABC"` aunque tengan 3 letras | `SupportedCurrencies.Normalize` + pruebas en `MoneyTests` |
-| **Q-19** | **BLOQUEADA, requiere acción manual.** El renombrado de carpeta a `Zentric` falla con `Cannot rename the item because it is in use`. No se ha cerrado | `Rename-Item` falló; hay procesos de VS Code con la carpeta abierta |
+| ~~**Q-19**~~ | ~~**BLOQUEADA, requiere acción manual.**~~ **✅ APARCADA por decisión del Owner (2026-09-30).** El renombrado de carpeta a `Zentric` falla con `Cannot rename the item because it is in use` porque el Owner tiene la carpeta abierta en muchos sitios. **No es una decisión técnica y no bloquea nada**: queda aplazado para el final del proyecto, cuando se cierre todo lo demás. El remoto ya es `github.com/D-MachadoDev/Zentric`, así que el nombre del repositorio remoto ya es el correcto | `Rename-Item` falló; hay procesos de VS Code con la carpeta abierta |
 
 **Dictadas por el Owner, implementadas y con parte pendiente (2026-09-27):**
 
@@ -727,15 +727,16 @@ recurso); quedan las tres que abrió Q-21 (Q-21c…Q-21e) más las tres preexist
 | **Q-21c** | ~~¿El Operador Logístico puede cancelar por quiebre de stock?~~ | ✅ **CERRADA 2026-09-29** — `ADR-0014`: puede, porque el ADDENDUM no nombra actor y el faltante lo detecta quien está en bodega |
 | **Q-21d** | ~~¿Quién emite las facturas?~~ | ✅ **CERRADA 2026-09-29** — `ADR-0014`: solo Administrador, porque el `ZentricDetail` es control de plataforma |
 | **Q-21e** | ~~`Supervisor` sin módulo en el frontend~~ | ✅ **CERRADA 2026-09-29** — `ADR-0014`: rol de solo lectura y auditoría, sin módulo propio |
-| **Q-19** | Renombrar la carpeta local a `Zentric` | Bloqueada por Windows: el editor mantiene la carpeta abierta. Acción manual del Owner |
+| ~~**Q-19**~~ | ~~Renombrar la carpeta local a `Zentric`~~ **✅ APARCADA por el Owner (2026-09-30) para el final del proyecto.** Acción manual, no técnica |
 | ~~**V-01**~~ | ~~`FulfillmentStatus` del código vs ADR-0006~~ | ✅ **RESUELTA** — el ADR-0006 ya adoptó los cinco estados del ADDENDUM (dictamen "que diga la Ley, no el ADR", 2026-09-27); Ley, ADR y código coinciden |
 | ~~**V-02**~~ | ~~Orden de reserva de `InventoryReservationService` vs ADR-0001~~ | ✅ **RESUELTA 2026-09-30** por dictamen del Owner: se retira la preferencia por bodega `Marketplace` y las tres fuentes quedan en "mayor stock, sin preferencia por tipo". Cero cambios de código |
 
-> **Estado real de este bloque tras la sesión del 2026-09-30:** de esta tabla solo queda abierta
-> **Q-19**, y no es una decisión técnica sino una acción manual del Owner (cerrar el editor para que
-> Windows libere la carpeta). Todo lo demás está cerrado: Q-20 (autenticación), Q-21 y sus cuatro
-> sub-preguntas (Q-21b…Q-21e), Q-22, V-01, V-02 y V-03. **Ya no hay ninguna pregunta técnica
-> bloqueando el desarrollo.**
+> **Estado real de este bloque tras la sesión del 2026-09-30:** la tabla **queda vacía de preguntas
+> abiertas**. La última, **Q-19** (renombrar la carpeta local a `Zentric`), el Owner la **aparcó
+> explícitamente para el final del proyecto** porque la tiene abierta en muchos sitios a la vez:
+> es una acción manual suya, no una decisión técnica, y nunca bloqueó el desarrollo. Todo lo demás
+> está cerrado: Q-20 (autenticación), Q-21 y sus cuatro sub-preguntas (Q-21b…Q-21e), Q-22, V-01,
+> V-02 y V-03. **No queda ninguna pregunta técnica bloqueando el desarrollo.**
 >
 > El smoke de autorización versionado (`backend/scripts/authorization-smoke.ps1`) tiene hoy
 > **69 comprobaciones** (no 36) y se ejecuta a mano contra el contenedor; T-032 (migrarlo a E2E del
