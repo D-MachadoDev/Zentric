@@ -76,7 +76,9 @@ namespace Zentric.Tests.Presentation
 
                 // 6. Logistica (ADDENDUM Dominio 8).
                 ["LogisticsController.CreateFulfillment"] = AuthorizationPolicies.FulfillmentOperate,
+                ["LogisticsController.PackFulfillment"] = AuthorizationPolicies.FulfillmentOperate,
                 ["LogisticsController.DispatchFulfillment"] = AuthorizationPolicies.FulfillmentOperate,
+                ["LogisticsController.DeliverFulfillment"] = AuthorizationPolicies.FulfillmentDeliver,
                 ["LogisticsController.CancelGhostStock"] = AuthorizationPolicies.FulfillmentCancelByQuiebre,
                 ["LogisticsController.GetFulfillmentById"] = AuthorizationPolicies.FulfillmentRead,
 

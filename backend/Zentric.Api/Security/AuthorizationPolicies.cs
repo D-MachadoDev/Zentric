@@ -123,6 +123,24 @@ namespace Zentric.Api.Security
         public const string FulfillmentOperate = "Zentric.FulfillmentOperate";
 
         /// <summary>
+        /// Confirmacion de la entrega (<c>Dispatched → Delivered</c>).
+        ///
+        /// [DICTADO Q-23, Owner 2026-10-01] Solo el Operador Logistico.
+        ///
+        /// El ADDENDUM Dominio 8 estado 4 define el estado ("Entregado: Recibido por el
+        /// comprador") pero no dice quien lo marca, asi que es una pregunta y no una traduccion.
+        /// Se decide el Operador porque el cierre de la entrega es, igual que el despacho, trabajo
+        /// fisico de bodega: es quien ve salir la transportadora. El Comprador queda como solo
+        /// lectura, coherente con que sea el rol mas restringido del sistema (unico con
+        /// auto-registro anonimo). El Vendedor queda excluido a proposito: no debe poder cerrar la
+        /// entrega de su propio paquete, porque eso lo deja certificando su propio servicio.
+        ///
+        /// Deliberadamente MAS ESTRECHA que <see cref="FulfillmentOperate"/>: puede empacar y
+        /// despachar su paquete, pero no confirmarlo recibido.
+        /// </summary>
+        public const string FulfillmentDeliver = "Zentric.FulfillmentDeliver";
+
+        /// <summary>
         /// Cancelacion por quiebre de stock fantasma.
         ///
         /// [CONFIRMADO] ADDENDUM Dominio 8 estado 5: "Cancelado por Quiebre: cancelacion
@@ -268,6 +286,12 @@ namespace Zentric.Api.Security
                     },
 
                     [FulfillmentOperate] = new[] { Role(UserRole.Seller), Role(UserRole.LogisticsOperator) },
+
+                    // Cierre de la entrega (ADDENDUM Dominio 8, estado 4). Deliberadamente mas
+                    // estrecha que FulfillmentOperate: solo el Operador confirma la entrega
+                    // (dictamen del Owner 2026-10-01). El Vendedor puede empacar y despachar su
+                    // paquete, pero no cerrar su propia entrega.
+                    [FulfillmentDeliver] = new[] { Role(UserRole.LogisticsOperator) },
 
                     [FulfillmentCancelByQuiebre] = new[] { Role(UserRole.Seller), Role(UserRole.LogisticsOperator) },
 
