@@ -644,11 +644,11 @@ Estado actual: 🟡 `NOT_STARTED`. Cada paso deja evidencia en el registro ([sec
 
 | ID | Dominio afectado | Regla dictada (resumen) | Cumplimiento en código |
 |---|---|---|---|
-| ADD-001 | Dom. 8 — Logística | Estados Empacado/Despachado; **Stock Fantasma** → cancelación con devolución obligatoria | ✅ `FulfillmentStatus` + `CancelDueToNoStock` + `ReconcileGhostStock` (verificación V-01, [sección 9.2](#92-verificaciones-de-consistencia-pendientes)) |
+| ADD-001 | Dom. 8 — Logística | Ciclo de cinco estados: `PendingPack → Packed → Dispatched → Delivered`, más `Cancelled`; **Stock Fantasma** → cancelación con devolución obligatoria. El resumen anterior decía solo "Empacado/Despachado", lo que contradecía el ADDENDUM y quedó corregido al cerrar V-01 | ✅ `FulfillmentStatus` (5 estados, nace en `PendingPack`) + `CancelDueToNoStock` + `ReconcileGhostStock` (verificación V-01, [sección 9.2](#92-verificaciones-de-consistencia-pendientes)) |
 | ADD-002 | Dom. 9 — Devoluciones | Prohibida la devolución de digitales; flujo físico inspección → aprobación del Vendedor → vuelta al stock con etiqueta "Usado" | ✅ `ReturnRequest` + `ReturnApprovedEvent` → `ReturnToUsedStock` (H-14 cerrado) |
 | ADD-003 | Dom. 10 — Facturación | Factura Maestra, Detalle Zentric y Factura de Vendedor (Split) | ✅ `InvoiceType` = `Master`, `ZentricDetail`, `VendorDetail` |
 
-🟡 **BLOQUEADO POR EL OWNER (no es deuda técnica)** **C-10:** el bloque base de `DOMINIO 8/9/10` no lleva el rótulo `[ADDENDUM - DICTADO POR OWNER]` que exige [AGENTS.md, sección 0.7](../AGENTS.md#07-inmutabilidad-de-los-documentos-biblia-y-registro-de-cambios). **La Biblia es intocable: solo el Owner puede autorizar añadir el rótulo**, y el agente no puede editar `ZENTRIC.md`. Mientras no se autorice, **no bloquea el desarrollo**: la precedencia del ADDENDUM ya está resuelta y documentada en [ADR-0006](Adr/0006-resolucion-contradiccion-ley-addendum.md), y la trazabilidad de lo dictado por el Owner vive en el `SDD.md` y en los ADR.
+✅ **RESUELTO — el rótulo ya está en la Biblia.** C-10 pedía autorización para rotular el bloque base de `DOMINIO 8/9/10` y esa autorización es innecesaria: el Owner **añadió el rótulo él mismo** en el commit `c347924` (2026-09-19, autor `D-MachadoDev`, mensaje *"agregar addendum unificado de dominios 8, 9 y 10 dictado por el owner"*), donde la línea `# [ADDENDUM - DICTADO POR OWNER]` aparece como adición (`+`) del propio commit. Se cumple lo que exige [AGENTS.md, sección 0.7](../AGENTS.md#07-inmutabilidad-de-los-documentos-biblia-y-registro-de-cambios) y, además, la precedencia del ADDENDUM está resuelta en [ADR-0006](Adr/0006-resolucion-contradiccion-ley-addendum.md). Este párrafo estaba obsoleto: afirmaba que el rótulo no existía.
 
 ### 8.3 Trazabilidad de preguntas ya cerradas
 
@@ -696,7 +696,7 @@ Estado actual: 🟡 `NOT_STARTED`. Cada paso deja evidencia en el registro ([sec
 |---|---|---|
 | **V-01** | ~~**FulfillmentStatus del código vs ADR-0006**~~ **RESUELTA.** Ya no hay contradicción: el Owner dictaminó el 2026-09-27 que **manda la Ley, no el ADR** ("que diga la Ley, no el ADR"), y el ADR-0006 se corrigió para adoptar los cinco estados del ADDENDUM Dominio 8, señalando `FulfillmentStatus.cs` como fuente de verdad. Verificado contra la Ley y contra el código: `PendingPack → Packed → Dispatched → Delivered`, más `Cancelled` por quiebre; el despacho nace en `PendingPack`, cada transición exige la anterior, y `CancelDueToNoStock()` se rechaza tras `Dispatched`/`Delivered` (ya salió la mercancía) | `ZENTRIC.md` Dominio 8 vs `FulfillmentStatus.cs` vs [ADR-0006](Adr/0006-resolucion-contradiccion-ley-addendum.md) — los tres coinciden |
 | **V-02** | ~~**Orden de reserva de `InventoryReservationService` vs ADR-0001**~~ **RESUELTA por dictamen del Owner (2026-09-30): "el código está bien, se cambia la especificación".** La fila quedó obsoleta en su diagnóstico (decía que el servicio recorría las bodegas en el orden del repositorio; ya ordenaba por mayor stock). La contradicción que quedaba era otra: el invariante 2 exigía buscar **primero** en bodega `Marketplace`, y el código nunca lo hizo. **Se retira esa preferencia** y las tres fuentes quedan alineadas en "mayor stock, sin preferencia por tipo": [04-invariants-and-rules.md](Domain/04-invariants-and-rules.md) invariante 2, [ADR-0001](Adr/0001-reserva-fragmentacion-contingencia.md) punto 2 y el comentario del servicio. **Por qué no se implementó:** `Inventory` no transporta `WarehouseType`, y con `VendorId = User.Id` (Q-21b, P1) el dueño del stock es el dueño del producto, no el de la bodega: el tipo solo dice quién opera el almacén. Cero cambios de código | `InventoryReservationService.cs` vs [ADR-0001](Adr/0001-reserva-fragmentacion-contingencia.md) — los tres coinciden |
-| **V-03** | **C-10:** ¿se autoriza rotular el bloque base de `DOMINIO 8/9/10` como `[ADDENDUM - DICTADO POR OWNER]` para distinguir texto del cliente de la expansión? | `git diff` de [ZENTRIC.md](../ZENTRIC.md) |
+| **V-03** | ~~**C-10: ¿se autoriza rotular el bloque `DOMINIO 8/9/10`?**~~ **RESUELTA, sin necesidad de dictamen.** El rótulo `# [ADDENDUM - DICTADO POR OWNER]` **ya está** en `ZENTRIC.md` (línea 227, justo antes de `DOMINIO 8`), y lo añadió el propio Owner en el commit `c347924` del 2026-09-19, cuyo mensaje dice *"dictado por el owner"*. La fila decía que el rótulo no existía: era una afirmación obsoleta, no un bloqueo real. Se corrigió además el resumen de **ADD-001** en [sección 8.2](#82-adiciones-a-la-biblia-addendum---dictado-por-owner-en-zentricmd), que declaraba solo dos estados y contradecía el ciclo de cinco cerrado en V-01 | `git show c347924 -- ZENTRIC.md` → `+# [ADDENDUM - DICTADO POR OWNER]`; autor `D-MachadoDev` |
 
 ### 9.3 Estado de las preguntas y bloqueos
 
@@ -724,22 +724,22 @@ recurso); quedan las tres que abrió Q-21 (Q-21c…Q-21e) más las tres preexist
 | ID | Naturaleza | Por qué no se cierra leyendo el repo |
 |---|---|---|
 | ~~**Q-21b**~~ | ~~Propiedad del recurso en lecturas, listados y escrituras~~ | ✅ **CERRADA 2026-09-29** — `ADR-0013`, 399/399 pruebas y smoke 69/69 en Docker |
-| **Q-21c** | ¿El Operador Logístico puede cancelar por quiebre de stock? | El ADDENDUM no nombra actor; hoy la política es fail-closed (solo Vendedor) |
-| **Q-21d** | ¿Quién emite las facturas? | La Matriz §12 dice Admin, el documento de frontend dice Vendedor; hay que elegir uno |
-| **Q-21e** | `Supervisor` sin módulo en el frontend (el documento declara 4 roles, el enum tiene 5) | Alcance de producto, no del backend |
+| **Q-21c** | ~~¿El Operador Logístico puede cancelar por quiebre de stock?~~ | ✅ **CERRADA 2026-09-29** — `ADR-0014`: puede, porque el ADDENDUM no nombra actor y el faltante lo detecta quien está en bodega |
+| **Q-21d** | ~~¿Quién emite las facturas?~~ | ✅ **CERRADA 2026-09-29** — `ADR-0014`: solo Administrador, porque el `ZentricDetail` es control de plataforma |
+| **Q-21e** | ~~`Supervisor` sin módulo en el frontend~~ | ✅ **CERRADA 2026-09-29** — `ADR-0014`: rol de solo lectura y auditoría, sin módulo propio |
 | **Q-19** | Renombrar la carpeta local a `Zentric` | Bloqueada por Windows: el editor mantiene la carpeta abierta. Acción manual del Owner |
-| **V-01** | `FulfillmentStatus` del código vs ADR-0006 | Cambiar la máquina de estados es cambio de comportamiento |
-| **V-02** | Orden de reserva de `InventoryReservationService` vs ADR-0001 | El ADR exige bodega única primero; el código recorre en el orden del repositorio |
+| ~~**V-01**~~ | ~~`FulfillmentStatus` del código vs ADR-0006~~ | ✅ **RESUELTA** — el ADR-0006 ya adoptó los cinco estados del ADDENDUM (dictamen "que diga la Ley, no el ADR", 2026-09-27); Ley, ADR y código coinciden |
+| ~~**V-02**~~ | ~~Orden de reserva de `InventoryReservationService` vs ADR-0001~~ | ✅ **RESUELTA 2026-09-30** por dictamen del Owner: se retira la preferencia por bodega `Marketplace` y las tres fuentes quedan en "mayor stock, sin preferencia por tipo". Cero cambios de código |
 
-> **Siguiente paso recomendado (no vinculante):** dictamen sobre **Q-21b** (propiedad del recurso
-> en lecturas, listados y escrituras), que es lo único que hoy frena integración nueva: sin él el
-> frontend no puede exponer listados sin arriesgarse a enseñar datos ajenos. **Q-22 ya está dictada
-> y cerrada** ([ADR-0012](Adr/0012-contrato-json-de-los-enum-por-nombre.md)), así que el frontend ya
-> sabe que manda `"Seller"` y nunca `1`. Q-21c y Q-21d no bloquean código, pero mantienen dos
-> políticas `fail-closed` que pueden estar negando de más (el Operador recibe `403` al cancelar por
-> quiebre de stock). Alternativa técnica sin dictamen: migrar el smoke versionado
-> (`backend/scripts/authorization-smoke.ps1`, 36 comprobaciones) a pruebas E2E automatizadas del
-> runner de xUnit (T-032), que hoy se ejecuta a mano contra el contenedor.
+> **Estado real de este bloque tras la sesión del 2026-09-30:** de esta tabla solo queda abierta
+> **Q-19**, y no es una decisión técnica sino una acción manual del Owner (cerrar el editor para que
+> Windows libere la carpeta). Todo lo demás está cerrado: Q-20 (autenticación), Q-21 y sus cuatro
+> sub-preguntas (Q-21b…Q-21e), Q-22, V-01, V-02 y V-03. **Ya no hay ninguna pregunta técnica
+> bloqueando el desarrollo.**
+>
+> El smoke de autorización versionado (`backend/scripts/authorization-smoke.ps1`) tiene hoy
+> **69 comprobaciones** (no 36) y se ejecuta a mano contra el contenedor; T-032 (migrarlo a E2E del
+> runner de xUnit) sigue pendiente y es el siguiente salto natural de calidad.
 
 ## 10. Riesgos, hallazgos y observaciones
 
@@ -1057,7 +1057,7 @@ Siguiente paso: Fase 6 — reparación, Docker e integración real
 | Verificación | Estado |
 |---|---|
 | Cada requisito tiene implementación y evidencia; cada criterio de aceptación, una validación | ⚠️ E2E y PostgreSQL pendientes |
-| Los invariantes se preservan; la Biblia no fue alterada y toda adición está como ADDENDUM | ✔ (`git diff --numstat` = 38/1; ADD-001 a ADD-003) |
+| Los invariantes se preservan; la Biblia no fue alterada y toda adición está como ADDENDUM | ✔ (`git log --numstat -- ZENTRIC.md`: `c347924` = **28/1**, único commit que añade contenido; `266b25d` = 225/0 y solo la reubicó en la raíz) |
 | El mapa refleja el cambio; no quedan huérfanos; nada se duplicó | ✔ |
 | Se respetó la organización del código que el repo ya usa | ✔ Regla hexagonal verificada |
 | Errores coherentes y seguros; autorización en el límite correcto | ⚠️ Falta `type` URI en Problem Details ([sección 13.3](#133-problem-details-rfc-9457)) |
