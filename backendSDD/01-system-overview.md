@@ -6,9 +6,9 @@
 
 ## 1. Qué es Zentric
 
-Zentric es una plataforma digital centralizada que actúa como **intermediario comercial** entre compradores y vendedores. Administra la operación completa del marketplace: incorporación de vendedores, catálogo unificado, inventario distribuido en múltiples bodegas, carrito con reserva temporal de existencias, división automática de pedidos, facturación con comisiones, logística de despacho y posventa (devoluciones y reembolsos).
+Zentric es una plataforma digital centralizada que actúa como **intermediario comercial** entre compradores y vendedores. Administra la operación completa del marketplace: incorporación de vendedores, catálogo unificado, inventario distribuido en múltiples bodegas, carrito con reserva temporal de existencias, división automática de pedidos, facturación multi-documento con comisiones, logística de despacho y posventa (devoluciones y reembolsos).
 
-### Diagrama del Flujo de Negocio Extremo a Extremo
+### Diagrama del Flujo de Compra y Logística
 
 ```mermaid
 flowchart TD
@@ -33,8 +33,14 @@ flowchart TD
     Return -->|"Digital"| NoReturn["⛔ Devolución PROHIBIDA\n(Entrega inmediata irrevocable)"]
     Return -->|"Físico"| PhysicalReturn["🔄 Devolución Aprobada e Inspeccionada\n(Reingresa a bodega como mercancía 'Usada')"]
     
-    Order --> Invoice["📑 Facturación Centralizada:\n1. Factura Maestra al Comprador\n2. Detalle de Comisión a Zentric (5%)\n3. Detalle de Liquidación a cada Vendedor"]
+    Order --> Invoice["📑 Facturación Dividida (Split Financiero)"]
+    Invoice --> InvBuyer["Factura Maestra al Comprador\n(Solo ve el total de su compra)"]
+    Invoice --> InvZentric["Detalle Zentric (5% Comisión)\n(Control interno, oculta al comprador y vendedor)"]
+    Invoice --> InvVendor["Detalle de Liquidación al Vendedor\n(Solo ve lo que le corresponde a él)"]
 ```
+
+> **Regla de Confidencialidad en la Facturación:**
+> El Comprador **NUNCA** ve la comisión que adquiere Zentric ni cuánto se le transfiere a cada vendedor; el comprador solo recibe su **Factura Maestra** por el total de los productos adquiridos. La comisión de plataforma (5%) es un registro estrictamente interno de Zentric.
 
 ---
 
@@ -54,7 +60,18 @@ Según [ZENTRIC.md](../ZENTRIC.md), cada participante en el sistema desempeña *
 
 ## 3. Flujo Operativo del Negocio (Paso a Paso)
 
-El ciclo de vida de Zentric sigue 8 fases cronológicas estructuradas:
+El ciclo de negocio de Zentric sigue 8 fases cronológicas estructuradas:
+
+```mermaid
+flowchart LR
+    F1["1. Incorporación\n(Admin registra vendedor y bodega)"] --> F2["2. Catálogo\n(Vendedor define productos y variantes)"]
+    F2 --> F3["3. Inventario\n(Carga de existencias en bodega)"]
+    F3 --> F4["4. Publicación\n(Activación en catálogo público)"]
+    F4 --> F5["5. Compra\n(Carrito con reserva de 15 min)"]
+    F5 --> F6["6. Transacción\n(Pago y división de despachos)"]
+    F6 --> F7["7. Logística\n(Empaque y entrega física)"]
+    F7 --> F8["8. Cierre\n(Finalizado o devolución posventa)"]
+```
 
 1. **Incorporación:** El Administrador registra al vendedor en la plataforma y da de alta su primera bodega física (el vendedor no puede auto-registrarse de forma anónima).
 2. **Catálogo:** El vendedor registra sus productos y define sus variantes *(las distintas presentaciones físicas como talla, color o modelo específico del producto)*.
