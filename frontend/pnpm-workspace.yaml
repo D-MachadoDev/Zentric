@@ -1,0 +1,17 @@
+# Q10 (grill): monorepo Turborepo + pnpm workspaces.
+# Q16-A: la raiz del monorepo es frontend/, para conservar docker-compose.yml
+# (context: ./frontend), el Dockerfile y el job de CI existentes sin romperlos.
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# pnpm 12 bloquea por defecto las publicaciones demasiado recientes (ventana
+# anti-supply-chain). Estos paquetes se publicaron dentro de esa ventana y no
+# tienen version anterior que fijar, asi que se excluyen del filtro de
+# antiguedad. No relaja el pin: todos van fijados con version exacta.
+minimumReleaseAgeExclude:
+  - '@tanstack/history@1.162.5'
+  - '@tanstack/react-router@1.170.42'
+  - '@tanstack/router-core@1.171.35'
+  - lucide-react@1.55.0
+  - prettier@3.9.10

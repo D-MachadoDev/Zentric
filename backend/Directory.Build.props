@@ -1,0 +1,24 @@
+<Project>
+
+  <!--
+    Politica de compilacion comun a todos los proyectos de Zentric.
+
+    Antes vivia solo en la linea de comandos (dotnet build -warnaserror), asi que un
+    "dotnet build" normal en local NO fallaba con avisos mientras la CI si. Esa
+    discrepancia es la que se corrige aqui: ahora las dos rutas coinciden y no depende de
+    acordarse de un flag.
+
+    EnableNETAnalyzers queda en el nivel por defecto de NET 10.0 a proposito, y no en
+    latest-recommended: medido el 2026-09-30, latest-recommended produce 940 avisos, de los
+    cuales 850 son CA1707 (identificadores con guion bajo). Esa regla contradice la convencion
+    de nombres que el propio proyecto usa (_camelCase en campos privados, PendingPack en
+    estados), asi que activarla como error seria Istanbul de mas y no de mas calidad. Subir
+    el nivel es una decision aparte, con su propio trabajo de limpieza.
+  -->
+
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

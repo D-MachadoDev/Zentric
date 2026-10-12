@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    name: Backend (.NET)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+    - name: Restore dependencies
+      run: dotnet restore Zentric.slnx
+    - name: Build
+      # Advertencia: se convierte en error. El objetivo de la rama es 0 warnings.
+      # -nodeReuse:false apaga la reutilizacion de nodos de MSBuild: los nodos retienen los
+      # DLL de salida y una compilacion colgada deja el siguiente build esperando un
+      # fichero que ya no puede escribir. En CI es tiempo desperdiciado: nunca se reutiliza.
+      run: dotnet build Zentric.slnx --no-restore -warnaserror -nodeReuse:false
+    - name: Test
+      # timeout-minutes y --blame-hang-timeout convierte un cuelgue en un fallo rapido y con
+      # diagnostico, en lugar de una pipeline que se queda esperando hasta que GitHub la corta
+      # sin explicar nada. El limite es holgado (una corrida sana tarda ~20 s).
+      timeout-minutes: 10
+      run: >-
+        dotnet test Zentric.slnx --no-build --verbosity normal
+        --blame-hang-timeout 5m --blame-hang-dump-type none
+    - name: Apagar servidores de compilacion
+      # Los servidores de MSBuild y Roslyn quedan vivos entre pasos y pueden retener ficheros.
+      # Apagarlos deja el runner limpio para el siguiente job.
+      if: always()
+      run: dotnet build-server shutdown
+
+# -----------------------------------------------------------------------------
+# PAUSADO TEMPORALMENTE: Se reactivará al trabajar en la fase del frontend
+# -----------------------------------------------------------------------------
+#  frontend:
+#    name: Frontend (pnpm + turbo)
+#    runs-on: ubuntu-latest
+#    defaults:
+#      run:
+#        working-directory: frontend
+#    steps:
+#    - uses: actions/checkout@v4
+#    - uses: pnpm/action-setup@v4
+#    - uses: actions/setup-node@v4
+#      with:
+#        node-version: '24'
+#        cache: pnpm
+#        cache-dependency-path: frontend/pnpm-lock.yaml
+#    - name: Verificar que existe el lockfile
+#      run: test -f pnpm-lock.yaml || (echo "::error::falta frontend/pnpm-lock.yaml" && exit 1)
+#    - name: Verificar coherencia del lockfile
+#      run: pnpm install --frozen-lockfile
+#    - name: Typecheck
+#      run: pnpm typecheck
+#    - name: Lint
+#      run: pnpm lint
+#    - name: Build
+#      run: pnpm build
+#    - name: Test
+#      run: pnpm test
+
+#  docs:
+#    name: Enlaces del SDD
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v4
+#    - name: Comprobar que no hay enlaces Markdown rotos
+#      run: |
+#        set -e
+#        broken=0
+#        for f in $(find . -name '*.md' -not -path './.git/*' -not -path '*/node_modules/*' \
+#                     -not -path '*/obj/*' -not -path '*/bin/*' -not -path './.agents/*' \
+#                     -not -path '*/dist/*' -not -path '*/.turbo/*'); do
+#          dir=$(dirname "$f")
+#          grep -oE '\]\([^)#]+' "$f" 2>/dev/null | sed 's/^](//' | while read -r link; do
+#            case "$link" in
+#              http*|mailto:*|'') continue ;;
+#            esac
+#            [ -e "$dir/$link" ] || { echo "::error::enlace roto en $f -> $link"; }
+#          done
+#        done
+#        echo "Verificacion de enlaces completada."
