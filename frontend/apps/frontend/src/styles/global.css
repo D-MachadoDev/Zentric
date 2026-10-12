@@ -1,0 +1,17 @@
+@import '@zentric/ui/styles/theme.css';
+
+/* Estilos globales de la app. El tema vive en packages/ui (Q18-A): aqui sólo
+   se anaden reglas propias del shell, nunca tokens de marca. */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* El shell ocupa la ventana completa: la consola no tiene scroll de documento,
+   lo desplazan los paneles internos. */
+#root {
+  display: flex;
+  flex-direction: column;
+}

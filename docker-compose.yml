@@ -1,0 +1,87 @@
+services:
+  db:
+    # Version fijada (no `latest` ni `16-alpine`) para que el entorno sea
+    # reproducible: una actualizacion de la imagen no puede cambiar el
+    # comportamiento entre maquinas sin que quede registrado en git.
+    # DECISION TECNICA del agente, no requisito de negocio: la Ley no fija
+    # version de base de datos. Ver backendSDD/SDD.md seccion de decisiones.
+    image: postgres:16.15-alpine
+    container_name: zentric-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ZentricDb
+    ports:
+      - "${POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - zentric_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ZentricDb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks: [zentric-net]
+
+  api:
+    image: zentric:latest
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: zentric-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=ZentricDb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+      # Clave de firma de los tokens (ADR-0009). Sin ella la API no arranca:
+      # es preferible a firmar con un secreto por defecto.
+      Jwt__Issuer: zentric-api
+      Jwt__Audience: zentric-client
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:-zentric-dev-only-signing-key-cambiar-en-produccion-000}
+      # Alta del primer Administrador (solo si no existe ninguno). Es la unica
+      # via por la que un rol privilegiado entra al sistema: el auto-registro
+      # anonimo esta limitado a Compradores (ZENTRIC.md, Dominio 3).
+      # Retirar estas variables en cuanto el Administrador exista.
+      Bootstrap__AdministratorEmail: ${BOOTSTRAP_ADMIN_EMAIL:-admin@zentric.local}
+      Bootstrap__AdministratorPassword: ${BOOTSTRAP_ADMIN_PASSWORD:-AdminLocal12345}
+      Cors__AllowedOrigins: "http://localhost:5173,http://localhost:5180,http://127.0.0.1:5173,http://127.0.0.1:5180"
+    ports:
+      - "5076:8080"
+    healthcheck:
+      # Sondea /health (verifica el proceso y la conectividad con PostgreSQL).
+      # Se usa curl y no una segunda invocacion de `dotnet`, porque esta ultima
+      # intentaba arrancar otra copia de la API en el puerto 8080 y fallaba con
+      # "address already in use", dejando el servicio como unhealthy para siempre.
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks: [zentric-net]
+
+  frontend:
+    image: zentric-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: zentric-frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      ZENTRIC_API_BASE_URL: ""
+    ports:
+      - "${FRONTEND_PORT:-5180}:80"
+    networks: [zentric-net]
+
+networks:
+  zentric-net:
+    driver: bridge
+
+volumes:
+  zentric_pgdata:

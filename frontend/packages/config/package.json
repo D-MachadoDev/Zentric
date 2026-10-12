@@ -1,0 +1,21 @@
+{
+  "name": "@zentric/config",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Configuracion compartida de TypeScript, ESLint y Prettier. No importa de nadie.",
+  "exports": {
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/app.json": "./tsconfig/app.json",
+    "./tsconfig/lib.json": "./tsconfig/lib.json",
+    "./eslint/base.js": "./eslint/base.js"
+  },
+  "files": ["tsconfig", "eslint"],
+  "dependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.7",
+    "globals": "17.13.0",
+    "typescript-eslint": "8.71.1"
+  }
+}
