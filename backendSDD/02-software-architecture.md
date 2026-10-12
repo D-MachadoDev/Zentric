@@ -29,7 +29,7 @@ El objetivo primario de esta arquitectura es **aislar el dominio del negocio** (
 
 ## 3. Capas y Regla de Dependencia Estricta
 
-El flujo de dependencias es **estrictamente unidireccional hacia el centro (Zentric.Domain)**:
+El flujo de dependencias es **estrictamente unidireccional hacia el centro (Zentric.Domain)**: 
 
 ```mermaid
 flowchart TD
@@ -164,11 +164,11 @@ sequenceDiagram
     else Parámetros válidos
         API->>APP: Ejecuta CreateOrderCommand
         APP->>PORT: Obtiene inventario y producto
-        PORT->>ADAPT: Consulta de persistencia
-        ADAPT->>DB: SELECT con clave foránea
-        DB-->>ADAPT: Registro de base de datos
-        ADAPT-->>PORT: Mapea a Entidad de Dominio
-        PORT-->>APP: Instancia de Dominio válida
+        PORT->>ADAPT: Consulta de persistencia (ej. GetByIdAsync)
+        ADAPT->>DB: Consulta SQL (SELECT ...)
+        DB-->>ADAPT: Filas de datos crudos
+        ADAPT-->>PORT: Mapea datos crudos a Objeto C#
+        PORT-->>APP: Instancia de Dominio lista en memoria RAM
         APP->>DOM: Ejecuta método de negocio (ej. Order.Create())
         DOM-->>DOM: Valida invariantes y cambia estado interno
         APP->>PORT: Guarda nuevo estado (UnitOfWork)
@@ -194,23 +194,7 @@ sequenceDiagram
 
 ---
 
-## 8. Estado Observado vs. Arquitectura Objetivo
-
-Auditoría técnica real del código de Zentric en el entorno de desarrollo:
-
-| Componente Arquitectónico | Estado en Código | Evidencia en el Repositorio |
-| :--- | :---: | :--- |
-| **Aislamiento de Dominio** | **100% CUMPLE** | `Zentric.Domain.csproj` no tiene referencias a paquetes NuGet de terceros. |
-| **Organización Modular** | **100% CUMPLE** | Módulos organizados por contexto: Users, Buyers, Products, Inventories, Warehouses, Orders, Logistics, Payments, Returns, Billing. |
-| **Casos de Uso CQRS** | **100% CUMPLE** | 25 Commands, 14 Queries, 14 Validadores FluentValidation en `Zentric.Application`. |
-| **Persistencia Aislada** | **100% CUMPLE** | `ZentricDbContext` con 12 `DbSet`, 13 `*DbModel`, 10 Mappers, 10 Repositorios y 10 Migraciones en `Zentric.Infrastructure`. |
-| **Endpoints y Controladores** | **100% CUMPLE** | 44 endpoints en 9 controladores REST + `GET /health` en `Zentric.Api`. |
-| **Seguridad y Autorización** | **100% CUMPLE** | Autenticación JWT HS256 + PBKDF2 y 20 políticas de autorización basadas en roles. |
-| **Cobertura de Pruebas** | **100% CUMPLE** | 457 pruebas unitarias y de aplicación pasando en verde en 1 segundo. |
-
----
-
-## 9. Restricciones Arquitectónicas Inviolables (Las 10 Reglas de Oro)
+## 8. Restricciones Arquitectónicas Inviolables (Las 10 Reglas de Oro)
 
 Para garantizar la integridad del sistema a largo plazo, cualquier desarrollador o agente de IA debe cumplir obligatoriamente estas 10 reglas:
 
