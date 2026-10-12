@@ -1,126 +1,116 @@
-# 01. System Overview — Zentric
+# 01. Panorama General del Sistema
 
-> Documento exigido por [AGENTS.md:0.1](../AGENTS.md#01-consulta-obligatoria-antes-de-codificar). **Derivado**, no inventado: consolida y
-> enlaza la especificación funcional de negocio existente
-> ([ZENTRIC.md](../ZENTRIC.md)) y los documentos de dominio. No introduce reglas
-> nuevas. Todo lo marcado `[INFERIDO]` requiere confirmación.
+> Documento derivado de la Ley funcional de negocio ([ZENTRIC.md](../ZENTRIC.md)) y sus decisiones de arquitectura asociadas. No introduce reglas nuevas ni asunciones. Su propósito es brindar una visión clara y comprensible del funcionamiento global de Zentric.
+
+---
 
 ## 1. Qué es Zentric
 
-`[CONFIRMADO]` [ZENTRIC.md](../ZENTRIC.md): plataforma digital centralizada que
-actúa como **intermediario comercial** entre compradores y vendedores. Administra
-la operación completa: registro de usuarios, publicación de productos, logística,
-facturación y posventa, con trazabilidad y coordinación entre participantes.
+Zentric es una plataforma digital centralizada que actúa como **intermediario comercial** entre compradores y vendedores. Administra la operación completa del marketplace: registro de participantes, publicación y catálogo de productos, existencias en bodegas distribuidas, procesamiento de pedidos, facturación con comisión de plataforma, logística de despacho y posventa (devoluciones).
 
-## 2. Objetivos estratégicos
+```mermaid
+flowchart LR
+    Buyer["Comprador"] -->|"1. Agrega al Carrito"| Cart["Carrito (15 min)"]
+    Cart -->|"2. Confirma y Paga"| Order["Pedido Central"]
+    Order -->|"3. Divide por Vendedor"| Fulfillment["Despachos Independientes"]
+    Fulfillment -->|"4. Prepara y Entrega"| Warehouse["Operador en Bodega"]
+    Order -->|"5. Factura Maestra y Comisión"| Billing["Facturación Zentric"]
+```
 
-`[CONFIRMADO]` [ZENTRIC.md](../ZENTRIC.md):
+---
+
+## 2. Participantes y Roles del Negocio
+
+Según [ZENTRIC.md](../ZENTRIC.md), cada participante dentro del sistema desempeña **un único rol**.
+
+| Rol | Definición para Negocio / No Técnicos | Responsabilidad Principal |
+|---|---|---|
+| **Comprador** (`Buyer`) | Cliente que adquiere productos en el marketplace. | Navega el catálogo, compra mediante carrito, paga y solicita devoluciones. |
+| **Vendedor** (`Vendor`) | Comercio o fabricante que vende productos en la plataforma. | Publica productos en su catálogo, gestiona sus bodegas y aprueba o rechaza solicitudes de devolución. |
+| **Operador Logístico** (`LogisticsOperator`) | Personal encargado del movimiento físico de mercancía en bodega. | Prepara paquetes, realiza despachos, reporta faltantes de stock y confirma entregas. |
+| **Administrador** (`Administrator`) | Operador central de Zentric con control global. | Da de alta a vendedores y bodegas iniciales, emite facturas y ejecuta reembolsos económicos. |
+| **Supervisor** (`Supervisor`) | Auditor de la plataforma. | Rol de consulta y solo lectura. Monitorea operaciones y cumplimiento sin intervenir en escrituras. |
+
+---
+
+## 3. Glosario de Términos para Personas No Técnicas
+
+Para evitar confusiones y asegurar que el equipo de negocio y el equipo técnico hablen exactamente el mismo idioma:
+
+* **Variante (SKU):** La presentación específica de un producto físico (por ejemplo: una camiseta talla M color azul). El inventario siempre se controla a nivel de variante, no de producto general.
+* **Despacho (`FulfillmentOrder`):** La porción de un pedido que corresponde a un único vendedor. Si un comprador compra artículos de dos vendedores distintos en el mismo carrito, el sistema crea un solo pedido maestro pero genera dos despachos separados para que cada vendedor envíe lo suyo.
+* **Quiebre de Stock (Stock Fantasma):** Situación en la que el sistema indicaba que había existencias disponibles, pero físicamente en la bodega no se encuentran. Se resuelve cancelando el despacho afectado y reajustando el inventario.
+* **Factura Maestra:** El documento comercial que refleja el total pagado por el comprador.
+* **Detalle Zentric:** La comisión que cobra la plataforma por intermediar en la venta (control interno).
+* **Detalle de Vendedor:** La liquidación que le corresponde recibir al vendedor tras descontar la comisión de Zentric.
+
+---
+
+## 4. Objetivos del Sistema
+
+Definidos en [ZENTRIC.md](../ZENTRIC.md):
 
 | Código | Objetivo |
 |---|---|
-| OBJ-01 | Administrar la información de todos los usuarios del Marketplace |
+| OBJ-01 | Administrar la información de todos los usuarios del marketplace |
 | OBJ-02 | Gestionar el registro y administración de vendedores |
 | OBJ-03 | Administrar compradores registrados |
 | OBJ-04 | Controlar la información de las bodegas |
 | OBJ-05 | Gestionar el catálogo de productos |
-| OBJ-06 | Administrar el inventario distribuido |
-| OBJ-07 | Gestionar el carrito de compras |
+| OBJ-06 | Administrar el inventario distribuido entre bodegas |
+| OBJ-07 | Gestionar el carrito de compras con control de tiempo |
 | OBJ-08 | Controlar el ciclo completo de los pedidos |
-| OBJ-09 | Administrar la facturación de las compras |
-| OBJ-10 | Gestionar los procesos logísticos |
+| OBJ-09 | Administrar la facturación y comisiones de las compras |
+| OBJ-10 | Gestionar los procesos logísticos de entrega |
 | OBJ-11 | Administrar devoluciones y reembolsos |
-| OBJ-12 | Consolidar información administrativa para consulta |
+| OBJ-12 | Consolidar información administrativa para consulta y auditoría |
 
-## 3. Alcance
+---
 
-`[CONFIRMADO]` [ZENTRIC.md](../ZENTRIC.md) incluye: registro de compradores, administración
-de usuarios, registro **administrativo** de vendedores, administración de bodegas,
-catálogo, inventario, carrito, pedidos, facturación, envíos, devoluciones,
-reembolsos y consulta de reportes administrativos.
+## 5. Alcance
 
-`[CONFIRMADO]` [ZENTRIC.md](../ZENTRIC.md) excluye explícitamente: interfaces gráficas,
-aplicaciones móviles, portales web, mecanismos de autenticación técnica,
-tecnologías de implementación, arquitectura del software y almacenamiento de la
-información. **Este repositorio cubre el core de dominio y su API, no la UI.**
+* **Incluido:** Registro y administración de usuarios, registro administrativo de vendedores y bodegas, catálogo de productos y variantes, control de inventario distribuido, reserva y timeout de carritos, procesamiento de pedidos, facturación multi-documento, envíos y logística, circuito de devoluciones y reembolsos, y seguridad mediante roles y permisos.
+* **Excluido:** Interfaces gráficas de usuario (UI), aplicaciones móviles, portales web de cara al público y pasarelas de pago bancarias externas reales. **Este backend expone la API REST y gobierna el núcleo de dominio.**
 
-## 4. Participantes y roles
+---
 
-`[CONFIRMADO]` [ZENTRIC.md](../ZENTRIC.md): Comprador, Vendedor, Operador Logístico,
-Administrador y Supervisor. Cada participante desempeña **un único rol**.
+## 6. Flujo Operativo del Negocio (Paso a Paso)
 
-`[CONFIRMADO]` [AGENTS.md :1](../AGENTS.md#1-vision-general-del-proyecto) enumera: vendedores, compradores, bodegas,
-productos, catálogos y pedidos.
+1. **Incorporación:** El Administrador registra al vendedor y su primera bodega física.
+2. **Catálogo:** El vendedor registra sus productos y variantes.
+3. **Inventario:** Se cargan las existencias iniciales en las bodegas correspondientes.
+4. **Publicación:** Los productos se activan para ser visibles en el catálogo general.
+5. **Compra:** El comprador selecciona productos en su carrito (con reserva temporal de 15 minutos) y confirma la compra.
+6. **Transacción y División:** Se valida el pago y el sistema fracciona el pedido maestro en órdenes de despacho independientes por cada vendedor involucrado.
+7. **Logística:** Los operadores preparan, empacan y despachan cada paquete.
+8. **Cierre o Posventa:** El pedido finaliza con la entrega confirmada. Si surge un reclamo, se inicia el flujo de devolución (aprobación del vendedor e inspección logística).
 
-## 5. Modelo operativo (flujo extremo a extremo)
+---
 
-`[CONFIRMADO]` [ZENTRIC.md](../ZENTRIC.md):
+## 7. Módulos del Dominio
 
-1. **Incorporación** — el Administrador registra al vendedor y su primera bodega.
-2. **Catálogo** — el vendedor registra productos y características.
-3. **Inventario** — se registran existencias iniciales en las bodegas.
-4. **Publicación** — los productos se hacen visibles en el catálogo.
-5. **Compra** — el comprador selecciona productos vía carrito y confirma.
-6. **Transacción** — se valida el pago y se inicia la preparación.
-7. **Logística** — empaque, despacho y transporte.
-8. **Cierre** — el pedido se marca finalizado tras entrega confirmada.
+El dominio de Zentric está estructurado en módulos cohesivos dentro de un único Bounded Context:
 
-## 6. Bounded context y módulos
-
-`[CONFIRMADO]` [backendSDD/Domain/01-domain-overview.md](Domain/01-domain-overview.md): **un único Bounded Context
-(Unified Domain)** dividido en módulos de dominio de alta cohesión.
-
-| Módulo | Responsabilidad | Documento de referencia |
+| Módulo | Responsabilidad | Documento de Referencia |
 |---|---|---|
-| Identity | Usuarios y estado comercial de participantes | [backendSDD/Domain/01-models.md :1](Domain/01-models.md#1-bounded-context-identity-access-usuarios) |
-| Catalog | Oferta de vendedores, productos y variantes | [backendSDD/Domain/01-models.md :2](Domain/01-models.md#2-bounded-context-catalog-catalogo) |
-| Inventory | Inventario distribuido, bodegas y cantidades | [backendSDD/Domain/01-models.md :3](Domain/01-models.md#3-bounded-context-inventory-inventario-y-bodegas) |
-| Ordering | Carrito, pedido maestro, facturación centralizada | [backendSDD/Domain/01-models.md :4](Domain/01-models.md#4-bounded-context-ordering-pedidos---interfaz-del-comprador) |
-| Fulfillment | Órdenes de despacho por vendedor y posventa | [backendSDD/Domain/01-models.md :5](Domain/01-models.md#5-bounded-context-fulfillment-logistics-despachos---interfaz-del-vendedor) |
-| Returns | Devolución con doble aprobación y vuelta a stock usado | [backendSDD/Domain/01-models.md §6](Domain/01-models.md) |
-| Billing | Factura maestra, detalles y comisión de plataforma | [backendSDD/Domain/01-models.md §7](Domain/01-models.md) |
-| Buyers | Direcciones y estado comercial del comprador | [backendSDD/Domain/01-models.md §8](Domain/01-models.md) |
-| Payments | Comprobante de cobro y crédito a favor | [backendSDD/Domain/01-models.md §9](Domain/01-models.md) |
+| **Identidad (`Identity`)** | Usuarios, credenciales y asignación de rol único. | [backendSDD/Domain/01-models.md](Domain/01-models.md#1-bounded-context-identity-access-usuarios) |
+| **Catálogo (`Catalog`)** | Productos, variantes físicas/digitales y visibilidad. | [backendSDD/Domain/01-models.md](Domain/01-models.md#2-bounded-context-catalog-catalogo) |
+| **Inventario (`Inventory`)** | Existencias por bodega, stock disponible y reservado. | [backendSDD/Domain/01-models.md](Domain/01-models.md#3-bounded-context-inventory-inventario-y-bodegas) |
+| **Pedidos (`Ordering`)** | Carrito temporal, líneas de compra y pedido central. | [backendSDD/Domain/01-models.md](Domain/01-models.md#4-bounded-context-ordering-pedidos---interfaz-del-comprador) |
+| **Logística (`Fulfillment`)** | Despachos por vendedor, empaque y entrega. | [backendSDD/Domain/01-models.md](Domain/01-models.md#5-bounded-context-fulfillment-logistics-despachos---interfaz-del-vendedor) |
+| **Devoluciones (`Returns`)** | Solicitud, aprobación de vendedor, inspección y reingreso a stock usado. | [backendSDD/Domain/01-models.md](Domain/01-models.md#6-bounded-context-returns-devoluciones) |
+| **Facturación (`Billing`)** | Factura maestra, detalle Zentric (comisión) y liquidación de vendedor. | [backendSDD/Domain/01-models.md](Domain/01-models.md#7-bounded-context-billing-facturacion) |
+| **Compradores (`Buyers`)** | Direcciones de entrega y perfil del comprador. | [backendSDD/Domain/01-models.md](Domain/01-models.md#8-bounded-context-buyers-compradores) |
+| **Pagos (`Payments`)** | Comprobantes de pago y créditos a favor por reembolsos. | [backendSDD/Domain/01-models.md](Domain/01-models.md#9-bounded-context-payments-pagos) |
 
-## 7. Restricciones transversales
+---
 
-`[CONFIRMADO]` [ZENTRIC.md](../ZENTRIC.md) y [:11](../ZENTRIC.md#11-validaciones-criticas):
+## 8. Reglas Críticas Transversales
 
-| Código | Restricción |
-|---|---|
-| RG-01 | Toda operación debe ejecutarse por un usuario autenticado |
-| RG-02 | Cada usuario tendrá un único rol dentro del sistema |
-| RG-03 | Ningún participante podrá administrar información fuera de su rol |
+Definidas en [ZENTRIC.md](../ZENTRIC.md):
 
-Validaciones críticas: no reservar inventario inexistente o marcado como dañado ·
-un pedido finalizado no puede modificarse · documento de identidad y correo
-electrónico únicos en la plataforma.
-
-## 8. Reglas de negocio consolidadas
-
-`[CONFIRMADO]` El catálogo canónico de reglas vive en:
-
-- [backendSDD/Domain/06-business-rules.md](Domain/06-business-rules.md): [INV-01](Domain/06-business-rules.md), [INV-02](Domain/06-business-rules.md), [INV-03](Domain/06-business-rules.md), [PED-01](Domain/06-business-rules.md), [PED-02](Domain/06-business-rules.md), [PED-03](Domain/06-business-rules.md),
-  [CAT-01](Domain/06-business-rules.md), [CAT-02](Domain/06-business-rules.md), [CAT-03](Domain/06-business-rules.md), [EXC-01](Domain/06-business-rules.md), [EXC-02](Domain/06-business-rules.md), [DEV-01](Domain/06-business-rules.md), [FAC-01](Domain/06-business-rules.md).
-- [backendSDD/Domain/04-invariants-and-rules.md](Domain/04-invariants-and-rules.md): [invariantes 1–13](Domain/04-invariants-and-rules.md) (inventario,
-  catálogo, pagos, posventa).
-- [backendSDD/Domain/07-lifecycle.md](Domain/07-lifecycle.md): máquinas de estado de `CustomerOrder` y
-  `FulfillmentOrder`.
-
-`[RESUELTO]` Las contradicciones de reglas del dominio quedaron resueltas el
-2026-09-17:
-
-- **[C-01](SDD.md)** ([INV-02](Domain/06-business-rules.md) vs [invariante 3](Domain/04-invariants-and-rules.md)) → [backendSDD/Adr/0001-reserva-fragmentacion-contingencia.md](Adr/0001-reserva-fragmentacion-contingencia.md): bodega única con
-  fraccionamiento de contingencia.
-- **[C-02](SDD.md)** (clave de stock `ProductId` vs `VariantId`) → [backendSDD/Adr/0002-clave-inventario-variantid.md](Adr/0002-clave-inventario-variantid.md):
-  el inventario se lleva por `VariantId` (SKU).
-- **[Q-10](orchestrator-state.md)** (¿variante obligatoria?) → [backendSDD/Adr/0003-variante-obligatoria-productos-fisicos.md](Adr/0003-variante-obligatoria-productos-fisicos.md): obligatoria solo en
-  `Physical` ([CAT-03](Domain/06-business-rules.md)), aplicado en código (551/551 pruebas verificadas 2026-10-06). Sub-decisiones
-  de ADR-0003 **ratificadas** el 2026-09-27 (Q-12, ver [orchestrator-state §9.1](orchestrator-state.md)).
-
-Reglas vigentes de inventario: **[INV-01](Domain/06-business-rules.md), [INV-02](Domain/06-business-rules.md), [INV-03](Domain/06-business-rules.md)** ([06-business-rules.md](Domain/06-business-rules.md)).
-
-El registro canónico de preguntas vive en [orchestrator-state.md §9](orchestrator-state.md). Riesgo abierto conocido: falta el módulo de **reportes administrativos** (OBJ-12; brecha registrada en [`frontendSDD/Contract-alignment.md`](../frontendSDD/Contract-alignment.md)).
-
-## 9. Estado de implementación
-
-Backend completo: **44 endpoints + `GET /health`, 580/580 pruebas en verde (2026-10-09), build 0 warnings**, capas Domain/Application/Infrastructure/Api montadas y verificadas contra PostgreSQL. Contrato HTTP: [Presentation/01-endpoints.md](Presentation/01-endpoints.md). Estado de sesión y roadmap: [orchestrator-state.md](orchestrator-state.md).
+* **RG-01:** Toda operación en el sistema debe ser ejecutada por un usuario autenticado.
+* **RG-02:** Cada usuario tiene asignado un único rol.
+* **RG-03:** Ningún participante puede administrar información ni ejecutar acciones fuera del alcance de su rol.
+* **Invariante de Stock:** El inventario nunca puede ser negativo ni reservarse mercancía marcada como dañada.
+* **Inmutabilidad:** Un pedido finalizado o pagado no puede ser alterado en sus líneas originales.
