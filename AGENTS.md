@@ -1,24 +1,21 @@
 # AGENTS.md — Directrices y Contexto para Agentes de IA
 
-> Este archivo define las reglas, arquitectura, roles y convenciones que cualquier agente de IA (Antigravity, Cursor, Claude, Copilot) debe seguir estrictamente al trabajar en el repositorio **zentric**.
+> Este archivo define las reglas, arquitectura, roles y convenciones que cualquier agente de IA debe seguir estrictamente al trabajar en este proyecto. Todo trabajo de código y commits se realiza en local; queda **estrictamente prohibido hacer git push a repositorios remotos sin autorización explícita por escrito del usuario en el turno**.
+
 ---
 
-## 0. ENRUTADOR Y PRINCIPIOS DE SPEC-DRIVEN DEVELOPMENT (SDD)
+## 0. PRINCIPIOS DE SPEC-DRIVEN DEVELOPMENT (SDD)
 
-En este proyecto aplicamos **Spec-Driven Development (SDD)**. La documentación en la carpeta `/SDD` es la **Fuente Única de Verdad (Single Source of Truth - SSoT)**.
+En este proyecto aplicamos **Spec-Driven Development (SDD)**. La jerarquía de verdad es:
+1. **La Ley (`ZENTRIC.md`):** Reglas funcionales del cliente, intocables por los agentes.
+2. **Decisiones del Owner y Especificaciones (`backendSDD/`):** Modelos, contratos, reglas tácticas y Architecture Decision Records (ADRs).
 
-### 0.0 Skill de ingeniería SDD (obligatoria)
-*   La metodología operativa de todo agente en este repositorio vive en la **skill `generic-sdd-agent` v7.0.1** (documento único):
-    - Fuente de verdad versionada: [`.agents/skills/generic-sdd-agent/SKILL.md`](.agents/skills/generic-sdd-agent/SKILL.md) (v7.0.1, monolítico; **ya no usa `references/`**).
-    - Copia instalada automática: `%USERPROFILE%\.agents\skills\generic-sdd-agent\` (regenerar con `.agents/skills/generic-sdd-agent/scripts/sync-skill.ps1`; **no editar la copia a mano**).
-    - Overlay del repositorio: integrado en **este [AGENTS.md](AGENTS.md)** ([sección 0](AGENTS.md#0-enrutador-y-principios-de-spec-driven-development-sdd)–[sección 8](AGENTS.md#8-checklist-de-definicion-de-terminado-dod-para-agentes)) más el contexto persistente de [backendSDD/SDD.md](backendSDD/SDD.md).
-*   **Contexto persistente (huella mínima):** [AGENTS.md](AGENTS.md) (contrato operativo) + [backendSDD/SDD.md](backendSDD/SDD.md) (memoria viva: mapa de entidades, decisiones/ADDENDA, verificación, riesgos y estado). [backendSDD/SDD.md](backendSDD/SDD.md) **no duplica** las specs: las indexa y apunta a ellas.
-*   Cuando exista conflicto, la prioridad es: decisión del Owner → [AGENTS.md](AGENTS.md) → [ZENTRIC.md](ZENTRIC.md) (Ley) → resto de backendSDD/ → skill.
-*   `generic-sdd-agent.md` (raíz, v2.0.0) quedó **superseded** y fue **ELIMINADO el 2026-09-18** por autorización del Owner (el propio archivo pedía autorización para su eliminación). La skill **v7.0.1** es el único punto de entrada metodológico vigente.
+Sin especificación no hay código. El código es solo un artefacto que cumple la especificación.
 
 ### 0.1 Consulta Obligatoria Antes de Codificar
-Antes de generar o modificar código, el agente **DEBE** consultar la documentación correspondiente en `/SDD`:
+Antes de generar o modificar código, el agente **DEBE** consultar la documentación correspondiente:
 
+*   **Para la Ley funcional pura:** Revisa [ZENTRIC.md](ZENTRIC.md).
 *   **Para contexto del negocio global:** Lee [backendSDD/01-system-overview.md](backendSDD/01-system-overview.md).
 *   **Para entender el flujo general y las capas:** Lee [backendSDD/02-software-architecture.md](backendSDD/02-software-architecture.md) para asimilar la Arquitectura Hexagonal y la regla de dependencia.
 *   **Para el contexto de negocio específico y reglas puras (Bounded Context):** Revisa los archivos dentro de backendSDD/Domain/. Aquí habitan las invariantes, el modelado y las reglas de negocio.
