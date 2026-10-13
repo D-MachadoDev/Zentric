@@ -191,7 +191,11 @@ El historial de decisiones de ingeniería se encuentra documentado bajo formato 
 | **[ADR-0018](./backendSDD/Adr/0018-devoluciones-confianza-recepcion-responsabilidad.md)** | Protocolo de Inspección en Devoluciones | Inspección en bodega por Operador Logístico y responsabilidad económica de reembolso. |
 | **[ADR-0019](./backendSDD/Adr/0019-auditoria-reembolsos-excepcionales.md)** | Auditoría de Reembolsos de Administrador | Registro inmutable de auditoría para reembolsos extraordinarios ejecutados por administradores. |
 | **[ADR-0020](./backendSDD/Adr/0020-precio-congelado-y-credito-parcial-por-linea.md)** | Precio Congelado y Crédito por Línea | Snapshot inmutable del precio unitario al agregar al carrito y reembolsos proporcionales. |
-| **[ADR-0021](./backendSDD/Adr/0021-ajuste-inventario-conteo-fisico.md)** | Ajuste de Stock por Conteo Físico | Operación de conciliación de inventario restringida exclusivamente a Administrador y Supervisor. |
+| **[ADR-0021](./backendSDD/Adr/0021-ajuste-de-stock-sin-cuello-de-botella.md)** | Ajuste de Stock sin Cuello de Botella | Evidencia según tipo de bodega (Marketplace vs. Vendedor) sin cuellos de botella administrativos. |
+| **[ADR-0022](./backendSDD/Adr/0022-pedido-resuelto-pasa-a-cancelled.md)** | Pedido Resuelto Transiciona a `Cancelled` | El pedido maestro pasa a Cancelled cuando todos sus despachos son cancelados por quiebre de stock. |
+| **[ADR-0023](./backendSDD/Adr/0023-split-de-pagos-documentos-no-transferencias.md)** | Split Contable sin Transferencias Bancarias | El split de pagos se satisface con los 3 documentos contables sin dispersión bancaria directa. |
+| **[ADR-0024](./backendSDD/Adr/0024-entrega-digital-inmediata-por-linea.md)** | Entrega Digital Inmediata por Línea | El producto digital se entrega inmediatamente tras el pago y se registra individualmente por ítem. |
+| **[ADR-0025](./backendSDD/Adr/0025-stock-negativo-update-condicional-atomico.md)** | No-Negatividad de Stock con UPDATE Condicional | Garantía de existencias no negativas mediante sentencia UPDATE atómica a nivel de motor SQL. |
 
 ---
 
@@ -380,4 +384,4 @@ Passed!  - Failed: 0, Passed: 457, Skipped: 0, Total: 457, Duration: 5 s - Zentr
 | **Cobertura de Pruebas** | Suite de 457 pruebas automatizadas cubriendo todas las capas. | [`Zentric.Tests/`](./backend/Zentric.Tests/) |
 | **Contenerización** | Despliegue multi-servicio en Docker Compose. | [`docker-compose.yml`](./docker-compose.yml)<br/>[`backend/Dockerfile`](./backend/Dockerfile) |
 | **Documentación de API** | OpenAPI v1 con Swagger UI y esquema Bearer JWT. | [`backendSDD/Presentation/01-endpoints.md`](./backendSDD/Presentation/01-endpoints.md) |
-| **Decisiones Técnicas** | Registro de 21 ADRs documentados bajo formato MADR. | [`backendSDD/Adr/`](./backendSDD/Adr/) |
+| **Decisiones Técnicas** | Registro de 25 ADRs documentados bajo formato MADR. | [`backendSDD/Adr/`](./backendSDD/Adr/) |

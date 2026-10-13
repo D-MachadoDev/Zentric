@@ -135,7 +135,11 @@ Registro canónico de Decisiones de Arquitectura (ADRs) adoptadas y aprobadas:
 - **[`ADR-0018`](Adr/0018-devoluciones-confianza-recepcion-responsabilidad.md):** Protocolo de inspección física y responsabilidad económica en devoluciones.
 - **[`ADR-0019`](Adr/0019-auditoria-reembolsos-excepcionales.md):** Registro inmutable de auditoría para reembolsos extraordinarios de administrador.
 - **[`ADR-0020`](Adr/0020-precio-congelado-y-credito-parcial-por-linea.md):** Precio unitario congelado por línea de pedido y notas crédito proporcionales.
-- **[`ADR-0021`](Adr/0021-ajuste-inventario-conteo-fisico.md):** Ajuste de stock por conteo físico restringido a roles de supervisión y control.
+- **[`ADR-0021`](Adr/0021-ajuste-de-stock-sin-cuello-de-botella.md):** Ajuste de stock sin cuello de botella y evidencia según tipo de bodega.
+- **[`ADR-0022`](Adr/0022-pedido-resuelto-pasa-a-cancelled.md):** El pedido totalmente resuelto pasa a estado Cancelled ante quiebre total de despachos.
+- **[`ADR-0023`](Adr/0023-split-de-pagos-documentos-no-transferencias.md):** El split de pagos se cumple mediante documentos contables, no con transferencias bancarias directas.
+- **[`ADR-0024`](Adr/0024-entrega-digital-inmediata-por-linea.md):** La entrega digital es inmediata tras la confirmación del pago y se registra individualmente por línea.
+- **[`ADR-0025`](Adr/0025-stock-negativo-update-condicional-atomico.md):** La no-negatividad del stock se garantiza mediante UPDATE condicional atómico en base de datos.
 
 ---
 
