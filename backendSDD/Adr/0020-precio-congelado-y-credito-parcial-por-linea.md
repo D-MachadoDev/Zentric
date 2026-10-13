@@ -72,4 +72,4 @@ Si se cumplen las tres → **crédito automático**. Si falta cualquiera → **e
 
 [PED-04](../Domain/06-business-rules.md) · [EXC-02](../Domain/06-business-rules.md) ·
 [DEV-05](../Domain/06-business-rules.md) · [04-invariants-and-rules.md](../Domain/04-invariants-and-rules.md)
-(invariantes 14 y 15) · [03-entity-map.md](../Infrastructure/03-entity-map.md)
+(invariantes 14 y 15) · [04-entity-map.md](../Infrastructure/04-entity-map.md)
