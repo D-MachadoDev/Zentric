@@ -76,13 +76,19 @@ sequenceDiagram
 
 ---
 
-## 5. Matriz de Respuestas HTTP y Comportamiento del Cliente
+## 5. Matriz Integral de Códigos HTTP y Comportamiento del Cliente
 
-| Código HTTP | Condición de Negocio | Acción Contractual del Cliente Web (`zentric.me`) |
-| :---: | :--- | :--- |
-| **`200 / 201`** | Petición autorizada y procesada con éxito. | Procesar y renderizar la información en pantalla. |
-| **`401 Unauthorized`** | Token ausente, firma inválida o sesión expirada. | Purgar credenciales locales y redirigir al formulario de **Inicio de Sesión**. |
-| **`403 Forbidden`** | Usuario autenticado pero sin rol suficiente para la acción. | Notificar restricción de permisos (**sin** cerrar la sesión activa). |
+| Código HTTP | Condición Técnica / Negocio | Formato de Respuesta | Acción Contractual del Cliente Web (`zentric.me`) |
+| :---: | :--- | :--- | :--- |
+| **`200 OK`** | Consulta (`GET`) o actualización (`PUT/PATCH`) procesada con éxito. | `application/json` | Renderizar o actualizar los datos en pantalla. |
+| **`201 Created`** | Recurso creado exitosamente (ej. nuevo pedido, alta de producto). | `application/json` | Notificar creación exitosa y mostrar el nuevo recurso. |
+| **`204 No Content`** | Eliminación (`DELETE`) o Preflight (`OPTIONS`) exitoso sin contenido devuelto. | Sin cuerpo | Confirmar la operación silenciosamente en la interfaz. |
+| **`400 Bad Request`** | Error de validación de entrada (FluentValidation, formato JSON o campos inválidos). | `application/problem+json` (RFC 9457) | Mostrar los mensajes de validación en los campos del formulario. |
+| **`401 Unauthorized`** | Falta de autenticación: token ausente, firma inválida o sesión expirada. | `application/problem+json` (RFC 9457) | Purgar el token de sesión y redirigir inmediatamente al **Login**. |
+| **`403 Forbidden`** | Falta de permisos: usuario autenticado pero su rol no tiene acceso a este recurso. | `application/problem+json` (RFC 9457) | Mostrar alerta de *"Acceso denegado"* (**sin** cerrar la sesión activa). |
+| **`404 Not Found`** | Recurso no encontrado (o recurso ajeno ocultado para evitar escaneo). | `application/problem+json` (RFC 9457) | Mostrar mensaje de *"Recurso no encontrado"* y permitir volver al listado. |
+| **`409 Conflict`** | Conflicto de estado o regla de negocio (ej. reserva de 15 min expirada, stock insuficiente). | `application/problem+json` (RFC 9457) | Notificar el conflicto específico de negocio para que el usuario tome acción. |
+| **`500 Internal Error`** | Error técnico no controlado capturado por el middleware global. | `application/problem+json` (RFC 9457) | Mostrar mensaje genérico de error de servidor con identificador de seguimiento. |
 
 ---
 
