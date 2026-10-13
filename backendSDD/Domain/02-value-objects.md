@@ -1,90 +1,80 @@
-# 02. Value Objects y Enumeraciones
+# 02. Objetos de Valor y Enumeraciones (Value Objects & Enums) — Zentric
 
-Este documento define los Value Objects (objetos inmutables sin identidad propia) y los Enumeradores que refuerzan las reglas de negocio y el Lenguaje Ubicuo en Zentric.
-
-## 1. Value Objects (Objetos de Valor)
-
-### `Money`
-Encapsula valores financieros garantizando cálculos precisos.
-- **Propiedades:** `Amount` (decimal), `Currency` (string, código ISO 4217 de 3 letras, ej. "COP").
-- **Reglas:** el constructor rechaza importes negativos y redondea a 2 decimales (`MidpointRounding.AwayFromZero`). La moneda se normaliza (mayúsculas, sin espacios) y se valida contra una **lista blanca** (Q-16, dictamen del Owner 2026-09-27): hoy solo `COP` está habilitada (`SupportedCurrencies`), un código debe tener 3 letras exactas y uno no habilitado lanza excepción.
-- **Comportamientos:** `Add(Money)`, `Subtract(Money)`, `Multiply(int)`; la igualdad es insensible a mayúsculas en la divisa. Mezclar divisas lanza `MixedCurrencyException` — excepción de negocio que la API traduce a `400`, no a `500`.
-- **Moneda por defecto:** `CustomerOrder.DefaultCurrency = "COP"` (y `SupportedCurrencies.Default`). Se usa únicamente cuando el carrito está vacío y no hay moneda de referencia que inferir. El sistema es **multi-moneda**: con items, el total adopta la moneda del primero.
-
-### `Address`
-Dirección postal del **comprador** (`Buyer.MainAddress`, obligatoria — ZENTRIC.md Dominio 2). No guarda coordenadas ni calcula distancias: el sistema no modela ubicación geográfica (las bodegas usan un `Location` de texto).
-- **Propiedades:** `Street`, `City`, `State`, `ZipCode`, `Country`.
-- **Reglas:** inmutable; los cinco campos son obligatorios (se recortan espacios y no pueden ir vacíos). Si el comprador cambia de casa, se genera una nueva `Address`.
-
-### `Email`
-Garantiza que cualquier email en el sistema sea estructuralmente válido.
-- **Propiedades:** `Value` (string, normalizado a minúsculas y sin espacios externos).
-- **Reglas:** valida en su constructor: no vacío, longitud mínima de 5, exactamente un `@` y dominio con `.`. La igualdad es insensible a mayúsculas.
-
-### Strongly-Typed IDs (IDs Fuertemente Tipados)
-**[NO IMPLEMENTADO - 2026-10-03]** Las entidades, los puertos y los DTO usan `Guid` como identificador. **Sección conservada como diseño propuesto, no como contrato vigente.**
-- Propuesta original: `record struct` para `UserId`, `ProductId`, `WarehouseId`, `OrderId`, `FulfillmentOrderId`.
-- **Por qué no se ratificó**: el Owner decidió (grill Q-08, 2026-09-27) que el costo de migración (entidades, puertos, DTOs, BD, mappers, tests) superaba el beneficio marginal. `Guid` plano + validaciones en constructores + tests de dominio ya garantizan integridad sin tipos fuertes.
-- **Estado**: diseño archivado. No hay plan de migración. Si el Owner lo ratifica en el futuro, se reabre como [Q-XX].
+> **Especificación Táctica de Conceptos Inmutables.** Define rigurosamente todos los Objetos de Valor (*Value Objects*) y Enumeradores (*Enums*) del dominio de **Zentric** (`Zentric.Domain`), conforme a los principios tácticos de Domain-Driven Design (DDD).
 
 ---
 
-## 2. Enumeraciones y Catálogos (Enums)
+## 1. Principios de Diseño de Value Objects en Zentric
 
-> Inventario verificado: **10 enums** en `Zentric.Domain`.
+En Zentric, los Value Objects encarnan conceptos del negocio que carecen de identidad propia y siguen cuatro leyes inviolables:
 
-### `UserRole`
-Define el rol estricto del participante; estos literales son los que viajan en el JSON del token, los DTO y los query params — los `enum` se serializan **por nombre** ([ADR-0012](../Adr/0012-contrato-json-de-los-enum-por-nombre.md)).
-- `Buyer`, `Seller`, `Administrator`, `Supervisor`, `LogisticsOperator`.
+1. **Inmutabilidad Estricta:** Una vez instanciado, un Value Object jamás muta su estado. Cualquier operación que altere un valor debe retornar una **nueva instancia** (ej. `money.Add(other)`).
+2. **Igualdad por Valor:** Dos objetos de valor son idénticos si todos sus atributos son iguales (`IEquatable<T>`), sin importar su dirección de memoria ni identificadores.
+3. **Auto-validación Defensiva:** Un Value Object no puede existir en memoria en un estado corrupto o inválido; el constructor valida formatos, rangos y listas blancas inmediatamente.
+4. **Cero Dependencia Técnica:** No implementan clases base pesadas de ORMs ni dependen de persistencia; son estructuras C# puras (`record` o `sealed class` con semántica de valor).
 
-### `UserStatus`
-Condición operativa del usuario: `Active`, `Blocked`, `Deleted`. El borrado es lógico: `Delete()`/`DeleteByAdmin()` marcan `DeletedAt` y pasan el estado a `Deleted`.
+---
 
-### `ProductType`
-Crucial para determinar la ruta logística.
-- `Physical`: Requiere inventario y despacho físico.
-- `Digital`: Requiere entrega inmediata tras pago (ej. enlace de descarga o licencia).
+## 2. Matriz Maestra de Value Objects del Dominio
 
-### `ProductStatus`
-- `Published`: Visible para la venta.
-- `Suspended`: Oculto temporalmente.
-- `Discontinued`: Retirado permanentemente del catálogo.
+| Value Object | Subdominio de Origen | Atributos Encapsulados | Reglas e Invariantes Críticas | Comportamientos de Negocio |
+| :--- | :--- | :--- | :--- | :--- |
+| **`Money`** | `Catalog` / `Ordering` / `Billing` | `Amount` (`decimal`), `Currency` (`string`) | Monto redondeado a 2 decimales (`MidpointRounding.AwayFromZero`). Moneda normalizada en mayúsculas de 3 letras (ISO 4217). **Lista blanca estricta:** actualmente solo `COP` habilitada. Prohibidos importes negativos. | `Add(Money)`, `Subtract(Money)`, `Multiply(int)`. Operar monedas distintas lanza `MixedCurrencyException`. |
+| **`Address`** | `Buyers` | `Street`, `City`, `State`, `ZipCode`, `Country` | Los 5 campos son obligatorios y sin espacios en blanco residuales. Representa la dirección física de despacho del comprador. | Igualdad estructural completa. |
+| **`Email`** | `Identity` | `Value` (`string`) | Normalizado en minúsculas. Mínimo 5 caracteres, exactamente un carácter `@`, y dominio con punto (`.`). | Igualdad insensible a mayúsculas/minúsculas. |
+| **`FullName`** | `Identity` | `FirstName` (`string`), `LastName` (`string`), `Value` (`string`) | Nombres y apellidos sin números, entre 2 y 80 caracteres. Formateado automático con mayúscula inicial y minúsculas restantes. | `ToString()` retorna `"Nombre Apellido"`. |
+| **`VariantAttribute`** | `Catalog` | `Name` (`string`), `Value` (`string`) | Par descriptivo inmutable de la variante vendible (ej. `"Talla" = "M"`, `"Color" = "Negro"`). Texto no vacío, máximo 50 caracteres por campo. | Formato canónico: `"Name=Value"`. |
+| **`StockAdjustmentRecord`** | `Inventory` | `SystemQuantity`, `PhysicalQuantity`, `CountedBy`, `Reason`, `CountedAt` | Registro inmutable de auditoría para conteos físicos en bodega. No puede ser alterado ni editado una vez creado. | Historial inmutable en `Inventory`. |
 
-### `OrderStatus` (Ciclo de Vida del CustomerOrder)
+---
 
-> Valores reales del enum en código; las transiciones y quién las ejecuta están en [07-lifecycle.md](07-lifecycle.md).
+## 3. Decisión Normativa sobre Identificadores (IDs Planos vs. Fuertemente Tipados)
 
-- `Cart`: Productos añadidos, inventario reservado (Timeout 15 min, regla PED-01).
-- `PendingPayment`: Transición hacia pasarela de pagos.
-- `Paid`: Pago aprobado.
-- `Dispatched`: El pedido salió a despacho.
-- `Delivered`: El pedido fue entregado al comprador.
-- `Cancelled`: Anulado (por timeout, fallo de pago o decisión administrativa).
+- **Estándar Oficial:** En Zentric, todas las entidades y agregados emplean **`Guid` plano** como identificador primario y foráneo.
+- **Justificación de Arquitectura:** El uso de tipos envoltorios (`record struct UserId(Guid Value)`) fue evaluado y descartado por introducir sobrecostos de conversión en DTOs, mappers de EF Core y serializadores JSON sin aportar beneficios funcionales proporcionales frente a las validaciones defensivas de constructores y pruebas unitarias.
 
-### `FulfillmentStatus` (Ciclo de Vida del FulfillmentOrder)
+---
 
-> Valores reales del enum; transiciones en [07-lifecycle.md](07-lifecycle.md).
+## 4. Matriz Maestra de Enumeraciones y Catálogos (Enums)
 
-- `PendingPack`: Aprobado, esperando que la bodega inicie alistamiento.
-- `Packed`: Empacado y listo para recolección.
-- `Dispatched`: Entregado a la transportadora (en tránsito).
-- `Delivered`: Recibido satisfactoriamente por el comprador.
-- `Cancelled`: Anulado por quiebre de stock con `CancellationReason` ([ADR-0004](../Adr/0004-estado-cancelacion-despacho.md)); lo reporta quien está en la bodega, Vendedor u Operador Logístico ([ADR-0014](../Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md)).
+Todas las enumeraciones en Zentric se serializan en contratos externos (JSON / HTTP REST) estrictamente por **su nombre literal en cadena** (*String Enum Converter*), quedando prohibido el uso de enteros ordinales para evitar roturas por reordenamiento.
 
-### `WarehouseType`
-- `Marketplace`: Operada por el equipo logístico de Zentric.
-- `Vendor`: Operada independientemente por el Vendedor.
+### 4.1. Catálogos de Identidad y Roles
 
-### `PlatformFeePolicy` / `FeeSplit` (Billing)
-- **Dónde vive:** `Zentric.Domain/Billing/Invoice.cs` (no hay archivo propio).
-- **`PlatformFeePolicy`:** comisión de plataforma. `DefaultPercentage = 0.05m` es un **supuesto** (la Ley no fija porcentaje): solo estima. `IsCollectable` es `true` únicamente con reparto ratificado (`Split != null`). `ApplyTo(Money)` conserva la moneda y redondea a 2 decimales (`MidpointRounding.AwayFromZero`).
-- **Reparto vigente:** 5 % plataforma / 95 % vendedor (dictamen Q-15, 2026-09-27). La regla de negocio está en [06-business-rules.md §6](06-business-rules.md).
+| Enumerador | Espacio de Nombres | Valores Admitidos | Significado y Regla de Negocio |
+| :--- | :--- | :--- | :--- |
+| **`UserRole`** | `Zentric.Domain.Users.Enums` | `Buyer`<br/>`Seller`<br/>`Administrator`<br/>`Supervisor`<br/>`LogisticsOperator` | Rol único asignado al usuario. Dicta los permisos en las políticas de seguridad de la API. |
+| **`UserStatus`** | `Zentric.Domain.Users.Enums` | `Active`<br/>`Blocked`<br/>`Deleted` | Condición operativa. `Blocked` inhabilita autenticación y compras. `Deleted` representa borrado lógico (*soft delete*). |
 
-### `PaymentStatus`
-Estado de un cobro — el rechazo comercial es un estado, no una excepción: `Pending`, `Approved`, `Declined`, `Refunded`. `Refunded` materializa el crédito a favor (ADDENDUM 2026-09-27): el pedido no se revierte.
+---
 
-### `ReturnStatus`
-Ciclo de la devolución (ADDENDUM Dominio 10): `Requested`, `Approved`, `Rejected`, `Refunded` — 1:1 con «Solicitada, Aprobada, Rechazada, Reembolsada» de la Ley. Quién ejecuta cada transición y la regla de inspección: [services/returns-approval-service.md](services/returns-approval-service.md) y [ADR-0018](../Adr/0018-devoluciones-confianza-recepcion-responsabilidad.md).
+### 4.2. Catálogos de Catálogo e Inventario
 
-### `InvoiceType`
-Documento emitido por pedido: `Master` (lo ve el Comprador), `ZentricDetail` (comisión de plataforma, control interno) y `VendorDetail` (lo ve su Vendedor). Reparto y emisión: FAC-01 en [06-business-rules.md §6](06-business-rules.md).
+| Enumerador | Espacio de Nombres | Valores Admitidos | Significado y Regla de Negocio |
+| :--- | :--- | :--- | :--- |
+| **`ProductType`** | `Zentric.Domain.Products.Enums` | `Physical`<br/>`Digital` | Define la ruta operativa: `Physical` exige inventario y despacho; `Digital` genera entrega digital inmediata tras pago y prohíbe devoluciones. |
+| **`ProductStatus`** | `Zentric.Domain.Products.Enums` | `Published`<br/>`Suspended`<br/>`Discontinued` | Ciclo comercial del producto: `Published` (vendible), `Suspended` (pausado temporalmente), `Discontinued` (retirado definitivamente). |
+| **`WarehouseType`** | `Zentric.Domain.Warehouses.Enum` | `Marketplace`<br/>`Vendor` | `Marketplace` (bodega central compartida de Zentric); `Vendor` (bodega privada con `VendorId` obligatorio). |
+
+---
+
+### 4.3. Catálogos de Pedidos y Logística
+
+| Enumerador | Espacio de Nombres | Valores Admitidos | Significado y Regla de Negocio |
+| :--- | :--- | :--- | :--- |
+| **`OrderStatus`** | `Zentric.Domain.Orders.Enums` | `Cart`<br/>`PendingPayment`<br/>`Paid`<br/>`Dispatched`<br/>`Delivered`<br/>`Cancelled` | Ciclo de vida del pedido maestro. `Cart` admite modificaciones; `Paid` sella el pedido como inmodificable; `Cancelled` libera reservas. |
+| **`OrderCancellationCause`** | `Zentric.Domain.Orders.Enums` | `PaymentTimeout`<br/>`FullyResolved` | Motivo estructurado de anulación: `PaymentTimeout` (expiró la ventana de 15 min); `FullyResolved` (todos los paquetes cancelados por quiebre y dinero reembolsado). |
+| **`FulfillmentStatus`** | `Zentric.Domain.Logistics.Enums` | `PendingPackaging`<br/>`Packed`<br/>`Dispatched`<br/>`Delivered`<br/>`Cancelled` | Ciclo del paquete por vendedor: `PendingPackaging` (alistamiento), `Packed` (caja lista), `Dispatched` (en camión), `Delivered` (entregado), `Cancelled` (quiebre de stock fantasma). |
+
+---
+
+### 4.4. Catálogos Financieros, Facturación y Posventa
+
+| Enumerador | Espacio de Nombres | Valores Admitidos | Significado y Regla de Negocio |
+| :--- | :--- | :--- | :--- |
+| **`PaymentStatus`** | `Zentric.Domain.Payments.Enums` | `Pending`<br/>`Approved`<br/>`Declined`<br/>`Refunded` | Estado financiero del cobro con la pasarela. `Refunded` solo se alcanza si el monto reembolsado iguala el total cobrado. |
+| **`InvoiceType`** | `Zentric.Domain.Billing.Enums` | `Master`<br/>`ZentricDetail`<br/>`VendorDetail` | Tipología fiscal: `Master` (entregada al comprador), `ZentricDetail` (comisión interna confidencial del 5%), `VendorDetail` (liquidación neta del vendedor al 95%). |
+| **`InvoiceStatus`** | `Zentric.Domain.Billing.Enums` | `Issued`<br/>`Anulled` | Estado contable de la factura: `Issued` (emitida válidamente), `Anulled` (anulada por contracargo o error administrativo). |
+| **`ReturnStatus`** | `Zentric.Domain.Returns.Enums` | `Requested`<br/>`Approved`<br/>`Rejected`<br/>`Refunded` | Ciclo de la devolución: requiere peritaje favorable de logística (`Inspect`) y visto bueno comercial del vendedor (`ApproveByVendor`). |
+| **`RefundDecisionType`**| `Zentric.Domain.Returns` | `Automatic`<br/>`Manual` | Origen de la decisión de reembolso: `Automatic` (regla del sistema por quiebre de stock); `Manual` (excepción autorizada por Administrador). |
+| **`RefundAuditOutcome`** | `Zentric.Domain.Returns` | `Credited`<br/>`InsufficientBalance`<br/>`VariantNotOnOrder`<br/>`NoReceipt`<br/>`Unauthorized`<br/>`Error` | Resultado técnico registrado en la auditoría inmutable de reembolsos (`RefundAudit`). |
