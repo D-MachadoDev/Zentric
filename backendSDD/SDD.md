@@ -9,7 +9,7 @@
 > stack y comportarse igual. El codigo es un resultado que cumple la especificacion.
 >
 > **Alcance:** el nucleo portable es `ZENTRIC.md`, `Domain/` y los contratos HTTP
-> de `Presentation/` y `Adapters/`: ahi no se impone stack. `Application/`, `Infrastructure/` y
+> de `Presentation/`: ahi no se impone stack. `Application/`, `Infrastructure/` y
 > las decisiones de `Adr/` documentan la implementacion .NET/EF Core **vigente y construida**:
 > citan tecnologia a proposito, para que el sistema actual sea reproducible sin preguntas.
 
@@ -21,8 +21,7 @@
 | [`Domain/`](Domain/) | Modelos, agregados, value objects, invariantes, puertos y reglas de negocio. |
 | [`Application/`](Application/) | Casos de uso, puertos de entrada y orquestacion. |
 | [`Infrastructure/`](Infrastructure/) | Persistencia, despliegue, servicios de fondo y el mapa de entidades. |
-| [`Presentation/`](Presentation/) | Contrato HTTP y matriz de autorizacion por rol. |
-| [`Adapters/`](Adapters/) | Endpoints, validacion REST y manejador global de errores. |
+| [`Presentation/`](Presentation/) | Contratos REST (OpenAPI), matriz de autorizacion por rol y manejo global de errores (RFC 7807). |
 | [`Adr/`](Adr/) | Una decision cada una, con sus alternativas descartadas y el porque. |
 | [`Contract-alignment.md`](Contract-alignment.md) | Politica contractual transversal y trazabilidad cliente-servidor. |
 | [`Backend-Cors-Security.md`](Backend-Cors-Security.md) | Origen permitido, cabeceras, JWT, preflight y pruebas CORS. |
