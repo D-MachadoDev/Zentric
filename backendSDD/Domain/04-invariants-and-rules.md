@@ -1,50 +1,167 @@
 # 04. Reglas de Negocio Estrictas (Invariantes)
 
-El Dominio está obligado a proteger y hacer cumplir las siguientes reglas mediante validaciones duras en sus constructores y métodos (lanzando excepciones de dominio si se intentan violar).
+> **Especificación Normativa de Invariantes del Dominio.** Define las 18 reglas inviolables que la capa de Dominio (`Zentric.Domain`) está obligada a proteger y hacer cumplir en todo momento mediante validaciones defensivas en constructores, entidades y servicios de dominio.
 
-## 1. Integridad del Inventario (Las reglas más duras)
-1. **No-Negatividad Absoluta:** `AvailableQuantity` nunca puede ser `< 0`. Es matemáticamente imposible en el dominio.
-2. **Orden de reserva por mayor stock, sin preferencia por tipo de bodega (V-02, dictamen del Owner 2026-09-30):** el algoritmo de reserva ordena las candidatas de **mayor a menor `AvailableQuantity`** y no distingue entre `WarehouseType.Marketplace` y `WarehouseType.Vendor`. El texto anterior de este invariante exigía buscar *primero* en `Marketplace` y usar el Vendedor solo como contingencia; se retira porque el modelo no puede honorarla —el agregado `Inventory` no transporta el tipo de bodega—, de modo que la regla era inaplicable y el código llevaba desde el inicio la regla contraria. **Por qué no se implementó:** con `VendorId = User.Id` (Q-21b) el dueño del stock es el dueño del *producto*, no el de la bodega, así que "bodega del Marketplace" no identifica un origen de mercancía distinto: solo indica quién opera el almacén. Priorizar por tipo habría cambiado el resultado sin cambiar el dueño del producto y habría exigido una columna nueva, una migración y un cambio en el puerto. Si algún día el hub del Marketplace implica mercancía propia con reglas distintas de las del vendedor, esta decisión se revisa junto con el modelo que lo soporte.
-3. **Bodega única con fraccionamiento de contingencia ([INV-02](06-business-rules.md) revisada por [ADR-0001](../Adr/0001-reserva-fragmentacion-contingencia.md)):**
-   - **Regla base:** toda la cantidad solicitada de una Variante específica en una línea del pedido (`OrderItem`) debe surtirse desde **una (1) sola bodega** cuando exista una bodega individual cuyo `AvailableQuantity` cubra la cantidad total. Los envíos de un mismo SKU no se dividen, para evitar costos exorbitantes.
-   - **Umbral exacto de la excepción (fraccionamiento permitido):** solo si **ninguna** bodega individual cubre la cantidad solicitada, el `InventoryReservationService` puede fraccionar la reserva entre varias bodegas, ordenándolas de mayor a menor stock disponible, **sin preferencia por `WarehouseType`** ([invariante 2](04-invariants-and-rules.md), revisado por el dictamen V-02 del 2026-09-30).
-   - **Fallo y compensación:** si la suma de todas las bodegas es menor que la cantidad solicitada, la operación **falla** y se liberan las reservas parciales calculadas en esa misma transacción (rollback virtual).
-   - **Efecto en logística:** cuando hubo fraccionamiento, se generan **múltiples `Shipment`** (una guía por bodega) dentro del `FulfillmentOrder` del vendedor.
-   - **Ejemplos normativos:** bodega A = 6, bodega B = 4.
-     - Cantidad 5 → A cubre → **una sola bodega** (no se divide).
-     - Cantidad 10 → ninguna cubre → se **fracciona** 6 + 4.
-     - Cantidad 12 → la suma (10) no alcanza → **falla** y no se reserva nada.
-4. **Ajuste de stock ([INV-04](06-business-rules.md)):** el movimiento **Ajuste** (Dominio 6 de la Ley) lo registra el sistema **sin que nadie lo autorice**, siempre con motivo escrito, actor y fecha. La reducción exige **evidencia** —conteo físico del Operador Logístico, `EXC-01` o una devolución—; el incremento es el `Ingreso` normal del Vendedor. El Administrador **audita** en lugar de aprobar. Sustituye la regla del 2026-10-03 («solo el Administrador ajusta»), que fallaba porque **no tiene más información que el Vendedor**: aprobar sin evidencia es trámite, no control. *(Decisión del Owner 2026-10-04; ver [ADR-0021](../Adr/0021-ajuste-de-stock-sin-cuello-de-botella.md).)* **[IMPLEMENTADO - 2026-10-05]:** el movimiento **Ajuste** se implementa con `Inventory.ApplyPhysicalCount(countedQuantity, countedBy, reason)` (excluye Marketplace, QA requerida para reincidentes). El método registra `StockAdjustmentRecord` con `SystemQuantity`, `PhysicalQuantity`, `CountedBy`, `Reason`, `CountedAt` y pre-carga `AdjustmentHistory` ordenada por `CountedAt`, aplicando `RestoreAdjustment` para leer el historial. El repositorio `InventoryRepository.SaveAdjustmentAsync` persiste la fila y el registro en la misma unidad de trabajo; `LoadWithHistoryAsync` recarga el historial. *[IMPLEMENTADO - 2026-10-05.] (Ver ADR-0021).*
+---
 
-## 2. Consistencia de Vendedores y Catálogo
-5. **Autopublicación:** Los productos no requieren aprobación previa humana: nacen en estado `Published` (CAT-01). **[IMPLEMENTADO 2026-10-07 — Q-25 cerrada]:** `POST /api/catalog/products/{productId}/suspend` (política `ProductManagement`, solo Vendedor) lleva el producto a `Suspended`; `POST /api/catalog/products/{productId}/publish` reactiva desde `Suspended` a `Published`. Ambos caminos existen.
-6. **Bloqueo del vendedor ([INV-05](06-business-rules.md)):** bloquear o desactivar a un Vendedor **le cierra el acceso**, no cascadea estados. Sus productos **siguen `Published`** y lo que impide su venta es la política de autorización: el checkout rechaza cualquier carrito que contenga un producto de un Vendedor bloqueado. Los pedidos ya pagados y sus despachos no se tocan. No se modela como evento en cascada ni exige que `User` emita eventos. *(Decisión del Owner 2026-10-04; sustituye la cascada de estados del 2026-10-03.)* **[IMPLEMENTADO - 2026-10-07]:** `POST /api/users/{id}/block` y `POST /api/users/{id}/activate` (política `UserAdministration`, solo Administrador; dictamen Q-26) + guard en `CheckoutOrderCommandHandler` que verifica `vendor.CanAuthenticate` antes de reservar stock.
+## 1. Integridad de Existencias e Inventario
 
-## 3. Dinámicas Comerciales y Pagos
-7. **Facturación Maestra (Merchant of Record):** Zentric asume legalmente el cobro al comprador. El `CustomerOrder` totaliza todo — **[APLAZADO POR DECISIÓN DEL OWNER — ADR-0008, 2026-09-27]:** la propiedad `FlatShippingFee` (Tarifa Plana de Envío) **no se implementa**: el ADR deja la política de envío decidida (transportadora propia «Zentric», guía obligatoria) pero **sin cifra y sin código**, «la tarifa llegará en algunos años». No es una omisión que haya que cerrar: es una decisión de negocio registrada. Y es la base de un único comprobante unificado (no se exponen múltiples recibos de pago al cliente).
+### 1. No-Negatividad Absoluta de Existencias
+- **Enunciado Normativo:** La cantidad disponible de cualquier posición de inventario (`AvailableQuantity`) nunca puede ser menor a cero (`< 0`). Es un límite matemático infranqueable en el dominio.
+- **Mecanismo en Dominio:** Validado en el constructor y en cada mutación de `Inventory`. Cualquier intento de decrementar existencias por debajo de cero provoca una excepción de dominio inmediata, abortando la transacción.
+- **Impacto de Negocio:** Impide la sobreventa de productos en el marketplace y garantiza que nunca se ofrezcan unidades inexistentes.
 
-    > **ADDENDUM - DICTADO POR OWNER (2026-09-27) — política de envío, sin implementación todavía.** Transportadora única propia ("Zentric"), **número de guía obligatorio** en cada despacho, **tarifa fija** (no por peso, tamaño ni zona, porque el sistema no modela ubicación geográfica) y **lo paga el cliente**, no Zentric. La funcionalidad se **aplaza**: el Owner estima que llegará en algunos años, así que este invariante documenta la decisión pero **no hay código de envío**. La cifra de la tarifa sigue sin definirse y ningún código debe asumir un importe. Ver [ADR-0008](../Adr/0008-transportadora-y-tarifa-de-envio.md).
-    >
-    > *Es un ADDENDUM del Owner; `ZENTRIC.md` no menciona envío, transportadora ni guía.*
-8. **Timeout de Reservas:** los pedidos en estado `Cart` o `PendingPayment` con 15 minutos sin actividad se anulan automáticamente: `CheckoutTimeoutService` devuelve las cantidades reservadas a `AvailableQuantity` y llama a `CancelDueToTimeout()` (que rechaza `Paid`/`Delivered`).
-9. **Simulación de Pasarela (YAGNI):** No se almacenan tarjetas de crédito ni billeteras. El Dominio avanza de estado con una simple entidad `PaymentReceipt` que valida la respuesta de éxito/fallo.
+---
 
-    > **Estado de implementación (verificado 2026-09-27):** `PaymentReceipt` existe como raíz de agregado en `Zentric.Domain/Payments/PaymentReceipt.cs` y **está persistido** (`PaymentReceipts`, con `Amount`, `RefundedAmount`, `TransactionId`, `RefundedAt`). `PayOrderCommandHandler` cobra **antes** de marcar el pedido como pagado y emite el comprobante **también cuando la pasarela rechaza**, de modo que todo intento de cobro queda registrado.
-    >
-    > **ADDENDUM - DICTADO POR OWNER (2026-09-27) — reembolso como crédito a favor:** la devolución de un producto físico genera un **crédito a favor del comprador dentro de la plataforma**, no una transferencia de dinero, porque el sistema no custodia fondos. El comprobante de pago pasa a `Refunded` con `RefundedAmount` y `RefundedAt`, y **el `CustomerOrder` NO se revierte**: ya fue entregado y facturado, y reabrirlo obligaría a deshacer logística y facturación cerradas. El estado `Reembolsada` del Dominio 10 de la Ley se materializa así.
-    >
-    > *Esta nota es un ADDENDUM del Owner; no forma parte de la Ley (`ZENTRIC.md`), que no menciona el mecanismo de reembolso.*
+### 2. Orden de Reserva por Mayor Capacidad Disponible
+- **Enunciado Normativo:** El algoritmo de asignación de existencias ordena las bodegas candidatas de **mayor a menor cantidad disponible** (`AvailableQuantity`), sin establecer prioridades ni discriminación entre bodegas del marketplace y bodegas de vendedores.
+- **Mecanismo en Dominio:** Implementado en `InventoryReservationService`. Ordena la lista de bodegas candidatas estrictamente por existencias decrecientes. El agregado `Inventory` no transporta tipo de bodega, preservando la portabilidad del modelo.
+- **Impacto de Negocio:** Optimiza la consolidación logística despachando desde los nodos con mayor capacidad, reduciendo el riesgo de dispersión de envíos.
 
-## 4. Posventa y Excepciones Logísticas
-10. **Pedido pagado, inmodificable:** una vez `Paid`, **ni el comprador ni el vendedor anulan el pedido**: el pedido pagado solo avanza (`Dispatched`/`Delivered`) o termina en `Anulado` por vencimiento del pago (Dominio 7 + ADDENDUM 2026-10-03), y RG-11 impide modificar un pedido finalizado. El comprador que se arrepiente tramita **devolución** (crédito a favor, Dominio 10) y el Vendedor que no puede cumplir anula **su despacho**, que abre devolución y reembolso ([EXC-03](06-business-rules.md)). *(Decisión del Owner 2026-10-03: la regla anterior —el comprador cancelaba su propio pedido mientras todos los despachos estuvieran en `PendingPack`— era inventada y se elimina; nunca tuvo caso de uso ni endpoint.)*
-    - **[ADDENDUM — DICTADO POR EL OWNER, 2026-10-04; ver [ADR-0022](../Adr/0022-pedido-resuelto-pasa-a-cancelled.md)]** `Anulado` admite un **segundo motivo**: la **resolución total del pedido** —todos sus despachos cancelados por [EXC-01](06-business-rules.md) y el comprador con saldo a favor total—. Sigue sin añadirse ningún estado al ciclo: lo que se amplía es el motivo. El pedido solo pasa a `Anulado` **cuando el dinero está acreditado** (invariante 14); resuelto con saldo sin devolver no está liquidado. No se confunde con `Delivered`: un pedido resuelto no recibió nada.
-11. **Cancelación por Stock Fantasma:** el Vendedor (o el Operador Logístico) puede anular el **despacho completo de su porción** por pérdida física de stock (`CancelDueToNoStock()`, motivo `Stock Fantasma`): el pedido maestro no se toca y se abre la devolución obligatoria de la línea. **IMPLEMENTADO 2026-10-07 (ADR-0020):** el consumidor `PartialFulfillmentCancelledConsumer` usa `RefundPolicyService` (regla automática "stock_breakage") para emitir reembolso automático con precio congelado y registrar `RefundAudit` (ADR-0020 decisión 7). El reembolso ya no requiere intervención manual del Administrador.
-12. **Blindaje de Productos Digitales:** La devolución y el reembolso de cualquier ítem donde `ProductType == Digital` está terminantemente prohibido por código (Venta Final Irreversible).
-13. **Doble Verificación de Devolución Física:** ningún reembolso por devolución física se emite sin dos banderas verdes explícitas: 1) Conformidad Física (Logística) y 2) Conformidad Comercial (Vendedor). **[ADR-0018]:** la inspección física es obligatoria **salvo** que la devolución se reciba en una bodega del propio vendedor; esa exención la deduce el servidor (el cliente ya no envía el flag) — ver [returns-approval-service.md](services/returns-approval-service.md).
+---
 
-## 5. Precio congelado y crédito al comprador
-14. **El crédito acumulado nunca supera lo cobrado:** la suma de todos los créditos de un comprobante no puede exceder su `Amount`, y el comprobante pasa a `Refunded` solo cuando el acumulado iguala el total cobrado. *(Decisión del Owner 2026-10-04; ver [EXC-02](06-business-rules.md) y [ADR-0020](../Adr/0020-precio-congelado-y-credito-parcial-por-linea.md).)* **Implementado 2026-10-04** (`PaymentReceipt.Refund` acumula sobre `RefundedAmount`, rechaza lo que exceda el saldo pendiente y solo marca `Refunded` cuando el acumulado iguala `Amount`; pruebas en `PaymentReceiptAccumulatedRefundTests`). El importe de cada crédito sale del **precio congelado de la línea × unidades devueltas**, nunca del total del comprobante — ver [EXC-02](06-business-rules.md).
-15. **El precio unitario de una línea es un snapshot inmutable:** se toma del catálogo (`Product.Price`) al añadir la línea al carrito y no cambia después; el total de línea es `precio × cantidad` y el total del pedido la suma de sus líneas. El contrato de alta de línea no admite precio, así que ni el comprador ni el servidor pueden fijar un precio distinto del catálogo. *(Decisiones del Owner 2026-10-04; ver [PED-04](06-business-rules.md).)* **Implementado 2026-10-04** (`AddOrderItemCommandHandler`, prueba `AltaDeLinea_ElPrecioLoMandaElCatalogo_NoElCliente`).
-16. **Identidad única por usuario:** el correo y el documento de identidad son únicos en todo el sistema, y cada usuario tiene **un único rol**. *(Ley: Dominio 1, atributo «Rol: Único por usuario»; reglas de negocio de `User` en [01-models.md](01-models.md).)* **[PARCIALMENTE GARANTIZADO - 2026-10-04]:** `CreateUserCommand` comprueba la unicidad con `IsEmailUniqueAsync` e `IsIdentityDocumentUniqueAsync` antes de insertar, pero **la base de datos no tiene índice único** sobre `Email` ni `IdentityDocument`. Es una comprobación previa sin garantía: dos altas concurrentes con el mismo correo pueden pasar ambas el control y persistir el duplicado. Cerrar el invariante exige el índice único, no solo la comprobación.
-17. **El comprador tiene dirección principal:** `Buyer.MainAddress` es obligatoria al crear el comprador y no puede quedar nula; las direcciones adicionales son opcionales. *(Ley: DOMINIO 2 «Gestión de Compradores», «Dirección principal: Sí» / «Direcciones adicionales: No».)* Ver [`Address`](02-value-objects.md), que además es inmutable y exige sus cinco campos.
-18. **Aislamiento del comprador:** el comprador administra únicamente su propia información; nunca la de otros compradores ni los inventarios. *(Ley: DOMINIO 2, «Restricción Clave».)* Esta regla **no se protege con estado en el dominio**: es una condición de autorización sobre el recurso, y se cumple en la capa de aplicación por propiedad del recurso — ver [ADR-0013](../Adr/0013-propiedad-del-recurso-por-rol.md) y la matriz de [Q-21b](../orchestrator-state.md#91-preguntas-al-owner-abiertas).
+### 3. Bodega Única con Fraccionamiento de Contingencia
+- **Enunciado Normativo:** Toda la cantidad solicitada de una variante en una línea de pedido debe reservarse desde **una sola bodega** si alguna de las bodegas candidatas cubre el requerimiento completo.
+  - **Excepción de Fraccionamiento:** Solo si **ninguna** bodega individual cuenta con existencias suficientes para cubrir la línea, el sistema fracciona la reserva entre múltiples bodegas, ordenadas de mayor a menor stock disponible.
+  - **Fallo y Compensación:** Si la suma combinada de todas las bodegas candidatas es inferior a la cantidad solicitada, la operación falla por completo y se liberan las reservas provisionales en esa misma operación.
+  - **Efecto Logístico:** En caso de fraccionamiento, se emiten múltiples órdenes de despacho (`Shipment`), una por cada bodega de origen involucrada.
+- **Mecanismo en Dominio:** Orquestado por `InventoryReservationService` conforme a la especificación de [reserva y contingencia](../Adr/0001-reserva-fragmentacion-contingencia.md).
+- **Impacto de Negocio:** Minimiza costos de flete consolidando envíos en una sola bodega y solo asume despachos divididos cuando es estrictamente indispensable para no perder la venta.
+
+---
+
+### 4. Ajuste de Existencias por Evidencia Física
+- **Enunciado Normativo:** Los movimientos de ajuste de existencias corrigen discrepancias entre el registro digital y el inventario físico real:
+  - **Ajustes al alza:** Constituyen ingresos normales declarados por el vendedor.
+  - **Ajustes a la baja:** Requieren obligatoriamente **evidencia comprobable** (conteo físico ejecutado por un Operador Logístico, reporte de stock fantasma al empacar o retorno de devolución).
+  - **Auditoría sin Bloqueo:** El sistema registra el ajuste de forma inmediata con actor, fecha y justificación escrita. El Administrador audita a posteriori en lugar de aprobar previamente.
+- **Mecanismo en Dominio:** Ejecutado mediante `Inventory.ApplyPhysicalCount()`, generando un registro inmutable `StockAdjustmentRecord` y emitiendo `StockAdjustedDomainEvent` según la política de [ajuste sin cuello de botella](../Adr/0021-ajuste-de-stock-sin-cuello-de-botella.md).
+- **Impacto de Negocio:** Elimina la burocracia administrativa en el almacén mientras mantiene una pista de auditoría rigurosa para identificar mermas y fraudes.
+
+---
+
+## 2. Catálogo y Consistencia de Vendedores
+
+### 5. Autopublicación Directa del Vendedor
+- **Enunciado Normativo:** Los vendedores poseen autonomía operativa sobre su catálogo:
+  - Todo producto creado o modificado nace inmediatamente en estado publicado (`Published`), sin requerir aprobación humana previa.
+  - El vendedor puede suspender (`Suspended`) y reactivar (`Published`) sus productos en cualquier momento.
+- **Mecanismo en Dominio:** Máquina de estados controlada dentro del agregado `Product` a través de los métodos `Publish()` y `Suspend()`.
+- **Impacto de Negocio:** Agilidad comercial inmediata en la incorporación de nuevos productos al marketplace.
+
+---
+
+### 6. Aislamiento de Acceso por Vendedor Inactivo o Bloqueado
+- **Enunciado Normativo:** Bloquear o desactivar a un vendedor revoca de inmediato su acceso a la plataforma sin alterar en cascada los productos de su catálogo.
+  - Los productos del vendedor bloqueado permanecen en su estado actual en el catálogo.
+  - El proceso de compra valida el estado del vendedor y rechaza cualquier carrito que contenga productos pertenecientes a un vendedor bloqueado.
+  - Los pedidos previamente pagados y en curso de entrega continúan su ciclo logístico normal hasta completarse.
+- **Mecanismo en Dominio:** Validado en el agregado `User` (`CanAuthenticate`) y verificado como guarda precondicional antes de consolidar reservas de inventario.
+- **Impacto de Negocio:** Permite suspender vendedores infractores en milisegundos sin disparar mutaciones pesadas de datos en masa y protegiendo las compras ya pagadas por los clientes.
+
+---
+
+### 7. Tasa de Incidencias de Stock Fantasma
+- **Enunciado Normativo:** El sistema monitorea la confiabilidad de cada vendedor mediante su tasa de incidencias de inventario (`StockFantasmaRate`). Cada cancelación de despacho por falta física de producto incrementa esta métrica. Si la tasa alcanza o supera el umbral crítico del 30%, el sistema bloquea preventivamente las ventas de ese vendedor.
+- **Mecanismo en Dominio:** Métodos de negocio en `User` (`IncrementStockFantasmaRate` y `ExceedsStockFantasmaThreshold`).
+- **Impacto de Negocio:** Protege al comprador frente a vendedores recurrentemente informales que declaran existencias que no poseen físicamente.
+
+---
+
+## 3. Dinámicas Comerciales y Pasarela de Pagos
+
+### 8. Facturación Maestra Centralizada (Merchant of Record)
+- **Enunciado Normativo:** Zentric opera legalmente como *Merchant of Record* ante el comprador, asumiendo la consolidación comercial del pedido:
+  - El comprador visualiza y paga un único pedido consolidado (`CustomerOrder`), recibiendo un comprobante unificado sin importar la cantidad de vendedores involucrados.
+  - La política de flete establece el uso de transportadora propia ("Zentric") con número de guía obligatorio en cada paquete.
+  - El cobro del flete se mantiene en reserva diferida según lo dictaminado en el [registro de transporte y envío](../Adr/0008-transportadora-y-tarifa-de-envio.md), sin asumir importes ficticios.
+- **Mecanismo en Dominio:** Agregado `CustomerOrder` totaliza las líneas comerciales; segregación de facturación delegada a la emisión de comprobantes `Invoice`.
+- **Impacto de Negocio:** Experiencia de compra unificada para el usuario final y cumplimiento de responsabilidades fiscales centralizadas.
+
+---
+
+### 9. Expiración de Reserva Preventiva (Ventana de 15 Minutos)
+- **Enunciado Normativo:** Toda reserva de existencias generada al iniciar el checkout dispone de una validez máxima de **15 minutos** para confirmar el pago.
+  - Si el pago no se confirma dentro del lapso establecido, el sistema revierte automáticamente las existencias reservadas al inventario disponible.
+  - El pedido en trámite pasa a estado anulado por tiempo de espera (`CancelDueToTimeout`).
+- **Mecanismo en Dominio:** El agregado `CustomerOrder` rechaza pagos posteriores a la expiración mediante validación de estado; la restitución de inventario se ejecuta mediante `Inventory.ReturnToAvailable()`.
+- **Impacto de Negocio:** Evita el bloqueo indefinido de mercancía por carritos abandonados, garantizando la rotación del inventario.
+
+---
+
+### 10. Registro Inmutable de Comprobantes de Pago
+- **Enunciado Normativo:** Zentric no custodia ni procesa directamente tarjetas de crédito ni datos financieros sensibles. Cada interacción con la pasarela de pagos genera un comprobante financiero inmutable (`PaymentReceipt`) que documenta tanto las transacciones aprobadas como los intentos rechazados.
+- **Mecanismo en Dominio:** Agregado raíz `PaymentReceipt` con propiedades inmutables de auditoría (`TransactionId`, `Amount`, `RefundedAmount`, `RefundedAt`).
+- **Impacto de Negocio:** Trazabilidad contable total de todos los intentos de cobro sin asumir riesgos de seguridad PCI-DSS.
+
+---
+
+## 4. Gestión de Despacho y Posventa
+
+### 11. Inmodificabilidad del Pedido Pagado y Resolución Total
+- **Enunciado Normativo:** Una vez que un pedido alcanza el estado pagado (`Paid`), ni el comprador ni el vendedor pueden modificar sus líneas ni anularlo arbitrariamente. El pedido pagado solo puede avanzar en su ciclo logístico hacia despacho (`Dispatched`) y entrega (`Delivered`).
+  - **Excepción de Resolución Total:** El pedido maestro solo transiciona a estado anulado (`Cancelled`) si la totalidad de sus órdenes de despacho fueron canceladas por quiebre de stock fantasma y el saldo económico a favor del comprador ha sido acreditado en su totalidad ([resolución total de orden](../Adr/0022-pedido-resuelto-pasa-a-cancelled.md)).
+- **Mecanismo en Dominio:** Invariante de estado en `CustomerOrder` que prohíbe transiciones regresivas o cancelaciones manuales una vez capturado el pago.
+- **Impacto de Negocio:** Garantiza la seguridad jurídica de las transacciones comerciales ya cobradas.
+
+---
+
+### 12. Cancelación de Despacho por Stock Fantasma
+- **Enunciado Normativo:** Si al momento de realizar el empaque físico en bodega se detecta que las unidades están dañadas o no existen, el Operador Logístico o el Vendedor cancelan unilateralmente esa orden de despacho específica (`FulfillmentOrder`) bajo causal de stock fantasma.
+  - El pedido maestro (`CustomerOrder`) conserva su validez para los despachos restantes.
+  - Se abre de forma automática el proceso de devolución de la línea afectada, emitiendo el reembolso proporcional al comprador.
+- **Mecanismo en Dominio:** Método `FulfillmentOrder.CancelDueNoStock()`, que emite el evento `PartialFulfillmentCancelledDomainEvent`.
+- **Impacto de Negocio:** Transparencia operativa ante quiebres de inventario sin paralizar las entregas de otros vendedores de la misma orden.
+
+---
+
+### 13. Blindaje de Productos Digitales (Venta Final)
+- **Enunciado Normativo:** La devolución, retracto o reembolso de cualquier producto de naturaleza digital (`DigitalDeliveryRecord`) está estrictamente prohibida por el dominio. Las compras de bienes digitales son ventas finales e irreversibles.
+- **Mecanismo en Dominio:** Guarda de negocio en `ReturnRequest` que valida `ProductType != Digital` al momento de instanciar o solicitar una devolución.
+- **Impacto de Negocio:** Protección patrimonial de los vendedores frente a copias no autorizadas o fraudes de consumo digital.
+
+---
+
+### 14. Doble Verificación en Devoluciones de Productos Físicos
+- **Enunciado Normativo:** El procesamiento de una devolución de mercancía física exige obligatoriamente dos conformidades independientes:
+  1. **Inspección de Condición Física:** Realizada por el Operador Logístico en la bodega de recepción.
+  2. **Aprobación Comercial:** Otorgada por el Vendedor responsable de la venta.
+  - **Excepción de Bodega Propia:** Si la devolución física es recibida directamente en una bodega de propiedad exclusiva del vendedor, la verificación física se asume completada por el propio vendedor conforme a la regla de [aprobación de devoluciones](../Adr/0018-devoluciones-aprobacion-dual-logistica-vendedor.md).
+- **Mecanismo en Dominio:** Estado bifactorial en el agregado `ReturnRequest` (`IsPhysicallyInspected` y `IsApprovedByVendor`), evaluado por `ReturnsApprovalService`.
+- **Impacto de Negocio:** Evita fraudes en devoluciones garantizando que la mercancía retorne en condiciones óptimas antes de liberar créditos económicos.
+
+---
+
+## 5. Saldo a Favor, Snapshots y Datos de Identidad
+
+### 15. Tope de Crédito Acumulado y Reembolso como Saldo
+- **Enunciado Normativo:** Todo reembolso originado por una devolución o quiebre de stock se procesa como **saldo a favor del comprador dentro de la plataforma**, nunca como una reversión bancaria directa hacia la pasarela de pago.
+  - La suma acumulada de todos los créditos asociados a un comprobante de pago nunca puede superar el monto originalmente cobrado (`Amount`).
+  - El comprobante de pago solo alcanza el estado de reembolsado (`Refunded`) cuando el saldo acumulado iguala el 100% del importe total.
+- **Mecanismo en Dominio:** Método de negocio `PaymentReceipt.Refund()` que acumula sobre `RefundedAmount` y rechaza importes que excedan el saldo residual conforme a la política de [crédito parcial por línea](../Adr/0020-precio-congelado-y-credito-parcial-por-linea.md).
+- **Impacto de Negocio:** Retención de liquidez en la plataforma y blindaje financiero contra sobre-reembolsos.
+
+---
+
+### 16. Snapshot Inmutable de Precio Unitario
+- **Enunciado Normativo:** El precio unitario de cada línea de pedido se captura de forma inmutable desde el catálogo (`Product.Price`) en el instante exacto en que la variante se añade al carrito.
+  - Ni el comprador ni el vendedor pueden enviar o modificar el precio de la línea.
+  - Las fluctuaciones posteriores de precio en el catálogo no alteran los pedidos en curso ni los carritos activos.
+- **Mecanismo en Dominio:** Constructor de `OrderItem` que recibe el precio unitario congelado como Value Object `Money` y calcula el subtotal como producto de precio por cantidad.
+- **Impacto de Negocio:** Certeza jurídica en el precio pactado con el comprador durante toda la transacción.
+
+---
+
+### 17. Identidad Única y Rol Exclusivo
+- **Enunciado Normativo:** Cada usuario en el sistema posee un correo electrónico y un documento de identidad estrictamente únicos. Asimismo, cada cuenta de usuario tiene asignado exactamente **un único rol funcional** dentro del marketplace.
+- **Mecanismo en Dominio:** Entidad raíz `User` que encapsula `Email`, documento de identidad y enum `UserRole`.
+- **Impacto de Negocio:** Control de acceso riguroso y segregación clara de responsabilidades operativas.
+
+---
+
+### 18. Dirección Principal Obligatoria y Aislamiento del Comprador
+- **Enunciado Normativo:** Todo comprador debe registrar obligatoriamente una dirección principal completa e inmutable (`Address`) al crearse en el sistema.
+  - El comprador administra únicamente su propia información personal, sus carritos y sus pedidos.
+  - Está estrictamente prohibido que un comprador tenga visibilidad o control sobre las órdenes de otros clientes o las posiciones globales de inventario.
+- **Mecanismo en Dominio:** Agregado `Buyer` exige `MainAddress` no nula en su creación; aislamiento de pertenencia aplicado en los contratos de datos y casos de uso.
+- **Impacto de Negocio:** Asegura la información indispensable para el despacho logístico y protege la privacidad y confidencialidad de los datos del cliente.

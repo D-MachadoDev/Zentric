@@ -1,4 +1,4 @@
-# 01. Panorama General del Dominio (Domain Overview) — Zentric
+# 01. Panorama General del Dominio (Domain Overview)
 
 > **Documento de Visión y Arquitectura de Dominio.** Define los límites de contexto (*Bounded Contexts*), las raíces de agregado (*Aggregate Roots*), el mapa de relaciones del negocio y la estructura de especificaciones que gobiernan el núcleo de **Zentric** (`Zentric.Domain`).
 

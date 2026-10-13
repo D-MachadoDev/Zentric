@@ -1,4 +1,4 @@
-# 04. Eventos de Dominio (Domain Events) — Zentric
+# 04. Eventos de Dominio (Domain Events)
 
 > **Especificación Táctica de Comunicación Desacoplada.** Define los Eventos de Dominio que notifican cambios de estado críticos entre distintos *Bounded Contexts* en **Zentric** (`Zentric.Domain`), garantizando la colaboración entre agregados sin romper sus límites transaccionales duros.
 
