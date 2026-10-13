@@ -5,7 +5,7 @@
 ---
 
 ## 1. Propósito y Responsabilidad
-Garantizar la regla **PED-05**: el estado global de una orden comercial ([`CustomerOrder`](file:///C:/Users/da-V7/Desktop/Proyectos/Zentric/backend/Zentric.Domain/Orders/CustomerOrder.cs)) refleja el mínimo común denominador del progreso de sus despachos fragmentados ([`FulfillmentOrder`](file:///C:/Users/da-V7/Desktop/Proyectos/Zentric/backend/Zentric.Domain/Logistics/FulfillmentOrder.cs)).
+Garantizar la **Regla del Mínimo Común de Despachos**: el estado global de una orden comercial ([`CustomerOrder`](file:///C:/Users/da-V7/Desktop/Proyectos/Zentric/backend/Zentric.Domain/Orders/CustomerOrder.cs)) refleja el mínimo común denominador del progreso de sus despachos fragmentados ([`FulfillmentOrder`](file:///C:/Users/da-V7/Desktop/Proyectos/Zentric/backend/Zentric.Domain/Logistics/FulfillmentOrder.cs)).
 
 El servicio no altera el estado de los despachos; evalúa el conjunto de estados y decide cuándo y cómo avanzar el pedido maestro.
 
@@ -28,11 +28,11 @@ El servicio no altera el estado de los despachos; evalúa el conjunto de estados
 
 ## 4. Flujo Lógico y Reglas de Negocio (Invariantes)
 
-### Regla 1: Aislamiento de Cancelaciones por Quiebre (EXC-01)
+### Regla 1: Aislamiento de Cancelaciones por Stock Fantasma
 Un despacho cancelado por falta física de existencias (`FulfillmentStatus.Cancelled` por "Stock Fantasma") **no bloquea** el avance del pedido maestro:
 - Los despachos cancelados se excluyen de la lista de despachos activos.
 - Si no se excluyeran, un solo paquete cancelado dejaría al pedido maestro congelado en `Paid` de por vida, aunque todos los demás vendedores hayan entregado sus productos.
-- La línea cancelada se salda económicamente a través de un reembolso parcial proporcional ([`EXC-02`](../06-business-rules.md)).
+- La línea cancelada se salda económicamente a través de un reembolso parcial proporcional por línea afectada.
 
 ### Regla 2: Sin Entregas Activas
 Si todos los despachos del pedido fueron cancelados por quiebre de stock (`active.Count == 0`), el pedido maestro no avanza:
