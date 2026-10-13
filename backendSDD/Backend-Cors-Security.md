@@ -76,19 +76,17 @@ sequenceDiagram
 
 ---
 
-## 5. Matriz Integral de Códigos HTTP y Comportamiento del Cliente
+## 5. Códigos de Respuesta Específicos de Seguridad y CORS
 
-| Código HTTP | Condición Técnica / Negocio | Formato de Respuesta | Acción Contractual del Cliente Web (`zentric.me`) |
-| :---: | :--- | :--- | :--- |
-| **`200 OK`** | Consulta (`GET`) o actualización (`PUT/PATCH`) procesada con éxito. | `application/json` | Renderizar o actualizar los datos en pantalla. |
-| **`201 Created`** | Recurso creado exitosamente (ej. nuevo pedido, alta de producto). | `application/json` | Notificar creación exitosa y mostrar el nuevo recurso. |
-| **`204 No Content`** | Eliminación (`DELETE`) o Preflight (`OPTIONS`) exitoso sin contenido devuelto. | Sin cuerpo | Confirmar la operación silenciosamente en la interfaz. |
-| **`400 Bad Request`** | Error de validación de entrada (FluentValidation, formato JSON o campos inválidos). | `application/problem+json` (RFC 9457) | Mostrar los mensajes de validación en los campos del formulario. |
-| **`401 Unauthorized`** | Falta de autenticación: token ausente, firma inválida o sesión expirada. | `application/problem+json` (RFC 9457) | Purgar el token de sesión y redirigir inmediatamente al **Login**. |
-| **`403 Forbidden`** | Falta de permisos: usuario autenticado pero su rol no tiene acceso a este recurso. | `application/problem+json` (RFC 9457) | Mostrar alerta de *"Acceso denegado"* (**sin** cerrar la sesión activa). |
-| **`404 Not Found`** | Recurso no encontrado (o recurso ajeno ocultado para evitar escaneo). | `application/problem+json` (RFC 9457) | Mostrar mensaje de *"Recurso no encontrado"* y permitir volver al listado. |
-| **`409 Conflict`** | Conflicto de estado o regla de negocio (ej. reserva de 15 min expirada, stock insuficiente). | `application/problem+json` (RFC 9457) | Notificar el conflicto específico de negocio para que el usuario tome acción. |
-| **`500 Internal Error`** | Error técnico no controlado capturado por el middleware global. | `application/problem+json` (RFC 9457) | Mostrar mensaje genérico de error de servidor con identificador de seguimiento. |
+Este documento regula exclusivamente los códigos HTTP vinculados al transporte de seguridad y la negociación de orígenes:
+
+| Código HTTP | Condición de Seguridad | Acción Contractual del Cliente Web (`zentric.me`) |
+| :---: | :--- | :--- |
+| **`204 No Content`** | Preflight (`OPTIONS`) exitoso: origen, método y cabeceras autorizados. | Continuar silenciosamente y emitir la petición real con el Bearer token. |
+| **`401 Unauthorized`** | Falta de autenticación: token JWT ausente, firma inválida o sesión expirada. | Purgar credenciales locales (`sessionStorage`) y redirigir inmediatamente a **Login**. |
+| **`403 Forbidden`** | Falta de autorización: origen rechazado por CORS, o token válido con rol insuficiente. | Notificar alerta de *"Acceso denegado"* en pantalla (**sin** cerrar la sesión activa). |
+
+> **Delimitación Arquitectónica:** El tratamiento del resto de códigos HTTP de negocio (`200 OK`, `201 Created`, `400 Bad Request`, `404 Not Found`, `409 Conflict`, `500 Internal Error`) y el esquema de RFC 9457 corresponden a los adaptadores REST y se especifican en [Adapters/Global-exception-handler.md](Adapters/Global-exception-handler.md) y [Presentation/01-endpoints.md](Presentation/01-endpoints.md).
 
 ---
 
