@@ -1,130 +1,254 @@
-# 01. Modelos de Dominio (Aggregate Roots y Entidades)
+# 01. Modelos de Dominio (Aggregate Roots y Entidades) — Zentric
 
-Este documento define los **Aggregate Roots (AR)** y las **Entidades** principales del sistema Zentric, agrupados por *Bounded Contexts*, garantizando la pureza del modelo sin dependencias de infraestructura.
+> **Especificación Táctica de Modelos.** Define las Raíces de Agregado (*Aggregate Roots*), Entidades hijas y relaciones estructurales de **Zentric** (`Zentric.Domain`), organizadas por *Bounded Contexts*. Garantiza la pureza de la lógica de negocio y la encapsulación estricta de invariantes.
 
-> Nota: las anotaciones `(UserId)`, `(ProductId)`… son conceptuales — en el código son `Guid` (sin IDs fuertemente tipados). Solo `CustomerOrder`, `FulfillmentOrder` y `ReturnRequest` heredan de `Entity` (la base que permite emitir eventos de dominio); el resto son clases planas.
+---
 
-## Mapa del modelo
+## 1. Diagrama Entidad-Relación del Dominio (ERD)
 
 ```mermaid
 erDiagram
-    CUSTOMERORDER ||--|{ ORDERITEM : "líneas del pedido"
-    CUSTOMERORDER ||--o{ FULFILLMENTORDER : "un despacho por vendedor"
-    FULFILLMENTORDER ||--o{ SHIPMENT : "guías por bodega"
-    PRODUCT ||--o{ PRODUCTVARIANT : "variantes (SKU)"
-    PRODUCTVARIANT ||--o{ INVENTORY : "stock por bodega"
-    WAREHOUSE ||--o{ INVENTORY : "bodega"
-    USER ||--o| BUYER : "perfil de compra"
-    CUSTOMERORDER ||--|{ INVOICE : "maestra + detalle"
-    CUSTOMERORDER ||--|| PAYMENTRECEIPT : "comprobante del cobro"
-    CUSTOMERORDER ||--o{ RETURNREQUEST : "devoluciones"
-    PRODUCT ||--o{ RETURNREQUEST : "variante devuelta"
+    USER ||--o| BUYER : "perfil comercial (1:1)"
+    USER ||--o{ PRODUCT : "vende (VendorId = UserId)"
+    USER ||--o{ WAREHOUSE : "administra bodega propia (VendorId)"
+    
+    PRODUCT ||--|{ PRODUCTVARIANT : "contiene variantes (SKU)"
+    PRODUCTVARIANT ||--o{ INVENTORY : "control de stock por bodega"
+    WAREHOUSE ||--o{ INVENTORY : "almacena existencias"
+    
+    BUYER ||--o{ CUSTOMERORDER : "realiza pedidos"
+    CUSTOMERORDER ||--|{ ORDERITEM : "líneas de compra"
+    CUSTOMERORDER ||--o{ FULFILLMENTORDER : "despacho dividido por vendedor"
+    FULFILLMENTORDER ||--|{ SHIPMENT : "paquetes agrupados por bodega"
+    
+    CUSTOMERORDER ||--|| PAYMENTRECEIPT : "comprobante de cobro"
+    CUSTOMERORDER ||--|{ INVOICE : "maestra + liquidaciones"
+    
+    CUSTOMERORDER ||--o{ RETURNREQUEST : "solicitud de devolución"
+    PRODUCTVARIANT ||--o{ RETURNREQUEST : "ítem físico devuelto"
 ```
 
-## 1. Bounded Context: Identity & Access (Usuarios)
+---
 
-### Aggregate Root: `User`
-Representa a cualquier individuo con acceso a la plataforma (Comprador, Vendedor, Op. Logístico, Admin, Supervisor).
-- **Propiedades:** `Id` (UserId), `IdentityDocument` (string, obligatorio — Q-07), `FullName` (VO `FullName`), `Email` (VO `Email`), `PasswordHash` (string), `Role` (UserRole), `Status` (UserStatus), `CreatedAt`, `UpdatedAt`, `DeletedAt` (soft delete → `IsDeleted`), `CanAuthenticate`.
-- **Reglas de Negocio:** 
-  - El correo y documento de identidad deben ser únicos en todo el sistema.
-  - Un usuario solo puede tener un único rol asignado.
-- **Comportamientos (Métodos):** `Block()`, `Activate()`, `UpdateRole()`, `UpdateFullName()`, `UpdateEmail()`, `UpdatePasswordHash()`, `Delete()`, `Restore()`, `DeleteByAdmin()`.
-  - **Cascada de suspensión al bloquear — RETIRADA, no es un pendiente.** La cadena de estados que este documento describía el 2026-10-03 la retiró el Owner el **2026-10-04** (ver [INV-05](06-business-rules.md) y la [enmienda de ADR-0019](../Adr/0019-cierre-de-decisiones-capa-domain.md#enmiendas)): bloquear **no** cascadea nada, los productos siguen `Published` y quien impide la venta es la política de autorización en el checkout. En consecuencia `User` **no** hereda `Entity` y no emite eventos **a propósito**, y el bloqueo es únicamente `Status = Blocked`. **INV-05 implementado 2026-10-07:** `POST /api/users/{id}/block` y `POST /api/users/{id}/activate` (política `UserAdministration`, solo Administrador; dictamen Q-26) + guard en `CheckoutOrderCommandHandler`. *(Verificado 2026-10-07: casos de uso y pruebas BDD existen.)*
-  - Fuente de verdad: `Zentric.Domain/Users/User.cs`.
+## 2. Modelos por Bounded Context
 
-## 2. Bounded Context: Catalog (Catálogo)
+### 2.1. Bounded Context: Identity & Access (Identidad)
 
-### Aggregate Root: `Product`
-Representa un bien ofrecido por un Vendedor.
-- **Propiedades:** `Id` (ProductId), `VendorId` (UserId), `Name` (string), `Description` (string), `Price` (Money), `Type` (ProductType - Físico o Digital), `Status` (ProductStatus), timestamps + soft delete.
-- **Entidades Hijas: `ProductVariant`** — combinación vendible del producto (ej. Talla/Color). Su `Id` **es** el `VariantId` y actúa como SKU para el inventario ([ADR-0002](../Adr/0002-clave-inventario-variantid.md)). Se compone de atributos: `VariantAttribute` (nombre + valor). El SKU es único dentro del producto.
-- **Reglas de Negocio:**
-  - Al crearse, su estado es `Published` automáticamente (sin flujo de aprobación).
-  - **Variante obligatoria solo para físicos ([CAT-03](06-business-rules.md)):** un producto `Physical`
-    exige al menos una variante (ver [backendSDD/Domain/06-business-rules.md](06-business-rules.md) [CAT-03](06-business-rules.md) y
-    [backendSDD/Adr/0003-variante-obligatoria-productos-fisicos.md](../Adr/0003-variante-obligatoria-productos-fisicos.md)). Un producto
-    `Digital` ([CAT-02](06-business-rules.md): sin logística ni inventario) puede nacer sin variantes.
-- **Comportamientos:** `Update()`, `UpdatePrice()`, `UpdateType()`, `Publish()` (reactiva desde `Suspended`; publicar uno ya publicado responde 400), `Suspend()`, `Delete()` (pasa a `Discontinued` + soft delete), `Restore()`, `AddVariant()`, `RemoveVariant()`. **[IMPLEMENTADO 2026-10-07 — Q-25 cerrada]:** `POST /api/catalog/products/{productId}/suspend` (política `ProductManagement`, solo Vendedor) lleva el producto a `Suspended`; `POST /api/catalog/products/{productId}/publish` reactiva desde `Suspended` a `Published`. La Ley (ZENTRIC.md Dominio 5) lista los tres estados y ahora ambos caminos existen.
+#### Aggregate Root: `User`
+Representa a cualquier participante autenticado en el sistema. Es el núcleo de identidad único para los 5 roles del marketplace.
+- **Propiedades Clave:**
+  - `Id` (`Guid`): Identificador único del usuario.
+  - `IdentityDocument` (`string`): Documento de identidad obligatorio y no vacío.
+  - `FullName` (`FullName` - Value Object): Nombre y apellido del usuario.
+  - `Email` (`Email` - Value Object): Correo electrónico único en el sistema.
+  - `PasswordHash` (`string`): Clave cifrada con PBKDF2.
+  - `Role` (`UserRole`): Rol único asignado (`Buyer`, `Seller`, `Administrator`, `Supervisor`, `LogisticsOperator`).
+  - `Status` (`UserStatus`): Estado operativo (`Active`, `Blocked`).
+  - `StockFantasmaRate` (`decimal`): Métrica histórica de quiebres de inventario (0.0 a 1.0) aplicable a vendedores.
+- **Invariantes del Modelo:**
+  - Correo electrónico y documento de identidad únicos en toda la plataforma.
+  - Cada cuenta posee **exactamente un rol activo** a la vez.
+  - El bloqueo de un usuario (`Status = Blocked`) inhabilita su autenticación inmediatamente.
+- **Métodos de Negocio:**
+  - `Block()` / `Activate()`: Modificación del estado operativo.
+  - `UpdateRole(newRole)`: Cambio de privilegios administrativos.
+  - `UpdateFullName()`, `UpdateEmail()`, `UpdatePasswordHash()`.
+  - `Delete()` / `Restore()`: Manejo de borrado lógico (*soft delete*).
 
-## 3. Bounded Context: Inventory (Inventario y Bodegas)
+---
 
-### Aggregate Root: `Warehouse`
-Espacio físico donde se almacenan los productos.
-- **Propiedades:** `Id` (WarehouseId), `Name` (string), `Location` (**string**, no VO), `Capacity` (int), `Type` (WarehouseType), `VendorId` (Guid? — `null` si es bodega del Marketplace), `IsActive`, timestamps + soft delete.
-- **Reglas de Negocio:** Distingue entre bodegas propias del marketplace y de los vendedores.
+### 2.2. Bounded Context: Buyers (Compradores)
 
-### Aggregate Root: `Inventory`
-El control transaccional del stock de una variante específica (SKU) en una bodega específica.
-- **Propiedades:** `Id`, `VariantId` (VariantId), `WarehouseId` (WarehouseId), `AvailableQuantity` (int), `ReservedQuantity` (int), `DamagedQuantity` (int), `UsedQuantity` (int), timestamps + soft delete (`MarkAsDeleted` rechaza si queda stock físico).
-- **Clave de stock:** la pareja `(VariantId, WarehouseId)`, según [ADR-0002](../Adr/0002-clave-inventario-variantid.md).
-- **Reglas de Negocio:** `AvailableQuantity` nunca puede ser negativo bajo ninguna circunstancia (invariante crítica).
-- **Comportamientos:** `AddStock()`, `ReserveStock()`, `DispatchStock()`, `MarkAsDamaged()`, `ReturnToAvailable()`, `ReturnToUsedStock()`, `ReconcileGhostStock()`, `ReceiveReturnedStock()`, `MarkAsDeleted()`, `ApplyPhysicalCount(countedQuantity, countedBy, reason)`. **IMPLEMENTADO 2026-10-08 (ADR-0021):** `POST /api/inventories/{id}/adjust` (política `InventoryAdjust`, solo Administrador y Supervisor), idempotente 5 min, solo reduce disponible.
+#### Aggregate Root: `Buyer`
+Extiende el perfil comercial del usuario con rol `Buyer`. Mantiene una relación 1 a 1 estricta con `User.Id`.
+- **Propiedades Clave:**
+  - `UserId` (`Guid`): Identificador coincidente con su cuenta en `User`.
+  - `MainAddress` (`Address` - Value Object): Dirección principal obligatoria para entregas físicas.
+  - `AdditionalAddresses` (`IReadOnlyCollection<Address>`): Direcciones secundarias de envío.
+  - `IsActiveForCommerce` (`bool`): Indicador de habilitación comercial para transaccionar.
+- **Invariantes del Modelo:**
+  - Todo comprador debe registrar obligatoriamente una dirección principal válida al ser creado.
+  - Un comprador no puede acceder ni consultar información de otros compradores.
+- **Métodos de Negocio:**
+  - `Create(userId, mainAddress)`: Fábrica que garantiza la dirección obligatoria.
+  - `UpdateMainAddress(newAddress)`: Reemplazo de dirección principal.
+  - `AddAdditionalAddress(address)` / `RemoveAdditionalAddress(address)`.
 
-## 4. Bounded Context: Ordering (Pedidos - Interfaz del Comprador)
+---
 
-### Aggregate Root: `CustomerOrder` (Order)
-Representa el compromiso comercial formal y el ciclo de negocio central del sistema.
-- **Propiedades:** `Id` (OrderId), `BuyerId` (UserId), `Items` (`IReadOnlyCollection<OrderItem>`), `TotalAmount` (Money, **calculado**: suma de los `TotalPrice`; carrito vacío = 0 en `DefaultCurrency = "COP"`), `Status` (OrderStatus), `CreatedAt`, `UpdatedAt`. Hereda `Entity` (emite eventos).
-- **Entidades Hijas:**
-  - `OrderItem`: `CustomerOrderId`, `VariantId` (SKU), **`VendorId`** (instantánea histórica del vendedor al comprar — dictamen Q-18, 2026-09-27), `Quantity`, `UnitPrice` (Money), `TotalPrice` (calculado).
-- **Ciclo de Estados del Pedido (OrderStatus):** 
-  - `Cart` (Carrito): Selección provisional.
-  - `PendingPayment` (Pendiente de Pago): Espera de confirmación financiera.
-  - `Paid` (Pagado): Inicio de alistamiento.
-  - `Dispatched` (Despachado): Salida física de la bodega.
-  - `Delivered` (Entregado / Finalizado): Conclusión de la entrega.
-  - `Cancelled` (Anulado): por expiración del plazo de reserva sin pago (incluidos cobros rechazados) — adición ADD-004 de la Ley.
-- **Reglas de Negocio:** 
-  - Un pedido en estado `Delivered` **o `Cancelled`** no podrá ser modificado bajo ninguna circunstancia (`EnsureNotDelivered()`).
-  - Los ítems solo se añaden o quitan en `Cart`; `Checkout()` exige carrito no vacío y menos de 15 minutos desde `CreatedAt` (PED-01).
-- **Comportamientos:** `AddItem()`, `RemoveItem()`, `Checkout()` (emite `OrderCreatedDomainEvent`), `MarkAsPaid()` (emite `OrderPaidDomainEvent`), `Dispatch()`, `Deliver()`, `CancelDueToTimeout()`.
+### 2.3. Modelado de Vendedores (Sellers / Vendors)
 
-## 5. Bounded Context: Fulfillment & Logistics (Despachos - Interfaz del Vendedor)
+En el diseño táctico actual de Zentric, el Vendedor no requiere una clase separada redundante:
+- Se representa mediante un **`User` con `Role == UserRole.Seller`**.
+- Su identificador (`User.Id`) opera en todo el sistema como **`VendorId`**.
+- **Regla de Gobernanza:** Los vendedores no pueden auto-registrarse; su alta la ejecuta exclusivamente el Administrador, vinculándole obligatoriamente su primera bodega de almacenamiento.
+- **Regla de Bloqueo:** Cuando un vendedor pasa a `Blocked`, sus productos no se despublican en la base de datos, pero el servicio de Checkout rechaza cualquier compra que contenga artículos de su catálogo.
 
-### Aggregate Root: `FulfillmentOrder`
-Orden de trabajo derivada de un `CustomerOrder`, pero específica para **un solo Vendor**.
-- **Propiedades:** `Id` (FulfillmentOrderId), `CustomerOrderId` (OrderId), `VendorId` (UserId), `Status` (FulfillmentStatus), `CancellationReason` (string?, solo con `Cancelled`), `Shipments` (List<Shipment>), `CreatedAt`, `UpdatedAt`. Hereda `Entity`.
-- **Entidades Hijas:**
-  - `Shipment`: Guía de despacho individual. Agrupa productos que salen de *una misma bodega*.
-- **Reglas de Negocio:** 
-  - Un `FulfillmentOrder` puede tener múltiples `Shipments` si el inventario del vendedor estaba fragmentado en varias bodegas.
-  - El Vendor puede cancelarlo unilateralmente si detecta quiebre de stock (Stock Fantasma).
-- **Comportamientos:** `AddShipment(warehouseId, trackingNumber)`, `Pack()`, `Dispatch()` (emite `PhysicalProductShippedDomainEvent` por guía), `Deliver()`, `CancelDueToNoStock()` (motivo `Stock Fantasma`; emite `PartialFulfillmentCancelledDomainEvent`).
+---
 
+### 2.4. Bounded Context: Catalog (Catálogo de Productos)
 
-## 6. Bounded Context: Returns (Devoluciones)
+#### Aggregate Root: `Product`
+Representa un artículo ofrecido por un Vendedor en el marketplace.
+- **Propiedades Clave:**
+  - `Id` (`Guid`): Identificador único del producto.
+  - `VendorId` (`Guid`): Identificador del vendedor propietario.
+  - `Name` (`string`), `Description` (`string`).
+  - `Price` (`Money` - Value Object): Precio base de comercialización.
+  - `Type` (`ProductType`): Tipo de producto (`Physical` o `Digital`).
+  - `Status` (`ProductStatus`): Estado comercial (`Published`, `Suspended`, `Discontinued`).
+- **Entidad Hija: `ProductVariant`**
+  - Representa la combinación específica vendible (ej. Talla, Color). Su `VariantId` actúa como la clave de SKU para control de inventario.
+- **Invariantes del Modelo:**
+  - **Variante obligatoria para productos físicos:** Todo producto de tipo `Physical` exige al menos una variante activa para poder venderse.
+  - Los productos de tipo `Digital` no requieren variantes ni gestión de bodegas físicas.
+  - Al crearse, el producto nace en estado `Published` de forma automática.
+- **Métodos de Negocio:**
+  - `Publish()` / `Suspend()`: Control de visibilidad comercial en el catálogo.
+  - `UpdatePrice(newPrice)`: Actualización del precio monetario.
+  - `AddVariant(name, sku, attributes)` / `RemoveVariant(variantId)`.
+  - `Delete()`: Pasa a `Discontinued` y marca borrado lógico.
 
-### Aggregate Root: `ReturnRequest`
-- **Responsabilidad:** Gestionar la devolución de productos.
-- **Propiedades (por constructor):** `CustomerOrderId`, `VariantId`, `WarehouseId`, `Quantity`, `ProductType`; gestiona además su `Status` (`ReturnStatus`). Hereda `Entity` (emite `ReturnApprovedEvent`).
-- **Reglas de Negocio Duras:** 
-  - **PROHIBIDO** devolver productos digitales — guard real: `ReturnRequest` lanza `"Digital products cannot be returned."` en su constructor.
-  - El producto físico requiere inspección del Operador Logístico (buen estado) y aprobación del Vendedor.
-  - Si cumple ambas condiciones, el producto regresa al inventario como **stock usado** (`ReturnToUsedStock` vía `ReturnApprovedEventHandler`).
+---
 
-## 7. Bounded Context: Billing (Facturación)
+### 2.5. Bounded Context: Inventory & Warehouses (Existencias y Bodegas)
 
-### Aggregate Root: `Invoice`
-- **Responsabilidad:** Registro financiero de la transacción.
-- **Propiedades:** `Id`, `CustomerOrderId`, `VendorId` (Guid?, solo en `VendorDetail`), `Type` (InvoiceType), `TotalAmount` (Money), `IssuedAt`.
-- **Fábricas:** `CreateMaster()`, `CreateVendorDetail()`, `CreateZentricDetail()`.
-- **Reglas de Negocio:**
-  - Existe una Factura Maestra para el Comprador.
-  - Zentric mantiene los detalles internos del split.
-  - Existe una Factura específica separada para el Vendedor (`VendorDetail`).
-  - El reparto 5 %/95 % (Q-15), los tres tipos de documento y quién emite (solo el Administrador) están en [06-business-rules.md §6 FAC-01](06-business-rules.md).
+#### Aggregate Root: `Warehouse`
+Espacio físico donde se almacenan las variantes de productos.
+- **Propiedades Clave:**
+  - `Id` (`Guid`): Identificador de la bodega.
+  - `Name` (`string`), `Location` (`string`), `Capacity` (`int`).
+  - `Type` (`WarehouseType`): Clasificación obligatoria (`Marketplace` o `Vendor`).
+  - `VendorId` (`Guid?`): Obligatorio si el tipo es `Vendor`; debe ser `null` si es `Marketplace`.
+  - `IsActive` (`bool`).
 
-## 8. Bounded Context: Buyers (Compradores)
+#### Aggregate Root: `Inventory` *(Hereda de `Entity`)*
+Control transaccional del stock de una variante específica en una bodega determinada.
+- **Propiedades Clave:**
+  - `Id` (`Guid`): Identificador de la posición de inventario.
+  - `VariantId` (`Guid`): Clave del SKU.
+  - `WarehouseId` (`Guid`): Bodega de almacenamiento.
+  - `AvailableQuantity` (`int`): Existencias libres para la venta (Invariante: **nunca negativo**).
+  - `ReservedQuantity` (`int`): Existencias bloqueadas temporalmente en carritos de compra.
+  - `DamagedQuantity` (`int`): Unidades averiadas no aptas para venta.
+  - `UsedQuantity` (`int`): Unidades reingresadas por devoluciones físicas aprobadas.
+  - `AdjustmentHistory` (`IReadOnlyCollection<StockAdjustmentRecord>`): Auditoría inmutable de conteos físicos.
+- **Invariantes del Modelo:**
+  - Clave unívoca de posición: la combinación `(VariantId, WarehouseId)`.
+  - `AvailableQuantity >= 0` bajo cualquier circunstancia.
+  - No se permite borrado lógico (`MarkAsDeleted`) si aún existen existencias físicas en la bodega.
+- **Métodos de Negocio y Eventos:**
+  - `ReserveStock(quantity)`: Traslada unidades de disponible a reservado.
+  - `DispatchStock(quantity)`: Descuenta unidades reservadas al completarse el envío.
+  - `ReturnToUsedStock(quantity)`: Incorpora stock devuelto a la cuenta de usados.
+  - `ApplyPhysicalCount(countedQuantity, countedBy, reason)`: Ajuste por auditoría física; emite `StockAdjustedDomainEvent`.
 
-### Aggregate Root: `Buyer`
-- **Responsabilidad:** Perfil de compra. Su `UserId` es **exactamente** el `Id` del `User` (vínculo 1 a 1, sin mezclar datos).
-- **Propiedades:** `UserId`, `MainAddress` (VO `Address`, obligatoria — ZENTRIC.md Dominio 2), `AdditionalAddresses` (lista solo lectura), `IsActiveForCommerce`, timestamps.
-- **Comportamientos:** `Create()` (fábrica desde componentes de dirección), `AdditionalAddress()`, `RemoveAdditionalAddress()`, `UpdateMainAddress()`.
+---
 
-## 9. Bounded Context: Payments (Pagos)
+### 2.6. Bounded Context: Ordering (Pedidos del Cliente)
 
-### Aggregate Root: `PaymentReceipt`
-- **Responsabilidad:** Comprobante del resultado de un cobro (invariante 9 de `04-invariants-and-rules.md`): **no** guarda tarjetas ni billeteras, solo el resultado del cobro.
-- **Propiedades:** `Id`, `OrderId`, `Amount` (Money), `Status` (PaymentStatus), `TransactionId`, `RefundedAmount` (Money), `CreatedAt`, `RefundedAt`.
-- **Comportamientos:** `Create()` (estático, importe positivo), `Approve()` (idempotente), `Decline()`, `Refund()` (crédito a favor — ADDENDUM del Owner 2026-09-27, **reformado por [ADR-0020](../Adr/0020-precio-congelado-y-credito-parcial-por-linea.md) el 2026-10-04**: acumula créditos en `RefundedAmount`, no admite un segundo reembolso silencioso, rechaza lo que exceda el saldo pendiente y solo pasa a `Refunded` cuando el acumulado iguala `Amount`).
+#### Aggregate Root: `CustomerOrder` *(Hereda de `Entity`)*
+Contrato comercial formal que agrupa las compras del cliente, permitiendo múltiples vendedores en un único pedido.
+- **Propiedades Clave:**
+  - `Id` (`Guid`): Identificador del pedido maestro.
+  - `BuyerId` (`Guid`): Identificador del comprador.
+  - `Status` (`OrderStatus`): Máquina de estados (`Cart`, `PendingPayment`, `Paid`, `Dispatched`, `Delivered`, `Cancelled`).
+  - `TotalAmount` (`Money` - Value Object): Total acumulado calculado de las líneas.
+  - `Items` (`IReadOnlyCollection<OrderItem>`): Líneas de compra del pedido.
+  - `CancellationReason` (`string?`): Motivo registrado si el pedido termina en `Cancelled`.
+- **Entidad Hija: `OrderItem`**
+  - Contiene `VariantId`, `VendorId` (instantánea histórica del vendedor al momento de la compra), `Quantity` y `UnitPrice`.
+- **Invariantes del Modelo:**
+  - Un pedido en estado `Delivered` o `Cancelled` es inmutable; queda prohibida cualquier alteración posterior.
+  - La transición desde `Cart` a `PendingPayment` activa una **reserva de 15 minutos**; si no se registra el pago en ese plazo, el pedido pasa a `Cancelled`.
+- **Métodos de Negocio y Eventos:**
+  - `AddItem(variantId, vendorId, quantity, unitPrice)` / `RemoveItem(variantId)`.
+  - `Checkout()`: Formaliza la orden; emite `OrderCreatedDomainEvent`.
+  - `MarkAsPaid()`: Confirma recepción del dinero; emite `OrderPaidDomainEvent`.
+  - `CancelDueToTimeout()`: Anulación automática por expiración de los 15 minutos.
+
+---
+
+### 2.7. Bounded Context: Fulfillment & Logistics (Despachos)
+
+#### Aggregate Root: `FulfillmentOrder` *(Hereda de `Entity`)*
+Orden de despacho derivada del pedido maestro, creada de forma individual para **un único vendedor**.
+- **Propiedades Clave:**
+  - `Id` (`Guid`): Identificador del despacho.
+  - `CustomerOrderId` (`Guid`): Referencia al pedido maestro.
+  - `VendorId` (`Guid`): Vendedor responsable del despacho.
+  - `Status` (`FulfillmentStatus`): Estados (`PendingPackaging`, `Packed`, `Dispatched`, `Delivered`, `Cancelled`).
+  - `CancellationReason` (`string?`): Obligatorio en cancelaciones (ej. "Stock Fantasma").
+  - `Shipments` (`IReadOnlyCollection<Shipment>`): Guías de envío agrupadas por bodega de origen.
+- **Invariantes del Modelo:**
+  - Cada vendedor despacha exclusivamente sus productos de forma autónoma.
+  - Si un vendedor sufre un quiebre de inventario ("Stock Fantasma"), **solo se cancela su orden de despacho**, procediendo a la devolución parcial sin afectar las órdenes de los demás vendedores.
+- **Métodos de Negocio y Eventos:**
+  - `AddShipment(warehouseId, trackingNumber)`.
+  - `Pack()` / `Dispatch()`: Emite `PhysicalProductShippedDomainEvent` por cada guía despachada.
+  - `CancelDueNoStock()`: Cancelación unilateral por quiebre; emite `PartialFulfillmentCancelledDomainEvent`.
+
+---
+
+### 2.8. Bounded Context: Returns (Devoluciones)
+
+#### Aggregate Root: `ReturnRequest` *(Hereda de `Entity`)*
+Gestiona el proceso de posventa y garantías sobre productos entregados.
+- **Propiedades Clave:**
+  - `Id` (`Guid`): Identificador de la solicitud.
+  - `CustomerOrderId` (`Guid`), `VariantId` (`Guid`), `WarehouseId` (`Guid`).
+  - `Quantity` (`int`), `Status` (`ReturnStatus`).
+  - `IsGoodCondition` (`bool`): Dictamen técnico de la inspección física en bodega.
+  - `VendorApproved` (`bool`): Autorización comercial del vendedor.
+- **Invariantes del Modelo:**
+  - **Prohibición Absoluta:** Los productos digitales (`ProductType.Digital`) no admiten solicitudes de devolución bajo ninguna circunstancia.
+  - Para que una devolución física sea aceptada, requiere la doble aprobación: inspección positiva del Operador Logístico (`IsGoodCondition = true`) Y aprobación del Vendedor (`VendorApproved = true`).
+  - Toda devolución física aprobada reingresa el producto al inventario con la clasificación de **Stock Usado**.
+- **Métodos de Negocio y Eventos:**
+  - `Inspect(isGoodCondition)`: Registro del peritaje por el operador de bodega.
+  - `ApproveByVendor()`: Aprobación comercial; al cumplirse ambas condiciones emite `ReturnApprovedEvent`.
+
+---
+
+### 2.9. Bounded Context: Billing (Facturación)
+
+#### Aggregate Root: `Invoice`
+Registro financiero y legal de la transacción de compra.
+- **Propiedades Clave:**
+  - `Id` (`Guid`): Identificador fiscal.
+  - `CustomerOrderId` (`Guid`): Pedido asociado.
+  - `VendorId` (`Guid?`): `null` en Factura Maestra; poblado en la Factura de Vendedor.
+  - `Type` (`InvoiceType`): Clasificación (`Master`, `PlatformDetail`, `VendorDetail`).
+  - `Status` (`InvoiceStatus`): Estado (`Issued`, `Anulled`).
+  - `TotalAmount` (`Money` - Value Object): Importe liquidado.
+- **Invariantes del Modelo:**
+  - El comprador recibe una única **Factura Maestra** por el valor total de su compra.
+  - Zentric genera un **Detalle Zentric** confidencial con el 5% de comisión de intermediación de la plataforma.
+  - Cada vendedor recibe una **Factura de Vendedor** correspondiente al 95% neto de sus productos vendidos.
+
+---
+
+### 2.10. Bounded Context: Payments (Pagos)
+
+#### Aggregate Root: `PaymentReceipt`
+Comprobante inmutable del resultado de la transacción procesada con la pasarela.
+- **Propiedades Clave:**
+  - `Id` (`Guid`), `OrderId` (`Guid`).
+  - `Amount` (`Money`): Total cobrado.
+  - `Status` (`PaymentStatus`): Estados (`Pending`, `Approved`, `Declined`, `Refunded`).
+  - `TransactionId` (`string`): Código de autorización externo.
+  - `RefundedAmount` (`Money`): Saldo total acumulado reintegrado por devoluciones parciales.
+- **Invariantes del Modelo:**
+  - No almacena números de tarjeta ni datos bancarios (sin custodia directa de fondos).
+  - Los reembolsos por devoluciones o quiebres parciales acumulan en `RefundedAmount`; el estado solo transiciona a `Refunded` cuando el monto acumulado iguala el 100% de `Amount`.
+- **Métodos de Negocio:**
+  - `Approve(transactionId)` / `Decline()`.
+  - `Refund(refundAmount)`: Aplica reembolsos parciales controlados validando que no excedan el saldo pendiente.
+
+---
+
+## 3. Reglas de Oro del Modelado de Dominio
+
+1. **Encapsulamiento Duro:** Prohibido el uso de *setters* públicos; las propiedades se modifican exclusivamente mediante métodos de negocio que validen sus invariantes.
+2. **Entidades con Eventos:** Solo las raíces que requieren coordinación asíncrona (`CustomerOrder`, `FulfillmentOrder`, `ReturnRequest`, `Inventory`) heredan de `Entity` y despachan eventos de dominio.
+3. **Consistencia Transaccional:** Cada operación de escritura debe modificar una única raíz de agregado. Las operaciones complejas entre agregados se orquestan mediante servicios de aplicación o eventos.
