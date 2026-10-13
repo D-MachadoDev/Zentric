@@ -1,39 +1,129 @@
 # 05. Puertos (Ports)
 
-Siguiendo el principio de **Inversión de Dependencias** y la **Arquitectura Hexagonal**, este documento lista los **puertos de salida del Dominio**: las interfaces que el Dominio necesita para leer/persistir datos y para delegar en lo que no le pertenece. Las implementaciones reales residen en `Zentric.Infrastructure`.
+> **Especificación Arquitectónica de Puertos de Salida.** Siguiendo la **Arquitectura Hexagonal (Puertos y Adaptadores)** y el **Principio de Inversión de Dependencias (DIP)**, este documento define los contratos formales que el núcleo de negocio (`Zentric.Domain` y `Zentric.Application`) requiere para interactuar con el exterior (persistencia, tiempo, pasarelas y seguridad), sin acoplarse a tecnologías concretas.
 
-Inventario verificado: **14 puertos de dominio** — 10 de repositorio y 4 de servicio/colaborador.
+---
 
-## 1. Puertos de repositorio
+## 1. Topología Hexagonal de Puertos y Adaptadores
 
-| Puerto | Agregado | Métodos | Tests de Integración |
-|---|---|---|---|
-| `IUserRepository` | `User` | `GetByIdAsync`, `GetByEmailAsync`, `GetAllAsync(role?)`, `IsEmailUniqueAsync`, `IsIdentityDocumentUniqueAsync`, `AddAsync`, `UpdateAsync` | `LoginCommandHandlerTests`, `CreateUserCommandHandlerTests`, `BlockActivateUserCommandHandlerTests` |
-| `IBuyerRepository` | `Buyer` | `GetByIdAsync`, `AddAsync`, `UpdateAsync` | `GetBuyerByIdQueryTests` |
-| `IProductRepository` | `Product` | `GetByIdAsync`, `GetByVariantIdAsync`, `GetAllAsync(vendorId?)`, `GetPagedAsync(vendorId, skip, take)`, `AddAsync`, `UpdateAsync` | `ProductTests`, `PublishProductCommandHandlerTests`, `CreateProductCommandHandlerTests` |
-| `IWarehouseRepository` | `Warehouse` | `GetByIdAsync`, `GetAllAsync(vendorId?)`, `AddAsync`, `UpdateAsync` | `WarehouseTests`, `CreateWarehouseCommandHandlerTests` |
-| `IInventoryRepository` | `Inventory` | `GetByIdAsync`, `GetByVariantAndWarehouseAsync`, `GetByVariantIdAsync`, `GetTotalAvailableStockAsync`, `GetListAsync(vendorId?)`, `AddAsync`, `UpdateAsync`, `LoadWithHistoryAsync`, `SaveAdjustmentAsync`, `TryReserveStockAsync(id, n)`, `ReleaseReservedStockAsync(id, n)` | `InventoryTests`, `InventoryReservationServiceTests`, `InventoryAtomicReserveE2ETests`, `AdjustInventoryCommandHandlerTests` |
-| `ICustomerOrderRepository` | `CustomerOrder` | `GetByIdAsync`, `GetByIdForBuyerAsync`, `GetByIdForVendorAsync`, `GetListAsync(buyerId?, vendorId?, status?)`, `GetExpiredOrdersAsync(threshold)`, `AddAsync`, `UpdateAsync` | `CustomerOrderTests`, `CheckoutOrderCommandHandlerTests`, `PayOrderCommandHandlerTests`, `OwnershipQueryTests` |
-| `IFulfillmentOrderRepository` | `FulfillmentOrder` | `GetByIdAsync`, `GetListAsync(vendorId?, buyerId?, status?)`, `AddAsync`, `UpdateAsync` | `FulfillmentOrderTests`, `DispatchFulfillmentCommandHandlerTests`, `CancelFulfillmentOrderDueToNoStockCommandHandlerTests` |
-| `IReturnRequestRepository` | `ReturnRequest` | `GetByIdAsync`, `GetListAsync(buyerId?, vendorId?, status?)`, `AddAsync`, `UpdateAsync` | `ReturnRequestTests`, `ApproveReturnCommandHandlerTests`, `RefundReturnCommandHandlerTests` |
-| `IInvoiceRepository` | `Invoice` | `GetByIdAsync`, `GetByOrderIdAsync`, `GetListAsync(...)`, `AddAsync`, `AddRangeAsync`, `UpdateAsync` | `InvoiceTests`, `GenerateInvoicesCommandHandlerTests`, `InvoiceVendorPersistenceTests` |
-| `IPaymentReceiptRepository` | `PaymentReceipt` | `GetByIdAsync`, `GetByOrderIdAsync`, `AddAsync`, `UpdateAsync` | `PaymentReceiptTests`, `PayOrderCommandHandlerTests`, `RefundReturnCommandHandlerTests` |
+```mermaid
+flowchart TD
+    subgraph APPLICATION_LAYER["⚙️ Capa de Aplicación (Orquestación y Casos de Uso)"]
+        UC["Casos de Uso (Handlers CQRS)"]
+        IUOW["IUnitOfWork (Puerto de Aplicación)"]
+    end
 
-Claves y filtros por rol:
-- El inventario se consulta por la clave `(VariantId, WarehouseId)` ([ADR-0002](../Adr/0002-clave-inventario-variantid.md)).
-- Los `GetListAsync` filtran **en la consulta** según el rol ([ADR-0013](../Adr/0013-propiedad-del-recurso-por-rol.md)); las lecturas de propiedad devuelven `null` — indistinguible de "no existe" — con `GetByIdForBuyerAsync` / `GetByIdForVendorAsync`.
-- **La no-negatividad del stock la garantiza un `UPDATE` condicional atómico, no el puerto** ([ADR-0025](../Adr/0025-stock-negativo-update-condicional-atomico.md)): `TryReserveStockAsync(inventoryId, n)` afecta una fila solo si `disponible >= n` (cero filas = rechazo) y `ReleaseReservedStockAsync(inventoryId, n)` es su inverso condicional para liberar parciales (ADR-0001). No hay token de concurrencia ni bloqueo: el candado dura lo que dura la sentencia. **[IMPLEMENTADO - 2026-10-06]** (antes marcado como `NO IMPLEMENTADO`).
+    subgraph DOMAIN_CORE["📦 Núcleo de Dominio (Zentric.Domain)"]
+        subgraph AGGREGATES["11 Agregados Raíz"]
+            ENT["User, Buyer, Product, Warehouse, Inventory,<br/>CustomerOrder, FulfillmentOrder, ReturnRequest,<br/>RefundAudit, PaymentReceipt, Invoice"]
+        end
+        
+        subgraph OUT_PORTS["Puertos de Salida de Dominio (Interfaces C# Puras)"]
+            REPO_PORTS["11 Puertos de Repositorio<br/>(IUserRepository, IBuyerRepository, etc.)"]
+            SERV_PORTS["4 Puertos de Servicio<br/>(IClock, IPaymentGatewayService, IPasswordHasher, IAuthTokenService)"]
+        end
+    end
 
-## 2. Puertos de servicio y colaboradores
+    subgraph INFRASTRUCTURE_ADAPTERS["🔌 Capa de Infraestructura (Zentric.Infrastructure)"]
+        DB_ADAPTERS["Adaptadores EF Core / PostgreSQL<br/>(UserRepository, InventoryRepository, etc.)"]
+        EXT_ADAPTERS["Adaptadores Técnicos de Servicio<br/>(SystemClock, SimulatedPaymentGateway,<br/>Pbkdf2PasswordHasher, JwtAuthTokenService, UnitOfWork)"]
+    end
 
-- **`IClock`** (`Common/Ports`): `DateTimeOffset UtcNow`. Reloj inyectable (T-004 / ADR-0010): el timeout del carrito y el JWT se verifican moviendo el reloj, no esperando.
-- **`IPaymentGatewayService`** (`Payments/Ports`): `ChargeAsync(orderId, amount) → PaymentResult`. El rechazo es un **resultado** (`Approved = false`), no una excepción. Pasarela simulada e intercambiable (invariante 9).
-- **`IPasswordHasher`** (`Users/Ports`): `Hash(password)`, `Verify(password, storedHash)`. El algoritmo (PBKDF2, ADR-0009) vive en el adaptador, no en el Dominio.
-- **`IAuthTokenService`** (`Users/Ports`): `Issue(userId, email, fullName, role) → AuthToken`. El formato del token (JWT HS256, ADR-0009) vive en el adaptador.
+    UC -->|Invoca| AGGREGATES
+    UC -->|Coordina mediante| REPO_PORTS
+    UC -->|Consulta colaboradores| SERV_PORTS
+    UC -->|Confirma transacción con| IUOW
+    
+    DB_ADAPTERS -.->|Implementa| REPO_PORTS
+    EXT_ADAPTERS -.->|Implementa| SERV_PORTS
+    EXT_ADAPTERS -.->|Implementa| IUOW
 
-## 3. Puertos que NO viven en el Dominio
+    style DOMAIN_CORE fill:#eff6ff,stroke:#1d4ed8,stroke-width:2px
+    style APPLICATION_LAYER fill:#f5f3ff,stroke:#7c3aed,stroke-width:2px
+    style INFRASTRUCTURE_ADAPTERS fill:#f0fdf4,stroke:#15803d,stroke-width:2px
+```
 
-- **`IUnitOfWork`** (`Zentric.Application/Common/Ports`): `SaveChangesAsync()`. Vive en Application porque coordina la transacción y el despacho de eventos.
-- **`IDomainEventDispatcher`** (`Zentric.Infrastructure/Persistence`): publica los eventos registrados por `Entity.AddDomainEvent` al persistir. Los agregados **no** dependen de esta interfaz.
-- **Autenticación por token y políticas por rol**: son de la capa de API (`AuthorizationPolicies`), no un puerto de Dominio.
-- **No existe `IInvoicingService`**: la facturación es el caso de uso `GenerateInvoicesCommand` sobre `IInvoiceRepository`, sin servicio de dominio propio.
+---
+
+## 2. Puertos de Repositorio (Persistencia por Agregado Raíz)
+
+Bajo las reglas de Domain-Driven Design, **cada Agregado Raíz cuenta con un único repositorio dedicado**. Se especifican los **11 puertos de repositorio** que gobiernan la persistencia del sistema:
+
+| Puerto de Salida | Agregado Raíz Asociado | Operaciones Normativas del Contrato | Criterio de Seguridad, Filtrado o Concurrencia |
+| :--- | :--- | :--- | :--- |
+| **`IUserRepository`** | `User` | `GetByIdAsync`, `GetByEmailAsync`, `GetAllAsync(role?)`, `IsEmailUniqueAsync`, `IsIdentityDocumentUniqueAsync`, `AddAsync`, `UpdateAsync` | Garantiza unicidad funcional de credenciales (`Email`, documento) y filtra usuarios por rol operativo. |
+| **`IBuyerRepository`** | `Buyer` | `GetByIdAsync`, `AddAsync`, `UpdateAsync` | Encapsula la gestión de direcciones de entrega y perfil del comprador en su propio ámbito. |
+| **`IProductRepository`** | `Product` | `GetByIdAsync`, `GetByVariantIdAsync`, `GetAllAsync(vendorId?, status?)`, `GetPagedAsync(vendorId, status, skip, take)`, `AddAsync`, `UpdateAsync` | Soporta paginación atómica y filtrado de catálogo: `Published` para público general o catálogo completo para el vendedor dueño. |
+| **`IWarehouseRepository`** | `Warehouse` | `GetByIdAsync`, `GetAllAsync(vendorId?)`, `AddAsync`, `UpdateAsync` | Lista y administra bodegas físicas, permitiendo filtrado por vendedor propietario. |
+| **`IInventoryRepository`** | `Inventory` | `GetByIdAsync`, `GetByVariantAndWarehouseAsync`, `GetByVariantIdAsync`, `GetTotalAvailableStockAsync`, `GetListAsync(vendorId?)`, `AddAsync`, `UpdateAsync`, `LoadWithHistoryAsync`, `SaveAdjustmentAsync`, `TryReserveStockAsync(id, qty)`, `ReleaseReservedStockAsync(id, qty)` | **Concurrencia Atómica:** `TryReserveStockAsync` y `ReleaseReservedStockAsync` ejecutan `UPDATE` condicional atómico sin bloqueos de tabla. Carga auditoría con `LoadWithHistoryAsync`. |
+| **`ICustomerOrderRepository`** | `CustomerOrder` | `GetByIdAsync`, `GetByIdForBuyerAsync`, `GetByIdForVendorAsync`, `GetListAsync(buyerId?, vendorId?, status?)`, `GetExpiredOrdersAsync(threshold)`, `AddAsync`, `UpdateAsync` | **Aislamiento de Propiedad:** Las consultas por rol devuelven `null` ante órdenes ajenas, impidiendo deducir si un pedido existe. Filtra carritos vencidos para liberación. |
+| **`IFulfillmentOrderRepository`** | `FulfillmentOrder` | `GetByIdAsync`, `GetByCustomerOrderIdAsync`, `GetListAsync(vendorId?, buyerId?, status?)`, `AddAsync`, `UpdateAsync` | Consulta despachos por orden maestra para sincronizar el estado común y filtra la cola logística por vendedor. |
+| **`IReturnRequestRepository`** | `ReturnRequest` | `GetByIdAsync`, `GetByOrderIdAsync`, `GetListAsync(buyerId?, vendorId?, status?)`, `AddAsync`, `UpdateAsync` | Resuelve solicitudes de devolución filtrando por comprador o vendedor en la consulta SQL para evitar fugas entre cuentas. |
+| **`IRefundAuditRepository`** | `RefundAudit` | `GetByIdAsync`, `GetByReturnRequestIdAsync`, `GetByOrderIdAsync`, `AddAsync` | Persistencia inmutable de auditorías financieras generadas por devoluciones o resoluciones automáticas de stock fantasma. |
+| **`IPaymentReceiptRepository`** | `PaymentReceipt` | `GetByIdAsync`, `GetByOrderIdAsync`, `AddAsync`, `UpdateAsync` | Registra comprobantes financieros inmutables y mantiene la acumulación de créditos parciales reembolsados. |
+| **`IInvoiceRepository`** | `Invoice` | `GetByIdAsync`, `GetByOrderIdAsync`, `GetListAsync(buyerId?, vendorId?)`, `AddAsync`, `AddRangeAsync`, `UpdateAsync` | Emite y consulta el split de facturación (Factura Maestra para comprador y Facturas Detalle por vendedor). |
+
+---
+
+## 3. Puertos de Servicio y Colaboradores Externos
+
+Abstraen capacidades auxiliares y de infraestructura técnica indispensables para el Dominio, manteniendo la neutralidad tecnológica del núcleo:
+
+### 3.1. `IClock` (Abstracción Temporal UTC)
+- **Ubicación:** `Zentric.Domain.Common.Ports.IClock`
+- **Contrato:** `DateTimeOffset UtcNow { get; }`
+- **Responsabilidad:** Proporciona el instante temporal exacto en formato UTC. Permite que las reglas dependientes del tiempo (expiración de reservas de 15 minutos, vigencia de tokens, marcas de auditoría) sean verificadas de forma determinista en pruebas unitarias simulando el paso del reloj sin esperas reales.
+- **Adaptador en Infraestructura:** `SystemClock` (consume `DateTimeOffset.UtcNow`).
+
+---
+
+### 3.2. `IPaymentGatewayService` (Pasarela de Pagos Externa)
+- **Ubicación:** `Zentric.Domain.Payments.Ports.IPaymentGatewayService`
+- **Contrato:** `Task<PaymentResult> ChargeAsync(Guid orderId, Money amount, CancellationToken cancellationToken = default);`
+- **Responsabilidad:** Solicita el débito de un monto económico imputado a una orden comercial. El resultado del negocio (`PaymentResult`) encapsula aprobación o rechazo (`Approved = true/false`, `TransactionId`, `DeclineReason`) como un flujo funcional ordinario, reservando excepciones para caídas técnicas de red.
+- **Adaptador en Infraestructura:** `SimulatedPaymentGateway` (emula autorizaciones y rechazos de pasarelas de pago).
+
+---
+
+### 3.3. `IPasswordHasher` (Criptografía de Credenciales)
+- **Ubicación:** `Zentric.Domain.Users.Ports.IPasswordHasher`
+- **Contrato:** 
+  - `string Hash(string password);`
+  - `bool Verify(string password, string storedHash);`
+- **Responsabilidad:** Deriva hashes seguros de contraseñas y realiza comprobaciones en tiempo constante contra ataques de temporización. El dominio desconoce el algoritmo criptográfico, permitiendo reemplazar la implementación en el adaptador sin alterar las entidades.
+- **Adaptador en Infraestructura:** `Pbkdf2PasswordHasher` (implementa derivación segura de claves PBKDF2-HMAC-SHA256 con 600,000 iteraciones).
+
+---
+
+### 3.4. `IAuthTokenService` (Emisión de Credenciales de Sesión)
+- **Ubicación:** `Zentric.Domain.Users.Ports.IAuthTokenService`
+- **Contrato:** `AuthToken Issue(Guid userId, string email, string fullName, UserRole role);`
+- **Responsabilidad:** Emite la credencial de autenticación que representa al usuario autenticado y su rol operativo en el sistema. El Dominio desconoce el estándar de transporte o codificación del token.
+- **Adaptador en Infraestructura:** `JwtAuthTokenService` (emite tokens compactos JWT firmados digitalmente con expiración programada).
+
+---
+
+## 4. Puertos de Orquestación y Transaccionalidad (Capa de Aplicación)
+
+### 4.1. `IUnitOfWork` (Unidad de Trabajo y Confirmación Atómica)
+- **Ubicación:** `Zentric.Application.Common.Ports.IUnitOfWork`
+- **Contrato:** `Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);`
+- **Responsabilidad:** Coordina la persistencia atómica de los cambios acumulados en una transacción de base de datos.
+- **Comportamiento en Pipeline:**
+  1. Los casos de uso invocan métodos de agregados y repositorios.
+  2. Al concluir la orquestación, se invoca `IUnitOfWork.SaveChangesAsync()`.
+  3. El adaptador en Infraestructura intercepta los eventos de dominio encolados en las entidades modificadas (`Entity.DomainEvents`).
+  4. Despacha los eventos mediante mediador interno antes de confirmar la transacción física en PostgreSQL.
+  5. Si cualquier manejador falla, la transacción de base de datos realiza *rollback*, garantizando consistencia absoluta.
+- **Adaptador en Infraestructura:** `UnitOfWork` (envuelve el ciclo de vida del `DbContext` de EF Core).
+
+---
+
+## 5. Principios de Diseño y Salvaguardas en los Puertos
+
+1. **Aislamiento Estricto de Datos por Rol (Row-Level Security):**
+   Los métodos de lectura por rol (`GetByIdForBuyerAsync`, `GetByIdForVendorAsync`, y `GetListAsync`) aplican las cláusulas de pertenencia directamente en la consulta a base de datos (`WHERE`). Devolver `null` en lugar de una excepción ante recursos no propios previene ataques de enumeración y garantiza que un cliente no pueda inferir la existencia de pedidos ajenos.
+2. **Concurrencia Atómica sin Bloqueos Pesados:**
+   El puerto `IInventoryRepository` descarta el uso de tokens de concurrencia optimista lentos o bloqueos pesados de tabla. Las operaciones de reserva y compensación (`TryReserveStockAsync` / `ReleaseReservedStockAsync`) imponen sentencias de actualización condicional atómica a nivel de fila (`UPDATE ... WHERE AvailableQuantity >= n`), protegiendo la invariante de no-negatividad contra hilos concurrentes.
+3. **Neutralidad de Framework:**
+   Ningún puerto de dominio contiene referencias a tipos de Entity Framework Core (`IQueryable`, `DbSet`), librerías web (`HttpContext`), o protocolos de serialización. Todos los contratos operan exclusivamente con Agregados Raíz, Value Objects, enumeraciones de dominio y tipos primitivos inmutables de C#.
