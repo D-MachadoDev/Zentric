@@ -1,159 +1,93 @@
 # Política de CORS y Seguridad HTTP — Zentric
 
-> **Documento de Especificación de Seguridad e Integración.** Define cómo el cliente web (Frontend en `https://zentric.me` o entornos locales `http://localhost:****`) se comunica con la API central de **Zentric** (.NET 10), qué orígenes tienen permiso de conexión (CORS), cómo se implementa en código C# y cómo viaja la identidad del usuario mediante tokens.
+> **Especificación Contractual de Integración y Seguridad.** Define los orígenes autorizados para el consumo de la API, las cabeceras y métodos permitidos, la política de transporte de identidad y el tratamiento normativo de respuestas HTTP para clientes web.
 
 ---
 
-## 1. ¿Qué es CORS y qué problema resuelve?
+## 1. Política del Mismo Origen (SOP) y Propósito de CORS
 
-Por defecto, los navegadores aplican la **Política del Mismo Origen (Same-Origin Policy)**:
-- El frontend vive en el dominio principal: **`https://zentric.me`** (o en desarrollo: `http://localhost:****`).
-- La API backend vive en un subdominio o puerto diferente: **`https://api.zentric.me`** (o en desarrollo: `http://localhost:****`).
+Por diseño de seguridad en navegadores modernos bajo la **Política del Mismo Origen (Same-Origin Policy)**:
+- El cliente web frontend se sirve desde el dominio principal: **`https://zentric.me`** (o en desarrollo: `http://localhost:****`).
+- La API central backend se expone en un subdominio o puerto diferente: **`https://api.zentric.me`** (o en desarrollo: `http://localhost:****`).
 
-El navegador detecta que son **orígenes distintos** y bloquea la comunicación a menos que el backend declare explícitamente qué orígenes tienen autorización.
-
-**CORS (Cross-Origin Resource Sharing)** es simplemente la lista de permisos del backend que le indica al navegador: *"Sí, acepto peticiones GET, POST, PUT, DELETE que vengan de `https://zentric.me` o de los puertos locales de desarrollo autorizados"*.
+Al constituir orígenes cruzados (*Cross-Origin*), el navegador exige que el backend declare de forma explícita qué orígenes, métodos y cabeceras tienen autorización para comunicarse con él.
 
 ---
 
-## 2. Cómo se ve realmente en Código C# (.NET 10)
+## 2. Matriz Contractual de Parámetros CORS
 
-En el backend de Zentric, esto está implementado directamente en [Program.cs](file:///C:/Users/da-V7/Desktop/Proyectos/Zentric/backend/Zentric.Api/Program.cs):
+La especificación exige la siguiente configuración normativa para la política de CORS:
 
-```csharp
-// 1. Cargar la lista de orígenes desde appsettings o variables de entorno (NUNCA quemados en código)
-var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Value;
-var allowedOrigins = string.IsNullOrWhiteSpace(configuredOrigins)
-    ? new[] { "https://zentric.me", "http://localhost:5173" }
-    : configuredOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-// 2. Registrar la política "Frontend" con los orígenes permitidos
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("Frontend", policy =>
-    {
-        policy.WithOrigins(allowedOrigins) // Solo los dominios/puertos en la lista
-              .AllowAnyHeader()           // Permite 'Authorization', 'Content-Type', etc.
-              .AllowAnyMethod();          // Permite GET, POST, PUT, DELETE, OPTIONS
-    });
-});
-
-// 3. Activar el middleware antes de la autenticación
-app.UseCors("Frontend");
-```
-
-### Configuración en `appsettings.json` o Variables de Entorno:
-```json
-{
-  "Cors": {
-    "AllowedOrigins": "https://zentric.me,http://localhost:5173,http://localhost:3000"
-  }
-}
-```
-*(De esta forma, en producción se usa `https://zentric.me`, en pruebas o desarrollo se usan los puertos dinámicos `http://localhost:****`, sin modificar ni una sola línea de C#).*
-
-### Matriz de Parámetros Configurados:
-
-| Parámetro | Valor Configurado | Justificación Técnica |
+| Parámetro | Valor Contractual | Justificación Normativa |
 | :--- | :--- | :--- |
-| **Nombre de la Política** | `Frontend` | Nombre lógico registrado en el contenedor de dependencias (IoC). |
-| **Orígenes Permitidos** | Lista explícita y configurable (`https://zentric.me`, `localhost:****`) | **Prohibido comodín (`*`)**. Los navegadores rechazan comodines cuando se envían tokens de autorización. |
-| **Cabeceras Permitidas** | `Authorization`, `Content-Type`, `Accept` | Permite el envío del token JWT y el formato de datos JSON estándar. |
-| **Métodos Permitidos** | `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS` | Soporta todas las operaciones de consulta, mutación y preflight. |
-| **Credenciales (Cookies)** | Deshabilitadas (`AllowCredentials: false`) | Zentric no utiliza cookies de sesión; la identidad viaja desacoplada en el Bearer token. |
+| **Identificador de Política** | `Frontend` | Nombre lógico del contrato en el contenedor de dependencias. |
+| **Orígenes Permitidos** | Lista explícita y configurable (`https://zentric.me`, `http://localhost:****`) | **Prohibido el uso de comodines (`*`)**. Los navegadores rechazan comodines cuando se transmiten cabeceras de autorización. |
+| **Cabeceras Permitidas** | `Authorization`, `Content-Type`, `Accept` | Habilita el transporte seguro de tokens JWT y cargas JSON. |
+| **Métodos Permitidos** | `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS` | Soporta el ciclo completo de operaciones CRUD y preflight. |
+| **Credenciales (Cookies)** | Deshabilitadas (`AllowCredentials: false`) | Zentric utiliza autenticación desacoplada basada en Bearer token; no se comparten cookies entre dominios. |
+
+> **Regla de Inyección Externa:** Los orígenes permitidos deben obtenerse de la configuración del entorno (`Cors:AllowedOrigins`), quedando terminantemente prohibido quemar puertos o URLs fijas dentro de la lógica del sistema.
 
 ---
 
-## 3. Anatomía Visual de los Headers (El "Sobre" de la Petición HTTP)
+## 3. Flujo Normativo de Validación y Preflight
 
-Las cabeceras (**Headers**) son como los sellos y etiquetas que van pegados **por fuera de un sobre de correo**:
-
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│  SOBRE HTTP (Headers enviados por el Navegador desde https://zentric.me)│
-├────────────────────────────────────────────────────────────────────────┤
-│  POST /api/orders HTTP/1.1                                            │
-│  Host: api.zentric.me                                                 │
-│  Origin: https://zentric.me           <-- "¿De qué web vengo?"         │
-│  Authorization: Bearer eyJhbGciOi...  <-- "Mi llave / Token JWT"       │
-│  Content-Type: application/json       <-- "Formato del contenido"      │
-├────────────────────────────────────────────────────────────────────────┤
-│  CUERPO DE LA CARTA (Body JSON):                                       │
-│  { "buyerId": "...", "items": [{ "sku": "CAM-01", "quantity": 2 }] }   │
-└────────────────────────────────────────────────────────────────────────┘
-```
-
-Y la **Respuesta del Servidor (.NET)** regresa con sus propios sellos de aprobación:
-
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│  SOBRE DE RESPUESTA (Headers devueltos por .NET al Navegador)          │
-├────────────────────────────────────────────────────────────────────────┤
-│  HTTP/1.1 201 Created                                                  │
-│  Access-Control-Allow-Origin: https://zentric.me  <-- Sello de permiso │
-│  Content-Type: application/json                                        │
-├────────────────────────────────────────────────────────────────────────┤
-│  CUERPO DE LA RESPUESTA (Body JSON):                                   │
-│  { "orderId": "1a2b3c4d", "status": "Pending" }                       │
-└────────────────────────────────────────────────────────────────────────┘
-```
-
-> **Regla del Navegador:** Si la respuesta de .NET **NO** trae la cabecera `Access-Control-Allow-Origin: https://zentric.me`, el navegador rompe la carta y no deja que tu pantalla de React lea los datos devueltos.
-
----
-
-## 4. Flujo en la Práctica: ¿Cómo valida el Backend y el Navegador?
-
-Cuando el usuario interactúa con la aplicación (por ejemplo, consulta un producto o envía su Bearer token), ocurre la siguiente validación:
+El navegador y el backend deben cumplir la siguiente secuencia de validación previa (*Preflight*) y ejecución de peticiones:
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Web as Frontend (https://zentric.me o localhost:****)
-    participant MID as Middleware CORS (.NET)
-    participant API as Controlador / Casos de Uso
-    participant DB as PostgreSQL
+    actor Web as Cliente Web (zentric.me / localhost:****)
+    participant MID as Middleware CORS
+    participant API as Endpoints de Negocio
+    participant DB as Persistencia (PostgreSQL)
 
-    Web->>MID: Petición HTTP (GET / POST) con Origin y Bearer Token
-    Note over Web,MID: Cabecera: Origin: https://zentric.me<br/>Cabecera: Authorization: Bearer eyJhbG...
-
-    alt Origen SÍ está en allowedOrigins
-        MID->>API: Permite pasar la petición al negocio
-        API->>DB: Consulta o persiste datos
-        DB-->>API: Resultado exitoso
-        API-->>Web: 200 OK / 201 Created con cabecera Access-Control-Allow-Origin
-        Note over Web: El navegador entrega los datos a la pantalla
-    else Origen NO está en allowedOrigins (ej. sitio desconocido)
-        MID-->>Web: Respuesta rechazada (sin cabeceras CORS)
-        Note over Web: El navegador bloquea la lectura del dato por seguridad
+    Note over Web,MID: 1. Validación Previa (Preflight con OPTIONS)
+    Web->>MID: OPTIONS /api/orders (Origin: https://zentric.me)
+    alt Origen en lista de permitidos
+        MID-->>Web: 204 No Content (Cabeceras CORS concedidas)
+    else Origen no autorizado
+        MID-->>Web: Rechazo sin cabeceras CORS (Bloqueo automático del navegador)
     end
+
+    Note over Web,API: 2. Petición Real (con Bearer Token)
+    Web->>MID: POST /api/orders (Authorization: Bearer <jwt>)
+    MID->>API: Entrega petición validada a la capa de Aplicación
+    API->>DB: Ejecución transaccional del caso de uso
+    DB-->>API: Confirmación de persistencia
+    API-->>Web: 201 Created (Access-Control-Allow-Origin: https://zentric.me)
 ```
 
 ---
 
-## 5. Política de Identidad y Seguridad de Tokens
+## 4. Política de Identidad y Seguridad de Tokens
 
-### 5.1. Canal Único de Identidad
-- La identidad del usuario viaja **exclusivamente** mediante el estándar HTTP:
+### 4.1. Canal Exclusivo de Identidad
+- Toda identidad autenticada debe viajar obligatoriamente en la cabecera estándar HTTP:
   ```http
   Authorization: Bearer <jwt_token>
   ```
-- **Prohibición de cabeceras arbitrarias:** Se eliminó cualquier cabecera personalizada como `X-Buyer-Id` (ver [ADR-0009](Adr/0009-autenticacion-jwt-rg01.md)). El backend extrae la identidad directamente de los claims criptográficos del JWT (`sub`, `role`), garantizando que nadie pueda suplantar a otro usuario cambiando un parámetro de la URL.
+- **Prohibición de cabeceras arbitrarias:** Queda estrictamente prohibido el uso de cabeceras de identidad paralelas (ej. `X-Buyer-Id`, retirada en [ADR-0009](Adr/0009-autenticacion-jwt-rg01.md)).
+
+### 4.2. Validación Criptográfica de Recursos
+- El backend nunca confía en parámetros de URL (como `?buyerId=...` o `?sellerId=...`) para determinar la propiedad de un recurso.
+- La identidad, el identificador de usuario (`sub`) y los privilegios (`role`) se extraen directamente de la firma criptográfica del token JWT validado por el servidor.
+- Las consultas a la base de datos se filtran automáticamente por el usuario autenticado, impidiendo accesos no autorizados a datos de terceros.
 
 ---
 
-## 6. Tratamiento de Respuestas para el Frontend
+## 5. Matriz de Respuestas HTTP y Comportamiento del Cliente
 
-| Código HTTP | Causa | Acción en el Frontend (`zentric.me`) |
+| Código HTTP | Condición de Negocio | Acción Contractual del Cliente Web (`zentric.me`) |
 | :---: | :--- | :--- |
-| **`200 / 201`** | Petición exitosa con origen y token válidos. | Renderizar los datos en pantalla. |
-| **`401 Unauthorized`** | Token ausente, inválido o expirado. | Limpiar la sesión y redirigir al formulario de **Login**. |
-| **`403 Forbidden`** | Token válido, pero el rol del usuario no tiene permisos para esa acción. | Mostrar mensaje de alerta de acceso denegado (**no** cerrar la sesión). |
+| **`200 / 201`** | Petición autorizada y procesada con éxito. | Procesar y renderizar la información en pantalla. |
+| **`401 Unauthorized`** | Token ausente, firma inválida o sesión expirada. | Purgar credenciales locales y redirigir al formulario de **Inicio de Sesión**. |
+| **`403 Forbidden`** | Usuario autenticado pero sin rol suficiente para la acción. | Notificar restricción de permisos (**sin** cerrar la sesión activa). |
 
 ---
 
-## 7. Reglas de Oro
+## 6. Reglas de Oro de Seguridad
 
-1. **Cero comodines (`*`):** Siempre declarar los orígenes de forma explícita mediante la lista `Cors:AllowedOrigins`.
-2. **Puertos y Dominios Dinámicos:** Los puertos locales (`****`) y los dominios de producción (`zentric.me`) se controlan mediante configuración externa, jamás hardcodeados en C#.
-3. **Manejo de Errores Estándar:** Todos los errores de negocio devuelven formato **RFC 9457 (Problem Details)** en formato JSON.
+1. **Cero Comodines:** Los orígenes de producción y pruebas se declaran siempre de forma explícita.
+2. **Independencia de Entornos:** La configuración de orígenes se administra vía variables de entorno sin recompilación.
+3. **Formato Estándar de Error:** Todo rechazo de nivel `4xx` o `5xx` debe adherirse a **RFC 9457 (Problem Details)** en formato JSON.
