@@ -17,39 +17,49 @@ El Dominio es el núcleo puro de **Zentric**. Está modelado en C# (.NET 10) baj
 
 ## 2. Mapa de Subdominios (Bounded Contexts)
 
-El marketplace de Zentric se organiza en **9 Subdominios** claramente delimitados que interactúan a lo largo del ciclo comercial:
+El marketplace de Zentric se organiza en **Subdominios (Bounded Contexts)** claramente delimitados que articulan a todos los participantes comerciales y operativos:
 
 ```mermaid
 flowchart TD
-    subgraph IDENTIDAD["👤 Gestión de Usuarios"]
-        USERS["Identity & Users<br/><i>(Autenticación, Roles, Estados)</i>"]
-        BUYERS["Buyers Context<br/><i>(Compradores y Direcciones)</i>"]
+    subgraph IDENTIDAD["👥 Gestión de Participantes (Identity & Roles)"]
+        USERS["Identity & Users<br/><i>(Autenticación central, Credenciales, Estados)</i>"]
+        BUYERS["Perfil Comprador (Buyers)<br/><i>(Direcciones de entrega y Estado Comercial)</i>"]
+        SELLERS["Perfil Vendedor (Sellers/Vendors)<br/><i>(VendorId, Bodega asociada, Calidad)</i>"]
+        OPERATIONS["Operación y Supervisión<br/><i>(Operadores Logísticos, Admins, Supervisores)</i>"]
     end
 
     subgraph OFERTA["📦 Catálogo y Existencias"]
         CATALOG["Catalog Context<br/><i>(Productos, Variantes, SKU)</i>"]
-        INVENTORY["Inventory & Warehouses<br/><i>(Bodegas y Stock Físico)</i>"]
+        INVENTORY["Inventory & Warehouses<br/><i>(Bodegas Marketplace/Vendor y Stock)</i>"]
     end
 
     subgraph TRANSACCION["🛒 Compra y Despacho"]
         ORDERING["Ordering Context<br/><i>(Carritos, Reservas 15m, Pedido Maestro)</i>"]
-        FULFILLMENT["Fulfillment Context<br/><i>(Órdenes de Envío por Vendedor)</i>"]
+        FULFILLMENT["Fulfillment Context<br/><i>(Despachos individuales por Vendedor)</i>"]
     end
 
     subgraph FINANZAS["💳 Finanzas y Posventa"]
         PAYMENTS["Payments Context<br/><i>(Procesamiento de Pagos)</i>"]
         BILLING["Billing Context<br/><i>(Factura Maestra y Comisiones 5%)</i>"]
-        RETURNS["Returns Context<br/><i>(Devoluciones e Inspección)</i>"]
+        RETURNS["Returns Context<br/><i>(Devoluciones e Inspección Física)</i>"]
     end
 
     USERS --> BUYERS
+    USERS --> SELLERS
+    USERS --> OPERATIONS
+
+    SELLERS -->|Registra productos| CATALOG
+    SELLERS -->|Asocia bodega inicial| INVENTORY
     CATALOG --> INVENTORY
-    BUYERS --> ORDERING
+    BUYERS -->|Arma carrito y compra| ORDERING
     CATALOG --> ORDERING
-    INVENTORY -.->|Reserva temporal 15m| ORDERING
+    INVENTORY -.->|Bloqueo temporal 15m| ORDERING
+
     ORDERING --> PAYMENTS
     PAYMENTS -->|Pago Confirmado| FULFILLMENT
     PAYMENTS -->|Pago Confirmado| BILLING
+    OPERATIONS -->|Gestiona empaque y despacho| FULFILLMENT
+    OPERATIONS -->|Inspección física en bodega| RETURNS
     FULFILLMENT -.->|Posventa| RETURNS
     RETURNS -.->|Reingreso como Usado| INVENTORY
 
@@ -66,15 +76,17 @@ flowchart TD
 
 | Subdominio | Responsabilidad de Negocio | Raíces de Agregado y Entidades | Reglas Sagradas del Dominio |
 | :--- | :--- | :--- | :--- |
-| **Identity & Users** | Administra las credenciales, estados comerciales y roles del sistema. | `User`, `Role`, `UserStatus` | Unicidad de documento de identidad; un único rol activo por cuenta; el bloqueo de un vendedor impide compras de sus productos en el checkout. |
-| **Buyers** | Gestiona el perfil del comprador y sus puntos de entrega. | `Buyer`, `DeliveryAddress` | Todo comprador debe poseer al menos una dirección principal válida para envíos físicos. |
-| **Catalog** | Gestiona el catálogo de productos físicos y digitales del marketplace. | `Product`, `ProductVariant` | Todo producto físico requiere al menos una variante con SKU único; publicación condicionada a datos completos. |
-| **Inventory** | Controla las existencias físicas distribuidas en múltiples bodegas. | `Warehouse`, `WarehouseStock`, `StockReservation` | Control estricto por variante y bodega; existencia física no admite números negativos; las bodegas pueden ser del Marketplace o del Vendedor. |
-| **Ordering** | Convierte la intención de compra del cliente en un pedido formal. | `Cart`, `CustomerOrder`, `OrderLine` | Bloqueo de existencias con expiración automática a los 15 minutos; soporte de múltiples vendedores en un solo carrito. |
-| **Fulfillment** | Desglosa el pedido maestro en órdenes de despacho individuales por vendedor. | `VendorFulfillmentOrder`, `ShipmentItem` | Fragmentación automática en el checkout; cada vendedor despacha de forma independiente; quiebres de inventario solo cancelan la entrega afectada. |
+| **Identity & Users** | Núcleo único de autenticación, credenciales, estados comerciales y roles del sistema. | `User`, `UserRole`, `UserStatus` | Unicidad de documento de identidad; cada usuario posee un único rol activo (Comprador, Vendedor, Operador, Admin, Supervisor); prohibido el acceso a credenciales inactivas o borradas. |
+| **Buyers** | Gestiona el perfil comercial de los compradores y sus puntos de entrega física. | `Buyer`, `DeliveryAddress` | Todo comprador requiere al menos una dirección principal obligatoria; el comprador nunca tiene visibilidad sobre inventarios ajenos ni otros compradores. |
+| **Sellers / Vendors** | Administra a los proveedores de productos del marketplace y su control operativo. | `User` (Rol `Seller` / `VendorId`), Bodega asignada | **No existe auto-registro:** son incorporados exclusivamente por el Administrador con una bodega inicial obligatoria; el bloqueo (`Blocked`) se evalúa en el Checkout y rechaza compras de sus productos. |
+| **Operations & Logistics** | Control de personal de bodega, supervisión y despacho físico de pedidos. | `User` (Roles `LogisticsOperator`, `Supervisor`) | Operador logístico restringido a gestión de existencias físicas, empaque de despachos e inspección de devoluciones; supervisor con perfil de consulta y auditoría operativa. |
+| **Catalog** | Gestiona el catálogo de productos físicos y digitales del marketplace. | `Product`, `ProductVariant` | Todo producto físico requiere al menos una variante con SKU único; publicación condicionada a datos completos; el producto pertenece obligatoriamente a un vendedor. |
+| **Inventory** | Controla las existencias físicas distribuidas en múltiples bodegas. | `Warehouse`, `WarehouseStock`, `StockReservation` | Control estricto por variante y bodega; existencia física no admite números negativos; las bodegas se clasifican estrictamente en Marketplace o Vendor. |
+| **Ordering** | Convierte la intención de compra del cliente en un pedido formal transaccional. | `Cart`, `CustomerOrder`, `OrderLine` | Bloqueo de existencias con expiración automática a los 15 minutos; soporte de múltiples vendedores en un solo carrito; validación de vendedores activos antes del pago. |
+| **Fulfillment** | Desglosa el pedido maestro en órdenes de despacho individuales por vendedor. | `VendorFulfillmentOrder`, `ShipmentItem` | Fragmentación automática en el checkout por cada vendedor; despachos independientes; quiebres de inventario solo cancelan la entrega afectada (cancelación parcial). |
 | **Payments** | Registra la confirmación y conciliación de la transacción financiera. | `PaymentTransaction`, `PaymentReceipt` | Simulación de pasarela externa sin custodia directa de fondos bancarios; pasarela define el paso a "Pagado" o "Anulado". |
-| **Billing** | Emite la facturación legal y liquida las comisiones de la plataforma. | `MasterInvoice`, `VendorSettlement` | El comprador recibe una única Factura Maestra; la comisión del 5% de Zentric es estrictamente confidencial y solo visible para administración. |
-| **Returns** | Gestiona la posventa, inspecciones físicas y saldos a favor. | `ReturnRequest`, `InspectionResult` | Prohibida la devolución de productos digitales; los productos físicos devueltos aprobados reingresan a inventario como "Usado". |
+| **Billing** | Emite la facturación legal y liquida las comisiones de la plataforma. | `MasterInvoice`, `VendorSettlement` | El comprador recibe una única Factura Maestra; la comisión del 5% de Zentric es estrictamente confidencial y solo visible para administración; cada vendedor recibe su liquidación neta. |
+| **Returns** | Gestiona la posventa, inspecciones físicas y saldos a favor. | `ReturnRequest`, `InspectionResult` | Prohibida la devolución de productos digitales; los productos físicos requieren inspección aprobada del operador y visto bueno del vendedor; reingresan a bodega como "Usado". |
 
 ---
 
