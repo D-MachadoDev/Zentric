@@ -90,8 +90,17 @@ Este documento regula exclusivamente los códigos HTTP vinculados al transporte 
 
 ---
 
-## 6. Reglas de Oro de Seguridad
+## 6. Transporte Seguro (TLS/HTTPS) y Proxy Inverso
+
+1. **Cifrado Obligatorio en Producción:** Toda comunicación entre el cliente web (`https://zentric.me`) y la API (`https://api.zentric.me`) debe realizarse obligatoriamente mediante **HTTPS / TLS 1.3**.
+2. **Redirección Automática:** Cualquier intento de conexión por HTTP inseguro debe redirigirse automáticamente a HTTPS, impidiendo la transmisión accidental de Bearer Tokens en texto plano por la red.
+3. **Preservación de Esquema en Proxy Inverso:** En despliegues bajo balanceadores de carga o proxies inversos (ej. Nginx, Cloudflare), la API debe procesar las cabeceras estándar `X-Forwarded-Proto` y `X-Forwarded-For` para reconocer con precisión el esquema y origen de la solicitud original.
+
+---
+
+## 7. Reglas de Oro de Seguridad
 
 1. **Cero Comodines:** Los orígenes de producción y pruebas se declaran siempre de forma explícita.
 2. **Independencia de Entornos:** La configuración de orígenes se administra vía variables de entorno sin recompilación.
-3. **Formato Estándar de Error:** Todo rechazo de nivel `4xx` o `5xx` debe adherirse a **RFC 9457 (Problem Details)** en formato JSON.
+3. **Cifrado en Tránsito:** Queda prohibido transmitir Bearer tokens sobre canales HTTP sin cifrar en entornos productivos.
+4. **Formato Estándar de Error:** Todo rechazo de nivel `4xx` o `5xx` debe adherirse a **RFC 9457 (Problem Details)** en formato JSON.
