@@ -60,6 +60,7 @@ flowchart TD
   3. **No Fraccionamiento Preferente:** Si la bodega con mayor stock cubre la totalidad requerida, la reserva se toma íntegramente de esa única bodega.
   4. **Fraccionamiento Atómico (INV-02):** Si ninguna bodega individual cubre la cantidad, se fracciona secuencialmente entre las bodegas necesarias hasta satisfacer la demanda.
 - **Compensación Defensiva:** Si la suma total disponible en la red no satisface el pedido, el servicio revierte inmediatamente cualquier reserva parcial previa y aborta la operación, garantizando que el pedido no quede en un estado semicomprometido.
+- **Especificación Completa:** [`services/inventory-reservation-service.md`](services/inventory-reservation-service.md)
 
 ---
 
@@ -72,6 +73,7 @@ flowchart TD
   2. **Transición a Despachado (`Dispatched`):** Si el pedido maestro está en `Paid` y **todos** los despachos activos han alcanzado o superado `FulfillmentStatus.Dispatched`, se invoca `order.Dispatch()`.
   3. **Transición a Entregado (`Delivered`):** Si el pedido maestro está en `Dispatched` y **todos** los despachos activos están en `FulfillmentStatus.Delivered`, se invoca `order.Deliver()`.
   4. Si todos los despachos fueron cancelados por quiebre (cero paquetes activos), el pedido maestro permanece sin entregas físicas y sus importes se saldan financieramente.
+- **Especificación Completa:** [`services/order-fulfillment-progress-synchronizer.md`](services/order-fulfillment-progress-synchronizer.md)
 
 ---
 
@@ -83,6 +85,7 @@ flowchart TD
   - **Flujo General:** La aprobación definitiva requiere el visto bueno del vendedor (`VendorApproved == true`) y que el dictamen técnico del Operador Logístico certifique buen estado físico (`IsGoodCondition == true`).
   - **Excepción de Mismo Vendedor y Bodega:** Si la devolución ocurre en la misma bodega física de origen del propio vendedor (`isSameWarehouseAndVendor == true`), la inspección logística no bloquea la decisión y el vendedor puede autorizar directamente el reingreso.
   - Al aprobarse, la entidad emite `ReturnApprovedEvent`, habilitando el reingreso de la unidad a bodega bajo el contador de mercancía usada (`UsedQuantity`).
+- **Especificación Completa:** [`services/returns-approval-service.md`](services/returns-approval-service.md)
 
 ---
 
@@ -98,3 +101,4 @@ flowchart TD
      - Procedencia: Cualquier disputa posventa ordinaria o devolución comercial (`vendor_approved_return`).
      - Exige dictamen explícito de un usuario con rol `Administrator` para liberar fondos de la plataforma (principio de segregación de poderes).
   3. **Validación Monetaria:** Verifica que el importe a reembolsar se calcule a partir del precio unitario congelado en la línea de compra (`OrderItem.UnitPrice`) y que el saldo remanente en `PaymentReceipt` sea suficiente.
+- **Especificación Completa:** [`services/refund-policy-service.md`](services/refund-policy-service.md)
