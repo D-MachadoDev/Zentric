@@ -1,4 +1,4 @@
-# 02. Arquitectura de Software — Zentric
+# 02. Arquitectura de Software
 
 > **Documento de Especificación Arquitectónica.** Define el estilo arquitectónico, las capas concéntricas, la regla de dependencia unidireccional y las responsabilidades técnicas del backend de **Zentric**. Sigue el estándar de **Arquitectura Hexagonal (Puertos y Adaptadores)** y **Domain-Driven Design (DDD)**.
 

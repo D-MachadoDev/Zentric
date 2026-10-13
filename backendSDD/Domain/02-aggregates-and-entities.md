@@ -1,4 +1,4 @@
-# 02. Límites de Agregados y Entidades (Aggregates & Transactional Boundaries) — Zentric
+# 02. Límites de Agregados y Entidades (Aggregates & Transactional Boundaries)
 
 > **Especificación Táctica de Agregados.** Establece los límites de consistencia transaccional, la jerarquía de identidades (globales y locales), las invariantes de ciclo de vida y las reglas de interacción entre agregados en **Zentric** (`Zentric.Domain`), conforme a Domain-Driven Design (DDD) y Arquitectura Hexagonal.
 

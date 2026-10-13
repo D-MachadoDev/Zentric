@@ -1,4 +1,4 @@
-# SDD - indice del backend Zentric
+# SDD — Índice Maestro del Backend
 
 > **Este fichero es un indice, no la especificacion.** Si buscas una regla de negocio esta en
 > `Domain/`, si buscas un endpoint esta en `Presentation/`, si buscas una decision esta en

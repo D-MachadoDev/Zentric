@@ -1,4 +1,4 @@
-# 01. Modelos de Dominio (Aggregate Roots y Entidades Hijas) — Zentric
+# 01. Modelos de Dominio (Aggregate Roots y Entidades Hijas) 
 
 > **Especificación Táctica de Modelos.** Define exhaustivamente las Raíces de Agregado (*Aggregate Roots*), Entidades Hijas y Value Objects de **Zentric** (`Zentric.Domain`), organizados por *Bounded Contexts*. Todas las clases operan con encapsulamiento estricto, métodos de negocio ricos y cero dependencias de infraestructura.
 

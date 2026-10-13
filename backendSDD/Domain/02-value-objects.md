@@ -1,4 +1,4 @@
-# 02. Objetos de Valor y Enumeraciones (Value Objects & Enums) — Zentric
+# 02. Objetos de Valor y Enumeraciones (Value Objects & Enums) 
 
 > **Especificación Táctica de Conceptos Inmutables.** Define rigurosamente todos los Objetos de Valor (*Value Objects*) y Enumeradores (*Enums*) del dominio de **Zentric** (`Zentric.Domain`), conforme a los principios tácticos de Domain-Driven Design (DDD).
 

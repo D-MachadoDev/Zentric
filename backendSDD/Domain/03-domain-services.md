@@ -1,4 +1,4 @@
-# 03. Servicios de Dominio (Domain Services) — Zentric
+# 03. Servicios de Dominio (Domain Services) 
 
 > **Especificación Táctica de Orquestación Pura.** Define los Servicios de Dominio de **Zentric** (`Zentric.Domain`). Un Servicio de Dominio encapsula lógica de negocio pura, cálculos complejos o coordinación entre múltiples Agregados Raíz que no pertenecen de forma natural a una sola entidad.
 

@@ -1,4 +1,4 @@
-# Política de CORS y Seguridad HTTP — Zentric
+# Política de CORS y Seguridad HTTP
 
 > **Especificación Contractual de Integración y Seguridad.** Define los orígenes autorizados para el consumo de la API, las cabeceras y métodos permitidos, la política de transporte de identidad y el tratamiento normativo de respuestas HTTP para clientes web.
 
