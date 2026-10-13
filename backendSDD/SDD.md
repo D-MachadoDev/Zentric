@@ -1,186 +1,159 @@
 # SDD — Índice Maestro del Backend
 
-> **Este fichero es un indice, no la especificacion.** Si buscas una regla de negocio esta en
-> `Domain/`, si buscas un endpoint esta en `Presentation/`, si buscas una decision esta en
-> `Adr/`, y si buscas donde quedamos esta en `orchestrator-state.md`.
-
-> **Principio:** la especificacion describe **QUE** debe hacer el sistema, no **COMO**. Si nada
-> de lo que hay aqui impone una tecnologia, este mismo sistema puede construirse con otro
-> stack y comportarse igual. El codigo es un resultado que cumple la especificacion.
->
-> **Alcance:** el nucleo portable es `ZENTRIC.md`, `Domain/` y los contratos HTTP
-> de `Presentation/`: ahi no se impone stack. `Application/`, `Infrastructure/` y
-> las decisiones de `Adr/` documentan la implementacion .NET/EF Core **vigente y construida**:
-> citan tecnologia a proposito, para que el sistema actual sea reproducible sin preguntas.
-
-## Donde esta cada cosa
-
-| Documento | Que contiene |
-|---|---|
-| [`ZENTRIC.md`](../ZENTRIC.md) | La Ley. Dominio e invariantes. Intocable. |
-| [`Domain/`](Domain/) | Modelos, agregados, value objects, invariantes, puertos y reglas de negocio. |
-| [`Application/`](Application/) | Casos de uso, puertos de entrada y orquestacion. |
-| [`Infrastructure/`](Infrastructure/) | Persistencia, despliegue, servicios de fondo y el mapa de entidades. |
-| [`Presentation/`](Presentation/) | Contratos REST (OpenAPI), matriz de autorizacion por rol y manejo global de errores (RFC 7807). |
-| [`Adr/`](Adr/) | Una decision cada una, con sus alternativas descartadas y el porque. |
-| [`Contract-alignment.md`](Contract-alignment.md) | Politica contractual transversal y trazabilidad cliente-servidor. |
-| [`Backend-Cors-Security.md`](Backend-Cors-Security.md) | Origen permitido, cabeceras, JWT, preflight y pruebas CORS. |
-| [`orchestrator-state.md`](orchestrator-state.md) | Estado, riesgos, preguntas abiertas, gates y bitacora. |
-
-## Si eres nuevo
-
-1. Lee el **glosario** del final de este documento: resuelve `Q-21b`, `H-15`, `R-08`, `ADR-0013` y el
-   resto de identificadores que el codigo cita. Saltarselo es la razon mas comun por la que este
-   repositorio parece criptico cuando no lo es.
-2. Sigue el orden de lectura de [`orchestrator-state.md`](orchestrator-state.md#orden-de-lectura-para-replicar-este-backend-con-otro-stack).
+> Fuente Única de Verdad (SSoT) y catálogo de navegación de la arquitectura, especificaciones funcionales y contratos técnicos del backend de Zentric.
 
 ---
 
-## 6. Índice de especificaciones (SSoT)
+## 1. Principio Fundamental de Spec-Driven Development (SDD)
 
-> Este orquestador **no duplica** las especificaciones: las indexa. Los documentos canónicos viven en `/backendSDD/` y en la raíz del repositorio.
+En este proyecto aplicamos **Spec-Driven Development (SDD)** bajo los siguientes principios inviolables:
 
-### 6.1 Documentos normativos y de panorama
+1. **La jerarquía de verdad:**
+   - **La Ley (`ZENTRIC.md`):** Reglas funcionales, dominios de negocio e invariantes dictadas por el cliente. Intocables por el equipo de desarrollo.
+   - **Especificaciones Técnicas (`backendSDD/`):** Modelos, contratos, puertos, adaptadores y Decisiones de Arquitectura (ADRs).
+   - **El Código:** Es un artefacto derivado cuya única razón de ser es satisfacer fielmente la especificación.
+2. **Separación de responsabilidades:** La especificación describe **QUÉ** debe hacer el sistema y cuáles son sus invariantes, no cómo resolverlo con tutoriales de implementación.
+3. **Sincronización Bidireccional:** Ninguna línea de código de negocio existe sin respaldo en esta especificación, y cualquier ajuste validado durante la implementación se refleja de inmediato en los documentos SDD.
 
-| Documento | Contenido | Rol |
+---
+
+## 2. Resumen Ejecutivo y Métricas Auditadas del Sistema
+
+El sistema implementa una **Arquitectura Hexagonal (Puertos y Adaptadores)** combinada con **Domain-Driven Design (DDD)** sobre **.NET 10** y **PostgreSQL 16**:
+
+| Dimensión | Métrica Auditada | Evidencia Técnica y Ubicación |
 |---|---|---|
-| [ZENTRIC.md](../ZENTRIC.md) | Ley funcional del cliente (reglas RG, dominios 1–11, roles) + `[ADDENDUM - DICTADO POR OWNER]` | **Congelada (Biblia)** — intocable; ADDENDA registradas en la [sección 8.2 de orchestrator-state](orchestrator-state.md#82-adiciones-a-la-biblia-addendum---dictado-por-owner-en-zentricmd) |
-| [AGENTS.md](../AGENTS.md) | Contrato operativo de agentes: arquitectura hexagonal, reglas por capa, DoD, comandos | Normativo |
-| [01-system-overview.md](01-system-overview.md) | Negocio global, alcance incluido/excluido, glosario de contexto | Panorama |
-| [02-software-architecture.md](02-software-architecture.md) | Arquitectura hexagonal, regla de dependencia, capas y puertos | Panorama |
-| `README.md` (raíz) | Presentación técnica integral del repositorio (matriz tecnológica, diagramas, guía de arranque) | Divulgación |
+| **Lenguaje y Framework** | C# (.NET 10.0) | Solución ensamblada en `backend/Zentric.slnx` |
+| **Motor de Persistencia** | PostgreSQL 16.15-alpine | Contenedor `zentric-postgres` en puerto `15432:5432` |
+| **ORM y Mapeo** | Entity Framework Core | `ZentricDbContext` con 14 `DbSet` en `Zentric.Infrastructure` |
+| **Agregados Raíz de Dominio** | 10 Agregados | `User`, `Buyer`, `Product`, `Inventory`, `Warehouse`, `CustomerOrder`, `FulfillmentOrder`, `Invoice`, `ReturnRequest`, `PaymentReceipt` |
+| **Entidades de Auditoría y Control** | 1 Entidad Dedicada | `RefundAuditRecord` (control transaccional de reembolsos de administrador) |
+| **Entidades Hijas y Relaciones** | 6 Modelos | `OrderItem`, `Shipment`, `ProductVariant`, `DigitalDeliveryRecord`, `RefundCredit`, `StockAdjustmentRecord` |
+| **Puertos de Salida** | 11 Repositorios + 4 Servicios | Catalogados en `backendSDD/Domain/05-ports.md` |
+| **Adaptadores Concretos** | 11 Repositorios + 11 Mappers | Implementados en `backend/Zentric.Infrastructure/Persistence/` |
+| **Migraciones de Esquema** | 15 Migraciones | Historial canónico secuencial en `backend/Zentric.Infrastructure/Migrations/` |
+| **Casos de Uso (CQRS)** | 22 Commands y 14 Queries | Desacoplados sin MediatR (Dispatcher propio) en `Zentric.Application` |
+| **Validación de Entrada** | FluentValidation + Pipeline | Ejecución automática pre-handler mediante `ValidationBehavior` |
+| **Endpoints HTTP REST** | 45 Endpoints | 44 acciones en controladores REST + 1 sonda de salud `/health` |
+| **Políticas de Autorización** | 21 Políticas | Registradas en `AuthorizationPolicies` con política de reserva fail-closed |
+| **Tratamiento de Errores** | Result Pattern + RFC 7807 | Respuestas Problem Details en `application/problem+json` |
+| **Procesos en Segundo Plano** | 1 Background Worker | `CheckoutTimeoutService` (liberación de reservas a los 15 minutos) |
+| **Cobertura y Calidad** | 457 Pruebas Unitarias en Verde | `dotnet test` (0 fallos, compilación con `-warnaserror`) |
 
-### 6.2 Dominio — `backendSDD/Domain/`
+---
 
-| Documento | Contenido |
+## 3. Mapa de Navegación del Sistema
+
+### 3.1 Documentos Normativos y Panorama Global
+- **[`ZENTRIC.md`](../ZENTRIC.md):** La Ley funcional pura del cliente. Contiene las reglas generales (RG-01 a RG-11), los 11 dominios operativos y los addenda dictados por el Owner.
+- **[`AGENTS.md`](../AGENTS.md):** Directrices operativas de ingeniería de software: regla de dependencia estricta, arquitectura hexagonal, Definition of Done (DoD) y políticas de calidad.
+- **[`01-system-overview.md`](01-system-overview.md):** Visión global del negocio, límites del sistema y glosario de contexto delimitado.
+- **[`02-software-architecture.md`](02-software-architecture.md):** Arquitectura Hexagonal, flujo unidireccional de dependencias hacia el centro y organización de proyectos.
+- **[`README.md`](../README.md):** Portada técnica del repositorio, guía de ejecución en contenedores y comandos de verificación.
+
+---
+
+### 3.2 Capa de Dominio (`backendSDD/Domain/`)
+
+El núcleo puro del negocio, libre de cualquier dependencia técnica o de infraestructura:
+
+| Documento | Contenido Canónico |
 |---|---|
-| [01-domain-overview.md](Domain/01-domain-overview.md) | Visión general del dominio y bounded contexts |
-| [01-models.md](Domain/01-models.md) | Modelos por contexto: agregados, entidades, propiedades |
-| [02-aggregates-and-entities.md](Domain/02-aggregates-and-entities.md) | Agregados, entidades y relaciones |
-| [02-value-objects.md](Domain/02-value-objects.md) | Value Objects y enumeraciones |
-| [03-domain-services.md](Domain/03-domain-services.md) | Servicios de dominio (reserva, split, timeout, devoluciones) |
-| [04-domain-events.md](Domain/04-domain-events.md) | Eventos de dominio y mensajería |
-| [04-invariants-and-rules.md](Domain/04-invariants-and-rules.md) | Invariantes estrictas (lista numerada) |
-| [05-ports.md](Domain/05-ports.md) | Puertos de repositorio y de mensajería |
-| [06-business-rules.md](Domain/06-business-rules.md) | Reglas de negocio catalogadas (INV, CAT, PED, DEV, RG…) |
-| [07-lifecycle.md](Domain/07-lifecycle.md) | Máquinas de estado críticas (pedido, despacho, devolución) |
-| [services/inventory-reservation-service.md](Domain/services/inventory-reservation-service.md) | Especificación de reserva atómica de stock en checkout |
-| [services/order-fulfillment-progress-synchronizer.md](Domain/services/order-fulfillment-progress-synchronizer.md) | Especificación de sincronización de avance del pedido maestro |
-| [services/returns-approval-service.md](Domain/services/returns-approval-service.md) | Especificación de doble verificación de devoluciones físicas |
-| [services/refund-policy-service.md](Domain/services/refund-policy-service.md) | Especificación de clasificación de reembolsos (automático vs. excepción) |
+| [`01-domain-overview.md`](Domain/01-domain-overview.md) | Panorama general del dominio, bounded contexts y fronteras transaccionales. |
+| [`01-models.md`](Domain/01-models.md) | Catálogo de modelos de dominio clasificados por contexto delimitado. |
+| [`02-aggregates-and-entities.md`](Domain/02-aggregates-and-entities.md) | Agregados raíz, entidades hijas y métodos de negocio expresivos (cero modelos anémicos). |
+| [`02-value-objects.md`](Domain/02-value-objects.md) | Objetos de valor inmutables (`Money`, `Address`, etc.) y las 14 enumeraciones del dominio. |
+| [`03-domain-services.md`](Domain/03-domain-services.md) | Servicios de dominio descentralizados para operaciones transversales. |
+| [`services/inventory-reservation-service.md`](Domain/services/inventory-reservation-service.md) | Reserva atómica de inventario por mayor capacidad volumétrica disponible. |
+| [`services/order-fulfillment-progress-synchronizer.md`](Domain/services/order-fulfillment-progress-synchronizer.md) | Sincronización del estado del pedido maestro a partir del avance de sus despachos. |
+| [`services/returns-approval-service.md`](Domain/services/returns-approval-service.md) | Flujo de doble verificación física y comercial para devoluciones de mercancía. |
+| [`services/refund-policy-service.md`](Domain/services/refund-policy-service.md) | Clasificación de reembolsos (automáticos por stock fantasma vs. excepción por daño). |
+| [`04-domain-events.md`](Domain/04-domain-events.md) | Los 7 eventos de dominio inmutables, ciclo de vida y puntos de extensión. |
+| [`04-invariants-and-rules.md`](Domain/04-invariants-and-rules.md) | Las 18 invariantes estrictas del modelo que garantizan la integridad en memoria. |
+| [`05-ports.md`](Domain/05-ports.md) | Puertos de salida: 11 interfaces de repositorio, 4 servicios de dominio y `IUnitOfWork`. |
+| [`06-business-rules.md`](Domain/06-business-rules.md) | Catálogo exhaustivo de reglas de negocio catalogadas por contexto delimitado (cero acrónimos crípticos). |
+| [`07-lifecycle.md`](Domain/07-lifecycle.md) | Máquinas de estado transaccionales para pedidos, despachos, devoluciones, facturas y productos. |
 
-✅ **RESUELTO (verificado 2026-09-27)** **Q-06:** `backendSDD/Domain/` ya no conserva parejas numeradas solapadas. `01-domain-overview.md` quedó como **índice de navegación** sin duplicar contenido (su visión y el patrón arquitectónico se movieron a `01-models.md` y `02-software-architecture.md`); los pares `02-aggregates`/`02-value-objects` y `04-domain-events`/`04-invariants-and-rules` tienen responsabilidades distintas y ya no se solapan. Nombres de método corregidos contra el código real (`Block()`/`Activate()`/`UpdateRole()`).
+---
 
-### 6.3 Aplicación, infraestructura y presentación
+### 3.3 Capa de Aplicación (`backendSDD/Application/`)
 
-| Documento | Contenido |
+Orquestación de casos de uso y puertos de entrada:
+
+| Documento | Contenido Canónico |
 |---|---|
-| [Application/01-use-cases-and-ports.md](Application/01-use-cases-and-ports.md) | Casos de uso CQRS y puertos de la capa de aplicación |
-| [Infrastructure/01-data-access.md](Infrastructure/01-data-access.md) | Persistencia EF Core, `DbModel`, mappers, repositorios y migraciones |
-| [Infrastructure/02-containerization-and-deployment.md](Infrastructure/02-containerization-and-deployment.md) | Dockerfile, docker-compose y despliegue |
-| [Infrastructure/03-background-services.md](Infrastructure/03-background-services.md) | Background services (expiración de checkout) |
-| [Infrastructure/04-entity-map.md](Infrastructure/04-entity-map.md) | Mapa de entidades y persistencia relacional (anti-amnesia) |
-| [Presentation/01-endpoints.md](Presentation/01-endpoints.md) | Catálogo de los 45 endpoints REST, seguridad OpenAPI y Problem Details |
-| [Presentation/02-authorization.md](Presentation/02-authorization.md) | Matriz de autorización por rol (RG-03): 20 políticas, los 45 endpoints, cómo se deduce |
-| [Presentation/03-error-handling.md](Presentation/03-error-handling.md) | Manejo global de errores (RFC 7807 Problem Details) |
+| [`01-use-cases-and-ports.md`](Application/01-use-cases-and-ports.md) | Los 22 Comandos y 14 Consultas CQRS, pipeline de validación automática con FluentValidation, consumidores de eventos y Result Pattern. |
 
-### 6.4 ADRs — `backendSDD/Adr/` (decisiones vigentes)
+---
 
-| ADR | Título | Estado |
+### 3.4 Capa de Infraestructura (`backendSDD/Infrastructure/`)
+
+Tecnología, persistencia física, procesos en segundo plano y empaquetado:
+
+| Documento | Contenido Canónico |
+|---|---|
+| [`01-data-access.md`](Infrastructure/01-data-access.md) | Persistencia EF Core, `ZentricDbContext` con 14 DbSets, 11 repositorios concretos, 11 mappers y 15 migraciones. |
+| [`02-containerization-and-deployment.md`](Infrastructure/02-containerization-and-deployment.md) | Construcción multi-etapa en Dockerfile, topología de servicios en docker-compose, ciclo de vida del esquema y bootstrap. |
+| [`03-background-services.md`](Infrastructure/03-background-services.md) | Trabajador en segundo plano `CheckoutTimeoutService` para liberación de reservas vencidas a los 15 minutos. |
+| [`04-entity-map.md`](Infrastructure/04-entity-map.md) | Matriz anti-amnesia de persistencia relacional que vincula cada entidad de dominio con su modelo de BD y tabla física. |
+
+---
+
+### 3.5 Capa de Presentación (`backendSDD/Presentation/`)
+
+Puntos de entrada, contratos REST y seguridad perimetral:
+
+| Documento | Contenido Canónico |
+|---|---|
+| [`01-endpoints.md`](Presentation/01-endpoints.md) | Catálogo canónico de los 45 endpoints HTTP expuestos por la API, esquemas OpenAPI y contratos de datos. |
+| [`02-authorization.md`](Presentation/02-authorization.md) | Matriz de autorización por rol: las 21 políticas de seguridad, política de reserva fail-closed y reglas de propiedad de recurso. |
+| [`03-error-handling.md`](Presentation/03-error-handling.md) | Manejo global de errores basado en RFC 7807 Problem Details y mapeo estandarizado de resultados. |
+
+---
+
+### 3.6 Decisiones de Arquitectura (`backendSDD/Adr/`)
+
+Registro canónico de Decisiones de Arquitectura (ADRs) adoptadas y aprobadas:
+
+- **[`ADR-0001`](Adr/0001-reserva-fragmentacion-contingencia.md):** Reserva de inventario en bodega única con fraccionamiento de contingencia.
+- **[`ADR-0002`](Adr/0002-clave-inventario-variantid.md):** Clave canónica del inventario: `VariantId` (SKU).
+- **[`ADR-0003`](Adr/0003-variante-obligatoria-productos-fisicos.md):** Obligatoriedad de variantes exclusivamente para productos físicos.
+- **[`ADR-0004`](Adr/0004-estado-cancelacion-despacho.md):** Estados transaccionales de cancelación de despachos logísticos.
+- **[`ADR-0005`](Adr/0005-modelado-carrito-compras.md):** Modelado del carrito de compras como estado transitorio con ventana de expiración.
+- **[`ADR-0006`](Adr/0006-resolucion-contradiccion-ley-addendum.md):** Precedencia de los Addenda dictados por el Owner sobre la redacción original de la Ley.
+- **[`ADR-0007`](Adr/0007-dispatcher-propio-sustituye-mediatr.md):** Dispatcher propio desacoplado para reemplazar MediatR y evitar riesgos de licenciamiento.
+- **[`ADR-0008`](Adr/0008-transportadora-y-tarifa-de-envio.md):** Asignación de transportadora y cálculo de tarifas de envío.
+- **[`ADR-0009`](Adr/0009-autenticacion-jwt-rg01.md):** Autenticación simétrica JWT con derivación de claves PBKDF2 en el servidor.
+- **[`ADR-0010`](Adr/0010-relojo-como-puerto-iclock.md):** Abstracción del tiempo mediante el puerto de dominio `IClock`.
+- **[`ADR-0011`](Adr/0011-matriz-autorizacion-por-rol.md):** Matriz centralizada de autorización por rol con política fail-closed.
+- **[`ADR-0012`](Adr/0012-contrato-json-de-los-enum-por-nombre.md):** Serialización estricta de enumeraciones exclusivamente por nombre canónico en JSON.
+- **[`ADR-0013`](Adr/0013-propiedad-del-recurso-por-rol.md):** Aislamiento estricto por propiedad de recurso en base de datos.
+- **[`ADR-0014`](Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md):** Enmiendas operativas para cancelación por stock fantasma, emisión de facturas y rol Supervisor.
+- **[`ADR-0015`](Adr/0015-contrato-de-error-http-problem-json.md):** Estandarización de errores HTTP bajo RFC 7807 `application/problem+json`.
+- **[`ADR-0016`](Adr/0016-pruebas-e2e-http-con-postgres-efimero.md):** Pruebas de integración HTTP contra contenedores efímeros de PostgreSQL con Testcontainers.
+- **[`ADR-0017`](Adr/0017-listados-de-recurso-propio.md):** Listados con filtrado forzado según el rol del llamante.
+- **[`ADR-0018`](Adr/0018-devoluciones-confianza-recepcion-responsabilidad.md):** Protocolo de inspección física y responsabilidad económica en devoluciones.
+- **[`ADR-0019`](Adr/0019-auditoria-reembolsos-excepcionales.md):** Registro inmutable de auditoría para reembolsos extraordinarios de administrador.
+- **[`ADR-0020`](Adr/0020-precio-congelado-y-credito-parcial-por-linea.md):** Precio unitario congelado por línea de pedido y notas crédito proporcionales.
+- **[`ADR-0021`](Adr/0021-ajuste-inventario-conteo-fisico.md):** Ajuste de stock por conteo físico restringido a roles de supervisión y control.
+
+---
+
+## 4. Glosario Canónico del Lenguaje Ubicuo
+
+Para garantizar el cumplimiento de la regla de **Cero Sinónimos**, todos los componentes del sistema (código, bases de datos y contratos) utilizan exclusivamente los siguientes términos:
+
+| Término Canónico | Rol / Concepto | Definición en el Negocio |
 |---|---|---|
-| [0001](Adr/0001-reserva-fragmentacion-contingencia.md) | Reserva de inventario: bodega única con fraccionamiento de contingencia | accepted (2026-09-17) |
-| [0002](Adr/0002-clave-inventario-variantid.md) | Clave del inventario: `VariantId` (SKU) | accepted (2026-09-17) |
-| [0003](Adr/0003-variante-obligatoria-productos-fisicos.md) | Variante obligatoria solo para productos físicos | accepted (2026-09-17) |
-| [0004](Adr/0004-estado-cancelacion-despacho.md) | Estado de cancelación de despacho | accepted |
-| [0005](Adr/0005-modelado-carrito-compras.md) | Modelado del carrito de compras (`Cart` como estado con timeout) | accepted |
-| [0006](Adr/0006-resolucion-contradiccion-ley-addendum.md) | Precedencia del ADDENDUM sobre la Ley original (C-08/Q-13) | accepted (2026-09-19) |
-| [0007](Adr/0007-dispatcher-propio-sustituye-mediatr.md) | Dispatcher propio en lugar de MediatR (licencia RPL) | accepted (2026-09-27) |
-| [0008](Adr/0008-transportadora-y-tarifa-de-envio.md) | Transportadora y tarifa de envío | accepted |
-| [0009](Adr/0009-autenticacion-jwt-rg01.md) | Autenticación real con JWT (RG-01), hash PBKDF2 en el servidor | accepted (2026-09-28) |
-| [0010](Adr/0010-relojo-como-puerto-iclock.md) | El tiempo entra al modelo por el puerto `IClock` | accepted (2026-09-29) |
-| [0011](Adr/0011-matriz-autorizacion-por-rol.md) | Matriz de autorización por rol en un solo archivo, `FallbackPolicy` fail-closed y verificación por reflexión (Q-21 / RG-03) | accepted (2026-09-29) |
-| [0012](Adr/0012-contrato-json-de-los-enum-por-nombre.md) | Los `enum` del contrato REST viajan solo por nombre (Q-22) | accepted (2026-09-29) |
-| [0013](Adr/0013-propiedad-del-recurso-por-rol.md) | Propiedad del recurso por rol, con la identidad de vendedor derivada del token (Q-21b) | accepted (2026-09-29) |
-| [0014](Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md) | Tres enmiendas a la matriz de roles: quién cancela por quiebre, quién factura y qué es el Supervisor (Q-21c, Q-21d, Q-21e) | accepted (2026-09-30) |
-| [0015](Adr/0015-contrato-de-error-http-problem-json.md) | Contrato de error HTTP: `application/problem+json` obligatorio | accepted (2026-10-01) |
-| [0016](Adr/0016-pruebas-e2e-http-con-postgres-efimero.md) | Pruebas E2E HTTP con PostgreSQL efímero (Testcontainers) | accepted (2026-10-01) |
-| [0017](Adr/0017-listados-de-recurso-propio.md) | Listados de recurso propio: el filtro lo decide el rol (pedidos, despachos, devoluciones, facturas, inventario) | accepted (2026-09-30) |
-| [0018](Adr/0018-devoluciones-confianza-recepcion-responsabilidad.md) | Devoluciones: inspección, lugar de recepción y responsabilidad económica del reembolso | accepted (2026-10-03) |
-
-### 6.5 Specs activas (códigos SPEC)
-
-| ID | Spec | Estado |
-|---|---|---|
-| SPEC-000 | Adopción SDD (bootstrap brownfield) | hecha |
-| SPEC-001 | Ley funcional Zentric | congelada (Biblia) |
-| SPEC-002 | Dominio (modelos, reglas, invariantes, puertos, eventos, ciclo de vida) | viva |
-| SPEC-003 | Aplicación (casos de uso y puertos) | viva |
-| SPEC-004 | Infraestructura (EF Core, mapeos, migraciones, background services, Docker) | viva |
-| SPEC-005 | Presentación (endpoints REST + OpenAPI) | viva |
-| SPEC-006 | Trazabilidad de la tanda no registrada (T-011…T-022) | hecha |
-| SPEC-007 | Validación de entrada + RFC 9457 + higiene (H-09/H-11/H-12) | hecha |
-
-
-## 19. Glosario de códigos de trazabilidad
-
-> **Por qué existe esta sección.** El código y las especificaciones citan identificadores cortos
-> (`Q-21b`, `H-15`, `T-004`, `R-08`). Son útiles porque apuntan a una decisión concreta en vez de
-> repetirla entera, pero **sin este índice son ininteligibles para quien no conoce la historia del
-> proyecto**. Un lector nuevo no debería tener que leer 1152 líneas para descubrir qué significa
-> `Q-21b`. Este apartado es el punto de entrada: se resuelve aquí y se sigue el enlace.
-
-### 19.1 Familias y qué representa cada una
-
-| Prefijo | Significado | Dónde se resuelve |
-|---|---|---|
-| `Q-` | **Pregunta** planteada al Owner que aún no tenía respuesta. `Q-05`, `Q-21b` | [`orchestrator-state.md`](orchestrator-state.md) §9 y §8.3 |
-| `ADR-NNNN` | **Decisión de arquitectura** adoptada, con sus alternativas descartadas | [`Adr/`](Adr/) |
-| `H-` | **Hallazgo** de defecto encontrado en el código, con su estado | [`orchestrator-state.md`](orchestrator-state.md) §10.1 |
-| `R-` | **Riesgo** vigente (backend) | [`orchestrator-state.md`](orchestrator-state.md) §10.2 |
-| `OBS-` | **Observación** de calidad o consistencia | [`orchestrator-state.md`](orchestrator-state.md) §10.2 |
-| `T-` | **Tarea** de un plan de ejecución | [`orchestrator-state.md`](orchestrator-state.md) §4 y §12.1 |
-| `E-` | **Entidad** del mapa de dominio (anti-amnesia) | [`Infrastructure/04-entity-map.md`](Infrastructure/04-entity-map.md) |
-| `SPEC-` / `FR-` | **Especificación** de fase y sus criterios de aceptación | [`orchestrator-state.md`](orchestrator-state.md) §18 y §11.4 |
-| `PED-` | **Regla de negocio** del glosario de `Domain/` | [`Domain/06-business-rules.md`](Domain/06-business-rules.md) |
-
-### 19.2 El prefijo `R-` está duplicado — aviso importante
-
-`R-` significa **dos cosas distintas** según dónde se lea, y esto es un defecto real del
-repositorio, no una convención:
-
-| Namespace | Qué significa | Dónde vive |
-|---|---|---|
-| `R-06`, `R-08`, `R-09`… | Riesgos del **backend** (este documento, §10.2) | [`orchestrator-state.md`](orchestrator-state.md) §10.2 |
-| `R-04`…`R-08` | Brechas de **integración con el frontend** (auditoría de contrato) | `frontendSDD/Contract-alignment.md`, `frontendSDD/Frontend-Adapters.md` |
-
-`R-06` designa "reloj directo" en un sitio y "devolver `variantId` en el alta de producto" en el
-otro. `R-08` designa "analizadores no activados" y "reportes administrativos". Mientras coexistan,
-**una cita de `R-08` es ambigua y no debe resolverse por suposición**.
-
-**Regla vigente:** `orchestrator-state.md` §10.2 es el namespace canónico de riesgos del backend. Los
-códigos de brecha del frontend son un namespace separado. Para evitar que un `R-06` en el código se
-lea con el significado equivocado, **el código ya no cita riesgos**: las auditorías que
-enumeraron brechas se resolvieron **eliminando el código del comentario** y dejando la
-explicación en palabras. Un comentario que dice *"antes solo existía `GET /api/Orders/{id}`"* se
-entiende sin saber nada del proyecto; uno que dice *"R-04"* no.
-
-Las referencias a `Q-`, `H-` y `ADR-` **sí se mantienen** en el código, porque esos códigos tienen
-un único significado, están indexados aquí y son el mecanismo que garantiza que una decisión no se
-pierda. Se citan siempre **junto a la explicación**, nunca en lugar de ella.
-
-### 19.3 Glosario de términos del negocio
-
-| Término                                              | Significado                                                                                                                                                                                                                              |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Comprador** (`Buyer`)                              | Persona que adquiere productos. Es el dueño de un pedido y quien puede devolverlo.                                                                                                                                                       |
-| **Vendedor** (`Seller` / `Vendor`)                   | Persona que publica productos. Es el dueño de un producto, un pedido, una bodega o una devolución. **El código usa `Vendor`; el rol del token es `Seller`:** el mismo actor con dos nombres, uno para la entidad y otro para el permiso. |
-| **Operador Logístico** (`LogisticsOperator`)         | Quien prepara, empaca, despacha y entrega en bodega. Trabaja sobre materiales, no sobre cuentas.                                                                                                                                         |
-| **Administrador** (`Administrator`)                  | Único que emite facturas y ejecuta reembolsos.                                                                                                                                                                                           |
-| **Supervisor** (`Supervisor`)                        | Rol de **solo lectura y auditoría**. Sin módulo propio, por dictamen del Owner.                                                                                                                                                          |
-| **Pedido** (`CustomerOrder`)                         | Lo que compra el Comprador. Puede tener líneas de varios vendedores.                                                                                                                                                                     |
-| **Despacho** (`FulfillmentOrder`)                    | La porción de un pedido que corresponde a un vendedor. Un pedido multi-vendedor genera varios.                                                                                                                                           |
-| **Factura Maestra** (`InvoiceType.Master`)           | Lo que paga el Comprador: el total de la operación.                                                                                                                                                                                      |
-| **Detalle Zentric** (`InvoiceType.ZentricDetail`)    | Comisión de la plataforma. **Control interno: ni el Comprador ni el Vendedor la ven.**                                                                                                                                                   |
-| **Detalle de vendedor** (`InvoiceType.VendorDetail`) | La parte de un vendedor tras descontar la comisión. Solo la ve ese vendedor.                                                                                                                                                             |
-| **Devolución** (`ReturnRequest`)                     | Solicitud del Comprador para devolver un producto entregado. El Vendedor aprueba o rechaza; el Administrador reembolsa.                                                                                                                  |
-| **Quiebre de stock** (`Stock fantasma`)              | El sistema cree que hay existencias y en bodega no están. Se resuelve cancelando el despacho, y lo reporta quien está en la bodega.                                                                                                      |
+| **Comprador** (`Buyer`) | Rol del Sistema | Persona natural o jurídica que adquiere productos. Es dueño de sus pedidos y carritos y puede solicitar devoluciones de mercancía entregada. |
+| **Vendedor** (`Seller` / `Vendor`) | Rol del Sistema | Actor comercial que publica productos en el catálogo, administra sus existencias en bodega, empaca y despacha sus órdenes y aprueba devoluciones. En el token de identidad se identifica como `Seller`; en las entidades de catálogo e inventario se utiliza `VendorId`. |
+| **Operador Logístico** (`LogisticsOperator`) | Rol del Sistema | Encargado del trabajo físico en bodega: recibe mercancía, empaca paquetes, registra guías de despacho, certifica entregas y dictamina inspecciones de devoluciones. |
+| **Administrador** (`Administrator`) | Rol del Sistema | Encargado de la gestión de la plataforma: incorpora vendedores, habilita bodegas, emite Facturas Maestras, ejecuta reembolsos de dinero y gestiona bloqueos de usuarios. |
+| **Supervisor** (`Supervisor`) | Rol del Sistema | Rol especializado de **solo lectura, auditoría y seguimiento operativo**. Participa en el ajuste de existencias por conteo físico pero carece de facultades de venta o recaudación. |
+| **Pedido de Compra** (`CustomerOrder`) | Agregado de Negocio | Transacción global iniciada por un comprador que agrupa líneas de productos (pudiendo abarcar múltiples vendedores). |
+| **Orden Logística de Despacho** (`FulfillmentOrder`) | Agregado de Negocio | Subdivisión operativa de un pedido correspondiente a los productos que deben ser preparados y despachados por un vendedor específico desde una bodega. |
+| **Factura Maestra** (`InvoiceType.Master`) | Documento Tributario | Factura consolidada emitida al comprador por el importe total de la operación comercial. |
+| **Detalle Zentric** (`InvoiceType.ZentricDetail`) | Documento Tributario | Registro interno de la comisión tecnológica correspondiente a la plataforma Zentric. Control interno confidencial. |
+| **Factura de Vendedor** (`InvoiceType.VendorDetail`) | Documento Tributario | Liquidación individual emitida a cada vendedor por sus productos tras descontar la comisión de la plataforma. |
+| **Solicitud de Devolución** (`ReturnRequest`) | Agregado de Negocio | Trámite radicado por el comprador para devolver mercancía física dentro del período de garantía legal. |
+| **Quiebre por Stock Fantasma** | Evento Operativo | Faltante físico en bodega no reflejado en el inventario del sistema. Origina la cancelación del despacho y la devolución obligatoria con crédito al comprador. |
