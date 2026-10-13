@@ -65,10 +65,10 @@
 | [05-ports.md](Domain/05-ports.md) | Puertos de repositorio y de mensajería |
 | [06-business-rules.md](Domain/06-business-rules.md) | Reglas de negocio catalogadas (INV, CAT, PED, DEV, RG…) |
 | [07-lifecycle.md](Domain/07-lifecycle.md) | Máquinas de estado críticas (pedido, despacho, devolución) |
-| [services/checkout-timeout-service.md](Domain/services/checkout-timeout-service.md) | Especificación del timeout de carrito/checkout (15 min) |
-| [services/inventory-reservation-service.md](Domain/services/inventory-reservation-service.md) | Especificación de reserva de stock (ADR-0001) |
-| [services/order-splitter-service.md](Domain/services/order-splitter-service.md) | Especificación del split de pedidos en N guías |
-| [services/returns-approval-service.md](Domain/services/returns-approval-service.md) | Especificación de la doble aprobación de devoluciones |
+| [services/inventory-reservation-service.md](Domain/services/inventory-reservation-service.md) | Especificación de reserva atómica de stock en checkout |
+| [services/order-fulfillment-progress-synchronizer.md](Domain/services/order-fulfillment-progress-synchronizer.md) | Especificación de sincronización de avance del pedido maestro |
+| [services/returns-approval-service.md](Domain/services/returns-approval-service.md) | Especificación de doble verificación de devoluciones físicas |
+| [services/refund-policy-service.md](Domain/services/refund-policy-service.md) | Especificación de clasificación de reembolsos (automático vs. excepción) |
 
 ✅ **RESUELTO (verificado 2026-09-27)** **Q-06:** `backendSDD/Domain/` ya no conserva parejas numeradas solapadas. `01-domain-overview.md` quedó como **índice de navegación** sin duplicar contenido (su visión y el patrón arquitectónico se movieron a `01-models.md` y `02-software-architecture.md`); los pares `02-aggregates`/`02-value-objects` y `04-domain-events`/`04-invariants-and-rules` tienen responsabilidades distintas y ya no se solapan. Nombres de método corregidos contra el código real (`Block()`/`Activate()`/`UpdateRole()`).
 

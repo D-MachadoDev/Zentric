@@ -1,24 +1,54 @@
 # Servicio de Dominio: InventoryReservationService
 
-## 1. Propósito y Responsabilidad
-El `InventoryReservationService` es responsable de coordinar la reserva de stock físico cuando un comprador añade productos al carrito. Resuelve la complejidad del inventario distribuido, garantizando que no se sobre-venda y que las reglas de concurrencia se respeten.
+> **Especificación Táctica de Servicio de Dominio.** Define el algoritmo de optimización y reserva atómica de existencias físicas distribuidas en múltiples bodegas durante el proceso de compra.
 
-## 2. Bounded Context
-Pertenece al **Inventory Context**, pero es orquestado a solicitud del **Ordering Context** (Carrito).
+---
+
+## 1. Propósito y Responsabilidad
+Coordinar la reserva transaccional de existencias físicas cuando un comprador ejecuta el checkout de su carrito. Resuelve la complejidad del inventario distribuido, asegurando que no se sobrevenda mercancía y respetando las reglas de consistencia de la plataforma.
+
+---
+
+## 2. Bounded Context y Ubicación
+- **Bounded Context:** `Inventory Context`, orquestado a petición del `Ordering Context`.
+- **Ubicación en Código:** `Zentric.Domain/Inventories/Services/InventoryReservationService.cs`.
+- **Agregados Coordinados:** `CustomerOrder` (como fuente de demanda) e `Inventory` (como custodio de existencias por bodega).
+
+---
 
 ## 3. Entradas y Salidas
-- **Input:** un `CustomerOrder` — reserva todos sus `Items` **físicos** (el checkout es quien lo invoca). El servicio consulta el producto de cada línea y omite las `Digital` (CAT-02): no llevan almacén ni reserva.
-- **Output:** `Task`. Falla con `InvalidOperationException` si el stock total no alcanza.
+- **Input:**
+  - `CustomerOrder order`: Pedido maestro en proceso de checkout.
+- **Output:**
+  - `Task`: Falla lanzando `InvalidOperationException` si el stock disponible en la red no satisface la totalidad de las líneas físicas.
 
-## 4. Flujo Lógico y Reglas (Invariantes)
-1. Recibir la solicitud de reserva del carrito.
-2. Por cada `VariantId` físico solicitado:
-   - Consultar los `Inventory` (bodegas) donde el `VariantId` coincida y `AvailableQuantity > 0`. *(Clave de stock `(VariantId, WarehouseId)` — [ADR-0002](../../Adr/0002-clave-inventario-variantid.md).)*
-   - **Regla de Prioridad (V-02):** ordenar de **mayor a menor `AvailableQuantity`** con desempate estable por `Id`, **sin preferencia por tipo de bodega** (`Inventory` no transporta `WarehouseType`; con `VendorId = User.Id` el dueño del stock es el dueño del producto, no el de la bodega).
-   - **Regla de Bodega Única (regla base [INV-02](../06-business-rules.md)):** si una sola bodega cubre la cantidad solicitada, la reserva se hace **íntegramente** en esa bodega aunque existan otras con stock. El envío no se divide.
-   - **Regla de Fragmentación de Contingencia (excepción [INV-02](../06-business-rules.md), [ADR-0001](../../Adr/0001-reserva-fragmentacion-contingencia.md)):** solo si **ninguna** bodega individual cubre la cantidad solicitada (ej. se piden 10 y la Bodega A tiene 6 y la Bodega B tiene 4), el servicio **fracciona** la reserva entre las bodegas necesarias, en orden de mayor a menor stock.
-   - Invocar `IInventoryRepository.TryReserveStockAsync(id, n)` en cada bodega seleccionada — `UPDATE` condicional atómico (ADR-0025) que solo descuenta si la fila aun tiene `n` unidades; cero filas afectadas = rechazo de esa bodega, y se pasa a la siguiente candidata. Tras el éxito se aplica `Inventory.ReserveStock(n)` en la copia en memoria como defensa en profundidad (ADR-0025, decisión 3), no como garantía.
-3. **Fallo y compensación:** si el total sumado de todas las bodegas es menor que la cantidad solicitada, o si la base rechaza todas las escrituras, el servicio libera con `ReleaseReservedStockAsync` (UPDATE inverso condicional) las reservas ya aplicadas en esta misma invocación —las de líneas anteriores incluidas— y **después** lanza `InvalidOperationException`. Antes esta atomicidad la daba el `SaveChanges` diferido del checkout; con la reserva ya escribiendo de inmediato (ADR-0025), la compensación explícita es lo que impide parciales confirmados (ADR-0001, fallo y compensación).
+---
 
-## 5. Eventos Emitidos
-El servicio no emite eventos. Tras la reserva exitosa, `CustomerOrder.Checkout()` emite `OrderCreatedDomainEvent` y el pedido pasa a `PendingPayment`.
+## 4. Algoritmo de Selección de Bodegas e Invariantes
+
+Por cada línea de compra (`OrderItem`) del pedido:
+
+### 1. Filtrado de Productos Digitales (CAT-02)
+El servicio consulta la tipología del producto. Si es `ProductType.Digital`, la línea se omite de la reserva (los productos digitales no ocupan espacio en bodega ni requieren inventario).
+
+### 2. Búsqueda y Ordenamiento por Capacidad (Regla V-02)
+Para cada variante física (`VariantId`), se consultan las posiciones de inventario con `AvailableQuantity > 0`:
+- Se ordenan de **mayor a menor disponibilidad** (`AvailableQuantity` descendente).
+- En caso de empate en cantidad disponible, el desempate es determinista por `WarehouseId`.
+- No existe preferencia por tipo de bodega (`Marketplace` vs. `Vendor`): el dueño del stock comercial es el vendedor del producto.
+
+### 3. Regla de Bodega Única (Regla Base INV-02)
+Si la bodega con mayor stock cubre la totalidad de las unidades solicitadas, la reserva se ejecuta íntegramente en esa bodega. El despacho no se divide innecesariamente.
+
+### 4. Fraccionamiento de Contingencia (Excepción INV-02)
+Solo si **ninguna** bodega individual cubre la cantidad solicitada (ej. se solicitan 10 unidades, la Bodega A tiene 6 y la Bodega B tiene 4), el servicio fracciona la reserva entre las bodegas necesarias, asignando el máximo posible a la bodega mayor y el remanente a las subsiguientes.
+
+### 5. Escritura Atómica y Compensación Defensiva
+- Por cada bodega seleccionada, se invoca la reserva atómica condicional sobre la base de datos.
+- Si en alguna línea física el stock total sumado no alcanza para cubrir la cantidad demandada, o si la persistencia rechaza la escritura por concurrencia, el servicio **revierte inmediatamente** todas las reservas parciales previas aplicadas en esa invocación.
+- Tras la compensación, lanza `InvalidOperationException` impidiendo que el pedido quede parcialmente reservado.
+
+---
+
+## 5. Eventos de Dominio Asociados
+El servicio de reserva no emite eventos directamente; la mutación sobre `Inventory` emite `StockAdjustedDomainEvent` cuando aplica, y la posterior transición del pedido a `PendingPayment` emite `OrderCreatedDomainEvent`.
