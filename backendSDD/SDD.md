@@ -79,8 +79,10 @@
 | [Infrastructure/01-data-access.md](Infrastructure/01-data-access.md) | Persistencia EF Core, `DbModel`, mappers, repositorios y migraciones |
 | [Infrastructure/02-containerization-and-deployment.md](Infrastructure/02-containerization-and-deployment.md) | Dockerfile, docker-compose y despliegue |
 | [Infrastructure/03-background-services.md](Infrastructure/03-background-services.md) | Background services (expiración de checkout) |
-| [Presentation/01-endpoints.md](Presentation/01-endpoints.md) | Catálogo de los 44 endpoints REST, seguridad OpenAPI y Problem Details |
-| [Presentation/02-authorization.md](Presentation/02-authorization.md) | Matriz de autorización por rol (RG-03): 20 políticas, los 44 endpoints, cómo se deduce
+| [Infrastructure/04-entity-map.md](Infrastructure/04-entity-map.md) | Mapa de entidades y persistencia relacional (anti-amnesia) |
+| [Presentation/01-endpoints.md](Presentation/01-endpoints.md) | Catálogo de los 45 endpoints REST, seguridad OpenAPI y Problem Details |
+| [Presentation/02-authorization.md](Presentation/02-authorization.md) | Matriz de autorización por rol (RG-03): 20 políticas, los 45 endpoints, cómo se deduce |
+| [Presentation/03-error-handling.md](Presentation/03-error-handling.md) | Manejo global de errores (RFC 7807 Problem Details) |
 
 ### 6.4 ADRs — `backendSDD/Adr/` (decisiones vigentes)
 
@@ -137,7 +139,7 @@
 | `R-` | **Riesgo** vigente (backend) | [`orchestrator-state.md`](orchestrator-state.md) §10.2 |
 | `OBS-` | **Observación** de calidad o consistencia | [`orchestrator-state.md`](orchestrator-state.md) §10.2 |
 | `T-` | **Tarea** de un plan de ejecución | [`orchestrator-state.md`](orchestrator-state.md) §4 y §12.1 |
-| `E-` | **Entidad** del mapa de dominio (anti-amnesia) | [`Infrastructure/03-entity-map.md`](Infrastructure/03-entity-map.md) |
+| `E-` | **Entidad** del mapa de dominio (anti-amnesia) | [`Infrastructure/04-entity-map.md`](Infrastructure/04-entity-map.md) |
 | `SPEC-` / `FR-` | **Especificación** de fase y sus criterios de aceptación | [`orchestrator-state.md`](orchestrator-state.md) §18 y §11.4 |
 | `PED-` | **Regla de negocio** del glosario de `Domain/` | [`Domain/06-business-rules.md`](Domain/06-business-rules.md) |
 
