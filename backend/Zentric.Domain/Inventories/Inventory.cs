@@ -14,6 +14,13 @@ namespace Zentric.Domain.Inventories
         string Reason,
         DateTime CountedAt);
 
+    /// <summary>
+    /// Agregado raíz que controla las existencias físicas y reservas de un SKU en una bodega determinada.
+    /// </summary>
+    /// <remarks>
+    /// ZENTRIC.md Dominio 6 y ADR-0002: El inventario se particiona por variante (SKU) y bodega (WarehouseId).
+    /// Protege la invariante de existencias no negativas (INV-01) y separa el disponible real del stock comprometido en carritos/pedidos.
+    /// </remarks>
     public sealed class Inventory : Entity
     {
         public Guid Id { get; init; }
@@ -40,9 +47,11 @@ namespace Zentric.Domain.Inventories
         // consumieron), pero deja de contar como existencia disponible.
         public bool IsDeleted => DeletedAt.HasValue;
 
+        /// <summary>
+        /// Constructor protegido para hidratación de persistencia sin ejecutar validaciones de creación.
+        /// </summary>
         private Inventory()
         {
-            // For EF Core
         }
         
         public Inventory(Guid variantId, Guid warehouseId, int availableQuantity, int reservedQuantity, int damagedQuantity, int usedQuantity = 0)
@@ -83,6 +92,9 @@ namespace Zentric.Domain.Inventories
             UpdatedAt = CreatedAt;
         }
 
+        /// <summary>
+        /// Incrementa el stock disponible tras una recepción física confirmada de mercancía del vendedor.
+        /// </summary>
         public void AddStock(int quantity)
         {
             if (quantity <= 0)
@@ -94,6 +106,13 @@ namespace Zentric.Domain.Inventories
             UpdatedAt = DateTime.UtcNow;
         }
 
+        /// <summary>
+        /// Bloquea temporalmente unidades disponibles para un carrito o pedido en curso.
+        /// </summary>
+        /// <remarks>
+        /// Invariante INV-01: No permite sobreventa. Las unidades pasan a <see cref="ReservedQuantity"/>
+        /// impidiendo que otros compradores adquieran el mismo producto simultáneamente.
+        /// </remarks>
         public void ReserveStock(int quantity)
         {
             if (quantity <= 0)
@@ -111,6 +130,12 @@ namespace Zentric.Domain.Inventories
             UpdatedAt = DateTime.UtcNow;
         }
 
+        /// <summary>
+        /// Liquida unidades reservadas cuando la orden es empaquetada y entregada a la transportadora.
+        /// </summary>
+        /// <remarks>
+        /// Las unidades abandonan físicamente la bodega, reduciendo el inventario reservado del sistema.
+        /// </remarks>
         public void DispatchStock(int quantity)
         {
             if (quantity <= 0)

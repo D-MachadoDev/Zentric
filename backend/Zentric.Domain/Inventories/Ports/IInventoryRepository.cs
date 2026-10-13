@@ -6,6 +6,13 @@ using Zentric.Domain.Inventories;
 
 namespace Zentric.Domain.Inventories.Ports
 {
+    /// <summary>
+    /// Puerto de salida (Output Port) para la persistencia y operaciones atómicas de inventario.
+    /// </summary>
+    /// <remarks>
+    /// Define contratos para consultas seguras aisladas por vendedor y mutaciones atómicas condicionales (ADR-0025)
+    /// que garantizan que el stock jamás sea negativo ante concurrencia sin usar locks pesados de base de datos.
+    /// </remarks>
     public interface IInventoryRepository
     {
         Task<Inventory?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);

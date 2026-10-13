@@ -1,101 +1,74 @@
-# C4 - Nivel 1: Contexto del frontend
+# C4 - Nivel 1: Contexto del Frontend
 
-## Propósito y alcance
+## 1. Propósito y Alcance del Sistema
 
-Zentric Frontend es la aplicación web con la que los actores del marketplace operan
-las capacidades expuestas por el backend: los Vendedores gestionan catálogo,
-inventario y despachos; los Compradores compran; el Administrador audita y factura;
-el Operador logístico despacha e inspecciona; el Supervisor consulta. La interfaz
-presenta las funciones permitidas para cada rol, recoge datos de entrada y muestra
-resultados, errores y estados de las operaciones. **No calcula ni persiste stock,
-totales ni reglas de negocio por cuenta propia y no se conecta directamente a las
-bases de datos.**
+Zentric Frontend es la aplicación web cliente con la que los distintos actores del marketplace interactúan con el ecosistema. Su responsabilidad primordial es proporcionar una interfaz visual intuitiva, segura y reactiva que traduzca las intenciones del usuario en operaciones sobre la API de Zentric.
 
-Este nivel muestra quién usa el frontend y con qué sistemas externos se comunica.
-Los límites internos de despliegue están en [C4-2-Contenedores.md](C4-2-Contenedores.md).
+El frontend opera bajo el principio de **cliente ligero (SPA)**:
+- **No persiste datos directamente:** No posee conexión con bases de datos ni almacena estado durable fuera de la sesión activa.
+- **No procesa transacciones críticas:** No calcula totales financieros, no decrementa inventario ni valida reglas de negocio por su cuenta; delega el 100% de la lógica de negocio y validación transaccional en el backend.
+- **Orquesta la experiencia:** Gestiona la navegación, presenta estados de carga y error, captura entradas de formularios y muestra datos adaptados a los permisos del usuario autenticado.
 
-> **Decisiones de diseño de este documento:** dirección **Q3-A** (dark
-> developer/builder), stack **Q4/Q5**, monorepo **Q10**. Ver
-> [`Frontend-SDD.md` §1.2](Frontend-SDD.md#12-decisiones-de-diseño-confirmadas-en-el-grill-q1q20).
+> [!IMPORTANT]
+> **Frontera de Confianza:** El navegador del usuario es un entorno inseguro. El frontend no contiene secretos comerciales, credenciales maestras ni claves privadas. Cualquier validación en la interfaz existe únicamente para optimizar la experiencia de usuario (feedback inmediato), mientras que la autoridad real y definitiva reside siempre en el backend.
 
-## Diagrama de contexto
+---
+
+## 2. Diagrama de Contexto del Sistema
 
 ```mermaid
-flowchart LR
-  seller["Persona: Vendedor<br/>Catálogo, inventario, despachos, devoluciones"]
-  buyer["Persona: Comprador<br/>Catálogo, carrito, compra, devoluciones"]
-  admin["Persona: Administrador<br/>Usuarios, bodegas, auditoría, facturación"]
-  logistics["Persona: Operador logístico<br/>Despachos, inspección de devoluciones"]
-  supervisor["Persona: Supervisor<br/>Solo consulta (Dominio 1)"]
+flowchart TB
+  subgraph Actores["Actores del Negocio"]
+    seller["Vendedor<br/>(Seller)<br/>Gestiona catálogo, inventario y despachos"]
+    buyer["Comprador<br/>(Buyer)<br/>Explora productos, compra y solicita devoluciones"]
+    admin["Administrador<br/>(Administrator)<br/>Gestiona usuarios, bodegas, auditoría y facturación"]
+    logistics["Operador Logístico<br/>(LogisticsOperator)<br/>Despacha pedidos e inspecciona devoluciones"]
+    supervisor["Supervisor<br/>(Supervisor)<br/>Auditoría y reportería en modo solo lectura"]
+    guest["Usuario Público<br/>(Anónimo)<br/>Inicia sesión y auto-registro de comprador"]
+  end
 
-  frontend["Sistema: Zentric Frontend<br/>Aplicación web React (consola operativa)"]
-  backend["Sistema externo: Zentric API<br/>.NET 10 — 44 endpoints + /health<br/>Autenticación, autorización y reglas de negocio"]
+  system["Sistema Central: Zentric Frontend<br/>[Aplicación Web SPA en React 19]<br/>Consola operativa que entrega la interfaz de usuario."]
 
-  seller -->|"Usa en navegador HTTPS"| frontend
-  buyer -->|"Usa en navegador HTTPS"| frontend
-  admin -->|"Usa en navegador HTTPS"| frontend
-  logistics -->|"Usa en navegador HTTPS"| frontend
-  supervisor -->|"Usa en navegador HTTPS"| frontend
-  frontend -->|"JSON sobre HTTP; Bearer en rutas protegidas"| backend
+  backend["Sistema Externo: Zentric Web API<br/>[.NET 10 / ASP.NET Core]<br/>Centraliza la autenticación, autorización y las reglas del negocio."]
+
+  seller -->|"Interactúa mediante navegador web"| system
+  buyer -->|"Interactúa mediante navegador web"| system
+  admin -->|"Interactúa mediante navegador web"| system
+  logistics -->|"Interactúa mediante navegador web"| system
+  supervisor -->|"Interactúa mediante navegador web"| system
+  guest -->|"Accede a login y registro"| system
+
+  system -->|"Peticiones RESTful (JSON sobre HTTPS / Bearer JWT)"| backend
 ```
 
-## Actores
+---
 
-La interfaz diferencia **cinco perfiles autenticados**, exactamente los del enum
-`UserRole` del backend (Lenguaje Ubicuo estricto, sin sinónimos):
+## 3. Actores y Perfiles de Acceso
 
-| Rol | Capacidad en la UI |
-| --- | --- |
-| `Administrator` | Usuarios, bodegas, facturación, reembolsos, auditoría |
-| `Seller` | Catálogo, inventario, despachos, aprobación de devoluciones |
-| `Buyer` | Catálogo, carrito, checkout, solicitar devolución |
-| `Supervisor` | **Solo lectura** (ZENTRIC.md Dominio 1): sin acciones de escritura |
-| `LogisticsOperator` | Despachos, inspección de devoluciones, quiebre de stock |
+El sistema reconoce exactamente **cinco roles autenticados**, correspondientes al enum `UserRole` del backend, más los usuarios anónimos:
 
-Los usuarios no autenticados acceden a inicio de sesión y al auto-registro
-(`POST /api/users` sólo para `Buyer`).
+| Rol | Clasificación | Responsabilidades Principales en la UI |
+|---|---|---|
+| **Administrator** | Autenticado | Gestión integral de usuarios, asignación de bodegas, resolución de reembolsos, auditoría operativa y generación de facturación maestra. |
+| **Seller** | Autenticado | Creación y mantenimiento de catálogo de productos, visualización de existencias de inventario, despacho de órdenes y aprobación de devoluciones. |
+| **Buyer** | Autenticado | Exploración de catálogo público, administración de carrito de compras, ejecución de checkout y solicitud de devoluciones. |
+| **LogisticsOperator** | Autenticado | Ejecución física de despachos desde bodega, inspección técnica de devoluciones recibidas y reporte de quiebres de stock. |
+| **Supervisor** | Autenticado | Perfil de auditoría con acceso de **solo lectura** (ZENTRIC.md Dominio 1). La interfaz inhabilita formularios de creación o edición. |
+| **Usuario Público** | Anónimo | Acceso exclusivo a la pantalla de inicio de sesión (`POST /api/auth/login`) y al registro público de nuevos compradores (`POST /api/users`). |
 
-Las personas representan capacidades de uso, no tipos de componente de React. La
-navegación concreta se resuelve a partir del rol recibido en el JWT.
+---
 
-## Relaciones y límites de confianza
+## 4. Fronteras de Seguridad y Límites de Confianza
 
-- El navegador descarga la aplicación y ejecuta sus componentes React localmente.
-- El frontend usa la API configurada mediante `VITE_API_BASE_URL`; en el entorno
-  local el valor es `http://localhost:5076` (el `8080` es el puerto interno del
-  contenedor, no el del host).
-- Las peticiones autenticadas incluyen el access token como
-  `Authorization: Bearer <token>` en **sólo en memoria**. **No hay refresh ni
-  cookie** (`ADR-0009:62`): a los 60 min o al recargar, re-login (**Q15-B**).
-  La cabecera `X-Buyer-Id` **ya no existe** (`ADR-0009`) y no autentica a nadie.
-- El backend es autoridad para validar identidad, permisos y reglas de negocio
-  (**20 políticas** en `AuthorizationPolicies.cs`). Las guardas del frontend
-  mejoran la navegación, pero **no reemplazan** la autorización del servidor.
-- El frontend **no conoce** credenciales de base de datos ni secretos de firma
-  JWT. La comunicación del navegador con el backend está sujeta a CORS (política
-  `Frontend`, verificada).
-- Las bases de datos y su persistencia pertenecen al backend; no son dependencias
-  directas del navegador.
+1. **Gestión de Sesión Volátil (ADR-0009):** El token JWT se mantiene **únicamente en memoria** durante la vida de la pestaña del navegador. No se almacena en `localStorage` ni `sessionStorage` para prevenir vulnerabilidades de Cross-Site Scripting (XSS). No existen mecanismos de refresh token automático ni cookies de sesión; si el usuario recarga la página (`F5`) o transcurren 60 minutos, la sesión finaliza y debe reautenticarse.
+2. **Autorización y Guardas:** Las rutas de la interfaz cuentan con guardas en el cliente (`beforeLoad`) para redirigir al usuario según su rol y evitar navegación a vistas restringidas. Sin embargo, la seguridad efectiva es garantizada por las **20 políticas de autorización** del backend (`AuthorizationPolicies.cs`). Una alteración del código en el navegador jamás permite ejecutar acciones no permitidas en el servidor.
+3. **Comunicación Perimetral:** El frontend se conecta con la API a través de peticiones HTTP con cabecera `Authorization: Bearer <token>`. Toda respuesta de error recibida sigue el estándar RFC 7807 (`ProblemDetails`), permitiendo una traducción unificada de errores hacia el usuario.
 
-## Flujos representativos
+---
 
-1. Un usuario abre el frontend, inicia sesión (`POST /api/auth/login`) y recibe
-   un access token que se guarda **sólo en memoria**.
-2. El frontend selecciona la página inicial correspondiente al rol.
-3. Una pantalla solicita los datos a los servicios de aplicación, que usan el
-   adaptador HTTP (TanStack Query, **Q9**) para comunicarse con la API.
-4. La interfaz representa los estados de carga, éxito, vacío o error. Para
-   operaciones sensibles (pagar, anular, cancelar) solicita confirmación y muestra
-   el resultado.
-5. Si una petición protegida recibe `401` (token caducado a los 60 min o sesión
-   vacía tras recargar), la sesión se limpia y el usuario vuelve al inicio de
-   sesión. **No hay refresh** que lo evite. Un `403` **no** cambia el rol ni
-   fingir autorización: conserva la sesión y avisa.
+## 5. Trazabilidad y Documentos Relacionados
 
-## Referencias
-
-- [Arquitectura frontend](Frontend-Architecture.md)
-- [Adaptadores frontend](Frontend-Adapters.md)
-- [Flujos de usuario](Frontend-User-Flows.md)
-- [Módulos por rol](Frontend-Role-Modules.md)
-- [C4 nivel 2: contenedores](C4-2-Contenedores.md)
+- **Nivel 2 (Contenedores):** [C4-2-Contenedores.md](C4-2-Contenedores.md) — Unidades de despliegue y servidores (Nginx, SPA, API, PostgreSQL).
+- **Nivel 3 (Componentes):** [C4-3-Componentes.md](C4-3-Componentes.md) — Arquitectura interna del cliente y módulos por rol.
+- **Arquitectura General del Frontend:** [Frontend-Architecture.md](Frontend-Architecture.md) — Capas hexagonales en el cliente.
+- **Reglas del Negocio (La Ley):** [ZENTRIC.md](../ZENTRIC.md) — Especificación canónica del negocio.

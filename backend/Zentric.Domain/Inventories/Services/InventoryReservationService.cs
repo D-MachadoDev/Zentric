@@ -8,6 +8,15 @@ using Zentric.Domain.Orders;
 
 namespace Zentric.Domain.Inventories.Services
 {
+    /// <summary>
+    /// Servicio de Dominio que coordina la reserva transaccional de stock entre múltiples bodegas para un pedido.
+    /// </summary>
+    /// <remarks>
+    /// En DDD, cuando una regla de negocio abarca múltiples agregados (<see cref="Inventory"/>, <see cref="CustomerOrder"/> y productos),
+    /// no debe forzarse dentro de una sola entidad. Este servicio orquesta la reserva atómica multialmacén (ADR-0025)
+    /// y ejecuta transacciones de compensación (liberación inversa) si algún ítem falla a mitad del checkout (ADR-0001).
+    /// Omite productos digitales automáticamente (CAT-02).
+    /// </remarks>
     public class InventoryReservationService
     {
         private readonly IInventoryRepository _inventoryRepository;
@@ -21,6 +30,12 @@ namespace Zentric.Domain.Inventories.Services
             _productRepository = productRepository;
         }
 
+        /// <summary>
+        /// Ejecuta la reserva atómica de existencias para todas las líneas físicas de un pedido.
+        /// </summary>
+        /// <param name="order">Pedido en estado Carrito con sus ítems a reservar.</param>
+        /// <param name="cancellationToken">Token de cancelación cooperativa.</param>
+        /// <exception cref="InvalidOperationException">Se lanza si no hay suficiente stock consolidado, disparando compensación.</exception>
         public async Task ReserveForOrderAsync(CustomerOrder order, CancellationToken cancellationToken = default)
         {
             // ADR-0025: la decision de reserva ya no es un calculo en memoria que
