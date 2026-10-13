@@ -52,9 +52,57 @@ app.UseCors("Frontend");
 ```
 *(De esta forma, en producción se usa `https://zentric.me`, en pruebas o desarrollo se usan los puertos dinámicos `http://localhost:****`, sin modificar ni una sola línea de C#).*
 
+### Matriz de Parámetros Configurados:
+
+| Parámetro | Valor Configurado | Justificación Técnica |
+| :--- | :--- | :--- |
+| **Nombre de la Política** | `Frontend` | Nombre lógico registrado en el contenedor de dependencias (IoC). |
+| **Orígenes Permitidos** | Lista explícita y configurable (`https://zentric.me`, `localhost:****`) | **Prohibido comodín (`*`)**. Los navegadores rechazan comodines cuando se envían tokens de autorización. |
+| **Cabeceras Permitidas** | `Authorization`, `Content-Type`, `Accept` | Permite el envío del token JWT y el formato de datos JSON estándar. |
+| **Métodos Permitidos** | `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS` | Soporta todas las operaciones de consulta, mutación y preflight. |
+| **Credenciales (Cookies)** | Deshabilitadas (`AllowCredentials: false`) | Zentric no utiliza cookies de sesión; la identidad viaja desacoplada en el Bearer token. |
+
 ---
 
-## 3. Flujo en la Práctica: ¿Cómo valida el Backend y el Navegador?
+## 3. Anatomía Visual de los Headers (El "Sobre" de la Petición HTTP)
+
+Las cabeceras (**Headers**) son como los sellos y etiquetas que van pegados **por fuera de un sobre de correo**:
+
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│  SOBRE HTTP (Headers enviados por el Navegador desde https://zentric.me)│
+├────────────────────────────────────────────────────────────────────────┤
+│  POST /api/orders HTTP/1.1                                            │
+│  Host: api.zentric.me                                                 │
+│  Origin: https://zentric.me           <-- "¿De qué web vengo?"         │
+│  Authorization: Bearer eyJhbGciOi...  <-- "Mi llave / Token JWT"       │
+│  Content-Type: application/json       <-- "Formato del contenido"      │
+├────────────────────────────────────────────────────────────────────────┤
+│  CUERPO DE LA CARTA (Body JSON):                                       │
+│  { "buyerId": "...", "items": [{ "sku": "CAM-01", "quantity": 2 }] }   │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+Y la **Respuesta del Servidor (.NET)** regresa con sus propios sellos de aprobación:
+
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│  SOBRE DE RESPUESTA (Headers devueltos por .NET al Navegador)          │
+├────────────────────────────────────────────────────────────────────────┤
+│  HTTP/1.1 201 Created                                                  │
+│  Access-Control-Allow-Origin: https://zentric.me  <-- Sello de permiso │
+│  Content-Type: application/json                                        │
+├────────────────────────────────────────────────────────────────────────┤
+│  CUERPO DE LA RESPUESTA (Body JSON):                                   │
+│  { "orderId": "1a2b3c4d", "status": "Pending" }                       │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+> **Regla del Navegador:** Si la respuesta de .NET **NO** trae la cabecera `Access-Control-Allow-Origin: https://zentric.me`, el navegador rompe la carta y no deja que tu pantalla de React lea los datos devueltos.
+
+---
+
+## 4. Flujo en la Práctica: ¿Cómo valida el Backend y el Navegador?
 
 Cuando el usuario interactúa con la aplicación (por ejemplo, consulta un producto o envía su Bearer token), ocurre la siguiente validación:
 
@@ -83,9 +131,9 @@ sequenceDiagram
 
 ---
 
-## 4. Política de Identidad y Seguridad de Tokens
+## 5. Política de Identidad y Seguridad de Tokens
 
-### 4.1. Canal Único de Identidad
+### 5.1. Canal Único de Identidad
 - La identidad del usuario viaja **exclusivamente** mediante el estándar HTTP:
   ```http
   Authorization: Bearer <jwt_token>
@@ -94,7 +142,7 @@ sequenceDiagram
 
 ---
 
-## 5. Tratamiento de Respuestas para el Frontend
+## 6. Tratamiento de Respuestas para el Frontend
 
 | Código HTTP | Causa | Acción en el Frontend (`zentric.me`) |
 | :---: | :--- | :--- |
@@ -104,7 +152,7 @@ sequenceDiagram
 
 ---
 
-## 6. Reglas de Oro
+## 7. Reglas de Oro
 
 1. **Cero comodines (`*`):** Siempre declarar los orígenes de forma explícita mediante la lista `Cors:AllowedOrigins`.
 2. **Puertos y Dominios Dinámicos:** Los puertos locales (`****`) y los dominios de producción (`zentric.me`) se controlan mediante configuración externa, jamás hardcodeados en C#.
