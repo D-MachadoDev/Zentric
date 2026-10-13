@@ -28,19 +28,19 @@ Coordinar la reserva transaccional de existencias físicas cuando un comprador e
 
 Por cada línea de compra (`OrderItem`) del pedido:
 
-### 1. Filtrado de Productos Digitales (CAT-02)
+### 1. Exclusión de Productos Digitales en Almacén
 El servicio consulta la tipología del producto. Si es `ProductType.Digital`, la línea se omite de la reserva (los productos digitales no ocupan espacio en bodega ni requieren inventario).
 
-### 2. Búsqueda y Ordenamiento por Capacidad (Regla V-02)
+### 2. Priorización por Mayor Capacidad Disponible
 Para cada variante física (`VariantId`), se consultan las posiciones de inventario con `AvailableQuantity > 0`:
 - Se ordenan de **mayor a menor disponibilidad** (`AvailableQuantity` descendente).
 - En caso de empate en cantidad disponible, el desempate es determinista por `WarehouseId`.
 - No existe preferencia por tipo de bodega (`Marketplace` vs. `Vendor`): el dueño del stock comercial es el vendedor del producto.
 
-### 3. Regla de Bodega Única (Regla Base INV-02)
+### 3. Principio de Despacho desde Bodega Única
 Si la bodega con mayor stock cubre la totalidad de las unidades solicitadas, la reserva se ejecuta íntegramente en esa bodega. El despacho no se divide innecesariamente.
 
-### 4. Fraccionamiento de Contingencia (Excepción INV-02)
+### 4. Fraccionamiento de Contingencia Multi-Bodega
 Solo si **ninguna** bodega individual cubre la cantidad solicitada (ej. se solicitan 10 unidades, la Bodega A tiene 6 y la Bodega B tiene 4), el servicio fracciona la reserva entre las bodegas necesarias, asignando el máximo posible a la bodega mayor y el remanente a las subsiguientes.
 
 ### 5. Escritura Atómica y Compensación Defensiva

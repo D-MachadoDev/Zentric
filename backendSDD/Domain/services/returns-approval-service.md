@@ -24,7 +24,7 @@ Asegurar la regla de negocio que exige **doble verificación** (peritaje físico
 
 ---
 
-## 4. Flujo Lógico y Reglas de Negocio (DEV-01)
+## 4. Flujo Lógico y Reglas de Negocio (Doble Verificación Técnica y Comercial)
 
 ### Paso 1: Peritaje Técnico en Bodega (Logística)
 - Cuando el paquete arriba a la bodega receptora, un usuario con rol `LogisticsOperator` inspecciona físicamente el bien.

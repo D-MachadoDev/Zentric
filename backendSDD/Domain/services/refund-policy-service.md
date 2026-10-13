@@ -31,7 +31,7 @@ Garantiza el principio de segregación de funciones: los vendedores pueden autor
 ### 1. Reembolsos Automáticos (`RefundDecision.Auto`)
 Ocurren cuando la causa de la devolución no depende de peritaje comercial ni arbitraje humano:
 - **Causa Estándar:** Quiebre físico de existencias durante el alistamiento de paquetes (`stock_breakage`, originado por `PartialFulfillmentCancelledDomainEvent`).
-- **Comportamiento:** El sistema aprueba el reembolso de inmediato sin intervención manual, aplicando la regla `EXC-02`.
+- **Comportamiento:** El sistema aprueba el reembolso de inmediato sin intervención manual, aplicando el reembolso proporcional por quiebre sobre la línea afectada.
 
 ### 2. Reembolsos por Excepción (`RefundDecision.Exception`)
 Aplica a cualquier otra disputa posventa:

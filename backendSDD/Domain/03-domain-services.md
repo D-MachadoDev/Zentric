@@ -58,7 +58,7 @@ flowchart TD
   1. **Filtrado:** Recorre las líneas del pedido y omite los productos de tipo `Digital` (no consumen almacenamiento).
   2. **Priorización por Capacidad:** Para cada variante física, consulta las bodegas con `AvailableQuantity > 0` y las ordena de **mayor a menor disponibilidad**, con desempate determinista por `WarehouseId`.
   3. **No Fraccionamiento Preferente:** Si la bodega con mayor stock cubre la totalidad requerida, la reserva se toma íntegramente de esa única bodega.
-  4. **Fraccionamiento Atómico (INV-02):** Si ninguna bodega individual cubre la cantidad, se fracciona secuencialmente entre las bodegas necesarias hasta satisfacer la demanda.
+  4. **Fraccionamiento Atómico de Contingencia:** Si ninguna bodega individual cubre la cantidad, se fracciona secuencialmente entre las bodegas necesarias hasta satisfacer la demanda.
 - **Compensación Defensiva:** Si la suma total disponible en la red no satisface el pedido, el servicio revierte inmediatamente cualquier reserva parcial previa y aborta la operación, garantizando que el pedido no quede en un estado semicomprometido.
 - **Especificación Completa:** [`services/inventory-reservation-service.md`](services/inventory-reservation-service.md)
 
@@ -66,10 +66,10 @@ flowchart TD
 
 ### 3.2. `OrderFulfillmentProgressSynchronizer` (Subdominio Ordering)
 - **Espacio de Nombres:** `Zentric.Domain.Orders.Services`
-- **Propósito:** Garantizar la regla **PED-05**: el pedido maestro refleja el mínimo común denominador del progreso de sus despachos asociados.
+- **Propósito:** Garantizar la **Regla del Mínimo Común de Despachos**: el pedido maestro refleja el mínimo común denominador del progreso de sus despachos asociados.
 - **Firma:** `void Synchronize(CustomerOrder order, IEnumerable<FulfillmentStatus> fulfillmentStatuses)`
 - **Reglas de Transición:**
-  1. **Aislamiento de Quiebres (EXC-01):** Los despachos cancelados por falta física de existencias (`FulfillmentStatus.Cancelled`) son excluidos de la lista de despachos activos. No bloquean el avance de los paquetes exitosos.
+  1. **Aislamiento de Quiebres por Stock Fantasma:** Los despachos cancelados por falta física de existencias (`FulfillmentStatus.Cancelled`) son excluidos de la lista de despachos activos. No bloquean el avance de los paquetes exitosos.
   2. **Transición a Despachado (`Dispatched`):** Si el pedido maestro está en `Paid` y **todos** los despachos activos han alcanzado o superado `FulfillmentStatus.Dispatched`, se invoca `order.Dispatch()`.
   3. **Transición a Entregado (`Delivered`):** Si el pedido maestro está en `Dispatched` y **todos** los despachos activos están en `FulfillmentStatus.Delivered`, se invoca `order.Deliver()`.
   4. Si todos los despachos fueron cancelados por quiebre (cero paquetes activos), el pedido maestro permanece sin entregas físicas y sus importes se saldan financieramente.
