@@ -18,24 +18,39 @@ Este documento descompone el frontend de Zentric en sus unidades de ejecución y
 flowchart TB
   user["Persona Usuaria<br/>[Comprador, Vendedor, Operador, Supervisor, Admin]"]
 
-  subgraph clientEnv["Entorno de Ejecución del Cliente"]
-    browser["Contenedor: Aplicación Cliente SPA<br/>[Tecnología: React 19, TypeScript, TanStack Router, TanStack Query, Tailwind]<br/>Ejecuta la interfaz, lógica de presentación y llamadas HTTP en el motor JS del navegador."]
+  subgraph boundaryBrowser["Entorno 1: Navegador Web del Cliente (Motor JS / RAM)"]
+    spa["CONTENEDOR 1: Aplicacion Cliente SPA<br/>[React 19, TypeScript, TanStack Router]<br/>• Ubicacion: frontend/apps/frontend/src/<br/>• Dibuja pantallas, formularios y tablas<br/>• Token JWT en memoria volatil de React<br/>• Gestiona llamadas HTTP a la API"]
   end
 
-  subgraph serverEnv["Entorno de Infraestructura Web"]
-    staticServer["Contenedor: Servidor Web Estático & Reverse Proxy<br/>[Tecnología: Nginx 1.27 en Docker / Vite en Desarrollo]<br/>Sirve index.html, bundles JS/CSS compilados y proxea /api al backend."]
+  subgraph boundaryNginx["Entorno 2: Servidor Web Estatico & Proxy (Docker Puerto 5180)"]
+    nginx["CONTENEDOR 2: Servidor Web Nginx<br/>[Nginx 1.27 Alpine]<br/>• Ubicacion: frontend/nginx.conf y Dockerfile<br/>• Entrega index.html, JS y CSS compilados<br/>• Regla try_files evita errores 404 al recargar<br/>• Inyecta variable de API (env-config.js)<br/>• Proxea /api internamente en Docker"]
   end
 
-  subgraph backendEnv["Entorno Backend & Datos (Externos al Frontend)"]
-    api["Sistema Externo: Zentric Web API<br/>[Tecnología: .NET 10, C#, ASP.NET Core, Arquitectura Hexagonal]<br/>Expone endpoints RESTful JSON en puerto 5076 (local) / 8080 (Docker)."]
-    db["Sistema Externo: Base de Datos Relacional<br/>[Tecnología: PostgreSQL 16.15]<br/>Persiste el modelo de dominio Zentric. Acceso exclusivo desde el backend."]
+  subgraph boundaryBackend["Entorno 3: Backend & Negocio (.NET 10 Puerto 5076 / 8080)"]
+    api["CONTENEDOR 3: Zentric Web API<br/>[C# .NET 10, ASP.NET Core]<br/>• Ubicacion: backend/Zentric.Api y Domain<br/>• Expone 44 endpoints RESTful JSON<br/>• Ejecuta 580 reglas de negocio e invariantes<br/>• Valida y emite tokens JWT"]
   end
 
-  user -->|"Interactúa con la UI (clics, formularios, navegación)"| browser
-  browser -->|"1. Descarga HTML inicial, bundles JS y CSS"| staticServer
-  browser -->|"2. Solicita operaciones de negocio (JSON, Bearer JWT)"| api
-  staticServer -.->|"Proxy inverso opcional para /api en red interna"| api
-  api -->|"Lee y escribe datos mediante EF Core"| db
+  subgraph boundaryDatabase["Entorno 4: Base de Datos Relacional (Docker Puerto 5432)"]
+    db[("CONTENEDOR 4: Base de Datos PostgreSQL<br/>[PostgreSQL 16.15 Alpine]<br/>• Almacenamiento: volumen zentric_pgdata<br/>• Tablas: Users, Buyers, Products, Orders<br/>• Persiste los datos de forma durable")]
+  end
+
+  user -->|"1. Abre la web y navega"| spa
+  spa -->|"2. Descarga index.html y bundle JS/CSS"| nginx
+  spa -->|"3. Peticiones REST (JSON + Bearer JWT)"| api
+  nginx -.->|"Proxy inverso opcional para /api"| api
+  api -->|"4. Lee y escribe datos con SQL (EF Core)"| db
+
+  classDef person fill:#0284c7,stroke:#0369a1,stroke-width:2px,color:#ffffff;
+  classDef spaContainer fill:#4f46e5,stroke:#3730a3,stroke-width:2px,color:#ffffff;
+  classDef webContainer fill:#0d9488,stroke:#0f766e,stroke-width:2px,color:#ffffff;
+  classDef apiContainer fill:#475569,stroke:#334155,stroke-width:2px,color:#ffffff;
+  classDef dbContainer fill:#b45309,stroke:#92400e,stroke-width:2px,color:#ffffff;
+
+  class user person;
+  class spa spaContainer;
+  class nginx webContainer;
+  class api apiContainer;
+  class db dbContainer;
 ```
 
 ---

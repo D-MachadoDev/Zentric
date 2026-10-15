@@ -17,28 +17,34 @@ El frontend opera bajo el principio de **cliente ligero (SPA)**:
 ## 2. Diagrama de Contexto del Sistema
 
 ```mermaid
-flowchart TB
-  subgraph Actores["Actores del Negocio"]
-    seller["Vendedor<br/>(Seller)<br/>Gestiona catálogo, inventario y despachos"]
-    buyer["Comprador<br/>(Buyer)<br/>Explora productos, compra y solicita devoluciones"]
-    admin["Administrador<br/>(Administrator)<br/>Gestiona usuarios, bodegas, auditoría y facturación"]
-    logistics["Operador Logístico<br/>(LogisticsOperator)<br/>Despacha pedidos e inspecciona devoluciones"]
-    supervisor["Supervisor<br/>(Supervisor)<br/>Auditoría y reportería en modo solo lectura"]
-    guest["Usuario Público<br/>(Anónimo)<br/>Inicia sesión y auto-registro de comprador"]
-  end
+flowchart LR
+  buyer["Persona: Comprador (Buyer)<br/>Explora catalogo, compra y solicita devoluciones"]
+  seller["Persona: Vendedor (Seller)<br/>Gestiona catalogo, existencias y despachos"]
+  admin["Persona: Administrador (Administrator)<br/>Usuarios, bodegas, auditoria y facturacion"]
+  logistics["Persona: Operador Logistico (LogisticsOperator)<br/>Despacha pedidos e inspecciona devoluciones"]
+  supervisor["Persona: Supervisor (Supervisor)<br/>Auditoria y reporteria en modo solo lectura"]
+  guest["Persona: Usuario Publico (Anonimo)<br/>Inicio de sesion y registro de comprador"]
 
-  system["Sistema Central: Zentric Frontend<br/>[Aplicación Web SPA en React 19]<br/>Consola operativa que entrega la interfaz de usuario."]
+  system["SISTEMA CENTRAL<br/>Zentric Frontend<br/>[Aplicacion Web SPA]<br/>Consola visual para todos los roles del marketplace"]
 
-  backend["Sistema Externo: Zentric Web API<br/>[.NET 10 / ASP.NET Core]<br/>Centraliza la autenticación, autorización y las reglas del negocio."]
+  backend["SISTEMA EXTERNO<br/>Zentric Web API<br/>[Servicio Backend .NET 10]<br/>Autenticacion JWT, autorizacion y reglas del negocio"]
 
-  seller -->|"Interactúa mediante navegador web"| system
-  buyer -->|"Interactúa mediante navegador web"| system
-  admin -->|"Interactúa mediante navegador web"| system
-  logistics -->|"Interactúa mediante navegador web"| system
-  supervisor -->|"Interactúa mediante navegador web"| system
+  buyer -->|"Usa en navegador"| system
+  seller -->|"Usa en navegador"| system
+  admin -->|"Usa en navegador"| system
+  logistics -->|"Usa en navegador"| system
+  supervisor -->|"Usa en navegador"| system
   guest -->|"Accede a login y registro"| system
 
-  system -->|"Peticiones RESTful (JSON sobre HTTPS / Bearer JWT)"| backend
+  system -->|"Peticiones HTTPS / REST JSON<br/>(Bearer JWT)"| backend
+
+  classDef person fill:#0284c7,stroke:#0369a1,stroke-width:2px,color:#ffffff;
+  classDef system fill:#4f46e5,stroke:#3730a3,stroke-width:3px,color:#ffffff;
+  classDef external fill:#475569,stroke:#334155,stroke-width:2px,color:#ffffff;
+
+  class buyer,seller,admin,logistics,supervisor,guest person;
+  class system system;
+  class backend external;
 ```
 
 ---
