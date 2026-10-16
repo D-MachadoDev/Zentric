@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Zentric.Domain.Payments;
+using Zentric.Domain.Payments.Enums;
 using Zentric.Domain.Payments.Ports;
 using Zentric.Domain.Returns.Ports;
 using Zentric.Domain.Orders;
@@ -107,17 +108,14 @@ namespace Zentric.Domain.Returns.Services
             var receipt = await _receiptRepository.GetByOrderIdAsync(customerOrderId, cancellationToken);
             if (receipt == null) return false;
 
-            var status = receipt.GetType().GetProperty("Status")?.GetValue(receipt)?.ToString();
-            if (status != "Approved" && status != "Refunded") return false;
+            // Se lee la API tipada del agregado, no por reflexion: Amount es
+            // Money (no decimal) y el cast por reflexion explotaba con
+            // InvalidCastException, rompiendo el reembolso automatico por
+            // quiebre (dictamen del Owner 2026-10-16; la regla no cambia).
+            if (receipt.Status != PaymentStatus.Approved && receipt.Status != PaymentStatus.Refunded) return false;
 
             // Verificar saldo pendiente > 0
-            var amountProp = receipt.GetType().GetProperty("Amount");
-            var refundedProp = receipt.GetType().GetProperty("RefundedAmount");
-            if (amountProp == null || refundedProp == null) return false;
-
-            var amount = (decimal)amountProp.GetValue(receipt)!;
-            var refunded = (decimal)refundedProp.GetValue(receipt)!;
-            return (amount - refunded) > 0;
+            return (receipt.Amount.Amount - receipt.RefundedAmount.Amount) > 0m;
         }
     }
 }

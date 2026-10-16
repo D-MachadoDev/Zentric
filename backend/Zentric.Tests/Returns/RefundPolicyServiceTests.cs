@@ -44,23 +44,35 @@ public sealed class RefundPolicyServiceTests
         Assert.False(decision.IsAuto);
     }
 
-    /// <summary>
-    /// HALLAZGO (no se toca produccion en esta oleada): con comprobante
-    /// aprobado y saldo, HasValidReceiptAndBalanceAsync lee Amount por
-    /// reflexion y lo convierte a decimal, pero Amount es Money, asi que el
-    /// cast explota con InvalidCastException en vez de decidir Auto. El test
-    /// documenta el comportamiento real; la correccion requiere dictamen del
-    /// Owner (cambia el camino del reembolso automatico por quiebre).
-    /// </summary>
     [Fact]
-    public async Task DecideAsync_QuiebreConSaldo_LanzaPorCastDeMoney()
+    public async Task DecideAsync_QuiebreConSaldo_RetornaAutomatico()
     {
+        // Dictamen del Owner 2026-10-16: se eliminó la lectura por reflexion
+        // (Amount es Money y el cast a decimal explotaba); la regla no cambia:
+        // comprobante aprobado con saldo pendiente decide Auto.
         var receipt = PaymentReceipt.Create(Guid.NewGuid(), new Money(10000m, "COP"));
         receipt.Approve("tx-1");
         _receipts.Setup(r => r.GetByOrderIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(receipt);
 
-        await Assert.ThrowsAsync<InvalidCastException>(() => Service.DecideAsync(Context("stock_breakage")));
+        var decision = await Service.DecideAsync(Context("stock_breakage"));
+
+        Assert.True(decision.IsAuto);
+        Assert.StartsWith("EXC-02", decision.RuleApplied);
+    }
+
+    [Fact]
+    public async Task DecideAsync_QuiebreConSaldoAgotado_RetornaExcepcion()
+    {
+        var receipt = PaymentReceipt.Create(Guid.NewGuid(), new Money(10000m, "COP"));
+        receipt.Approve("tx-1");
+        receipt.Refund(new Money(10000m, "COP"));
+        _receipts.Setup(r => r.GetByOrderIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(receipt);
+
+        var decision = await Service.DecideAsync(Context("stock_breakage"));
+
+        Assert.False(decision.IsAuto);
     }
 
     [Fact]

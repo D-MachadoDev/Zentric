@@ -80,3 +80,11 @@ _(vacio — sin bloqueos de spec pendientes)_
   `DecideAsync_QuiebreConSaldo_LanzaPorCastDeMoney` lo documenta). Afecta al
   reembolso automatico por quiebre. La correccion cambia comportamiento y
   requiere dictamen del Owner.
+- 2026-10-16 (dictamen del Owner "corrigelo"): `RefundPolicyService`
+  corregido — `HasValidReceiptAndBalanceAsync` ahora lee la API tipada del
+  agregado (`Status`, `Amount.Amount`, `RefundedAmount.Amount`) en vez de
+  reflexion con cast a decimal. La regla NO cambia (auto solo con comprobante
+  aprobado y saldo > 0); ningun documento de `backendSDD/` describia el
+  mecanismo, asi que no hubo spec que sincronizar. Test actualizado:
+  `DecideAsync_QuiebreConSaldo_RetornaAutomatico` + nuevo
+  `DecideAsync_QuiebreConSaldoAgotado_RetornaExcepcion`. Suite 681/681 verde.
