@@ -11,7 +11,7 @@
     "./lib": "./src/lib/index.ts",
     "./lib/cn": "./src/lib/cn.ts",
     "./hooks": "./src/hooks/index.ts",
-    "./logo": "./src/components/logo/index.ts",
+    "./logo": "./src/logo/index.ts",
     "./components/ui/*": "./src/components/ui/*.tsx"
   },
   "//": "Sin build: la app importa el TS fuente via Vite y el empaquetado lo resuelve el bundler. Emitir declaraciones solo añadiria un paso que nadie consume.",
@@ -42,6 +42,7 @@
     "@testing-library/user-event": "14.6.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@vitest/coverage-v8": "5.0.3",
     "@zentric/config": "workspace:*",
     "eslint": "10.12.0",
     "jsdom": "30.1.2",

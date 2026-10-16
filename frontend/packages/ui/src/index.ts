@@ -11,5 +11,6 @@
 export * from './tokens';
 export * from './lib';
 export * from './hooks';
-export { Logo, LogoMark, LogoWordmark } from './components/logo';
-export type { LogoProps, LogoMarkProps, LogoWordmarkProps } from './components/logo';
+export { Logo, LogoMark, LogoWordmark } from './logo';
+export type { LogoProps, LogoMarkProps, LogoWordmarkProps } from './logo';
+

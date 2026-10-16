@@ -8,7 +8,7 @@ import type { SVGProps } from 'react';
  * bodegas, pedidos) bajo su control. Se lee como "el centro del comercio".
  *
  * Recurso gráfico propio generado en el repositorio. Prohibido material de
- * terceros (Frontend-Design-System.md seccion 9).
+ * terceros (Frontend-Design-System.md sección 9).
  */
 export function LogoMark({ title, ...props }: LogoMarkProps) {
   const isDecorative = title === undefined;

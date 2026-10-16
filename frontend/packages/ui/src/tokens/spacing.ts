@@ -47,3 +47,13 @@ export const durations = {
   skeletonLoop: 1400,
   spinnerLap: 700,
 } as const;
+
+/**
+ * Curvas de transición y aceleración (Frontend-Design-System.md §1, §3).
+ * easeOutExpo para paneles laterales y diálogos; easeOutQuint para microinteracciones.
+ */
+export const transitions = {
+  easeOutExpo: 'cubic-bezier(0.16, 1, 0.3, 1)',
+  easeOutQuint: 'cubic-bezier(0.22, 1, 0.36, 1)',
+} as const;
+

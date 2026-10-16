@@ -30,37 +30,42 @@
    ========================================================================== */
 
 @theme {
-  /* --- Marca y superficies (Obsidian Luxury B2B) --- */
-  --color-background: #09090b; /* Obsidian profundo puro */
-  --color-foreground: #f4f4f5; /* Texto principal de alta legibilidad */
-  --color-brand: #00d4aa; /* Cian Zentric de precision */
-  --color-brand-strong: #00b896; /* Hover/active del cian */
-  --color-warning: #f59e0b; /* Ambar calido moderno */
-  --color-surface: #141418; /* Superficie solida con masa real */
-  --color-surface-muted: #1e1e24; /* Superficie secundaria */
-  --color-border: #27272a; /* Bordes zinc definidos y sutiles */
+  /* --- Marca y superficies (Dark Developer / Swiss Operational Console) --- */
+  --color-background: #0A0E1A; /* Lienzo base (carbón azulado profundo) */
+  --color-surface: #111827; /* Superficie primaria (tarjetas, tablas, modales) */
+  --color-surface-muted: #161F30; /* Superficie secundaria (cabeceras, hover) */
+  --color-border: #1F293D; /* Borde estructural estándar (1px solid) */
+  --color-border-subtle: #192231; /* Borde sutil / línea divisoria interna (hairlines) */
 
-  /* --- Semanticos de estado --- */
-  --color-success: #10b981;
-  --color-danger: #ef4444;
-  --color-info: #38bdf8;
+  /* --- Jerarquía de texto y contraste (Foreground) --- */
+  --color-foreground: #F1F5F9; /* Texto primario (hueso tintado, contraste > 14:1) */
+  --color-foreground-muted: #94A3B8; /* Texto secundario (pizarra claro, contraste >= 6.2:1) */
+  --color-foreground-subtle: #64748B; /* Texto terciario / metadato (contraste >= 4.5:1) */
 
-  /* --- Tokens semanticos que los componentes shadcn (Q5/Q14) esperan ---
+  /* --- Acentos semánticos y estados de dominio --- */
+  --color-brand: #00D4AA; /* Acento primario de acción (esmeralda/cian suave) */
+  --color-brand-strong: #00B896; /* Hover/active del acento primario */
+  --color-warning: #FFB800; /* Alerta / checkout 15 minutos (ámbar canónico) */
+  --color-success: #10B981; /* Confirmado / activo (verde esmeralda) */
+  --color-danger: #EF4444; /* Error / acción destructiva (rojo intenso) */
+  --color-info: #3B82F6; /* Informativo / tránsito (azul operativo) */
+
+  /* --- Tokens semánticos que los componentes shadcn (Q5/Q14) esperan ---
      Cada uno apunta a un token de Zentric de arriba: shadcn se adapta al
-     design system, nunca al reves. */
+     design system, nunca al revés. */
   --color-card: var(--color-surface);
   --color-card-foreground: var(--color-foreground);
   --color-popover: var(--color-surface);
   --color-popover-foreground: var(--color-foreground);
 
   --color-primary: var(--color-brand);
-  --color-primary-foreground: #09090b; /* Texto solido sobre cian (contraste AAA 12.5:1) */
+  --color-primary-foreground: #0A0E1A; /* Texto sólido sobre cian (contraste AAA > 11:1) */
 
   --color-secondary: var(--color-surface-muted);
   --color-secondary-foreground: var(--color-foreground);
 
   --color-muted: var(--color-surface-muted);
-  --color-muted-foreground: #a1a1aa;
+  --color-muted-foreground: var(--color-foreground-muted);
 
   --color-accent: var(--color-surface-muted);
   --color-accent-foreground: var(--color-foreground);
@@ -69,39 +74,40 @@
   --color-destructive-foreground: #ffffff;
 
   --color-input: var(--color-border);
-  /* Anillo de foco = color de marca. La regla de accesibilidad de la seccion 5
-     exige un unico anillo visible en todo elemento interactivo. */
+  /* Anillo de foco = color de marca. La regla de accesibilidad de la sección 5
+     exige un único anillo visible en todo elemento interactivo. */
   --ring: var(--color-brand);
   --color-ring: var(--color-brand);
 
-  /* --- Tipografia (Q8-B) ---
+  /* --- Tipografía (Q8-B) ---
      El nombre lo dicta el paquete: 'Geist Variable' (verificado contra
      node_modules/@fontsource-variable/geist/index.css), no 'Geist Sans Variable'. */
   --font-sans: 'Geist Variable', system-ui, sans-serif;
   --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
   --font-heading: var(--font-sans);
 
-  /* --- Radios (Frontend-Design-System.md seccion 1) --- */
+  /* --- Radios (Frontend-Design-System.md sección 1) --- */
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
-  /* 9999 y no 999: el Owner confirmo §2.3 como fuente de verdad de los radios
-     (§1 decia 6/10/14/999 y quedo corregida). 9999 asegura circulo real
-     independientemente del tamano del elemento. */
+  /* 9999 y no 999: el Owner confirmó §2.3 como fuente de verdad de los radios
+     (§1 decía 6/10/14/999 y quedó corregida). 9999 asegura círculo real
+     independientemente del tamaño del elemento. */
   --radius-full: 9999px;
-  /* Derivados: la spec fija 6/8/12/16/999. Estos tres escalan la misma rampa
+  /* Derivados: la spec fija 6/8/12/16/9999. Estos tres escalan la misma rampa
      para que rounded-2xl/3xl/4xl de shadcn no queden sin token. */
   --radius-2xl: 20px;
   --radius-3xl: 24px;
   --radius-4xl: 28px;
 
-  /* --- Movimiento (seccion 7): nunca bloquea la lectura --- */
+  /* --- Movimiento (sección 7): nunca bloquea la lectura --- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Alias en bruto. Algunos componentes shadcn referencian var(--foreground) y
-   var(--secondary) DIRECTAMENTE (no via la clase bg-secondary). Sin estos
+   var(--secondary) DIRECTAMENTE (no vía la clase bg-secondary). Sin estos
    alias esas referencias quedan sin resolver y el texto/fondo sale por
    defecto del navegador. Mapean a los tokens --color-* de arriba; son el mismo
    valor, solo cambia el nombre que el componente espera. */
@@ -123,8 +129,11 @@
   --destructive: var(--color-destructive);
   --destructive-foreground: var(--color-destructive-foreground);
   --border: var(--color-border);
+  --border-subtle: var(--color-border-subtle);
   --input: var(--color-input);
   --ring: var(--color-ring);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @layer base {
