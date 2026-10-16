@@ -94,7 +94,7 @@ backend/
 │
 ├── Zentric.Infrastructure/               <-- Adaptadores Secundarios / Persistencia y Tecnología
 │   ├── Persistence/
-│   │   ├── ZentricDbContext.cs          <-- Contexto EF Core (12 DbSets)
+│   │   ├── ZentricDbContext.cs          <-- Contexto EF Core (14 DbSets)
 │   │   ├── Models/                       <-- Modelos de persistencia relacional (*DbModel)
 │   │   ├── Mappers/                      <-- Mapeadores bidireccionales (DbModel <-> Dominio)
 │   │   ├── Repositories/                 <-- Implementaciones concretas de puertos de salida
