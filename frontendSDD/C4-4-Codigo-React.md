@@ -1,297 +1,213 @@
-# C4 - Nivel 4: Código y funcionamiento de React
+# C4 - Nivel 4: Código y Funcionamiento de React
 
-## Alcance y guía de lectura
+## 1. Alcance y Guía de Lectura
 
-El nivel 4 baja desde los componentes arquitectónicos hasta archivos, funciones,
-hooks y relaciones concretas.
+El **Nivel 4 (Código)** del modelo C4 desciende desde los componentes arquitectónicos del Nivel 3 hacia los archivos, funciones, hooks, interfaces y flujos de ejecución concretos en TypeScript y React 19.
 
-> **Estado honesto (2026-10-09):** el código descrito aquí es la **especificación
-> objetivo** derivada de las decisiones Q1–Q14. `apps/frontend/src/` **aún no
-> existe**: sólo hay la configuración base heredada de `frontend/`
-> (React 18 + react-router-dom 6, sin `src/`), que **no coincide** con el stack
-> decidido. Este documento es la guía de implementación de la fase F1/F2; no debe
-> leerse como código ya escrito. El estado real está en
-> [`Frontend-SDD.md` §4](Frontend-SDD.md#4-fases-y-estado).
+Este documento establece la **especificación técnica de implementación** para la aplicación SPA (`frontend/apps/frontend`) y sus paquetes compartidos (`frontend/packages/*`):
+- **React 19 + TypeScript:** Construcción declarativa del árbol de componentes con tipado estricto de props y estado.
+- **TanStack Router:** Enrutamiento estático tipado (Type-Safe Routing) con layouts anidados, carga perezosa (`lazy`) y guardas síncronas de autorización (`beforeLoad`).
+- **TanStack Query:** Coordinador del estado de servidor, políticas de caducidad (`staleTime`), invalidación de claves de consulta y reintentos automáticos.
+- **React Hook Form + Zod:** Gestión controlada de formularios con validación defensiva derivada de los contratos del backend.
+- **Doctrina Visual Anti-IA Genérica:** Jerarquía tipográfica con Geist Sans / Geist Mono, neutros tintados carbón (`#0B0F19`, `#111827`, `#1F293D`) y acento semántico esmeralda (`#00D4AA`).
 
-En este frontend, **React 19** con TypeScript define el árbol de UI; **TanStack
-Router** resuelve la navegación cliente; **TanStack Query** gestiona el estado
-remoto; **Vite** compila TSX y publica los recursos. Las rutas hexagonales
-(`domain`, `application`, `adapters`, `modules`) son límites del código de la
-aplicación, no capas internas propias de React.
+> [!IMPORTANT]
+> **Frontera Arquitectónica:** Las capas (`domain`, `application`, `adapters`, `modules`) representan límites físicos de código en el monorepo. Ninguna vista puede invocar peticiones HTTP directamente, saltarse la validación Zod o manipular el token JWT fuera de los adaptadores de infraestructura.
 
-## 1. Arranque: desde HTML hasta el árbol React
+---
 
-`apps/frontend/index.html` ofrece el elemento raíz `#root` y carga el módulo de
-entrada `src/main.tsx`. El punto de entrada construye el `QueryClient` una sola
-vez y luego monta el árbol:
+## 2. Inicialización y Montaje del Árbol de Proveedores
+
+El archivo `apps/frontend/index.html` suministra el nodo raíz `#root` y carga el punto de entrada `src/main.tsx`. La aplicación configura el cliente de estado remoto y ensambla la jerarquía de contextos de forma determinista:
 
 ```mermaid
 flowchart TD
-  html["index.html<br/>#root"] --> entry["main.tsx"]
-  entry -->|"crea una vez"| qc["new QueryClient()"]
-  entry -->|"createRoot().render()"| strict["StrictMode"]
-  strict --> boundary["ErrorBoundary"]
-  boundary --> qcp["QueryClientProvider"]
-  qcp --> theme["ThemeProvider"]
-  theme --> auth["AuthProvider<br/>sesión en memoria"]
-  auth --> rp["RouterProvider<br/>TanStack Router"]
-  rp --> toaster["Toaster (sonner)"]
+  html["index.html (#root)"] --> entry["src/main.tsx (Punto de Entrada)"]
+  entry -->|"Instancia única"| qc["new QueryClient()"]
+  entry -->|"createRoot().render()"| strict["React.StrictMode"]
+  strict --> boundary["ErrorBoundary (Límite Global de Errores)"]
+  boundary --> qcp["QueryClientProvider (Estado Remoto)"]
+  qcp --> theme["ThemeProvider (Tokens Visuales y Modo Oscuro)"]
+  theme --> auth["AuthProvider (Sesión en Memoria RAM)"]
+  auth --> router["RouterProvider (TanStack Router)"]
+  router --> toaster["Toaster (Notificaciones Accesibles)"]
+
+  classDef core fill:#1e293b,stroke:#334155,stroke-width:2px,color:#f8fafc;
+  classDef prov fill:#0f766e,stroke:#0d9488,stroke-width:2px,color:#ffffff;
+  classDef route fill:#4338ca,stroke:#4f46e5,stroke-width:2px,color:#ffffff;
+
+  class html,entry,strict,boundary core;
+  class qc,qcp,theme,auth,toaster prov;
+  class router route;
 ```
 
-### Qué hace cada paso
+### Reglas Críticas del Árbol de Montaje:
+1. **`QueryClient` Único Fuera del Ciclo de Render:** La instancia de `QueryClient` se crea a nivel de módulo en `main.tsx`. Esto evita que un re-renderizado accidental destruya la memoria caché.
+2. **Orden Estricto de Dependencia entre Contextos:**
+   - `AuthProvider` reside **dentro** de `QueryClientProvider`, lo que le permite invocar `queryClient.clear()` e invalidar consultas remotas al momento del cierre de sesión.
+   - `RouterProvider` reside **dentro** de `AuthProvider`, asegurando que las guardas `beforeLoad` tengan acceso síncrono al estado de autenticación y rol del usuario.
+   - `Toaster` se monta en el nivel superior para escuchar eventos globales de notificación sin interferir con las rutas.
 
-1. `new QueryClient(...)` en `main.tsx` configura `staleTime`, `gcTime` y
-   `retry` (sin reintento en `4xx`). Se ejecuta fuera de los componentes, así que
-   un render no vuelve a crear el cliente.
-2. `createRoot(...).render(...)` enlaza React con el nodo DOM administrado por la
-   aplicación.
-3. `StrictMode` activa comprobaciones adicionales de desarrollo para detectar
-   efectos secundarios y patrones inseguros. No es un proveedor de datos.
-4. `ErrorBoundary` captura errores de renderizado descendientes y permite una
-   recuperación en vez de derribar toda la interfaz.
-5. `QueryClientProvider` publica el cliente de datos a toda la aplicación.
-6. `AuthProvider` publica la sesión (access token en memoria, rol) mediante
-   Context; depende de que esté bajo `QueryClientProvider`.
-7. `RouterProvider` construye las ramas públicas, autenticadas y por rol.
+---
 
-El **orden de los providers importa**: `AuthProvider` usa `useQueryClient` para
-invalidar caché al cerrar sesión, por tanto necesita estar bajo
-`QueryClientProvider`; las rutas que llaman `useAuth()` deben estar bajo
-`AuthProvider`; las funciones de navegación requieren el router.
+## 3. Composición de Componentes y Primitivas Accesibles
 
-## 2. JSX, componentes y composición
+La interfaz se ensambla mediante una jerarquía estricta de responsabilidades:
+- **Páginas (`src/modules/*/pages/`):** Conectan la URL con los hooks de la capa `application` y orquestan las acciones del usuario. No contienen estilos manuales ni construyen tablas desde cero.
+- **Componentes Compuestos (`packages/ui/src/composite/`):** Organismos complejos accesibles (`DataTable`, `ResponsiveDrawer`, `ModalDialog`, `StatCard`).
+- **Primitivas Atómicas (`packages/ui/src/primitives/`):** Controles base adaptados sobre Radix UI (`Button`, `Input`, `Badge`, `Skeleton`).
 
-Un componente funcional es una función TypeScript que recibe props, puede leer
-contexto/hooks y devuelve JSX. JSX describe elementos; el plugin de React/Vite lo
-transforma durante el build en llamadas que React reconcilia con el árbol previo.
+### Contrato de Primitivas UI:
+Todo control interactivo cumple las siguientes garantías de accesibilidad WAI-ARIA:
+1. **Identificadores Estables:** Uso de `useId()` para asociar etiquetas `<label htmlFor={id}>` con sus respectivos campos de entrada `<input id={id}>`.
+2. **Descripción de Estados y Errores:** Enlace de textos de ayuda o mensajes de validación mediante `aria-describedby` y señalización semántica de campos inválidos con `aria-invalid={!!error}`.
+3. **Respeto a Preferencias del Usuario:** Transiciones atenuadas bajo la media query `prefers-reduced-motion`.
 
-La UI se compone en varios niveles:
+---
 
-- El **routeTree** de TanStack Router elige la página según la URL y el estado de acceso.
-- Las páginas de `modules/` ensamblan secciones y conectan acciones con servicios.
-- `packages/ui` contiene controles reutilizables y piezas de presentación con
-  props explícitas (shadcn/ui adaptado, Q14).
-- El DOM real se actualiza como resultado del render de React.
+## 4. Gestión del Estado: Local, Compartido y Remoto
 
-Por ejemplo, `Input` recibe `label`, `hint`, `error` y el resto de atributos
-nativos. Usa `useId()` para producir un identificador estable por instancia y
-conecta el `<label>` al campo mediante `htmlFor`. Vincula mensajes con
-`aria-describedby`, indica errores con `aria-invalid` y renderiza el mensaje como
-alerta accesible. La validación pertenece al formulario (Zod, Q13), no al control
-genérico.
+El frontend separa de forma rigurosa los tres tipos de estado de la aplicación:
 
-## 3. Estado: local frente a compartido
+| Tipo de Estado | Mecanismo | Ámbito y Ciclo de Vida | Ejemplos en Zentric |
+|---|---|---|---|
+| **Estado Local** | `useState` / `useReducer` | Transitorio dentro del ciclo de vida del componente en pantalla. | Despliegue de un menú desplegable, pestaña activa, visibilidad de contraseña. |
+| **Estado Compartido** | React Context (`useAuth`) | Sesión activa en memoria RAM; se destruye al recargar el navegador. | Token JWT Bearer, rol del usuario autenticado (`UserRole`), correo electrónico. |
+| **Estado de Servidor** | TanStack Query (`useQuery`) | Memoria caché compartida, sincronizada y revalidada con el backend. | Catálogo de productos, existencias de bodega, lista de órdenes, facturas. |
 
-### Estado local de pantalla
+### 4.1 Estado Compartido de Autenticación (Sesión en RAM)
+Cumpliendo rigurosamente con la política de seguridad y autenticación ([ADR-0009](./backendSDD/Adr/0009-autenticacion-jwt-rg01.md)):
+- El token JWT reside **exclusivamente en memoria RAM** dentro del estado del `AuthProvider` y del adaptador `MemorySessionAdapter`.
+- Queda **estrictamente prohibido** persistir tokens en `localStorage`, `sessionStorage` o cookies no seguras.
+- Si la página se recarga o el token de 60 minutos expira en el servidor, la API devuelve un HTTP `401 Unauthorized`. El cliente reacciona de forma inmediata: purga el token de la memoria RAM, invalida la caché de TanStack Query y redirige al usuario a la vista de login con un aviso explícito de sesión expirada (**sin mecanismo de refresh token**).
 
-`useState` conserva datos que solo necesita una instancia de componente. En
-`LoginPage`, por ejemplo, existen estados independientes para correo, contraseña,
-errores de validación y envío pendiente:
-
-```text
-email/password     -> valores editables del formulario
-errors             -> errores de validación local (Zod)
-pending            -> bloquea envíos duplicados y desactiva campos
-```
-
-El formulario es controlado y se gestiona con **React Hook Form (Q13)**:
-`useForm({ resolver: zodResolver(schema) })` valida contra el esquema Zod del
-caso de uso. `handleSubmit` previene el envío HTML por defecto, valida primero,
-activa `pending`, llama al servicio y actualiza la pantalla según resultado.
-
-### Estado compartido por Context
-
-`AuthProvider` mantiene `user`, `accessToken` y `expiredNotice` con `useState`.
-Publica el valor mediante `AuthContext.Provider`; `useAuth()` consume ese valor
-desde páginas, layouts y guards. Context evita pasar la sesión manualmente por
-cada nivel de props.
-
-**Context no es almacenamiento persistente:** el access token vive sólo en la
-variable de estado (memoria). Al recargar la página **se pierde**: el backend no
-tiene refresh (`ADR-0009:62`), así que hay que volver a autenticarse (**Q15-B**).
-Al abrir la app, `RestaurarSesionService` llama a `GET /api/auth/me` **sólo si
-queda token en memoria**.
-
-### Estado remoto
-
-Los datos de la API no se confunden ni con la sesión ni con el estado transitorio
-de un formulario. Las páginas usan **TanStack Query (Q9)**:
-
-```ts
-const { data, isPending, isError, refetch } = useQuery({
-  queryKey: ['orders'],
-  queryFn: () => services.orders.list(),
-});
-```
-
-TanStack Query encapsula el ciclo de carga/resultado/vacío/error/reintento y
-permite que la página traduzca ese estado a skeletons, tablas o alertas.
+### 4.2 Estado de Servidor y Máquina de Estados Cuádruple
+Toda consulta remota gestionada con TanStack Query modela explícitamente cuatro estados visuales en la interfaz:
 
 ```mermaid
 stateDiagram-v2
-   [*] --> idle
-   idle --> loading: mount o refetch()
-   loading --> success: respuesta con datos
-   loading --> empty: respuesta sin elementos
-   loading --> error: error de red o API
-   error --> loading: reintento
-   success --> loading: invalidación por mutación
-   empty --> loading: recarga solicitada
+    [*] --> Idle: Inicialización
+    Idle --> Loading: Montaje del componente o refetch()
+    Loading --> Success: HTTP 200 OK con datos
+    Loading --> Empty: HTTP 200 OK con lista vacía ([])
+    Loading --> Error: HTTP 4xx / 5xx (RFC 7807)
+    Error --> Loading: Reintento por acción del usuario
+    Success --> Loading: Invalidación de caché por mutación
+    Empty --> Loading: Recarga manual o cambio de filtro
 ```
 
-Las mutaciones invalidan la caché afectada: tras `checkout` se invalida
-`['orders', id]`; tras `addStock`, `['inventory', variantId]`.
+- **`Loading`:** Renderiza esqueletos de carga (`Skeleton`) que replican la estructura y densidad de la tabla o formulario final.
+- **`Empty`:** Presenta una ilustración sobria, mensaje explicativo y botón de acción principal para guiar al usuario (ej. "No hay existencias registradas. Ingresar Stock").
+- **`Error`:** Presenta un componente de alerta estructurado que renderiza el campo `detail` del Problem Details (RFC 7807) y un botón interactivo para reintentar la operación (`refetch`).
+- **`Success`:** Dibuja los datos en la tabla o tarjeta con renderizado de códigos y monedas en Geist Mono.
 
-## 4. Hooks y efectos: responsabilidades
+---
 
-- `useState` modela estado local que participa en el render.
-- `useContext` (o `useAuth`, `useQueryClient`) lee servicios y sesión desde los providers.
-- `useNavigate`, `useSearch` y `Link` de TanStack Router integran estado de ruta
-  con UI **type-safe** sin recarga completa del documento.
-- `useQuery` / `useMutation` de TanStack Query gestionan datos remotos y caché.
-- `useForm` de React Hook Form gestiona formularios con validación Zod.
-- `useEffect` sincroniza React con sistemas externos después del render. En
-  `AuthProvider` valida `GET /api/auth/me` al montar si hay token en memoria, y
-  limpia la sesión si caducó.
-- `useCallback` mantiene funciones de notificación estables; `useMemo` construye
-  el objeto de valor del contexto; `useRef` guarda marcas que no necesitan render.
-- Todo efecto que instala un listener **debe devolver una limpieza**.
+## 5. Validación Defensiva de Formularios (React Hook Form + Zod)
 
-Los hooks sólo pueden invocarse en el nivel superior de componentes funcionales o
-hooks propios, no condicionalmente ni dentro de ciclos.
+Los formularios implementan validación en dos barreras consecutivas:
 
-## 5. Renderizado y navegación
+1. **Barrera de Interfaz (Zod en Cliente):** 
+   - Se define un esquema Zod fuertemente tipado en `src/application/schemas/` que replica con exactitud las reglas de negocio de los validadores FluentValidation del backend (longitudes, formatos de correo, no-negatividad de cantidades, números de documento válidos).
+   - `react-hook-form` integra el esquema mediante `@hookform/resolvers/zod`.
+   - Si la entrada no es válida, los errores se proyectan inmediatamente bajo cada campo y **el cliente nunca emite la petición HTTP**, ahorrando ancho de banda y latencia.
+2. **Barrera de Autoridad (API Backend):**
+   - Si la petición supera la validación local, viaja a la API.
+   - Si el backend detecta una violación de invariante de negocio (ej. falta de existencias en bodega o precio no coincidente), devuelve un HTTP `400 Bad Request` con cabecera `application/problem+json`. El adaptador HTTP traduce el error y el formulario lo proyecta en el campo correspondiente o en un mensaje de alerta global.
 
-El routeTree declara rutas con `createRoute`. Las páginas públicas (`/login`,
-registro) pueden mostrarse sin sesión. Las rutas autenticadas se anidan bajo un
-layout con `beforeLoad` de guardia; dentro del layout, cada grupo se anida por rol.
+---
+
+## 6. Enrutamiento Tipado y Guardas de Rol (TanStack Router)
+
+El sistema de enrutamiento implementa **Code-Based Routing** fuertemente tipado mediante TanStack Router:
 
 ```mermaid
-flowchart LR
-   url["URL del navegador"] --> loc["TanStack Router resuelve location"]
-   loc --> routes["routeTree busca la coincidencia"]
-   routes --> bl{"beforeLoad<br/>¿hay sesión?"}
-   bl -->|"No"| login["redirect a /login<br/>conserva destino"]
-   bl -->|"Sí"| role{"beforeLoad<br/>¿rol permitido?"}
-   role -->|"No"| home["redirect al inicio del rol<br/>o estado 403"]
-   role -->|"Sí"| layout["Layout autenticado"]
-   layout --> outlet["Outlet renderiza<br/>la página seleccionada"]
-   outlet --> state["Cambios de estado<br/>producen nuevo render"]
-   state --> outlet
+flowchart TD
+  url["Navegación / Cambio de URL"] --> resolve["TanStack Router Resuelve Ruta"]
+  resolve --> guardAuth{"Guarda beforeLoad:<br/>¿Existe sesión en RAM?"}
+
+  guardAuth -->|"No"| redirectLogin["Redirección síncrona a /login<br/>(Almacena redirectUrl)"]
+  guardAuth -->|"Sí"| guardRole{"Guarda beforeLoad:<br/>¿Rol coincide con la política?"}
+
+  guardRole -->|"No coincide"| stateForbidden["Estado 403 Forbidden<br/>(Acceso Restringido para este Rol)"]
+  guardRole -->|"Rol Autorizado"| layout["Carga Layout del Rol<br/>(Buyer, Seller, Admin, etc.)"]
+  layout --> outlet["Outlet Renderiza Página Específica"]
+
+  classDef check fill:#0f766e,stroke:#0d9488,stroke-width:2px,color:#ffffff;
+  classDef ok fill:#1e293b,stroke:#334155,stroke-width:2px,color:#f8fafc;
+  classDef warn fill:#b45309,stroke:#d97706,stroke-width:2px,color:#ffffff;
+
+  class guardAuth,guardRole check;
+  class layout,outlet ok;
+  class redirectLogin,stateForbidden warn;
 ```
 
-El layout permanece como shell común alrededor de la página hija. Su `<Outlet/>`
-es el punto donde React Router coloca la pantalla activa.
+### Principio de Doble Verificación:
+Las guardas `beforeLoad` proporcionan una experiencia fluida y evitan renderizar pantallas para las que el usuario carece de permisos. Sin embargo, **la interfaz de usuario no es una frontera de seguridad**: cada endpoint del backend valida de forma independiente e innegociable el token Bearer JWT contra su matriz de 21 políticas de autorización fail-closed ([ADR-0011](./backendSDD/Adr/0011-matriz-autorizacion-por-rol.md)).
 
-**La interfaz de rol es control de navegación y experiencia, no una frontera de
-seguridad.** Todos los permisos y operaciones se validan también en el backend
-(20 políticas).
+---
 
-## 6. Ejemplo completo: inicio de sesión
+## 7. Mapeo de Respuestas y Manejo de Errores (RFC 7807)
 
-```text
-1. El usuario escribe en los campos controlados de LoginPage (React Hook Form).
-2. handleSubmit ejecuta la validación Zod del esquema loginSchema.
-3. Si hay errores, se pintan junto al campo y NO se hace HTTP.
-4. Si es válido, pending=true desactiva controles y evita reenvío accidental.
-5. services.auth.login() ejecuta el caso de uso mediante el adaptador HTTP.
-6. El adaptador hace fetch, analiza la respuesta y devuelve la sesión o lanza ApiError.
-7. En éxito, signIn() guarda el access token EN MEMORIA y el rol en Context.
-8. No hay refresh ni cookie: sólo queda el token en memoria (Q15-B).
-9. LoginPage calcula el destino por rol y navega con TanStack Router.
-10. El router reevalúa la URL, beforeLoad permite la rama y el layout representa su Outlet.
-11. En error, se presenta el Problem Details del servidor; finally restablece pending.
+El cliente estandariza la captura de excepciones y errores de red en la capa de adaptadores:
+
+```typescript
+// Contrato de dominio para errores tipados derivados de Problem Details
+export interface ApiProblemDetails {
+  type: string;
+  title: string;
+  status: number;
+  detail: string;
+  instance?: string;
+  errors?: Record<string, string[]>;
+}
 ```
 
-```mermaid
-sequenceDiagram
-   actor Usuario
-   participant LoginPage
-   participant Auth as AuthProvider / Estado React
-   participant Service as auth.login()
-   participant HTTP as Adaptador HTTP
-   participant API as Zentric API
-   participant Router as TanStack Router
+- **HTTP 400 Bad Request:** Contiene detalles de validación de campos (`errors`) o violación de invariante de negocio (`detail`). Se proyecta directamente sobre los formularios.
+- **HTTP 401 Unauthorized:** Token expirado o ausente. Dispara evento global de sesión caducada, purga inmediata de la memoria RAM y redirección forzada a la pantalla de login.
+- **HTTP 403 Forbidden:** El usuario está autenticado pero su rol no posee privilegios para la acción solicitada. Conserva la sesión del usuario y despliega una notificación de acceso denegado.
+- **HTTP 404 Not Found:** Recurso inexistente o ajeno al usuario autenticado ([ADR-0013](./backendSDD/Adr/0013-propiedad-del-recurso-por-rol.md)).
+- **HTTP 500 Internal Server Error:** Error técnico no controlado en el servidor. Muestra mensaje amigable de contingencia sin exponer detalles de infraestructura.
 
-   Usuario->>LoginPage: escribe y envía formulario
-   LoginPage->>LoginPage: validación Zod + pending=true
-   LoginPage->>Service: login(email, password)
-   Service->>HTTP: request de autenticación pública
-   HTTP->>API: POST /api/auth/login
-   API-->>HTTP: { token } o Problem Details
-   HTTP-->>Service: resultado tipado
-   Service-->>LoginPage: Session
-   LoginPage->>Auth: signIn(session)
-   Auth->>Auth: access token en memoria + rol en Context
-   LoginPage->>Router: navigate(destino por rol)
-   Router-->>Usuario: muestra layout y página autorizada
-```
+---
 
-Si la API responde con error, la respuesta regresa al componente como `ApiError`;
-la página presenta el `detail` del servidor, conserva el correo y restablece
-`pending` en `finally`.
+## 8. Integración de la Doctrina Visual Anti-IA Genérica
 
-## 7. Ejemplo completo: consulta de un listado
+La construcción del código visual en React y Tailwind CSS v4 cumple las siguientes directrices de diseño:
 
-La página obtiene los servicios desde `useServices()` y usa `useQuery`. Cada
-invocación crea un estado para un recurso con su clave tipada. El JSX evalúa el
-estado y selecciona la representación:
+1. **Tokens Semánticos en CSS `@theme`:** Los estilos no emplean clases arbitrarias ni grises desaturados (`#888888`). Todo fondo utiliza los neutros tintados carbón (`bg-surface-base`, `bg-surface-card`, `border-subtle`).
+2. **Tipografía Intencional:** 
+   - Texto de navegación, etiquetas y encabezados: **Geist Sans** con pesos 600 o 700 para alto contraste.
+   - Datos tabulares, importes monetarios (`Money`), códigos SKU, fechas y números de guía: **Geist Mono** con alineación tabular a la derecha para lectura rápida.
+3. **Acciones Semánticas:** 
+   - Acento primario único en esmeralda/cian suave (`#00D4AA`) para botones de acción principal (`Confirmar Pago`, `Empacar Orden`, `Guardar Producto`).
+   - Acento de advertencia en ámbar (`#FFB800`) para estados transitorios de atención (contador regresivo de checkout de 15 minutos).
+4. **Patrones Prohibidos en Código:**
+   - ❌ Queda prohibido el uso de degradados multicolores en textos de encabezados (`bg-gradient-to-r text-transparent bg-clip-text`).
+   - ❌ Queda prohibido el uso de bordes izquierdos con barras de colores chillones en tarjetas.
+   - ❌ Queda prohibido el uso de colores cian-neón o violeta-neón saturados sobre fondos negros puros `#000000`.
 
-- `isPending`: skeleton con semántica de estado;
-- `isError`: error visible y acción `refetch`;
-- vacío (`data.length === 0`): estado vacío con orientación contextual;
-- `success`: tabla o tarjetas derivadas de los datos.
+---
 
-Las listas usan un identificador estable como `key` (nunca el índice si existe
-identidad de dominio). Los handlers llaman a `navigate()`; la pantalla **no**
-construye URLs API ni llama directamente a `fetch`.
+## 9. Estrategia de Pruebas Automatizadas (DoD Frontend)
 
-> **Nota de contrato:** cinco listados (`/api/Orders`, `/api/logistics/fulfillments`,
-> `/api/returns`, `/api/billing/invoices`, `/api/Inventories`) devuelven la lista
-> completa sin paginación (`ADR-0017`); sólo `/api/Catalog/products` pagina. La UI
-> debe soportar ambos casos.
+Antes de considerar cualquier componente o módulo como terminado, el código debe satisfacer las siguientes compuertas de verificación:
 
-## 8. Errores, sesión y límites del navegador
-
-El adaptador HTTP convierte `Problem Details` (RFC 7807) a `ApiError`. Ante un
-`401` **no hay reintento** (el backend no expone refresh, `ADR-0009:62`): se
-limpia la sesión mediante `SessionPort` y se notifica el evento; el
-`AuthProvider` actualiza Context y el router renderiza la redirección con aviso
-de expiración. En `403`, se conserva la sesión y se presenta una alerta de
-autorización.
-
-Los errores de render y los errores de solicitudes son rutas diferentes:
-`ErrorBoundary` atiende fallos de renderizado; los errores de red/API se manejan
-en los servicios, TanStack Query y el adaptador de alertas.
-
-## 9. Accesibilidad y estructura de UI
-
-- Los controles reutilizables reciben atributos HTML estándar mediante props tipadas.
-- `Input` enlaza etiqueta y control, y relaciona hint/error con `aria-describedby`.
-- Estados de carga, menús y errores usan roles y propiedades ARIA cuando corresponde.
-- Las listas renderizadas deben tener `key` estable.
-- Las acciones son callbacks explícitos del padre, separando presentación y comportamiento.
-- Movimiento respeta `prefers-reduced-motion`.
-
-## 10. Build y pruebas relacionadas
-
-- `vite.config.ts` registra `@vitejs/plugin-react` y `@tanstack/router-plugin/vite`
-  (code-splitting automático, Q11); el build compila TypeScript y genera el bundle.
-- **Vitest** ejecuta pruebas de componentes en `jsdom`; las pruebas viven junto a
-  `src/**/*.test.{ts,tsx}`.
-- **React Testing Library** verifica comportamiento observable del usuario (texto,
-  formularios, accesibilidad, navegación) sin acoplar las pruebas al DOM interno.
-- Esquemas Zod compartidos permiten probar validación sin montar la UI.
-
-## Archivos de referencia (objetivo)
-
-- `apps/frontend/src/main.tsx`
-- `apps/frontend/src/app/router.tsx`
-- `apps/frontend/src/app/providers/AuthProvider.tsx`
-- `apps/frontend/src/app/providers/QueryProvider.tsx`
-- `apps/frontend/src/modules/auth/LoginPage.tsx`
-- `apps/frontend/src/adapters/http/httpAdapter.ts`
-- `apps/frontend/src/adapters/session/sessionAdapter.ts`
-- `apps/frontend/src/application/schemas/login.ts`
-- `packages/ui/src/components/ui/input.tsx`
-- `packages/ui/src/tokens/colors.ts`
+1. **Verificación de Tipos Estricta:**
+   ```bash
+   pnpm --filter frontend typecheck
+   ```
+   Cero errores de compilación de TypeScript (`tsc --noEmit`).
+2. **Pruebas de Componentes y Lógica con Vitest:**
+   ```bash
+   pnpm --filter frontend test:run
+   ```
+   Pruebas de comportamiento centradas en el usuario utilizando **React Testing Library** y **Happy-DOM**. Las pruebas verifican:
+   - Renderizado correcto de los 4 estados (carga, vacío, éxito, error).
+   - Bloqueo de envíos duplicados mientras `isPending` es verdadero.
+   - Mapeo correcto de mensajes de error de Problem Details (RFC 7807).
+3. **Cobertura Automatizada de Código:**
+   ```bash
+   pnpm --filter frontend test:coverage
+   ```
+   Umbral innegociable de cobertura de líneas y ramas $\ge 90\%$ auditado por `13-frontend-qa-guardian`.
