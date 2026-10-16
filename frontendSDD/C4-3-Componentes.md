@@ -51,7 +51,7 @@ flowchart TB
 
       subgraph applicationLayer["3. Lógica de Aplicación y Estado Remoto"]
         appServices["Servicios de Aplicación & Hooks<br/>[application/services/]<br/>TanStack Query Hooks (useQuery, useMutation)"]
-        zodSchemas["Esquemas de Validación Zod<br/>[application/schemas/]<br/>Validación defensiva de formularios (Q13)"]
+        zodSchemas["Esquemas de Validación Zod<br/>[application/schemas/]<br/>Validación defensiva tipada para formularios"]
       end
 
       subgraph domainLayer["4. Dominio Frontend Puro"]
@@ -147,7 +147,7 @@ Cada módulo encapsula las pantallas de un actor del marketplace:
 
 #### Capa 5: Adaptadores de Infraestructura (`src/adapters/`)
 - **`adapters/http/HttpClient.ts`:** **Único componente autorizado en todo el proyecto para ejecutar `fetch()`**. Aplica el token Bearer en las cabeceras, intercepta respuestas no exitosas y transforma las cargas RFC 7807 (`application/problem+json`) en instancias de error de dominio tipadas.
-- **`adapters/session/MemorySessionAdapter.ts`:** Implementa `ISessionPort` reteniendo el token JWT exclusivamente en la memoria RAM de JavaScript. Ante recarga del navegador o recepción de un HTTP `401 Unauthorized`, purga la sesión inmediatamente sin recurrir a `localStorage` ([ADR-0009](./backendSDD/Adr/0009-autenticacion-jwt-rg01.md) y decisión Q15-B).
+- **`adapters/session/MemorySessionAdapter.ts`:** Implementa `ISessionPort` reteniendo el token JWT exclusivamente en la memoria RAM de JavaScript. Ante recarga del navegador o recepción de un HTTP `401 Unauthorized`, purga la sesión inmediatamente sin recurrir a `localStorage`, cumpliendo la política estricta de sesión volátil sin refresh token ([ADR-0009](./backendSDD/Adr/0009-autenticacion-jwt-rg01.md)).
 
 ---
 
