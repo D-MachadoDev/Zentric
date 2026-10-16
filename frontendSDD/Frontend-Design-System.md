@@ -1,261 +1,141 @@
-# Frontend-Design-System
+# Sistema de Diseño y Tokens Visuales (Frontend Design System)
 
-> Sistema de diseño de la consola Zentric. Define tokens, componentes
-> reutilizables, estados obligatorios y criterios de accesibilidad.
-> No se usan marcas, logotipos ni material visual de terceros: la identidad
-> gráfica es original y propia.
+> Sistema de diseño unificado para la consola de Zentric Marketplace. Define los tokens semánticos en CSS (`@theme`), componentes atómicos y compuestos, estados obligatorios de interfaz y criterios de accesibilidad WAI-ARIA.
 >
-> **Decisiones de origen (grill, 2026-10-09):** dirección visual **Q3-A**,
-> paleta **Q7-C**, tipografía **Q8-B**, componentes **Q5-B** + **Q14**, logo
-> **Q6-D**. Detalle en [`Frontend-SDD.md` §1.2](Frontend-SDD.md#12-decisiones-de-diseño-confirmadas-en-el-grill-q1q20).
+> **Fundamentos de Identidad:**
+> - **Dirección Visual:** Arquetipo *Dark Developer / Builder* (consola de alta densidad operativa y sobria).
+> - **Paleta Semántica:** Carbón azulado tintado con acento primario esmeralda (`#00D4AA`) y advertencia ámbar (`#FFB800`).
+> - **Tipografía Oficial:** Geist Sans (interfaz y lectura) + Geist Mono (datos tabulares, monedas, SKUs y códigos).
+> - **Primitivas UI:** Componentes accesibles sobre Radix UI y Tailwind CSS v4.
+> - **Identidad Gráfica:** Isotipo y logotipo original *"Zentric: Sistema Operativo para Comercio"* (Monograma Z + Órbita/Centro).
 
 ---
 
-## 1. Dirección visual
+## 1. Dirección Visual y Doctrina Anti-IA Genérica
 
-| Atributo | Definición |
-| --- | --- |
-| Arquetipo | **Dark Developer/Builder (Q3-A):** una herramienta de trabajo, no un folleto. Densidad alta, jerarquía clara, feedback técnico. |
-| Personalidad | **Confiable, operativa, sobria.** Información densa, sin decoración superflua. |
-| Marca | `#00D4AA` **Cian** — acciones primarias, foco, éxito de marca. |
-| Semánticos | Esmeralda = confirmado · Ámbar `#FFB800` = pendiente/énfasis · Rojo = error · Azul = informativo |
-| Tipografía | **Geist Sans** (UI) + **Geist Mono** (datos: cifras, IDs, tablas). Ver §2.2. |
-| Iconos | **Lucide React** (Q8). Un set, sin mezclar librerías. |
-| Densidad | Compacta pero respirada: filas de 40 px, separación por escala de 4 px. |
-| Radios | `sm 6` px · `md 8` px · `lg 12` px · `xl 16` px · `full 9999` px (ver §2.3) |
+Para evitar que la plataforma aparente una plantilla genérica o prefabricada por IA, se aplican las siguientes reglas obligatorias de diseño visual:
 
-**Prohibido:** degradados decorativos fuera de la marca, sombras como adorno,
-animaciones que bloqueen la lectura y color como único indicador de estado.
+| Atributo | Definición Técnica | Directriz Anti-IA Genérica |
+|---|---|---|
+| **Arquetipo** | **Dark Developer / Builder:** Herramienta de trabajo de alta densidad, jerarquía estructurada y retroalimentación técnica inmediata. | Prohibido el uso de espacios vacíos decorativos o tarjetas clonadas idénticas sin diferenciación de importancia. |
+| **Neutros Tintados** | Fondo principal carbón azulado profundo (`#0B0F19` / `#0A0E1A`), superficies de tarjetas en carbón tintado (`#111827` / `#161F30`), y bordes sutiles en `#1F293D`. | **Prohibido el uso de negro puro `#000000`** sobre fondos planos o escalas de grises desaturados muertos (`#888888`). |
+| **Acento Semántico Único** | Acción primaria y foco: **Esmeralda / Cian Suave (`#00D4AA`)**. Estados transitorios y atención: **Ámbar (`#FFB800`)**. | **Prohibido el uso de "arcoíris visuales"** con múltiples colores no relacionados o efectos cian-neón saturados sobre fondo negro absoluto. |
+| **Tipografía y Contraste** | **Geist Sans** para interfaz y encabezados; **Geist Mono** para valores numéricos, importes y códigos. | Encabezados en pesos robustos (600 o 700) con alto contraste; cuerpo de texto en peso 400. **Prohibido el texto con degradados multicolores ("AI gradient text")**. |
+| **Bordes y Superficies** | Bordes uniformes con contraste medido (`#1F293D`) y radios controlados (6px, 8px, 12px). | **Prohibido el uso de bordes izquierdos con barras de acento de colores chillones en tarjetas**. |
+| **Iconografía** | Set único oficial: **Lucide React**. Tamaño estándar de 16px a 20px, con trazo consistente de 1.5px o 2px. | Prohibida la mezcla de múltiples librerías de iconos con estilos dispares. |
 
 ---
 
-## 2. Tokens
+## 2. Tokens de Diseño (Tailwind CSS v4 `@theme`)
 
-**Tailwind v4 (Q18-A)**: la configuración del tema vive **en CSS**, con la
-directriz `@theme`, no en `tailwind.config.ts` (que queda vacío/inexistente para
-shadcn). Fuente de verdad: `packages/ui/src/styles/theme.css`.
+En Tailwind CSS v4, la configuración del tema visual reside **directamente en CSS** mediante la directriz `@theme` en `packages/ui/src/styles/theme.css`. No se utiliza archivo `tailwind.config.ts`:
 
 ```css
 @import "tailwindcss";
 
 @theme {
-  /* Marca (Q7-C) */
-  --color-background: #0A0E1A;    /* Carbón — fondo */
-  --color-foreground: #F1F5F9;    /* texto principal */
-  --color-brand: #00D4AA;         /* Cian — acción primaria */
-  --color-brand-strong: #00B896;
-  --color-warning: #FFB800;       /* Ámbar — énfasis */
-  --color-surface: #111827;
-  --color-surface-muted: #1F2937;
-  --color-border: #374151;
+  /* Paleta de Neutros Tintados */
+  --color-background: #0A0E1A;          /* Carbón azulado profundo — Fondo principal */
+  --color-foreground: #F1F5F9;          /* Slate 100 — Texto principal */
+  --color-surface: #111827;             /* Carbón tintado — Tarjetas y paneles */
+  --color-surface-muted: #161F30;       /* Carbón elevado — Elementos secundarios */
+  --color-border: #1F293D;              /* Contraste medido — Bordes de tarjetas y tablas */
+  --color-border-subtle: #192231;       /* Separadores internos atenuados */
 
-  /* Semánticos */
-  --color-success: #10B981;
-  --color-danger: #EF4444;
-  --color-info: #3B82F6;
+  /* Colores de Marca y Acento Semántico */
+  --color-brand: #00D4AA;               /* Esmeralda / Cian suave — Acción primaria y foco */
+  --color-brand-strong: #00B896;        /* Tono hover / presionado de marca */
+  --color-warning: #FFB800;             /* Ámbar — Énfasis, atención, checkout 15 min */
 
-  /* Tipografía (Q8-B) */
-  --font-sans: "Geist Sans", system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, monospace;
+  /* Estados Funcionales */
+  --color-success: #10B981;             /* Verde esmeralda — Confirmado, entregado */
+  --color-danger: #EF4444;              /* Rojo coral — Errores, rechazos, cancelaciones */
+  --color-info: #3B82F6;                /* Azul — Información técnica y auditoría */
+
+  /* Tipografía */
+  --font-sans: "Geist Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Escala de Radios */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
 }
 ```
 
-`packages/ui/src/tokens/*.ts` mantiene los **mismos valores en TS**, pero sólo
-para lo que se necesita en JavaScript (formateadores de moneda/fecha, validación
-de contraste). Si ambos divergen, **manda el CSS**: es lo que pinta la UI.
-
-> **shadcn (Q14):** `npx shadcn@latest init` con `style: new-york-v4` y
-> `tailwind.config: ""` (vacío, porque v4 no usa archivo de config). Los
-> componentes ya vienen sin `forwardRef` y listos para React 19.
-
-El tema es **oscuro por defecto** (Q3). Si se añade tema claro, se invierten
-superficies y se conserva el cian como marca; contraste AA verificado.
-
-### 2.2 Tipografía (Q8-B)
-
-| Rol | Fuente | Uso |
-| --- | --- | --- |
-| `font-sans` | **Geist Sans**, `system-ui` | UI, títulos, botones, texto corrido |
-| `font-mono` | **Geist Mono**, `ui-monospace` | Cifras, IDs/GUID, tablas, código, métricas |
-
-Escala `xs → 4xl` con line-height decreciente (1.5 → 1.2). Pesos 400/500/600/700.
-`letter-spacing: -0.02em` en títulos grandes.
-
-> Fuentes alojadas localmente (bundle o `fontsource`), **sin bloqueo por red**:
-> se mantiene la regla de no depender de CDNs remotos en tiempo de carga.
-
-### 2.3 Espaciado y forma
-
-- Escala de **4 px**: `0, 1(4), 2(8), 3(12), 4(16), 6(24), 8(32), 12(48), 16(64), 24(96)`.
-- Radios: `sm 6` · `md 8` · `lg 12` · `xl 16` · `full 9999` px.
-- Sombras: sobrias, sólo para elevación real (menús, diálogos); nunca como adorno.
+> **Sincronización con TypeScript:** El archivo `packages/ui/src/tokens/colors.ts` expone los mismos valores hexadecimales en TypeScript exclusivamente para utilidades lógicas de cliente (formateadores `Intl`, contrastes en canvas). Ante cualquier discrepancia, la directriz CSS `@theme` actúa como autoridad visual.
 
 ---
 
-## 3. Componentes obligatorios
+### 2.1 Jerarquía Tipográfica y Legibilidad
 
-Base: **shadcn/ui completo instalado y adaptado (Q14)** en `packages/ui/src/components/ui/`,
-más los componentes propios de dominio. cva + tailwind-merge para variantes.
+| Rol Tipográfico | Familia | Pesos Disponibles | Aplicación Obligatoria |
+|---|---|---|---|
+| **`font-sans`** | **Geist Sans** | `400` (Regular), `500` (Medium), `600` (SemiBold), `700` (Bold) | Navegación, títulos de sección, textos de ayuda, botones interactivos y modales. |
+| **`font-mono`** | **Geist Mono** | `400` (Regular), `500` (Medium), `600` (SemiBold) | Tablas de datos, importes monetarios (`Money`), códigos SKU, IDs de orden y fechas ISO. |
 
-| Componente | Responsabilidad | Regla clave |
-| --- | --- | --- |
-| `Button` | Acción | Variantes shadcn (`default` = cian, `destructive`, `outline`, `secondary`, `ghost`, `link`) + `loading` con `aria-busy`. |
-| `Input` / `Select` / `Textarea` / `Checkbox` | Campo | `label` siempre visible; error enlazado con `aria-describedby`. |
-| `Card` | Superficie | Título, cuerpo y pie opcionales. |
-| `Table` / `DataTable` | Listado | Esqueleto durante carga; `caption` para lectores de pantalla. |
-| `StatusBadge` | Estado | Texto **más** color; punto de color como refuerzo, nunca único indicador. |
-| `MoneyAmount` | Importe | `font-mono`, formatea con la moneda del servidor. |
-| `EntityCard` | Resumen de entidad | Identificador, estado y acción directa. |
-| `Dialog` / `AlertDialog` | Diálogo | Foco atrapado, cierre con `Escape`, `role="dialog"`. |
-| `Alert` | Aviso en línea | `role="alert"` en errores. |
-| `Skeleton` | Carga | Sin salto de layout al llegar el contenido. |
-| `StateView` | Vacío / error | Un componente único para ambos, con acción de reintento. |
-| `Logo` / `LogoMark` / `LogoWordmark` | Identidad | Ver §9. |
-
-**Estados semánticos.** `Badge` y `Alert` exponen además `warning`, `success` e
-`info`, mapeados a los tokens de Q7/Q8 (`--color-warning: #ffb800`,
-`--color-success: #10b981`, `--color-info: #3b82f6`). El tema ya los declaraba
-pero la base shadcn no los expresaba, y F4 los necesita para pintar estados de
-pedido, despacho, devolución y publicación de producto sin reducir todo a
-`secondary`. Sigue vigente la regla de `StatusBadge`: **el color nunca es el
-único indicador**, siempre acompaña al texto.
-
-**Componentes de dominio (F4b).** Los tres últimos de la tabla ya están
-implementados en `packages/ui`:
-
-| Componente | Contrato |
-| --- | --- |
-| `StatusBadge` | `tone` (`neutral` · `info` · `warning` · `success` · `danger`) + texto obligatorio. El punto de color es refuerzo, jamás el único portador de significado (§5). |
-| `MoneyAmount` | Recibe `amount` y `currency` **del servidor** y sólo formatea con `Intl.NumberFormat`. Nunca recalcula el importe: la moneda y el total los decide el backend. |
-| `StateView` | Un único componente para vacío y error (§4). `tone="empty"` usa `role="status"`, `tone="error"` usa `role="alert"`; ambos admiten una acción, que en error es el reintento. |
-
-**Rotulación de los enums del dominio.** Los módulos **no** importan
-`domain/` (Frontend-Architecture §2), así que el vocabulario del backend se
-traduce a español en `src/components/` —la capa puente, igual que
-`errorMessage.ts`—, en `components/domainLabels.ts`. No se inventa ningún
-sinónimo: cada rótulo es el término exacto de la Ley.
-
-| Enum | Origen del rótulo | Rótulos |
-| --- | --- | --- |
-| `UserRole` | `ZENTRIC.md` §5 | Comprador · Vendedor · Operador Logístico · Administrador · Supervisor |
-| `ReturnStatus` | Dominio 10 ("Solicitada, Aprobada, Rechazada, Reembolsada") | Solicitada · Aprobada · Rechazada · Reembolsada |
-| `WarehouseType` | Dominio 7 ("bodegas del Marketplace y bodegas de Vendedores") | Marketplace · Vendedor |
-| `InvoiceType` | Dominio 9 / ADR-0023 | Factura Maestra · Detalle Zentric · Factura de Vendedor |
-| `ProductStatus` | Dominio 5 ("Publicado, Suspendido o Descontinuado") | Publicado · Suspendido · Descontinuado |
-| `ProductType` | Dominio 5 ("Físico o Digital") | Físico · Digital |
-
-Los mapas se declaran `Record<Enum, string>`: si el backend añade un estado, el
-compilador obliga a rotularlo (§4: **ninguna vista queda muda**). Las opciones de
-un `Select` se derivan del propio `Record` para que no existan dos fuentes del
-mismo vocabulario.
-
-**Tono del `StatusBadge` por estado de devolución.** El tono no es decoración:
-señala **quién debe actuar**. La bandeja del Administrador (§2.2) sólo permite
-reembolsar una devolución `Aprobada`, así que ése es el único estado en
-`warning`; el texto siempre acompaña al color (§5).
-
-| Estado | Tono |
-| --- | --- |
-| `Requested` (Solicitada) | `info` |
-| `Approved` (Aprobada) | `warning` |
-| `Rejected` (Rechazada) | `danger` |
-| `Refunded` (Reembolsada) | `success` |
-
-**Tono del `StatusBadge` por estado de producto (F4c).** En la vista de gestión
-del Vendedor (§2.3) lo que exige acción es el producto **fuera** del catálogo: el
-`Suspendido`, que sólo se reactiva publicándolo.
-
-| Estado | Tono |
-| --- | --- |
-| `Published` (Publicado) | `success` |
-| `Suspended` (Suspendido) | `warning` |
-| `Discontinued` (Descontinuado) | `neutral` |
+- **Escala de Tamaños:** `xs` (12px) $\rightarrow$ `sm` (14px) $\rightarrow$ `base` (16px) $\rightarrow$ `lg` (18px) $\rightarrow$ `xl` (20px) $\rightarrow$ `2xl` (24px) $\rightarrow$ `3xl` (30px).
+- **Interletrado (Tracking):** `-0.02em` en títulos grandes (`2xl`, `3xl`) para compacidad visual.
+- **Alojamiento Local:** Las fuentes se empaquetan en el bundle mediante `@fontsource/geist-sans` y `@fontsource/geist-mono`, garantizando cero bloqueos de red o dependencias externas de CDNs.
 
 ---
 
-## 4. Estados obligatorios (requisito RNF-02)
+## 3. Catálogo de Componentes de UI (`packages/ui`)
 
-**Ninguna vista queda muda.** Cada módulo declara los cuatro estados:
+### 3.1 Primitivas Atómicas Adaptadas (Radix UI)
+Ubicadas en `packages/ui/src/primitives/`:
+- **`Button`:** Variantes `default` (acento esmeralda `#00D4AA`), `destructive`, `outline`, `secondary`, `ghost`. Soporte nativo para estado `loading` con indicador `aria-busy`.
+- **`Input` / `Textarea` / `Select` / `Checkbox`:** Campos controlados con `label` siempre visible, enlace semántico `aria-describedby` y borde atenuado que se ilumina con el anillo `--color-brand` al foco.
+- **`Badge`:** Insignia compacta con variantes semánticas (`neutral`, `info`, `warning`, `success`, `danger`).
+- **`Skeleton`:** Marcador de carga con animación sutil pulsante que respeta las proporciones de los datos esperados.
 
-| Estado | Componente | Contenido |
-| --- | --- | --- |
-| Carga | `Skeleton` / `TableSkeleton` | Estructura visible, sin salto de layout |
-| Vacío | `StateView` | Explicación y **siguiente acción útil** |
-| Error | `StateView` tono error | Mensaje del servidor + reintento |
-| Éxito | Contenido | Datos + acción siguiente |
-
-Ejemplo de estado vacío correcto:
-
-> **Todavía no hay bodegas registradas.**
-> Registrá la primera bodega para poder asignarle inventario.
-> `[ Registrar bodega ]`
-
-Incorrecto: un panel blanco sin explicación.
-
----
-
-## 5. Accesibilidad (requisito RNF-01)
-
-| Criterio | Regla |
-| --- | --- |
-| Contraste | Mínimo AA (4.5:1 texto normal, 3:1 texto grande y componentes) |
-| Foco | Anillo visible (`--ring: #00D4AA`) en todo elemento interactivo; nunca se suprime |
-| Teclado | Todo el flujo es navegable; `Escape` cierra diálogos |
-| Etiquetas | Cada campo tiene `label` visible; los iconos tienen `aria-label` |
-| Anuncios | Carga y errores usan `role="status"` y `role="alert"` |
-| Movimiento | `prefers-reduced-motion` desactiva transiciones y animaciones |
-| Estructura | Un solo `h1` por vista; jerarquía de encabezados sin saltos |
-| Color | Nunca el único portador de significado |
+### 3.2 Componentes Compuestos de Negocio
+Ubicados en `packages/ui/src/composite/`:
+- **`DataTable`:** Tabla de alta densidad para inventarios y órdenes con ordenamiento, filtrado, paginación y renderizado en Geist Mono.
+- **`ResponsiveDrawer`:** Panel lateral deslizante para inspección y edición rápida sin perder el contexto de la lista.
+- **`ModalDialog`:** Diálogo accesible para confirmaciones críticas con captura de foco y cierre con `Escape`.
+- **`StatCard`:** Tarjeta asimétrica de métricas clave con cifras grandes en Geist Mono y etiquetas en Geist Sans.
+- **`StatusBadge`:** Componente de estado de dominio que renderiza **texto obligatorio acompañado de un punto de color de soporte**. El color nunca es el único portador de significado.
+- **`MoneyAmount`:** Formateador de moneda que consume `amount` y `currency` emitidos por el servidor mediante `Intl.NumberFormat`. No recalcula importes en el cliente.
+- **`StateView`:** Componente unificado para los estados vacío (`empty`) y error (`error`), con botón de reintento (`refetch`).
 
 ---
 
-## 6. Responsive (requisito RNF-03)
+## 4. Rotulación Oficial de Enumeraciones del Dominio
 
-| Punto de corte | Comportamiento |
-| --- | --- |
-| `> 900 px` | Barra lateral fija + contenido con ancho máximo de 1440 px |
-| `≤ 900 px` | La barra lateral pasa a navegación horizontal desplazable |
-| `≤ 560 px` | Encabezados apilados, botones a ancho completo, columnas secundarias ocultas |
+Para evitar sinónimos y mantener estricta fidelidad con el lenguaje ubicuo de la Ley (`ZENTRIC.md`), la traducción visual de las enumeraciones se centraliza en `packages/ui/src/components/domainLabels.ts`:
 
-Las tablas conservan desplazamiento horizontal controlado; nunca se comprimen
-hasta ilegibles.
+| Enumeración | Origen en la Ley | Rótulos Oficiales en la Interfaz |
+|---|---|---|
+| **`UserRole`** | `ZENTRIC.md` Dominio 5 | Comprador · Vendedor · Operador Logístico · Administrador · Supervisor |
+| **`OrderStatus`** | `ZENTRIC.md` Dominio 6 | Carrito · Pendiente de Pago · Pagado · Cancelado · Resuelto |
+| **`FulfillmentStatus`** | `ZENTRIC.md` Dominio 8 | Pendiente de Empaque · Empacado · Despachado · Entregado · Cancelado por Quiebre |
+| **`ReturnStatus`** | `ZENTRIC.md` Dominio 10 | Solicitada · Aprobada · Rechazada · Reembolsada |
+| **`ProductStatus`** | `ZENTRIC.md` Dominio 5 | Publicado · Suspendido · Descontinuado |
+| **`WarehouseType`** | `ZENTRIC.md` Dominio 7 | Marketplace · Vendedor |
+| **`InvoiceType`** | `ZENTRIC.md` Dominio 9 | Factura Maestra · Detalle Zentric · Factura de Vendedor |
 
----
-
-## 7. Movimiento
-
-| Uso | Duración | Curva |
-| --- | --- | --- |
-| Hover de botón o enlace | 120 ms | `ease-out` |
-| Aparición de diálogo | 200 ms | `ease-out` |
-| Esqueleto pulsante | 1.4 s en bucle | `linear` |
-| Indicador de carga | 700 ms por vuelta | `linear` |
-
-Las animaciones nunca bloquean la entrada del usuario y se desactivan con
-`prefers-reduced-motion: reduce`.
+> **Garantía de Exhaustividad:** Los mapas se tipan como `Record<Enum, string>`. Si el backend añade un nuevo valor a una enumeración, el compilador de TypeScript emite un error inmediato hasta que se defina su rótulo en español, asegurando que ninguna pantalla quede desprovista de descripción textual.
 
 ---
 
-## 8. Voz y copy
+## 5. Criterios de Accesibilidad (WAI-ARIA) y Usabilidad
 
-- Español rioplatense neutro, sin coloquialismo excesivo.
-- Títulos en infinitivo: **"Registrar usuario"**, no "Registro de usuario".
-- Errores: dicen qué pasó y qué hacer. **"No se pudo conectar con el servidor.
-  Verificá que la API esté en ejecución."** Nunca "Error 500".
-- Estados vacíos: explican y ofrecen la acción siguiente.
+El sistema de diseño cumple con los estándares WCAG 2.1 Nivel AA:
+1. **Contraste de Color:** Razón de contraste mínima de 4.5:1 para texto estándar y 3:1 para textos grandes e interactivos sobre fondo carbón.
+2. **Navegación por Teclado:** Toda la consola es operable sin ratón. El anillo de foco visual (`ring-brand`) es claramente perceptible en elementos activos y nunca se suprime con `outline: none`.
+3. **Anuncios para Lectores de Pantalla:** Los estados de carga utilizan `role="status"` y las alertas de error usan `role="alert"`.
+4. **Respeto a Preferencias de Movimiento:** La directriz `@media (prefers-reduced-motion: reduce)` desactiva transiciones y animaciones decorativas para usuarios con sensibilidad vestibular.
 
 ---
 
-## 9. Identidad gráfica (Q6-D)
+## 6. Identidad Gráfica y Monograma Oficial
 
-- **Concepto: "Z + Órbita/Centro".** La `Z` es el centro de gravedad del
-  sistema; a su alrededor, órbitas que representan las entidades del dominio
-  (productos, bodegas, pedidos) girando bajo su control. Leé como
-  "el centro del comercio".
-- **Marca tipográfica "Zentric"** con el monograma como `LogoMark`.
-- Componentes: `LogoMark` (sólo símbolo), `LogoWordmark` (sólo texto),
-  `Logo` (completo, con variante `showTagline` — *"Sistema Operativo para
-  Comercio"*, Q1).
-- **Prohibido:** logotipos, nombres o material visual de terceros; imágenes de
-  stock con licencia indeterminada; fuentes remotas bloqueantes.
-- Los recursos gráficos son SVG propios generados en el repositorio.
+- **Concepto Visual: "Z + Órbita/Centro":** El monograma presenta la letra `Z` geométrica rodeada de trayectorias orbitales estilizadas, simbolizando a Zentric como el núcleo operacional del marketplace donde convergen compradores, vendedores, bodegas y pedidos.
+- **Componentes SVG:**
+  - `LogoMark`: Isotipo autónomo para favicons y barra lateral colapsada.
+  - `LogoWordmark`: Tipografía Zentric vectorial para cabeceras y pantallas públicas.
+  - `Logo`: Combinación de símbolo, texto y subtítulo *"Sistema Operativo para Comercio"*.
+- **Prohibición de Marcas Externas:** Queda estrictamente prohibido utilizar logotipos comerciales o dependencias visuales de terceros; todo el set de identidad gráfica reside como código SVG propio en el repositorio.
