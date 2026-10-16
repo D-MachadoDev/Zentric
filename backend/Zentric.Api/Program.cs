@@ -208,6 +208,16 @@ builder.Services.AddScoped<Zentric.Domain.Returns.Services.RefundPolicyService>(
 
 // Q-08: pasarela de pago SIMULADA. El puerto vive en el Dominio; sustituir este
 // adaptador por uno real (PSE, Wompi, Stripe) no exige tocar Dominio ni casos de uso.
+// La seleccion sale de configuracion Payments:Provider; hoy solo "simulated" es
+// valido. Otro valor hace fallar el arranque para no cobrar en falso.
+var paymentsProvider = builder.Configuration.GetSection(
+    Zentric.Infrastructure.Payments.PaymentGatewayOptions.SectionName)
+    .Get<Zentric.Infrastructure.Payments.PaymentGatewayOptions>()?.Provider ?? "simulated";
+if (!string.Equals(paymentsProvider, "simulated", StringComparison.OrdinalIgnoreCase))
+{
+    throw new InvalidOperationException(
+        $"Payments:Provider '{paymentsProvider}' sin adaptador real. El Owner debe dictar el proveedor y su adaptador (Freno de Mano).");
+}
 builder.Services.AddScoped<Zentric.Domain.Payments.Ports.IPaymentGatewayService, Zentric.Infrastructure.Payments.SimulatedPaymentGateway>();
 
 
@@ -259,6 +269,21 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("Frontend");
+
+// Cabeceras de seguridad para API: sin sniffing, sin marcos, sin referer.
+// No se fija CSP estricta global porque Swagger UI la rompe; nginx ya cubre el frontend.
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    await next();
+});
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
 
 // Middleware global de excepciones: las fallas técnicas no controladas se convierten en Problem Details (AGENTS.md, sección 3.4).
 app.UseExceptionHandler();
