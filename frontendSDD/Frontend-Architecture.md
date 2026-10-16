@@ -1,202 +1,174 @@
-# Frontend-Architecture
+# Arquitectura del Frontend (Frontend Architecture)
 
-> Especificación de la arquitectura del cliente Zentric. Deriva de
-> [`../backendSDD/02-software-architecture.md`](../backendSDD/02-software-architecture.md)
-> (Arquitectura Hexagonal) y de [`Frontend-SDD.md`](Frontend-SDD.md).
+> Especificación formal de la arquitectura del cliente web Zentric. Deriva de la Arquitectura Hexagonal del sistema ([`backendSDD/02-software-architecture.md`](../backendSDD/02-software-architecture.md)), la Ley funcional ([`ZENTRIC.md`](../ZENTRIC.md)) y los 25 Architecture Decision Records (ADRs).
 
 ---
 
-## 1. Principio rector
+## 1. Principio Rector: Arquitectura Hexagonal en el Cliente
 
-El cliente replica la **regla de dependencia hacia el centro** del backend: los
-detalles de tecnología (HTTP, almacenamiento, alertas) quedan en el borde, y el
-modelo del dominio del cliente no los conoce.
+El cliente replica la **regla de dependencia unidireccional hacia el centro** del backend: los detalles tecnológicos (transporte HTTP, almacenamiento volátil, diálogos visuales) se ubican en la periferia como adaptadores, mientras que el núcleo de dominio del cliente permanece desacoplado de librerías externas o APIs de red:
 
 ```text
-        UI (componentes, páginas)
-              │  depende de
-              ▼
-      Aplicación (casos de uso, sesión)
-              │  depende de puertos
-              ▼
-        Dominio (modelos, reglas de presentación)
-              ▲
-              │  implementa puertos
-     Adaptadores (HTTP, sesión, alertas)
-              │
-              ▼
-          API Zentric (externo)
+              UI (Módulos por Rol, Páginas y Vistas)
+                            │  depende de
+                            ▼
+           Lógica de Aplicación (Servicios, ViewModels, Zod)
+                            │  depende de puertos
+                            ▼
+              Dominio Frontend (Modelos, Invariantes, Puertos)
+                            ▲
+                            │  implementa puertos
+           Adaptadores (HTTP Fetch, Sesión en RAM, Notificaciones)
+                            │
+                            ▼
+                 API Zentric Backend (Servicio Externo .NET 10)
 ```
 
 ---
 
-## 2. Capas y dependencias permitidas
+## 2. Capas y Reglas de Dependencia Inviolables
 
-| Capa | Puede importar | **Prohibido** importar |
-| --- | --- | --- |
-| `domain/` | nada del proyecto | React, `fetch`, `axios`, SweetAlert2, `window`, `localStorage` |
-| `application/` | `domain/` | React (salvo tipos de presentación), `fetch`, alertas |
-| `adapters/` | `domain/`, `application/` | componentes de UI |
-| `components/` | `domain/`, `application/`, adaptadores de presentación | lógica de negocio de la Ley |
-| `layouts/` | `domain/` (sólo tipos), `application/`, componentes de UI, `app/providers` (hooks de sesión) | construir URLs o cabeceras a mano |
-| `modules/` | `components/`, `application/`, adaptadores, `app/providers` (hooks de sesión) | construir URLs o cabeceras a mano |
-| `app/` | todo lo anterior | — |
+| Capa | Puede Importar | **Estrictamente Prohibido** Importar |
+|---|---|---|
+| **`domain/`** | Nada del proyecto (TypeScript puro) | React, `fetch`, `axios`, `window`, `localStorage`, `sessionStorage`. |
+| **`application/`** | `domain/` | React (salvo tipos de presentación), llamadas a `fetch()`, manipulación de red. |
+| **`adapters/`** | `domain/`, `application/` | Componentes visuales de UI, hooks de React contextuales. |
+| **`packages/ui`** | `tokens/`, Primitivas Radix UI | Código de `apps/frontend`, endpoints, tokens JWT, lógica de negocio. |
+| **`modules/`** | `packages/ui`, `application/`, `domain/` (modelos), `useAuth` | Invocar `fetch()` directamente, construir URLs `/api/...` manualmente. |
+| **`app/`** | Todas las capas anteriores | — (Es el Composition Root del frontend). |
 
-**`layouts/` es el armazón de la consola** (barra lateral y navegación por rol,
-§3): no decide reglas ni llama a la API, sólo compone el armazón y reparte los
-enlaces filtrados por el rol de la sesión.
-
-**`app/providers` es la única excepción permitida a los módulos**, y no por
-comodidad: el estado de sesión no vive en `application/`. `C4-3-Componentes.md`
-declara el arco `modules → providers` en su diagrama y `C4-4-Codigo-React.md` §3
-prescribe `useAuth()` como consumidor desde páginas, layouts y guardas. El resto
-de `app/` —rutas, layouts y composición— **no** es importable desde un módulo.
-
-**Prohibición absoluta:** ningún archivo fuera de `adapters/http/` contiene la
-cadena `fetch(`, ni construye rutas `/api/...` concatenadas, ni escribe cabeceras
-`Authorization`.
+### Monopolio Absoluto de Red:
+El archivo `src/adapters/http/HttpClient.ts` es el **único punto autorizado en todo el proyecto** para ejecutar la instrucción `fetch()`. Ninguna vista, servicio o componente puede comunicarse con la red saltándose este adaptador.
 
 ---
 
-## 3. Estructura de carpetas (Monorepo — Q10)
+## 3. Estructura de Carpetas (Monorepo Turborepo + pnpm)
 
-> **Monorepo Turborepo + pnpm workspaces (Q10).** El Owner prioriza el SEO y la
-> reutilización del design system, así que el código se separa por paquetes.
+El proyecto se estructura como un monorepo administrado con **Turborepo y pnpm workspaces**, separando físicamente el sistema de diseño reutilizable de la aplicación web del marketplace:
 
 ```text
-frontend/                        # Raíz del monorepo (Q16-A: conserva Docker/CI)
+frontend/                        # Raíz del monorepo (entorno contenerizado en Docker)
 ├── apps/
-│   └── frontend/               # La aplicación (Vite + React 19 + TS + Tailwind)
+│   └── frontend/               # Aplicación SPA cliente (Vite + React 19 + TypeScript)
 │       ├── index.html
 │       ├── src/
-│       │   ├── app/            # Composition Root: TanStack Router, providers, guardas
-│       │   │   ├── routes/     # Rutas type-safe (Q11), code-splitting automático
-│       │   │   └── providers/  # QueryClient, Theme, Auth
-│       │   ├── domain/         # Modelos, reglas de presentación y puertos. Sin dependencias externas.
-│       │   │   ├── models/     # Producto, Variante, Bodega, Pedido, Despacho, Factura
-│       │   │   ├── enums/      # Roles y estados (constantes explícitas)
-│       │   │   ├── rules/      # Reglas de presentación derivadas de la Ley
-│       │   │   └── ports/      # ZentricApiPort, SessionPort, AlertPort
-│       │   ├── application/
-│       │   │   ├── services/   # Casos de uso de cliente
-│       │   │   ├── schemas/    # Zod por caso de uso (Q13)
-│       │   │   └── dto/        # Formatos de entrada/salida
-│       │   ├── adapters/
-│       │   │   ├── http/       # Único punto de contacto con la red (TanStack Query)
-│       │   │   ├── session/    # Access token en memoria; sin refresh (Q15-B)
-│       │   │   └── alert/      # Único punto que invoca el diálogo de alerta
-│       │   ├── components/     # Componentes propios de la app
-│       │   ├── layouts/        # RootLayout (shell raíz), ConsoleLayout (armazón por rol)
-│       │   ├── modules/        # Módulos por rol (admin/seller/buyer/logistics/public)
-│       │   └── styles/         # Estilos globales
+│       │   ├── app/            # Composition Root: TanStack Router, providers y guardas
+│       │   │   ├── routes/     # Árbol de rutas tipadas con code-splitting automático
+│       │   │   └── providers/  # QueryClientProvider, ThemeProvider, AuthProvider
+│       │   ├── domain/         # Núcleo de Dominio Frontend (TypeScript puro sin dependencias)
+│       │   │   ├── models/     # Entidades: Product, Order, Inventory, Warehouse, Invoice
+│       │   │   ├── enums/      # Enumeraciones exactas de la Ley (cero sinónimos)
+│       │   │   └── ports/      # Interfaces: ZentricApiPort, SessionPort, NotificationPort
+│       │   ├── application/    # Casos de uso y orquestación de cliente
+│       │   │   ├── services/   # Hooks de TanStack Query (useQuery, useMutation)
+│       │   │   ├── schemas/    # Esquemas Zod que replican FluentValidation
+│       │   │   └── dto/        # Objetos de transferencia y contratos de formulario
+│       │   ├── adapters/       # Implementación técnica de infraestructura
+│       │   │   ├── http/       # Cliente HTTP nativo con inyección Bearer y Problem Details
+│       │   │   ├── session/    # Retención de token JWT en memoria RAM (Sin refresh)
+│       │   │   └── notify/     # Adaptador de notificaciones accesibles (Toasts)
+│       │   ├── layouts/        # Layouts estructurales por rol (DashboardLayout, AuthLayout)
+│       │   ├── modules/        # Pantallas por rol (buyer, seller, admin, logistics, supervisor)
+│       │   └── styles/         # Variables globales y directivas CSS
 │       ├── package.json
 │       └── vite.config.ts
 ├── packages/
-│   ├── ui/                     # Design System: shadcn/ui adaptado (Q5/Q14)
+│   ├── ui/                     # Design System agnóstico al negocio y a la red
 │   │   └── src/
-│   │       ├── tokens/         # colors.ts, typography.ts, spacing.ts (Q7/Q8)
-│   │       ├── components/
-│   │       │   ├── ui/         # shadcn/ui base
-│   │       │   └── logo/       # LogoMark, LogoWordmark, Logo (Q6)
-│   │       ├── hooks/          # useMediaQuery, useDebounce
-│   │       └── lib/            # cn(), formatters (moneda, fecha)
-│   ├── config/                 # TS, Tailwind, ESLint compartidos
-│   └── api-client/             # Cliente tipado de la API (fase posterior)
+│   │       ├── tokens/         # Tokens semánticos: colors.ts, typography.ts, spacing.ts
+│   │       ├── primitives/     # Primitivas atómicas Radix UI (Button, Input, Badge, Skeleton)
+│   │       ├── composite/      # Componentes ricos (DataTable, ResponsiveDrawer, StatCard)
+│   │       └── logo/           # Monograma y logomarca oficial Zentric (SVG propio)
+│   ├── config/                 # Presets compartidos de TypeScript, Tailwind v4 y ESLint
+│   └── api-client/             # Tipos derivados del contrato OpenAPI del backend
 ├── turbo.json
 ├── pnpm-workspace.yaml
 ├── package.json
 └── tsconfig.json
 ```
 
-**Regla de dependencia entre paquetes:**
-
+**Regla de Dependencia de Paquetes:**
 ```text
-apps/frontend  →  packages/ui  →  packages/config
-       └────────────┴── packages/api-client
+apps/frontend  ───▶  packages/ui  ───▶  packages/config
+      │                     ▲
+      ▼                     │
+packages/api-client ────────┘
 ```
-
-`packages/ui` **no** importa de `apps/frontend`. `packages/config` no importa de nadie.
+`packages/ui` **nunca** importa de `apps/frontend`. `packages/config` no importa de nadie.
 
 ---
 
-## 4. Puertos del dominio
+## 4. Puertos del Dominio Frontend
 
-Interfaces que definen **qué** necesita el cliente, nunca **cómo** se obtiene.
+Interfaces que dictan **qué** necesita el sistema, sin depender del **cómo**:
 
-```ts
+```typescript
 // domain/ports/ZentricApiPort.ts
 //
-// Los `*Input` no llevan identidad del llamante (`CallerId`, `CallerRole`,
-// `BuyerId`, `vendorId` en `createProduct`): la identidad sale del token y el
-// servidor la aplica antes del caso de uso (Q-21b, ADR-0013).
-// `createProduct` devuelve `productId` + `variantIds` (CAT-01), y `createCart`
-// no acepta cuerpo porque el carrito es siempre del comprador del token.
+// Los inputs no contienen CallerId ni CallerRole: la identidad se extrae
+// directamente del token JWT en el backend (ADR-0013 / Propiedad del recurso).
 export interface ZentricApiPort {
   getHealth(): Promise<HealthStatus>;
 
+  // Autenticación y Usuarios
   login(input: LoginInput): Promise<AuthToken>;
   currentUser(): Promise<CurrentUser>;
-  listUsers(): Promise<User[]>;
+  listUsers(role?: UserRole): Promise<User[]>;
   createUser(input: CreateUserInput): Promise<string>;
+  blockUser(id: string): Promise<void>;
+  activateUser(id: string): Promise<void>;
 
-  // `vendorId` opcional: `GET /api/catalog/products?vendorId=` devuelve la vista
-  // de gestión del dueño (también `Suspended`); sin él es el catálogo comercial (Q-27).
+  // Catálogo de Productos
+  // El parámetro vendorId opcional permite al vendedor consultar sus productos suspendidos
   listProducts(vendorId?: string): Promise<Product[]>;
   getProduct(id: string): Promise<Product>;
   createProduct(input: CreateProductInput): Promise<CreatedProduct>;
   publishProduct(productId: string): Promise<void>;
-  /** `POST /api/catalog/products/{id}/suspend` — saca el producto del catálogo (Q-27). Sólo Vendedor. */
   suspendProduct(productId: string): Promise<void>;
 
+  // Inventarios y Bodegas
   addStock(input: AddStockInput): Promise<string>;
   listInventoryByVariant(variantId: string): Promise<Inventory[]>;
-
-  listWarehouses(): Promise<Warehouse[]>;
+  listWarehouses(vendorId?: string): Promise<Warehouse[]>;
   createWarehouse(input: CreateWarehouseInput): Promise<string>;
 
+  // Pedidos y Checkout (Ventana de 15 minutos)
   createCart(): Promise<string>;
   addCartItem(input: AddCartItemInput): Promise<void>;
   getOrder(id: string): Promise<Order>;
-  // `200 OK` sin cuerpo: el servidor no devuelve el estado resultante.
   checkoutOrder(orderId: string): Promise<void>;
   payOrder(orderId: string): Promise<void>;
 
+  // Facturación y Liquidación Split
   generateInvoices(orderId: string): Promise<boolean>;
   getInvoicesByOrder(orderId: string): Promise<Invoice[]>;
 
-  // Ciclo del despacho (backendSDD Domain/07-lifecycle.md): nace en
-  // `PendingPack`; hay que empacar antes de despachar y sólo el Operador
-  // Logístico cierra la entrega (Q-23). Los tres responden `200 OK` sin cuerpo.
+  // Logística y Despachos
   createFulfillment(input: CreateFulfillmentInput): Promise<string>;
   packFulfillment(id: string): Promise<void>;
   dispatchFulfillment(id: string): Promise<void>;
   deliverFulfillment(id: string): Promise<void>;
   cancelGhostStock(input: CancelGhostStockInput): Promise<boolean>;
 
+  // Devoluciones y Garantías
   requestReturn(input: RequestReturnInput): Promise<string>;
   inspectReturn(id: string, input: InspectReturnInput): Promise<void>;
   approveReturn(returnRequestId: string): Promise<void>;
-  /**
-   * `GET /api/Returns` — bandeja propia (`ADR-0017`, sin paginación aún).
-   * El reparto por rol lo hace el servidor: el Comprador ve las de sus pedidos,
-   * el Vendedor las de sus productos, y el Operador, el Administrador y el
-   * Supervisor leen sin filtro. No admite pedir las de otro.
-   */
+  rejectReturn(returnRequestId: string): Promise<void>;
   listReturns(): Promise<ReturnRequest[]>;
-  /** `POST /api/Returns/{id}/refund` — **sólo Administrador** (Q-24); reembolsa una devolución ya aprobada. */
   refundReturn(id: string): Promise<void>;
 }
 ```
 
-```ts
+```typescript
 // domain/ports/SessionPort.ts
-// Q15-B: el backend NO tiene refresh (ADR-0009:62). El access token vive SOLO
-// en memoria; al recargar se pierde y toca volver a autenticarse.
+//
+// Política de seguridad estricta: El token JWT vive exclusivamente en la memoria RAM
+// de JavaScript. No hay refresh token (ADR-0009); al recargar o expirar, se solicita reautenticación.
 export interface SessionPort {
-  getAccessToken(): string | null;   // en memoria
+  getAccessToken(): string | null;
   setAccessToken(token: string): void;
   clear(): void;
-  restore(): Promise<boolean>;       // GET /api/auth/me si hay token; false si no
   getRole(): UserRole | null;
   setRole(role: UserRole): void;
   getUserId(): string | null;
@@ -204,90 +176,54 @@ export interface SessionPort {
 }
 ```
 
-```ts
-// domain/ports/AlertPort.ts
-export type AlertKind = 'success' | 'error' | 'warning' | 'info' | 'confirm';
+---
 
-export interface AlertPort {
-  show(kind: Exclude<AlertKind, 'confirm'>, title: string, message?: string): Promise<void>;
-  confirm(title: string, message: string, confirmLabel?: string): Promise<boolean>;
+## 5. Manejo Centralizado de Errores (RFC 7807)
+
+El cliente mapea de forma estructurada los errores devueltos por el backend:
+
+```typescript
+// domain/models/ApiProblemDetails.ts
+export interface ApiProblemDetails {
+  type: string;
+  title: string;
+  status: number;
+  detail: string;
+  instance?: string;
+  errors?: Record<string, string[]>;
 }
 ```
 
----
-
-## 5. Manejo de errores
-
-Un único tipo de error de dominio, traducido por el adaptador HTTP:
-
-```ts
-// domain/models/ApiError.ts
-export class ApiError extends Error {
-  readonly status: number;
-  readonly detail: string;
-  readonly traceId?: string;
-  constructor(status: number, detail: string, traceId?: string) { /* ... */ }
-  get userMessage(): string { /* mensaje apto para el usuario */ }
-}
-```
-
-| Estado | Comportamiento de la UI |
-| --- | --- |
-| `400` | Mostrar el mensaje del servidor junto al formulario; **conservar lo escrito** |
-| `401` | Limpiar sesión y volver a la entrada con aviso de expiración |
-| `403` | **Conservar** la sesión y mostrar aviso de permiso insuficiente |
-| `404` | Estado vacío contextual, no error global |
-| `409` | Explicar el conflicto de negocio y conservar los datos del formulario |
-| `5xx` | Estado de error con reintento y `traceId` para soporte |
-
-Nunca se muestra una traza de pila ni texto crudo de base de datos.
+| Código HTTP | Diagnóstico de Negocio | Comportamiento en la Interfaz |
+|---|---|---|
+| **`400 Bad Request`** | Error de validación o violación de invariante de dominio. | Muestra el detalle junto al formulario; **preserva los datos editados por el usuario**. |
+| **`401 Unauthorized`** | Token expirado (60 min) o firma inválida. | **Purga la sesión de memoria RAM** y redirige forzosamente al login con aviso de sesión caducada. |
+| **`403 Forbidden`** | Privilegios insuficientes para el rol autenticado. | **Conserva la sesión** y despliega una alerta de acceso denegado sin alterar la identidad. |
+| **`404 Not Found`** | Recurso inexistente o propiedad ajena ([ADR-0013](../backendSDD/Adr/0013-propiedad-del-recurso-por-rol.md)). | Renderiza vista de estado vacío contextual (`StateView`), no un error fatal. |
+| **`500 Internal Server Error`** | Excepción técnica no controlada en el backend. | Presenta mensaje amigable de contingencia con botón de reintento (`refetch`). |
 
 ---
 
-## 6. Estado de servidor y caché
+## 6. Estado de Servidor e Invalidación de Caché
 
-- Un único proveedor de consultas en `app/`, con reintentos acotados y
-  reintento desactivado en errores `4xx`.
-- Las mutaciones invalidan la caché afectada: tras `checkout` se invalida el
-  pedido; tras `addStock`, el inventario.
-- Claves de caché componentsizadas por entidad: `['orders', id]`.
-
----
-
-## 7. Configuración
-
-| Variable | Uso | Defecto |
-| --- | --- | --- |
-| `VITE_API_BASE_URL` | URL base de la API | `http://localhost:5076` |
-
-En Docker la URL puede sobreescribirse en tiempo de ejecución inyectando
-`window.__ZENTRIC_API_BASE_URL__`, para no reconstruir la imagen por entorno.
+TanStack Query administra las consultas remotas mediante políticas estructuradas:
+- **`staleTime: 30_000` (30 segundos):** Los datos se consideran frescos durante 30s para evitar peticiones repetitivas al navegar entre pestañas.
+- **`retry: (failureCount, error) => ...`:** Desactivado para cualquier error de la familia `4xx` (validaciones, autenticación, permisos).
+- **Invalidación Dirigida tras Mutaciones:**
+  - Tras `checkoutOrder`: se invalida `['orders', orderId]` y `['inventories']`.
+  - Tras `payOrder`: se invalidan `['orders']` y `['fulfillments']`.
+  - Tras `addStock`: se invalida `['inventories', variantId]`.
+  - Tras `deliverFulfillment`: se actualiza el estado logístico a `Delivered`.
 
 ---
 
-## 8. Estructura de pruebas
+## 7. Decisiones Técnicas y Arquitectónicas Vinculantes
 
-| Ubicación | Qué prueba |
-| --- | --- |
-| `src/adapters/http/__tests__` | Cabeceras, `401`, mapeo de errores |
-| `src/application/services/__tests__` | Orquestación de cada caso de uso |
-| `src/components/__tests__` | Estados de UI y accesibilidad |
-| `src/modules/**/__tests__` | Flujo principal de cada módulo |
-| `src/app/__tests__` | Guardas de rol y redirecciones (TanStack Router `beforeLoad`) |
-
-> **Nota:** el prompt de orquestación recibido propone los nombres
-> `natural-customer`, `business-customer`, `teller`, `commercial`,
-> `internal-analyst`. Se sustituyen por los **roles reales de Zentric**.
-> Mantener los nombres del prompt importaría un dominio ajeno.
-
----
-
-## 9. Decisiones de stack vinculantes (grill Q1–Q14)
-
-| Aspecto | Decisión | Consecuencia arquitectónica |
-| --- | --- | --- |
-| Enrutamiento (Q11) | **TanStack Router** | Rutas type-safe y code-splitting; guardas de rol en `beforeLoad`. |
-| Datos (Q9) | **TanStack Query** | Un solo `QueryClient` en `app/providers`; invalidación por mutación. |
-| Formularios (Q13) | **React Hook Form + Zod** | Un esquema Zod por caso de uso, compartido con la forma del request. |
-| Sesión (Q15-B) | **Access token en memoria; sin refresh** | El interceptor lee el token de memoria. Ante `401` cierra sesión y va al login. **No** hay reintento: el backend no expone refresh (`ADR-0009:62`). **Nunca** token en `localStorage`. |
-| UI (Q5/Q14) | **shadcn/ui completo, adaptado** | El código vive en `packages/ui`; no hay dependencia externa de librería. |
+| Dimensión Técnica | Solución Arquitectónica | Justificación Técnica Vinculante |
+|---|---|---|
+| **Enrutamiento** | **TanStack Router** | Enrutamiento tipado (Type-Safe Routing) con layouts anidados y guardas de rol síncronas en `beforeLoad`. |
+| **Estado Remoto** | **TanStack Query** | Manejo declarativo del ciclo de vida de peticiones, caché en memoria y sincronización automática. |
+| **Formularios** | **React Hook Form + Zod** | Validación defensiva en cliente que previene peticiones inválidas antes del envío HTTP. |
+| **Seguridad de Sesión** | **Token JWT en memoria RAM (Sin Refresh)** | Máximo aislamiento de credenciales ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)), prohibiendo `localStorage`. |
+| **Sistema de Diseño** | **Tailwind v4 (`@theme`) + Radix UI** | Tokens semánticos en CSS sin archivos JS de configuración, Geist Sans/Mono y doctrina anti-IA genérica. |
+| **Monorepo** | **Turborepo + pnpm workspaces** | Desacoplamiento físico entre UI agnóstica (`packages/ui`) y la aplicación de negocio (`apps/frontend`). |
