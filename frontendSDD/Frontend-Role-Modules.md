@@ -1,270 +1,174 @@
-# Frontend-Role-Modules
+# Frontend-Role-Modules — Módulos y Pantallas por Rol
 
-> Módulos del cliente según los roles definidos en
-> [`../ZENTRIC.md`](../ZENTRIC.md#12-matriz-de-responsabilidades) (Matriz de Responsabilidades) y RG-02.
+> Especificación canónica de los módulos de la aplicación web de Zentric estructurados según los cinco roles de negocio definidos en [`../ZENTRIC.md`](../ZENTRIC.md#12-matriz-de-responsabilidades) y la matriz de 21 políticas de autorización de [`../backendSDD/Presentation/02-authorization.md`](../backendSDD/Presentation/02-authorization.md).
 >
-> **Los roles son cinco:** Administrador, Vendedor, Comprador, Operador
-> logístico y **Supervisor**. Los nombres de rol del prompt de orquestación recibido
-> (`natural-customer`, `teller`, `commercial`, `internal-analyst`) no existen en
-> esta Ley y no se usan.
->
-> `[ADDENDUM - DICTADO POR OWNER, 2026-09-29]` Este documento declaraba **cuatro**
-> roles y omitía al Supervisor, que `ZENTRIC.md` §5 sí define y que el backend
-> implementa como perfil de **consulta y seguimiento operativo**: puede leer
-> pedidos, despachos, devoluciones y facturas, y no puede escribir en ninguna
-> parte. La omisión era de este documento, no de la Ley. El Supervisor **no tiene
-> módulo propio**: usa las pantallas compartidas de solo lectura (§2.6). Ver
-> `backendSDD/Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md`.
+> **Los cinco roles canónicos del sistema son:**
+> 1. **Comprador (`Buyer`):** Catálogo público, carrito, checkout atómico de 15 minutos, pago, seguimiento de pedidos y radicación de devoluciones.
+> 2. **Vendedor (`Seller`):** Gestión de catálogo propio, publicación/suspensión, carga de inventario físico, empaque de órdenes propias y aprobación/rechazo comercial de devoluciones.
+> 3. **Operador Logístico (`LogisticsOperator`):** Monitoreo de almacén, empaque general, despacho con guía de transporte, certificación exclusiva de entrega física, reporte de faltante físico (*stock fantasma*) e inspección técnica de devoluciones.
+> 4. **Administrador (`Administrator`):** Alta y gestión de usuarios, registro de bodegas físicas, emisión y anulación de Facturas Maestras (facturación split), liquidación financiera de reembolsos y ajuste de stock por conteo físico.
+> 5. **Supervisor de Auditoría (`Supervisor`):** Seguimiento operativo integral, trazabilidad de pedidos, despachos, devoluciones, facturación y auditoría de ajustes de inventario en modo de sólo lectura.
 
 ---
 
-## 1. Matriz de responsabilidades (de la Ley)
+## 1. Matriz Canónica de Responsabilidades
 
-| Proceso | Comprador | Vendedor | Op. Logístico | Admin |
-| --- | :---: | :---: | :---: | :---: |
-| Registro de Vendedores | | | | ✔ |
-| Registro de Productos | | ✔ | | |
-| Administración de Inventario | | ✔ | ✔ | |
-| Gestión de Pedidos | ✔ | ✔ | ✔ | |
-| Gestión de Reembolsos | ✔ | | | ✔ |
-
-`[INFERIDO]` De esta matriz se derivan los módulos. "✔" significa que el actor
-**opera** el proceso, no que tenga acceso total. RG-03 impide a cualquier
-participante administrar información fuera de su rol.
-
----
-
-## 2. Módulos
-
-### 2.1 `modules/public/` — Entrada
-
-| Ruta | Contenido | Visible para |
-| --- | --- | --- |
-| `/entrar` | Acceso con correo y contraseña (ADR-0009) | Todos |
-| `/salud` | Estado del servidor | Todos |
-
-No requiere sesión. Es la única puerta de entrada al sistema.
-
-> **Resuelto (ADR-0009, 2026-09-28):** el backend **sí valida credenciales**. La pantalla
-> de acceso llama a `POST /api/auth/login`; si devuelve `401` no entra. Ya no es
-> `PROVISIONAL`: el frontend debe reemplazar la selección de rol por un login con
-> correo y contraseña, y guardar el token devuelto.
-
-### 2.2 `modules/admin/` — Administrador
-
-| Ruta | Contenido | Endpoints |
-| --- | --- | --- |
-| `/` | Panel general | `GET /health`, `GET /api/Users`, `GET /api/Warehouses`, `GET /api/Catalog/products` |
-| `/usuarios` | Listado de usuarios | `GET /api/Users` |
-| `/usuarios/nuevo` | Alta de usuario | `POST /api/Users` |
-| `/bodegas` | Listado de bodegas | `GET /api/Warehouses` |
-| `/bodegas/nueva` | Alta de bodega | `POST /api/Warehouses` |
-| `/devoluciones` | Bandeja de reembolsos | `GET /api/Returns`, `POST /api/Returns/{id}/refund` |
-
-> **Reembolso, no aprobación (Q-24).** `POST /api/Returns/{id}/approve` es
-> **sólo del Vendedor**: la política `ReturnApprove` no incluye al Administrador
-> y quien lo invoca desde este rol recibe `403`
-> ([`backendSDD/Presentation/02-authorization.md`](../backendSDD/Presentation/02-authorization.md) §3 y §5).
-> El ADDENDUM Dominio 10 dice que la aprobación de la devolución "requiere la
-> aprobación del Vendedor", y [ADR-0006](../backendSDD/Adr/0006-resolucion-contradiccion-ley-addendum.md)
-> le dio la última palabra. El poder de esta pantalla es el **reembolso**:
-> `POST /api/Returns/{id}/refund` (política `ReturnRefund`, **sólo
-> Administrador**, [Q-24](../backendSDD/Presentation/02-authorization.md)) acredita
-> el dinero al comprador, que es lo que la tabla de §4 ya rotulaba
-> "(reembolso)". El listado que alimenta la bandeja es `GET /api/Returns`
-> (política `ReturnRead`, los cinco roles — `ADR-0017`), y el reembolso sólo
-> cabe sobre una devolución **ya aprobada**: el botón se ofrece únicamente en
-> ese estado.
-
-**Facturación** (`[ADDENDUM - DICTADO POR OWNER, 2026-09-29]`, antes estaba en el
-módulo del Comprador): la emisión de facturas es un acto de la plataforma —el
-backend emite la Factura Maestra, el Detalle Zentric con la comisión y una factura
-por vendedor—, así que el botón vive aquí y **solo** el Administrador puede
-pulsarlo. El endpoint además rechaza un pedido no pagado y un pedido ya
-facturado.
-
-| Ruta | Contenido | Endpoints |
-| --- | --- | --- |
-| `/pedidos/:id/facturar` | Emisión de las facturas del pedido | `POST /api/Billing/invoices/generate/{orderId}` |
-
-**Panel:** cuatro indicadores (usuarios, bodegas, productos, estado de la base) con
-esqueleto de carga, estado vacío y reintento.
-
-### 2.3 `modules/seller/` — Vendedor
-
-> Q-02 fijó que existe un *Seller Dashboard*. La gestión del catálogo propio es lo que
-> este módulo debe consumir del backend:
->
-> | Ruta backend | Qué resuelve |
-> | --- | --- |
-> | `GET /api/Catalog/products?vendorId={id propio}` | **Único listado que muestra también los `Suspended` y `Discontinued`.** Para cualquier otro `vendorId`, o sin filtro, devuelve sólo `Published` (Q-27, dictamen Q22 = B). |
-> | `POST /api/Catalog/products` | Alta de producto. Nace `Published` (auto-publicación, CAT-01). |
-> | `POST /api/Catalog/products/{id}/publish` | Reactiva un `Suspended` (Q-25). |
-> | `POST /api/Catalog/products/{id}/suspend` | Suspende: el producto sale del catálogo comercial y el carrito lo rechaza (Q-27). |
->
-> El `vendorId` propio no lo elige el cliente: lo deriva el backend de la identidad del token y lo
-> compara con el `vendorId` pedido. Por eso un Vendedor **no puede** pedir los estados de otro
-> vendedor — recibe sólo lo publicado, igual que cualquiera.
-
-| Ruta | Contenido | Endpoints |
-| --- | --- | --- |
-| `/` | Panel del vendedor: sus productos | `GET /api/Catalog/products?vendorId=` |
-| `/productos/nuevo` | Alta de producto con variante | `POST /api/Catalog/products` |
-| `/productos/:id` | Detalle, publicación y suspensión | `GET /api/Catalog/products/{id}`, `POST /publish`, `POST /suspend` |
-| `/inventario` | Carga y consulta de existencias | `POST /api/Inventories/stock`, `GET /api/Warehouses`, `GET /api/Inventories/{variantId}` |
-
-**Reglas de UI aplicadas:**
-- Un producto `Physical` exige al menos una variante (ADR-0003).
-- Tras crear el producto, la UI muestra el **SKU y el `variantId`** para que el
-  vendedor pueda usarlo en el inventario.
-- La cantidad de stock debe ser mayor que cero (INV-01: no hay existencias negativas).
-
-### 2.4 `modules/buyer/` — Comprador
-
-| Ruta | Contenido | Endpoints |
-| --- | --- | --- |
-| `/` | Panel del comprador | `GET /api/Catalog/products` |
-| `/catalogo` | Catálogo con variantes | `GET /api/Catalog/products` |
-| `/carrito` | Carrito y checkout | `POST /api/Orders/cart`, `POST /cart/items`, `POST /checkout` |
-| `/pedidos/:id` | Detalle y pago | `GET /api/Orders/{id}`, `POST /pay` |
-
-> `[ADDENDUM - DICTADO POR OWNER, 2026-09-29]` Esta fila incluía
-> `POST /api/Billing/invoices/generate`, que devolvía `403` a este rol: el
-> comprador no emite sus propias facturas. Ese endpoint se movió al módulo del
-> **Administrador** (§2.2).
-
-> `[Q19 — APLAZADA, 2026-10-09]` El Owner fijó que **`/catalogo` debe poder
-> navegarse sin sesión** y que el login se pida **al pulsar *Comprar***, porque
-> ahí es donde se juega el SEO del Buyer. **La ejecución queda aplazada**: exige
-> una excepción nueva a **RG-01** que sólo el Owner puede dictar como
-> `[ADDENDUM - DICTADO POR OWNER]`, y previamente hay que cerrar **Q-27**
-> (el catálogo hoy no filtra `Status`, así que se expondrían productos
-> suspendidos). **Mientras tanto:** `/catalogo` se diseña como ruta **pública**
-> en el router —el `beforeLoad` **no** exige sesión— y el guard se pone en el
-> botón *Comprar*, que redirige a login guardando el retorno. El adaptador
-> **no** asume anonimato: consume `GET /api/Catalog/products` tal cual, que
-> sigue exigiendo token hasta que exista el ADDENDUM. Ver
-> [`Frontend-SDD.md` §1.4](Frontend-SDD.md#14-q19--seo-del-catálogo-decisión-registrada-ejecución-aplazada).
-
-**Reglas de UI aplicadas:**
-- El checkout **no** replica la reserva: la muestra después de la respuesta.
-- El botón de pagar se deshabilita si el pedido no está en `Pendiente de Pago`.
-- Un pedido `Pagado` o posterior se muestra como **inmutable** (Validación crítica).
-- El total se formatea con la moneda que devuelve el servidor; nunca se recalcula
-  en el cliente como fuente de verdad.
-
-### 2.5 `modules/logistics/` — Operador logístico
-
-| Ruta | Contenido | Endpoints |
-| --- | --- | --- |
-| `/` | Panel de despachos | `GET /api/Logistics/fulfillment` (bloqueado por R-03) |
-| `/despachos/:id` | Detalle y despacho | `POST /api/Logistics/fulfillment/{id}/dispatch` |
-| `/despachos/:id/quiebre` | Reporte de quiebre de stock | `POST /api/Logistics/fulfillment/cancel-ghost-stock` |
-| `/devoluciones` | Inspección de devoluciones | `POST /api/Returns/{id}/inspect` |
-
-> `[ADDENDUM - DICTADO POR OWNER, 2026-09-29]` El reporte de quiebre estaba
-> documentado en las reglas de UI pero devolvía `403` a este rol: solo el
-> Vendedor podía ejecutarlo, y el Vendedor no está en la bodega. Ahora el
-> Operador puede reportarlo, porque es quien encuentra el faltante. La
-> cancelación no es silenciosa: genera la devolución obligatoria y el crédito
-> al comprador. Ver `backendSDD/Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md`.
-
-**Reglas de UI aplicadas:**
-- La cancelación por quiebre de stock requiere confirmación explícita
-  (ADDENDUM Dominio 8: stock fantasma).
-- La inspección registra si el producto está en buen estado; sin esa respuesta no
-  se puede continuar.
-
-### 2.6 `modules/shared-modules/` — Visible para varios roles
-
-| Ruta | Roles | Contenido |
-| --- | --- | --- |
-| `/pedidos/:id` | Todos | Detalle del pedido, sólo lectura |
-| `/devoluciones/nueva` | Comprador, Admin | Solicitud de devolución |
-| `/configuracion` | Todos | Preferencias de sesión y cierre |
-
-> **Supervisor.** `[ADDENDUM - DICTADO POR OWNER, 2026-09-29]` Es el quinto rol y
-> no tiene módulo propio: entra por estas pantallas compartidas, todas de solo
-> lectura. El backend le permite leer pedidos, despachos, devoluciones y
-> facturas, y ninguna escritura. Si en el futuro quiere un panel propio, hará
-> falta un endpoint de **listado** de pedidos o despachos, que hoy no existe
-> (R-03: solo hay detalle por identificador).
-
-**Prohibición en la UI (ADDENDUM Dominio 10):** si el producto es `Digital`, la
-opción de solicitar devolución **no se muestra**. No es una validación: es la
-ausencia de la acción, porque está prohibida por la Ley.
+| Proceso Operativo | Comprador | Vendedor | Op. Logístico | Administrador | Supervisor |
+|---|:---:|:---:|:---:|:---:|:---:|
+| **Registro de Usuarios Privilegiados** | — | — | — | ✔ (Exclusivo) | — |
+| **Alta de Nuevos Compradores** | ✔ (Auto-registro) | — | — | ✔ | — |
+| **Registro de Bodegas Físicas** | — | — | — | ✔ (Exclusivo) | — |
+| **Gestión de Catálogo (Alta/Baja)** | — | ✔ (Exclusivo) | — | — | — |
+| **Carga de Stock Físico** | — | ✔ | ✔ | — | — |
+| **Ajuste de Stock por Conteo Físico** | — | — | — | ✔ | ✔ (Auditoría) |
+| **Carrito y Checkout (15 min)** | ✔ (Exclusivo) | — | — | — | — |
+| **Pago y Recaudo de Pedido** | ✔ (Exclusivo) | — | — | — | — |
+| **Empaque de Despacho (`Packed`)** | — | ✔ (Órdenes propias) | ✔ (Cualquier orden) | — | — |
+| **Despacho y Asignación de Guía** | — | — | ✔ | — | — |
+| **Certificación de Entrega (`Delivered`)** | — | — | ✔ (Exclusivo) | — | — |
+| **Reporte de Quiebre (*Stock Fantasma*)** | — | ✔ | ✔ | — | — |
+| **Radicación de Devolución** | ✔ (Exclusivo) | — | — | — | — |
+| **Inspección Técnica de Devolución** | — | — | ✔ (Exclusivo) | — | — |
+| **Aprobación/Rechazo de Devolución** | — | ✔ (Exclusivo dueño) | — | — | — |
+| **Acreditación de Reembolso Financiero** | — | — | — | ✔ (Exclusivo) | — |
+| **Facturación Split (Emisión/Anulación)** | — | — | — | ✔ (Exclusivo) | — |
+| **Consulta y Auditoría Integral** | Líneas propias | Líneas propias | Despachos/Bodega | Totalidad | Totalidad (Solo lectura) |
 
 ---
 
-## 3. Guardas de acceso (Q11 — TanStack Router)
+## 2. Definición Estructurada de Módulos
 
-Con **TanStack Router**, la guarda vive en el `beforeLoad` de la ruta, no en un
-componente envoltorio: si el rol no corresponde, la ruta ni se resuelve.
+### 2.1 Módulo Público y de Identidad (`src/modules/public/`)
+
+Puerta de entrada y acceso inicial al sistema sin exigir sesión previa activa:
+
+| Ruta | Componente / Pantalla | Endpoints Consumidos | Descripción Operativa |
+|---|---|---|---|
+| `/entrar` | `LoginPage` | `POST /api/auth/login` | Formulario de autenticación con correo electrónico y contraseña. Al autenticar con éxito, almacena el token Bearer JWT en `MemorySessionAdapter` y redirige al panel según el rol. |
+| `/registro` | `RegisterBuyerPage` | `POST /api/users` | Formulario de auto-registro público exclusivo para el rol Comprador (`role: "Buyer"`). Excepcionado de autenticación en backend. |
+| `/salud` | `HealthStatusPage` | `GET /health` | Diagnóstico en tiempo real del estado de la API y conectividad con la base de datos PostgreSQL. |
+
+### 2.2 Módulo del Administrador (`src/modules/admin/`)
+
+Gestión centralizada de infraestructura, entidades privilegiadas y operaciones financieras:
+
+| Ruta | Componente / Pantalla | Endpoints Consumidos | Descripción Operativa |
+|---|---|---|---|
+| `/admin` | `AdminDashboardPage` | `GET /health`<br>`GET /api/users`<br>`GET /api/warehouses`<br>`GET /api/catalog/products` | Panel ejecutivo con cuatro tarjetas de métricas cuantitativas: usuarios registrados, bodegas activas, productos publicados y estado de conectividad. |
+| `/admin/usuarios` | `UserListPage` | `GET /api/users` | Tabla de usuarios con filtros por rol y búsqueda textual. Acciones de bloqueo y reactivación. |
+| `/admin/usuarios/nuevo` | `CreateUserPage` | `POST /api/users` | Alta de usuarios privilegiados (Vendedor, Operador Logístico, Administrador, Supervisor). Requiere política `UserAdministration`. |
+| `/admin/bodegas` | `WarehouseListPage` | `GET /api/warehouses` | Inventario de centros de acopio y bodegas con capacidad volumétrica ($m^3$) y tipo. |
+| `/admin/bodegas/nueva` | `CreateWarehousePage` | `POST /api/warehouses` | Registro de bodega física vinculando nombre, ubicación y tipo (`Zentric` o `Vendor`). |
+| `/admin/inventario/ajuste` | `InventoryAdjustPage` | `POST /api/inventories/{id}/adjust` | Formulario de ajuste por conteo físico. Exclusivo para Administrador y Supervisor (política `InventoryAdjust`). Solo disminuye unidades disponibles por seguridad. |
+| `/admin/reembolsos` | `RefundListPage` | `GET /api/returns`<br>`POST /api/returns/{id}/refund` | Bandeja de devoluciones aprobadas comercialmente pendientes de acreditación económica. El botón de reembolso invoca `AlertPort.confirm()` antes de transferir fondos. |
+| `/admin/facturas` | `InvoiceManagementPage` | `GET /api/billing/invoices`<br>`POST /api/billing/invoices/generate/{orderId}`<br>`POST /api/billing/invoices/annul/{orderId}` | Emisión de la Factura Maestra consolidada para pedidos pagados y anulación formal por revocación de recaudo. |
+
+### 2.3 Módulo del Vendedor (`src/modules/seller/`)
+
+Gestión comercial del catálogo propio, inventario de variantes y resolución de garantías:
+
+| Ruta | Componente / Pantalla | Endpoints Consumidos | Descripción Operativa |
+|---|---|---|---|
+| `/seller` | `SellerDashboardPage` | `GET /api/catalog/products?vendorId={id}` | Panel del vendedor. Lista exclusivamente sus productos (incluidos los suspendidos) filtrando por el ID derivado del token JWT. |
+| `/seller/productos/nuevo` | `CreateProductPage` | `POST /api/catalog/products` | Alta de producto. Si es de tipo `Physical`, exige registrar al menos una variante obligatoria (ADR-0003). Muestra el identificador de producto y los `variantIds` generados. |
+| `/seller/productos/:id` | `ProductDetailPage` | `GET /api/catalog/products/{id}`<br>`POST /api/catalog/products/{id}/publish`<br>`POST /api/catalog/products/{id}/suspend` | Consulta de ficha técnica con botones de acción para publicar o suspender comercialmente el producto. |
+| `/seller/inventario` | `SellerInventoryPage` | `GET /api/inventories`<br>`POST /api/inventories/stock` | Carga de unidades físicas clasificando entre existencias nuevas o reacondicionadas (`isUsed`) por variante y bodega. |
+| `/seller/pedidos` | `SellerOrdersPage` | `GET /api/orders` | Lista de pedidos donde el vendedor posee líneas de venta. El backend filtra los datos ajenos y muestra únicamente sus líneas e importes correspondientes. |
+| `/seller/despachos` | `SellerFulfillmentsPage` | `GET /api/logistics/fulfillments`<br>`POST /api/logistics/fulfillment/{id}/pack`<br>`POST /api/logistics/fulfillment/cancel-ghost-stock` | Empaque de paquetes en bodega propia. Botón de reporte de faltante físico (*stock fantasma*) ante discrepancias. |
+| `/seller/devoluciones` | `SellerReturnsPage` | `GET /api/returns`<br>`POST /api/returns/{id}/approve`<br>`POST /api/returns/{id}/reject` | Bandeja de inspecciones técnicas finalizadas. El vendedor ejerce la potestad exclusiva de aprobar o rechazar comercialmente la devolución (ADR-0006). |
+
+### 2.4 Módulo del Comprador (`src/modules/buyer/`)
+
+Experiencia de compra, confirmación transaccional y radicación de solicitudes post-venta:
+
+| Ruta | Componente / Pantalla | Endpoints Consumidos | Descripción Operativa |
+|---|---|---|---|
+| `/catalogo` | `CatalogPage` | `GET /api/catalog/products/paged` | Exploración de productos disponibles en estado publicado (`Published`). Búsqueda, filtrado por categorías y visualización de variantes físicas. |
+| `/catalogo/:id` | `ProductDetailPage` | `GET /api/catalog/products/{id}` | Ficha de producto con selección de variantes y adición directa al carrito. |
+| `/carrito` | `CartPage` | `POST /api/orders/cart`<br>`POST /api/orders/cart/items`<br>`POST /api/orders/{id}/checkout` | Visualización de ítems agregados con precio unitario congelado. Botón de Checkout que activa la reserva física y la ventana de espera de 15 minutos. |
+| `/pedidos/:id` | `OrderDetailPage` | `GET /api/orders/{id}` | Consulta del estado del pedido, desglose de líneas, montos e información de envío. |
+| `/pedidos/:id/pagar` | `OrderPaymentPage` | `POST /api/orders/{id}/pay` | Formulario de recaudo para pedidos en estado `PendingPayment`. Deshabilita el pago si expira la ventana de 15 minutos. |
+| `/devoluciones/solicitar/:orderId` | `RequestReturnPage` | `POST /api/returns/request` | Formulario de solicitud de garantía para pedidos entregados. Valida que el producto sea físico y esté en plazo legal de reclamación. |
+
+### 2.5 Módulo del Operador Logístico (`src/modules/logistics/`)
+
+Operaciones físicas de bodega, empaque transversal, despacho y entrega:
+
+| Ruta | Componente / Pantalla | Endpoints Consumidos | Descripción Operativa |
+|---|---|---|---|
+| `/logistics` | `LogisticsDashboardPage` | `GET /api/logistics/fulfillments` | Bandeja consolidada de órdenes logísticas distribuidas por bodega y estado (`PendingPack`, `Packed`, `Dispatched`, `Delivered`). |
+| `/logistics/empaque/:id` | `PackFulfillmentPage` | `POST /api/logistics/fulfillment/{id}/pack` | Validación de ítems y transición a estado empaquetado (`Packed`). |
+| `/logistics/despacho/:id` | `DispatchFulfillmentPage` | `POST /api/logistics/fulfillment/{id}/dispatch` | Asignación de empresa transportadora, número de guía (*tracking number*) y transición a despachado (`Dispatched`). |
+| `/logistics/entrega/:id` | `DeliverFulfillmentPage` | `POST /api/logistics/fulfillment/{id}/deliver` | Certificación final de entrega física del paquete al comprador (`Delivered`). **Exclusivo Operador Logístico**. |
+| `/logistics/quiebre/:id` | `GhostStockReportPage` | `POST /api/logistics/fulfillment/cancel-ghost-stock` | Reporte técnico de faltante físico en estantería (*stock fantasma*). Cancela la orden y dispara devolución y crédito automático. |
+| `/logistics/inspeccion/:id` | `InspectReturnPage` | `POST /api/returns/{id}/inspect` | Registro obligatorio del dictamen técnico sobre mercancía recibida en bodega (estado físico, averías, sellos rotos). |
+
+### 2.6 Módulo del Supervisor de Auditoría (`src/modules/supervisor/`)
+
+Trazabilidad integral y auditoría operativa de sólo lectura:
+
+| Ruta | Componente / Pantalla | Endpoints Consumidos | Descripción Operativa |
+|---|---|---|---|
+| `/supervisor` | `SupervisorDashboardPage` | `GET /health`<br>`GET /api/orders`<br>`GET /api/logistics/fulfillments`<br>`GET /api/returns`<br>`GET /api/billing/invoices` | Panel consolidado con trazabilidad en tiempo real de todos los pedidos, despachos, devoluciones y facturas emitidas. |
+| `/supervisor/auditoria/inventario` | `InventoryAuditPage` | `GET /api/inventories`<br>`POST /api/inventories/{id}/adjust` | Inspección de discrepancias de existencias en almacenes con facultad de registrar ajustes de conteo físico (política `InventoryAdjust`). |
+| `/supervisor/expediente/:orderId` | `OrderAuditFilePage` | `GET /api/orders/{id}`<br>`GET /api/logistics/fulfillments`<br>`GET /api/billing/invoices/order/{orderId}` | Vista 360° del ciclo de vida del pedido: compra, recaudo, orden logística, guía de transporte, factura maestra y facturas split. |
+
+---
+
+## 3. Guardas de Autorización con TanStack Router
+
+El control de acceso en la interfaz de usuario se implementa en la capa de enrutamiento mediante funciones `beforeLoad` fuertemente tipadas en TanStack Router:
 
 ```ts
-// app/routes/_seller.tsx
-// Guarda de rol en beforeLoad: se ejecuta antes de hidratar el módulo.
-const sellerRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/seller',
+// src/app/routes/_console.tsx (Layout contenedor autenticado)
+export const Route = createFileRoute('/_console')({
   beforeLoad: ({ context }) => {
-    if (context.role !== UserRole.Seller) throw redirect({ to: '/entrar' });
+    if (!context.auth.isAuthenticated) {
+      throw redirect({
+        to: '/entrar',
+        search: { redirect: window.location.pathname },
+      });
+    }
   },
-  component: SellerLayout,
+  component: ConsoleLayout,
+});
+
+// src/app/routes/_console/admin.tsx (Guarda de rol específico)
+export const Route = createFileRoute('/_console/admin')({
+  beforeLoad: ({ context }) => {
+    if (context.auth.user?.role !== UserRole.Administrator) {
+      throw redirect({ to: '/_console/acceso-denegado' });
+    }
+  },
+  component: AdminLayout,
 });
 ```
 
-| Situación | Resultado |
-| --- | --- |
-| Sin sesión | Redirección a `/entrar` con aviso |
-| Rol no autorizado | Estado `403` con aviso; **la sesión se conserva** |
-| Rol autorizado | Renderiza el módulo |
+### 3.1 Manejo de Escenarios de Autorización en el Router
 
-La navegación lateral se construye **filtrando por rol**, de modo que un usuario
-nunca ve un enlace que le será denegado (RG-03).
-
-**Implementación (F4b).** El armazón no se repite por rol: `app/routes` declara
-**una** ruta sin `path` (`_console`, id explícito) cuyo `beforeLoad` ejecuta
-`exigirSesion` y cuyo componente es `ConsoleLayout`; todas las pantallas internas
-cuelgan de ella y cada una añade su `exigirRol`. Así la sesión se exige **una sola
-vez** y ninguna ruta hija puede olvidarlo, y el `403` de un rol equivocado se
-pinta **dentro** del armazón (no se pierde la consola). El panel de la raíz `/`
-despacha por rol (`F4-Q1`), porque cuatro módulos reclaman `/` y TanStack Router
-admite un único componente por ruta.
+| Escenario Detectado | Comportamiento del Router | Estado de Sesión en Memoria |
+|---|---|---|
+| **Ruta protegida sin sesión** | Redirección inmediata a `/entrar` persistiendo el parámetro de retorno `?redirect=...`. | Sin sesión. |
+| **Rol no autorizado para la ruta** | Renderiza la vista de acceso denegado (`403 Forbidden`) dentro del marco visual de la consola. | **La sesión se preserva intacta**. No se desautentica al usuario. |
+| **Rol plenamente autorizado** | Resuelve el árbol de rutas y monta perezosamente (*lazy loading*) el módulo correspondiente. | Sesión activa. |
+| **Token expirado en red (401)** | Interceptado por `HttpClient.ts`, purga la memoria de sesión y redirige a `/entrar`. | Sesión purgada (Fail-Closed). |
 
 ---
 
-## 4. Navegación por rol
+## 4. Matriz de Navegación Lateral por Rol
 
-| Enlace | Administrador | Vendedor | Comprador | Op. logístico |
-| --- | :---: | :---: | :---: | :---: |
-| Panel | ✔ | ✔ | ✔ | ✔ |
-| Catálogo | ✔ | ✔ | ✔ | ✔ |
-| Productos | | ✔ (alta) | | |
-| Inventario | ✔ (ajuste) | ✔ | | ✔ (consulta) |
-| Bodegas | ✔ | | | |
-| Usuarios | ✔ | | | |
-| Carrito | | | ✔ | |
-| Despachos | ✔ | | | ✔ |
-| Devoluciones | ✔ (reembolso) | | ✔ (solicitud) | ✔ (inspección) |
+Para garantizar el cumplimiento de la regla de mínima exposición, la barra de navegación lateral filtra dinámicamente las opciones visibles según los reclamos del usuario autenticado:
 
-> **Productos es alta sólo del Vendedor.** La fila daba al Administrador un
-> "(alta)" que el backend deniega: `POST /api/catalog/products` exige la política
-> `ProductManagement`, que sólo incluye al Vendedor, y al Administrador le
-> responde `403` ([`backendSDD/Presentation/02-authorization.md`](../backendSDD/Presentation/02-authorization.md) §2).
-> `ZENTRIC.md` §1 también le asigna *Registro de Productos* únicamente al
-> Vendedor. Lo que el Administrador sí puede es leer el catálogo (§2.2).
->
-> **Inventario del Administrador:** puede **ajustar** (`POST /api/Inventories/{id}/adjust`,
-> `InventoryAdjust`) pero **no** leer el listado (`GET /api/Inventories` es de
-> Vendedor y Operador); la fila ya no promete una consulta que responde `403`.
-
----
-
-## 5. Autorización real en el servidor
-
-`[CONFIRMADO]` R-01 está **cerrado** (`ADR-0009`): el backend emite JWT y aplica
-**20 políticas** (`Zentric.Api/Security/AuthorizationPolicies.cs`), incluida
-`InventoryAdjust`. Las guardas del cliente son de **presentación** (evitan
-pantallas inútiles); la seguridad real la garantiza el servidor. Un `403` del
-servidor siempre prevalece y la UI lo muestra sin cerrar la sesión.
+| Opción de Menú | Comprador | Vendedor | Op. Logístico | Administrador | Supervisor |
+|---|:---:|:---:|:---:|:---:|:---:|
+| **Panel Principal** | ✔ | ✔ | ✔ | ✔ | ✔ |
+| **Explorar Catálogo** | ✔ | ✔ (Solo lectura) | ✔ (Solo lectura) | ✔ (Solo lectura) | ✔ (Solo lectura) |
+| **Mis Productos** | — | ✔ (Gestión completa) | — | — | — |
+| **Existencias de Inventario** | — | ✔ (Stock propio) | ✔ (Stock bodega) | — | ✔ (Auditoría) |
+| **Ajustes de Inventario** | — | — | — | ✔ | ✔ |
+| **Bodegas de Almacén** | — | — | — | ✔ (Gestión) | — |
+| **Directorio de Usuarios** | — | — | — | ✔ (Gestión) | — |
+| **Carrito y Compras** | ✔ | — | — | — | — |
+| **Despachos y Logística** | — | ✔ (Despachos propios) | ✔ (Cola general) | — | ✔ (Consulta) |
+| **Devoluciones y Garantías** | ✔ (Radicación) | ✔ (Resolución) | ✔ (Inspección) | ✔ (Reembolsos) | ✔ (Auditoría) |
+| **Facturación y Tributación** | — | — | — | ✔ (Emisión/Anulación) | ✔ (Consulta) |
