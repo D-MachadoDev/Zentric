@@ -105,7 +105,7 @@ Ubicados en `packages/ui/src/composite/`:
 
 ## 4. Rotulación Oficial de Enumeraciones del Dominio
 
-Para evitar sinónimos y mantener estricta fidelidad con el lenguaje ubicuo de la Ley (`ZENTRIC.md`), la traducción visual de las enumeraciones se centraliza en `packages/ui/src/components/domainLabels.ts`:
+Para evitar sinónimos y mantener estricta fidelidad con el lenguaje ubicuo de la Ley (`ZENTRIC.md`), la traducción visual de las enumeraciones se centraliza en `apps/frontend/src/components/domainLabels.ts` (manteniendo `packages/ui` 100% agnóstico del dominio):
 
 | Enumeración | Origen en la Ley | Rótulos Oficiales en la Interfaz |
 |---|---|---|

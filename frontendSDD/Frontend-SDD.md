@@ -44,44 +44,45 @@ La siguiente matriz documenta las decisiones estructurales acordadas formalmente
 | **Gestión de Estado de Servidor** | TanStack Query v5 | Cache asíncrona, invalidación reactiva de consultas y desacoplamiento del ciclo de vida de los componentes. |
 | **Estructura del Repositorio** | Monorepo con Turborepo + pnpm | `apps/frontend` (aplicación web) y `packages/ui` (tokens y componentes agnósticos). Prohibidas importaciones cíclicas. |
 | **Enrutamiento Type-Safe** | TanStack Router con Guardas `beforeLoad` | Enrutamiento fuertemente tipado en tiempo de compilación con guardas de autorización por rol antes de hidratar los módulos. |
-| **Gestión de Sesión (ADR-0009)** | Sesión Volátil Exclusiva en Memoria RAM sin Token de Refresco | Máxima seguridad contra ataques XSS: el token Bearer nunca toca `localStorage` ni cookies legibles. Al expirar a los 60 min o recargar, se exige reautenticación. |
+| **Gestión de Sesión ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md))** | Sesión Volátil Exclusiva en Memoria RAM sin Token de Refresco | Máxima seguridad contra ataques XSS: el token Bearer nunca toca `localStorage` ni cookies legibles. Al expirar a los 60 min o recargar, se exige reautenticación. |
 | **Validación de Formularios** | React Hook Form + Zod derivado de Contratos OpenAPI | Validación estructural inmediata en cliente sincronizada exactamente con los validadores FluentValidation del backend. |
-| **Serialización de Enumeraciones (ADR-0012)** | Enumeraciones como Cadenas de Texto Estrictas | Cuerpos JSON de solicitud y respuesta utilizan nombres canónicos en string (ej. `"Seller"`, `"Physical"`, `"Paid"`). Prohibidos valores numéricos enteros. |
-| **Aislamiento de Propiedad (ADR-0013)** | Filtro Forzado en Servidor y 404 ante Intrusión | El servidor restringe las consultas a los recursos del llamante. El frontend no intenta filtrar colecciones masivas por su cuenta. |
-| **Enmiendas de Roles (ADR-0014)** | Cobertura Plena de 5 Roles de la Ley | Operador Logístico habilitado para reportar faltantes (*stock fantasma*); emisión de facturación asignada al Administrador; inclusión plena del Supervisor. |
-| **Listados de Recursos (ADR-0017)** | Endpoints de Colección Filtrados en Servidor por Rol | Consumo directo de `GET /api/orders`, `GET /api/logistics/fulfillments`, `GET /api/returns`, `GET /api/billing/invoices` e `GET /api/inventories`. |
-| **Resolución de Variantes (ADR-0021)** | Retorno de `variantIds` en Alta de Productos | `POST /api/catalog/products` retorna `CreatedProductDto` conteniendo el identificador de producto y sus variantes físicas para su uso en inventario y carritos. |
+| **Serialización de Enumeraciones ([ADR-0012](../backendSDD/Adr/0012-contrato-json-de-los-enum-por-nombre.md))** | Enumeraciones como Cadenas de Texto Estrictas | Cuerpos JSON de solicitud y respuesta utilizan nombres canónicos en string (ej. `"Seller"`, `"Physical"`, `"Paid"`). Prohibidos valores numéricos enteros. |
+| **Aislamiento de Propiedad ([ADR-0013](../backendSDD/Adr/0013-propiedad-del-recurso-por-rol.md))** | Filtro Forzado en Servidor y 404 ante Intrusión | El servidor restringe las consultas a los recursos del llamante. El frontend no intenta filtrar colecciones masivas por su cuenta. |
+| **Enmiendas de Roles ([ADR-0014](../backendSDD/Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md))** | Cobertura Plena de 5 Roles de la Ley | Operador Logístico habilitado para reportar faltantes (*stock fantasma*); emisión de facturación asignada al Administrador; inclusión plena del Supervisor. |
+| **Listados y Variantes ([ADR-0017](../backendSDD/Adr/0017-listados-de-recurso-propio.md))** | Endpoints de Colección por Rol y `CreatedProductDto` | Consumo directo de `GET /api/orders`, `GET /api/logistics/fulfillments`, `GET /api/returns`, `GET /api/billing/invoices` e `GET /api/inventories`, y retorno de `{ productId, variantIds }` en el alta de productos. |
+| **Ajuste de Stock ([ADR-0021](../backendSDD/Adr/0021-ajuste-de-stock-sin-cuello-de-botella.md))** | Ajuste por Conteo Físico sin Contención Global | `POST /api/inventories/{id}/adjust` disponible para Administrador y Supervisor (`InventoryAdjust`). |
 
 ---
 
 ## 3. Estructura y Mapa de Especificaciones SDD del Frontend
 
-El cuerpo de conocimiento y especificación arquitectónica del frontend de Zentric se organiza en los siguientes documentos especializados:
+El cuerpo de conocimiento y especificación arquitectónica del frontend de Zentric se organiza en los siguientes documentos especializados (con estado de orquestación unificado en [`../orchestrator-state.json`](../orchestrator-state.json)):
 
 | Documento Canónico | Propósito Arquitectónico y Contenido Esencial |
 |---|---|
-| [`Frontend-SDD.md`](Frontend-SDD.md) | Orquestador maestro, principios de gobernanza, decisiones formalizadas y criterios de completitud (DoD). |
-| [`Frontend-Architecture.md`](Frontend-Architecture.md) | Estructura del monorepo, capas de Arquitectura Hexagonal, reglas de dependencia estricta y organización de paquetes. |
-| [`Frontend-Design-System.md`](Frontend-Design-System.md) | Tokens semánticos en Tailwind v4, escala tipográfica, accesibilidad WAI-ARIA y componentes de interfaz. |
+| [`Frontend-SDD.md`](Frontend-SDD.md) | Documento maestro, principios de gobernanza, decisiones formalizadas y criterios de completitud (DoD). |
+| [`Frontend-Architecture.md`](Frontend-Architecture.md) | Estructura del monorepo, capas de Arquitectura Hexagonal, reglas de dependencia estricta y los 45 métodos de `ZentricApiPort`. |
+| [`Frontend-Design-System.md`](Frontend-Design-System.md) | Tokens semánticos en Tailwind v4, escala tipográfica, accesibilidad WAI-ARIA y separación `primitives/` vs `composite/`. |
 | [`Frontend-Adapters.md`](Frontend-Adapters.md) | Monopolio de red, configuración de `HttpClient.ts`, inventario de los 45 endpoints y gestión de sesión en memoria. |
-| [`Frontend-Domain-Services.md`](Frontend-Domain-Services.md) | Casos de uso de aplicación, puertos de entrada/salida y esquemas de validación Zod derivados de contratos OpenAPI. |
-| [`Frontend-Role-Modules.md`](Frontend-Role-Modules.md) | Definición exhaustiva de módulos y pantallas para los 5 roles (Comprador, Vendedor, Operador, Administrador, Supervisor) y guardas TanStack Router. |
+| [`Frontend-Domain-Services.md`](Frontend-Domain-Services.md) | Hooks de TanStack Query en inglés, factoría `queryKeys`, reglas de presentación y esquemas Zod derivados de contratos OpenAPI. |
+| [`Frontend-Role-Modules.md`](Frontend-Role-Modules.md) | Definición exhaustiva de módulos y rutas en inglés para los 5 roles (`/buyer/*`, `/seller/*`, `/admin/*`, `/logistics/*`, `/supervisor/*`) y guardas TanStack Router. |
 | [`Frontend-User-Flows.md`](Frontend-User-Flows.md) | Recorridos observables de usuario: checkout atómico de 15 minutos, stock fantasma, ciclo logístico y garantías. |
 | [`Contract-alignment.md`](Contract-alignment.md) | Auditoría de congruencia y paridad contractual contra los 45 endpoints y 21 políticas del backend de .NET 10. |
 | [`C4-1-Contexto.md`](C4-1-Contexto.md) | Diagrama C4 Nivel 1: Actores del ecosistema, dependencias externas y límites del sistema. |
 | [`C4-2-Contenedores.md`](C4-2-Contenedores.md) | Diagrama C4 Nivel 2: Monorepo, SPA, servidor Nginx, API REST y base de datos PostgreSQL. |
-| [`C4-3-Componentes.md`](C4-3-Componentes.md) | Diagrama C4 Nivel 3: Paquetes `@zentric/ui`, servicios de aplicación, adaptadores y enrutamiento por rol. |
+| [`C4-3-Componentes.md`](C4-3-Componentes.md) | Diagrama C4 Nivel 3: Paquetes `@zentric/ui`, hooks de aplicación, adaptadores y enrutamiento por rol. |
 | [`C4-4-Codigo-React.md`](C4-4-Codigo-React.md) | Diagrama C4 Nivel 4: Árbol de archivos TypeScript, hooks de TanStack Query y componentes React. |
+| [`../orchestrator-state.json`](../orchestrator-state.json) | Máquina de estados unificada (DAG) que gobierna las oleadas de ejecución de los 13 agentes especializados. |
 
 ---
 
-## 4. Política Estricta de Sesión y Seguridad en Memoria RAM (ADR-0009)
+## 4. Política Estricta de Sesión y Seguridad en Memoria RAM ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md))
 
 En estricta congruencia con el backend de Zentric, que no implementa tokens de refresco:
 
 1. **Almacenamiento Exclusivo en Memoria:** El token Bearer JWT reside exclusivamente en una variable privada en memoria RAM gestionada por el singleton `MemorySessionAdapter.ts`.
 2. **Prohibición de Web Storage:** Queda terminantemente prohibido escribir tokens de sesión en `localStorage`, `sessionStorage` o cookies accesibles por JavaScript, eliminando vectores de ataque por robo de credenciales mediante XSS.
-3. **Comportamiento Fail-Closed ante Expiración (401):** Cuando la API rechaza una petición con código `401 Unauthorized` (por caducidad de la ventana de 60 minutos o alteración criptográfica), el adaptador HTTP purga inmediatamente la memoria y redirige al usuario a `/entrar` notificando que la sesión ha expirado.
+3. **Comportamiento Fail-Closed ante Expiración (401):** Cuando la API rechaza una petición con código `401 Unauthorized` (por caducidad de la ventana de 60 minutos o alteración criptográfica), el adaptador HTTP purga inmediatamente la memoria y redirige al usuario a `/login` notificando que la sesión ha expirado.
 4. **Comportamiento ante Denegación de Permisos (403):** Una respuesta `403 Forbidden` mantiene la sesión activa en memoria y presenta una notificación informativa sobre facultades operativas insuficientes.
 5. **Recarga del Navegador:** Al recargar la página (`F5`), el estado en memoria se vacía naturalmente y el usuario debe ingresar nuevamente sus credenciales de acceso.
 

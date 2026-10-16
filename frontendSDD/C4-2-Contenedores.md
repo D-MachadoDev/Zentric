@@ -27,7 +27,7 @@ flowchart TB
   end
 
   subgraph boundaryBackend["Entorno 3: Backend & Negocio (.NET 10 Puerto 5076 / 8080)"]
-    api["CONTENEDOR 3: Zentric Web API<br/>[C# .NET 10, ASP.NET Core]<br/>• Ubicacion: backend/Zentric.Api y Domain<br/>• Expone 44 endpoints RESTful JSON<br/>• Ejecuta 580 reglas de negocio e invariantes<br/>• Valida y emite tokens JWT"]
+    api["CONTENEDOR 3: Zentric Web API<br/>[C# .NET 10, ASP.NET Core]<br/>• Ubicacion: backend/Zentric.Api y Domain<br/>• Expone 45 endpoints RESTful JSON (44 + /health)<br/>• Ejecuta 592 pruebas e invariantes en verde<br/>• Valida y emite tokens JWT"]
   end
 
   subgraph boundaryDatabase["Entorno 4: Base de Datos Relacional (Docker Puerto 5432)"]
@@ -59,10 +59,10 @@ flowchart TB
 
 | Contenedor | Tipo | Responsabilidad Principal | Tecnologías Clave | Entorno de Ejecución |
 |---|---|---|---|---|
-| **Aplicación Cliente SPA** | Single Page Application (SPA) | Renderizado declarativo de UI, navegación type-safe, gestión de caché y estado remoto, captura de formularios y adaptación de errores RFC 7807. | React 19, TypeScript, TanStack Router, TanStack Query, Tailwind CSS. | Motor JavaScript del navegador (V8, WebKit, Gecko). |
-| **Servidor Web Estático & Proxy** | Web Server / Reverse Proxy | Servir activos estáticos cacheados de forma inmutable, fallback de enrutamiento SPA (`try_files`) e inyección de variables de entorno en runtime. | Nginx 1.27-alpine (Producción) / Vite 6 (Desarrollo local). | Contenedor Docker Linux (puerto 80) / Proceso Node.js (puerto 5173). |
-| **Zentric Web API** | API RESTful (Servicio de Negocio) | Autenticación (JWT), autorización por roles, orquestación de casos de uso CQRS, validación de invariantes de negocio y transaccionalidad. | .NET 10, C#, ASP.NET Core, MediatR. | Proceso .NET en host (puerto 5076) o contenedor Docker (puerto 8080). |
-| **Base de Datos Zentric** | Almacén Relacional | Persistencia durable de entidades de dominio (Buyers, Products, Inventories, Orders, etc.). | PostgreSQL 16.15. | Contenedor Docker Linux (puerto 5432). |
+| **Aplicación Cliente SPA** | Single Page Application (SPA) | Renderizado declarativo de UI, navegación type-safe, gestión de caché y estado remoto, captura de formularios y adaptación de errores RFC 7807. | React 19, TypeScript, TanStack Router, TanStack Query, Tailwind CSS v4. | Motor JavaScript del navegador (V8, WebKit, Gecko). |
+| **Servidor Web Estático & Proxy** | Web Server / Reverse Proxy | Servir activos estáticos cacheados de forma inmutable, fallback de enrutamiento SPA (`try_files`) e inyección de variables de entorno en runtime. | Nginx 1.27-alpine (Producción) / Vite (Desarrollo local). | Contenedor Docker Linux (puerto 80) / Proceso Node.js (puerto 5173). |
+| **Zentric Web API** | API RESTful (Servicio de Negocio) | Autenticación (JWT), autorización por roles (21 políticas), orquestación de casos de uso CQRS, validación de invariantes de negocio y transaccionalidad. | .NET 10, C#, ASP.NET Core, Dispatcher nativo CQRS ([ADR-0007](../backendSDD/Adr/0007-dispatcher-propio-sustituye-mediatr.md)). | Proceso .NET en host (puerto 5076) o contenedor Docker (puerto 8080). |
+| **Base de Datos Zentric** | Almacén Relacional | Persistencia durable de los 14 agregados de dominio (Users, Warehouses, Products, Inventories, Orders, Fulfillments, Returns, Invoices, etc.). | PostgreSQL 16.15-alpine. | Contenedor Docker Linux (puerto 5432). |
 
 ---
 

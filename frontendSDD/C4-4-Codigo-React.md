@@ -76,10 +76,10 @@ El frontend separa de forma rigurosa los tres tipos de estado de la aplicación:
 | **Estado de Servidor** | TanStack Query (`useQuery`) | Memoria caché compartida, sincronizada y revalidada con el backend. | Catálogo de productos, existencias de bodega, lista de órdenes, facturas. |
 
 ### 4.1 Estado Compartido de Autenticación (Sesión en RAM)
-Cumpliendo rigurosamente con la política de seguridad y autenticación ([ADR-0009](./backendSDD/Adr/0009-autenticacion-jwt-rg01.md)):
+Cumpliendo rigurosamente con la política de seguridad y autenticación ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)):
 - El token JWT reside **exclusivamente en memoria RAM** dentro del estado del `AuthProvider` y del adaptador `MemorySessionAdapter`.
 - Queda **estrictamente prohibido** persistir tokens en `localStorage`, `sessionStorage` o cookies no seguras.
-- Si la página se recarga o el token de 60 minutos expira en el servidor, la API devuelve un HTTP `401 Unauthorized`. El cliente reacciona de forma inmediata: purga el token de la memoria RAM, invalida la caché de TanStack Query y redirige al usuario a la vista de login con un aviso explícito de sesión expirada (**sin mecanismo de refresh token**).
+- Si la página se recarga o el token de 60 minutos expira en el servidor, la API devuelve un HTTP `401 Unauthorized`. El cliente reacciona de forma inmediata: purga el token de la memoria RAM, invalida la caché de TanStack Query y redirige al usuario a la vista de `/login` con un aviso explícito de sesión expirada (**sin mecanismo de refresh token**).
 
 ### 4.2 Estado de Servidor y Máquina de Estados Cuádruple
 Toda consulta remota gestionada con TanStack Query modela explícitamente cuatro estados visuales en la interfaz:
@@ -130,7 +130,7 @@ flowchart TD
   guardAuth -->|"Sí"| guardRole{"Guarda beforeLoad:<br/>¿Rol coincide con la política?"}
 
   guardRole -->|"No coincide"| stateForbidden["Estado 403 Forbidden<br/>(Acceso Restringido para este Rol)"]
-  guardRole -->|"Rol Autorizado"| layout["Carga Layout del Rol<br/>(Buyer, Seller, Admin, etc.)"]
+  guardRole -->|"Rol Autorizado"| layout["Carga Layout del Rol<br/>(/buyer, /seller, /admin, etc.)"]
   layout --> outlet["Outlet Renderiza Página Específica"]
 
   classDef check fill:#0f766e,stroke:#0d9488,stroke-width:2px,color:#ffffff;
@@ -143,7 +143,7 @@ flowchart TD
 ```
 
 ### Principio de Doble Verificación:
-Las guardas `beforeLoad` proporcionan una experiencia fluida y evitan renderizar pantallas para las que el usuario carece de permisos. Sin embargo, **la interfaz de usuario no es una frontera de seguridad**: cada endpoint del backend valida de forma independiente e innegociable el token Bearer JWT contra su matriz de 21 políticas de autorización fail-closed ([ADR-0011](./backendSDD/Adr/0011-matriz-autorizacion-por-rol.md)).
+Las guardas `beforeLoad` proporcionan una experiencia fluida y evitan renderizar pantallas para las que el usuario carece de permisos. Sin embargo, **la interfaz de usuario no es una frontera de seguridad**: cada endpoint del backend valida de forma independiente e innegociable el token Bearer JWT contra su matriz de 21 políticas de autorización fail-closed ([ADR-0011](../backendSDD/Adr/0011-matriz-autorizacion-por-rol.md) y [ADR-0014](../backendSDD/Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md)).
 
 ---
 
@@ -164,9 +164,9 @@ export interface ApiProblemDetails {
 ```
 
 - **HTTP 400 Bad Request:** Contiene detalles de validación de campos (`errors`) o violación de invariante de negocio (`detail`). Se proyecta directamente sobre los formularios.
-- **HTTP 401 Unauthorized:** Token expirado o ausente. Dispara evento global de sesión caducada, purga inmediata de la memoria RAM y redirección forzada a la pantalla de login.
+- **HTTP 401 Unauthorized:** Token expirado o ausente. Dispara evento global de sesión caducada, purga inmediata de la memoria RAM y redirección forzada a la pantalla de `/login`.
 - **HTTP 403 Forbidden:** El usuario está autenticado pero su rol no posee privilegios para la acción solicitada. Conserva la sesión del usuario y despliega una notificación de acceso denegado.
-- **HTTP 404 Not Found:** Recurso inexistente o ajeno al usuario autenticado ([ADR-0013](./backendSDD/Adr/0013-propiedad-del-recurso-por-rol.md)).
+- **HTTP 404 Not Found:** Recurso inexistente o ajeno al usuario autenticado ([ADR-0013](../backendSDD/Adr/0013-propiedad-del-recurso-por-rol.md)).
 - **HTTP 500 Internal Server Error:** Error técnico no controlado en el servidor. Muestra mensaje amigable de contingencia sin exponer detalles de infraestructura.
 
 ---

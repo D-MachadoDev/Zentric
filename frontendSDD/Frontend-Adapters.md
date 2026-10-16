@@ -11,7 +11,7 @@
 En cumplimiento de la regla de separación de capas de la Arquitectura Hexagonal, el adaptador HTTP implementa un **monopolio absoluto de red**:
 
 > [!IMPORTANT]
-> **Regla de Monopolio de Red:** Queda estrictamente prohibido invocar `fetch()`, `axios` o cualquier cliente de red nativo desde componentes de UI, hooks de React, esquemas o servicios de dominio. Todas las peticiones HTTP del sistema se originan exclusivamente a través del singleton tipado `HttpClient.ts` ubicado en `apps/frontend/src/application/adapters/http/HttpClient.ts`.
+> **Regla de Monopolio de Red:** Queda estrictamente prohibido invocar `fetch()`, `axios` o cualquier cliente de red nativo desde componentes de UI, hooks de React, esquemas o servicios de dominio. Todas las peticiones HTTP del sistema se originan exclusivamente a través del singleton tipado `HttpClient.ts` ubicado en `apps/frontend/src/adapters/http/HttpClient.ts`.
 
 ### 1.1 Parámetros de Configuración del Cliente
 
@@ -20,7 +20,7 @@ En cumplimiento de la regla de separación de capas de la Arquitectura Hexagonal
 | **URL Base** | `import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5076'` | Configurable por variable de entorno para entornos Docker, CI y local. |
 | **Cabeceras Fijas** | `Accept: application/json`<br>`Content-Type: application/json` | Contrato JSON estricto en ambos sentidos. |
 | **Autenticación** | `Authorization: Bearer {token}` | Token JWT emitido por `POST /api/auth/login`. Inyectado dinámicamente desde `MemorySessionAdapter`. |
-| **Prohibición de Cabeceras Forjables** | Prohibido enviar `X-Buyer-Id` | La identidad se extrae en el servidor del claim `sub` del JWT (Decisión de seguridad formalizada en ADR-0009). |
+| **Prohibición de Cabeceras Forjables** | Prohibido enviar `X-Buyer-Id` | La identidad se extrae en el servidor del claim `sub` del JWT (Decisión de seguridad formalizada en [ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)). |
 | **Tiempo Límite (*Timeout*)** | 15 segundos mediante señal `AbortSignal.timeout(15000)` | Previene bloqueos indefinidos en llamadas de red lentas o desconexiones. |
 | **Política de Reintentos** | Máximo 1 reintento automático exclusivamente ante errores de red o códigos `5xx` en operaciones idempotentes (GET). Prohibido reintentar en códigos `4xx` o comandos de pago/checkout. | Evita duplicidad de transacciones financieras o estados inconsistentes. |
 
@@ -28,102 +28,102 @@ En cumplimiento de la regla de separación de capas de la Arquitectura Hexagonal
 
 ## 2. Inventario Canónico de Endpoints (45 Endpoints)
 
-Leyenda de verificación: `VERIFIED` (auditado contra código C# de controladores y pruebas de integración) · `MAPPED` (puerto frontend definido y alineado al contrato OpenAPI).
+Leyenda de verificación: `VERIFIED` (auditado contra código C# de controladores y pruebas de integración) · Todos los métodos pertenecen a la interfaz unificada `ZentricApiPort` (`domain/ports/ZentricApiPort.ts`).
 
 ### 2.1 Módulo 0: Autenticación e Identidad (`/api/auth`)
 
-| Método | Ruta | Puerto de Entrada | Estado | Descripción de Contrato |
+| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
 |---|---|---|:---:|---|
-| `POST` | `/api/auth/login` | `AuthPort.login` | `VERIFIED` | Autentica credenciales (email y contraseña PBKDF2), emite JWT de 60 min. Acceso anónimo permitido. |
-| `GET` | `/api/auth/me` | `AuthPort.getCurrentUser` | `VERIFIED` | Resuelve la identidad, rol y reclamos (*claims*) del usuario autenticado a partir del token JWT activo. |
+| `POST` | `/api/auth/login` | `ZentricApiPort.login` | `VERIFIED` | Autentica credenciales (email y contraseña PBKDF2), emite JWT de 60 min. Acceso anónimo permitido. |
+| `GET` | `/api/auth/me` | `ZentricApiPort.getCurrentUser` | `VERIFIED` | Resuelve la identidad, rol y reclamos (*claims*) del usuario autenticado a partir del token JWT activo. |
 
 ### 2.2 Módulo 1: Usuarios y Gestión de Acceso (`/api/users`)
 
-| Método | Ruta | Puerto de Entrada | Estado | Descripción de Contrato |
+| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
 |---|---|---|:---:|---|
-| `POST` | `/api/users` | `UserPort.createUser` | `VERIFIED` | Registra usuario. Acceso anónimo permitido sólo para `role = "Buyer"`. Exige token de Administrador para otros roles. Retorna `Guid` en texto plano JSON. |
-| `GET` | `/api/users` | `UserPort.listUsers` | `VERIFIED` | Lista usuarios registrados con filtro opcional por rol (`role?`). Exige rol Administrador o Supervisor. |
-| `GET` | `/api/users/{id}` | `UserPort.getUserById` | `VERIFIED` | Consulta detalle técnico y estado de un usuario por su ID. |
-| `POST` | `/api/users/{id}/block` | `UserPort.blockUser` | `VERIFIED` | Bloquea el acceso de un usuario. Exclusivo para Administrador. |
-| `POST` | `/api/users/{id}/activate` | `UserPort.activateUser` | `VERIFIED` | Reactiva un usuario bloqueado. Exclusivo para Administrador. |
+| `POST` | `/api/users` | `ZentricApiPort.createUser` | `VERIFIED` | Registra usuario. Acceso anónimo permitido sólo para `role = "Buyer"`. Exige token de Administrador para otros roles. Retorna `Guid` en texto plano JSON. |
+| `GET` | `/api/users` | `ZentricApiPort.listUsers` | `VERIFIED` | Lista usuarios registrados con filtro opcional por rol (`role?`). Exige rol Administrador o Supervisor. |
+| `GET` | `/api/users/{id}` | `ZentricApiPort.getUserById` | `VERIFIED` | Consulta detalle técnico y estado de un usuario por su ID. |
+| `POST` | `/api/users/{id}/block` | `ZentricApiPort.blockUser` | `VERIFIED` | Bloquea el acceso de un usuario. Exclusivo para Administrador. |
+| `POST` | `/api/users/{id}/activate` | `ZentricApiPort.activateUser` | `VERIFIED` | Reactiva un usuario bloqueado. Exclusivo para Administrador. |
 
 ### 2.3 Módulo 2: Bodegas y Centros de Almacenamiento (`/api/warehouses`)
 
-| Método | Ruta | Puerto de Entrada | Estado | Descripción de Contrato |
+| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
 |---|---|---|:---:|---|
-| `POST` | `/api/warehouses` | `WarehousePort.createWarehouse` | `VERIFIED` | Registra una nueva bodega física especificando nombre, ubicación, capacidad ($m^3$) y tipo (`Zentric` o `Vendor`). Retorna `Guid`. |
-| `GET` | `/api/warehouses` | `WarehousePort.listWarehouses` | `VERIFIED` | Lista bodegas activas con filtro opcional por vendedor (`vendorId?`). |
-| `GET` | `/api/warehouses/{id}` | `WarehousePort.getWarehouseById` | `VERIFIED` | Consulta ficha técnica y capacidad volumétrica de una bodega específica. |
+| `POST` | `/api/warehouses` | `ZentricApiPort.createWarehouse` | `VERIFIED` | Registra una nueva bodega física especificando nombre, ubicación, capacidad ($m^3$) y tipo (`Zentric` o `Vendor`). Retorna `Guid`. |
+| `GET` | `/api/warehouses` | `ZentricApiPort.listWarehouses` | `VERIFIED` | Lista bodegas activas con filtro opcional por vendedor (`vendorId?`). |
+| `GET` | `/api/warehouses/{id}` | `ZentricApiPort.getWarehouseById` | `VERIFIED` | Consulta ficha técnica y capacidad volumétrica de una bodega específica. |
 
 ### 2.4 Módulo 3: Inventarios y Control de Stock (`/api/inventories`)
 
-| Método | Ruta | Puerto de Entrada | Estado | Descripción de Contrato |
+| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
 |---|---|---|:---:|---|
-| `POST` | `/api/inventories/stock` | `InventoryPort.addStock` | `VERIFIED` | Ingresa existencias clasificando unidades entre nuevas o reacondicionadas (`isUsed`). Retorna `Guid`. |
-| `GET` | `/api/inventories` | `InventoryPort.listInventories` | `VERIFIED` | Lista existencias con aislamiento forzado por rol (vendedor ve solo su stock; admin/operador ven consolidado). |
-| `GET` | `/api/inventories/{variantId}` | `InventoryPort.listInventoryByVariant` | `VERIFIED` | Consulta existencias distribuidas por bodega para una variante (disponible, reservado, usado, dañado). |
-| `POST` | `/api/inventories/{id}/adjust` | `InventoryPort.adjustInventory` | `VERIFIED` | Registra ajuste por conteo físico en bodega. Solo disminuye unidades disponibles. Exclusivo Administrador y Supervisor. |
+| `POST` | `/api/inventories/stock` | `ZentricApiPort.addStock` | `VERIFIED` | Ingresa existencias clasificando unidades entre nuevas o reacondicionadas (`isUsed`). Retorna `Guid`. |
+| `GET` | `/api/inventories` | `ZentricApiPort.listInventories` | `VERIFIED` | Lista existencias con aislamiento forzado por rol (vendedor ve solo su stock; admin/operador ven consolidado). |
+| `GET` | `/api/inventories/{variantId}` | `ZentricApiPort.listInventoryByVariant` | `VERIFIED` | Consulta existencias distribuidas por bodega para una variante (disponible, reservado, usado, dañado). |
+| `POST` | `/api/inventories/{id}/adjust` | `ZentricApiPort.adjustInventory` | `VERIFIED` | Registra ajuste por conteo físico en bodega. Solo disminuye unidades disponibles. Exclusivo Administrador y Supervisor. |
 
 ### 2.5 Módulo 4: Catálogo de Productos (`/api/catalog`)
 
-| Método | Ruta | Puerto de Entrada | Estado | Descripción de Contrato |
+| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
 |---|---|---|:---:|---|
-| `POST` | `/api/catalog/products` | `CatalogPort.createProduct` | `VERIFIED` | Da de alta producto con precio y variantes. Retorna `CreatedProductDto` (`{ productId, variantIds }`). Exclusivo Vendedor. |
-| `POST` | `/api/catalog/products/{productId}/publish` | `CatalogPort.publishProduct` | `VERIFIED` | Reactiva producto suspendido a estado publicado (`Published`). Retorna `200 OK` vacío. |
-| `POST` | `/api/catalog/products/{productId}/suspend` | `CatalogPort.suspendProduct` | `VERIFIED` | Suspende producto, ocultándolo de búsquedas públicas y carritos. Retorna `200 OK` vacío. |
-| `GET` | `/api/catalog/products` | `CatalogPort.listProducts` | `VERIFIED` | Catálogo de productos. Público ve `Published`; vendedor ve propios (incluidos suspendidos). |
-| `GET` | `/api/catalog/products/paged` | `CatalogPort.listProductsPaged` | `VERIFIED` | Versión paginada con metadatos `PagedResult<ProductDto>` (`items`, `page`, `size`, `totalItems`, `totalPages`). |
-| `GET` | `/api/catalog/products/{id}` | `CatalogPort.getProductById` | `VERIFIED` | Ficha técnica completa de producto por ID. |
+| `POST` | `/api/catalog/products` | `ZentricApiPort.createProduct` | `VERIFIED` | Da de alta producto con precio y variantes. Retorna `CreatedProductDto` (`{ productId, variantIds }`). Exclusivo Vendedor. |
+| `POST` | `/api/catalog/products/{productId}/publish` | `ZentricApiPort.publishProduct` | `VERIFIED` | Reactiva producto suspendido a estado publicado (`Published`). Retorna `200 OK` vacío. |
+| `POST` | `/api/catalog/products/{productId}/suspend` | `ZentricApiPort.suspendProduct` | `VERIFIED` | Suspende producto, ocultándolo de búsquedas públicas y carritos. Retorna `200 OK` vacío. |
+| `GET` | `/api/catalog/products` | `ZentricApiPort.listProducts` | `VERIFIED` | Catálogo de productos. Público ve `Published`; vendedor ve propios (incluidos suspendidos). |
+| `GET` | `/api/catalog/products/paged` | `ZentricApiPort.listProductsPaged` | `VERIFIED` | Versión paginada con metadatos `PagedResult<ProductDto>` (`items`, `page`, `size`, `totalItems`, `totalPages`). |
+| `GET` | `/api/catalog/products/{id}` | `ZentricApiPort.getProductById` | `VERIFIED` | Ficha técnica completa de producto por ID. |
 
 ### 2.6 Módulo 5: Carrito y Pedidos de Compra (`/api/orders`)
 
-| Método | Ruta | Puerto de Entrada | Estado | Descripción de Contrato |
+| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
 |---|---|---|:---:|---|
-| `POST` | `/api/orders/cart` | `OrderPort.createCart` | `VERIFIED` | Crea pedido en estado `Cart` vinculado al comprador autenticado. Retorna `Guid`. |
-| `POST` | `/api/orders/cart/items` | `OrderPort.addCartItem` | `VERIFIED` | Agrega variante al carrito y congela precio unitario. Retorna `200 OK` vacío. |
-| `POST` | `/api/orders/{orderId}/checkout` | `OrderPort.checkoutOrder` | `VERIFIED` | Cierra carrito, reserva stock en bodegas, inicia temporizador de 15 min. Retorna `200 OK` vacío. |
-| `POST` | `/api/orders/{orderId}/pay` | `OrderPort.payOrder` | `VERIFIED` | Procesa pago, consolida reserva y transiciona pedido a `Paid`. Retorna `200 OK` vacío. |
-| `GET` | `/api/orders` | `OrderPort.listOrders` | `VERIFIED` | Lista pedidos con aislamiento por rol (comprador ve compras; vendedor ve líneas propias; admin ve todo). |
-| `GET` | `/api/orders/{id}` | `OrderPort.getOrderById` | `VERIFIED` | Detalle de pedido. Vendedor recibe `SellerOrderViewDto`; comprador y admin reciben `OrderDto` consolidado. |
+| `POST` | `/api/orders/cart` | `ZentricApiPort.createCart` | `VERIFIED` | Crea pedido en estado `Cart` vinculado al comprador autenticado. Retorna `Guid`. |
+| `POST` | `/api/orders/cart/items` | `ZentricApiPort.addCartItem` | `VERIFIED` | Agrega variante al carrito y congela precio unitario. Retorna `200 OK` vacío. |
+| `POST` | `/api/orders/{orderId}/checkout` | `ZentricApiPort.checkoutOrder` | `VERIFIED` | Cierra carrito, reserva stock en bodegas, inicia temporizador de 15 min. Retorna `200 OK` vacío. |
+| `POST` | `/api/orders/{orderId}/pay` | `ZentricApiPort.payOrder` | `VERIFIED` | Procesa pago, consolida reserva y transiciona pedido a `Paid`. Retorna `200 OK` vacío. |
+| `GET` | `/api/orders` | `ZentricApiPort.listOrders` | `VERIFIED` | Lista pedidos con aislamiento por rol (comprador ve compras; vendedor ve líneas propias; admin ve todo). |
+| `GET` | `/api/orders/{id}` | `ZentricApiPort.getOrderById` | `VERIFIED` | Detalle de pedido. Vendedor recibe `SellerOrderViewDto`; comprador y admin reciben `OrderDto` consolidado. |
 
 ### 2.7 Módulo 6: Logística y Órdenes de Despacho (`/api/logistics`)
 
-| Método | Ruta | Puerto de Entrada | Estado | Descripción de Contrato |
+| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
 |---|---|---|:---:|---|
-| `POST` | `/api/logistics/fulfillment` | `LogisticsPort.createFulfillment` | `VERIFIED` | Crea orden manual de despacho para bodega y vendedor específicos. Retorna `Guid`. |
-| `POST` | `/api/logistics/fulfillment/{id}/pack` | `LogisticsPort.packFulfillment` | `VERIFIED` | Transiciona orden a `Packed`. Operador puede empacar cualquiera; vendedor solo propias. Retorna `200 OK` vacío. |
-| `POST` | `/api/logistics/fulfillment/{id}/dispatch` | `LogisticsPort.dispatchFulfillment` | `VERIFIED` | Marca como `Dispatched`, asigna transportadora y tracking, descuenta stock definitivamente. Retorna `200 OK` vacío. |
-| `POST` | `/api/logistics/fulfillment/{id}/deliver` | `LogisticsPort.deliverFulfillment` | `VERIFIED` | Certifica entrega física (`Delivered`). **Exclusivo Operador Logístico**; prohibido al vendedor. Retorna `200 OK` vacío. |
-| `POST` | `/api/logistics/fulfillment/cancel-ghost-stock` | `LogisticsPort.cancelGhostStock` | `VERIFIED` | Reporta faltante físico no detectado (*stock fantasma*). Cancela orden y genera reembolso automático. Retorna `Guid`. |
-| `GET` | `/api/logistics/fulfillments` | `LogisticsPort.listFulfillments` | `VERIFIED` | Lista despachos con filtro de rol y estado (`status?`). Nota: pluralizado formalmente en ADR-0017. |
-| `GET` | `/api/logistics/fulfillment/{id}` | `LogisticsPort.getFulfillmentById` | `VERIFIED` | Ficha técnica de despacho, paquetes, transportadora y guía. |
+| `POST` | `/api/logistics/fulfillment` | `ZentricApiPort.createFulfillment` | `VERIFIED` | Crea orden manual de despacho para bodega y vendedor específicos. Retorna `Guid`. |
+| `POST` | `/api/logistics/fulfillment/{id}/pack` | `ZentricApiPort.packFulfillment` | `VERIFIED` | Transiciona orden a `Packed`. Operador puede empacar cualquiera; vendedor solo propias. Retorna `200 OK` vacío. |
+| `POST` | `/api/logistics/fulfillment/{id}/dispatch` | `ZentricApiPort.dispatchFulfillment` | `VERIFIED` | Marca como `Dispatched`, asigna transportadora y tracking, descuenta stock definitivamente. Retorna `200 OK` vacío. |
+| `POST` | `/api/logistics/fulfillment/{id}/deliver` | `ZentricApiPort.deliverFulfillment` | `VERIFIED` | Certifica entrega física (`Delivered`). **Exclusivo Operador Logístico**; prohibido al vendedor. Retorna `200 OK` vacío. |
+| `POST` | `/api/logistics/fulfillment/cancel-ghost-stock` | `ZentricApiPort.cancelGhostStock` | `VERIFIED` | Reporta faltante físico no detectado (*stock fantasma*). Cancela orden y genera reembolso automático. Retorna `Guid`. |
+| `GET` | `/api/logistics/fulfillments` | `ZentricApiPort.listFulfillments` | `VERIFIED` | Lista despachos con filtro de rol y estado (`status?`). Nota: pluralizado formalmente en [ADR-0017](../backendSDD/Adr/0017-listados-de-recurso-propio.md). |
+| `GET` | `/api/logistics/fulfillment/{id}` | `ZentricApiPort.getFulfillmentById` | `VERIFIED` | Ficha técnica de despacho, paquetes, transportadora y guía. |
 
 ### 2.8 Módulo 7: Devoluciones y Garantías (`/api/returns`)
 
-| Método | Ruta | Puerto de Entrada | Estado | Descripción de Contrato |
+| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
 |---|---|---|:---:|---|
-| `POST` | `/api/returns/request` | `ReturnPort.requestReturn` | `VERIFIED` | Radica devolución de producto entregado dentro de plazo de garantía. Retorna `Guid`. |
-| `POST` | `/api/returns/{id}/inspect` | `ReturnPort.inspectReturn` | `VERIFIED` | Registra dictamen técnico en bodega (buen estado o dañado). Operador u Vendedor según bodega. Retorna `200 OK` vacío. |
-| `POST` | `/api/returns/{id}/approve` | `ReturnPort.approveReturn` | `VERIFIED` | Aprueba comercialmente devolución y reingresa stock como usado. **Exclusivo Vendedor dueño**. Retorna `200 OK` vacío. |
-| `POST` | `/api/returns/{id}/reject` | `ReturnPort.rejectReturn` | `VERIFIED` | Rechaza solicitud de devolución. **Exclusivo Vendedor dueño**. Retorna `200 OK` vacío. |
-| `POST` | `/api/returns/{id}/refund` | `ReturnPort.refundReturn` | `VERIFIED` | Liquida y acredita reembolso financiero de devolución aprobada. **Exclusivo Administrador**. Retorna `200 OK` vacío. |
-| `GET` | `/api/returns` | `ReturnPort.listReturns` | `VERIFIED` | Lista devoluciones con filtro por estado y aislamiento estricto por rol. |
-| `GET` | `/api/returns/{id}` | `ReturnPort.getReturnById` | `VERIFIED` | Expediente completo de devolución con dictámenes técnicos y resoluciones. |
+| `POST` | `/api/returns/request` | `ZentricApiPort.requestReturn` | `VERIFIED` | Radica devolución de producto entregado dentro de plazo de garantía. Retorna `Guid`. |
+| `POST` | `/api/returns/{id}/inspect` | `ZentricApiPort.inspectReturn` | `VERIFIED` | Registra dictamen técnico en bodega (buen estado o dañado). Operador u Vendedor según bodega. Retorna `200 OK` vacío. |
+| `POST` | `/api/returns/{id}/approve` | `ZentricApiPort.approveReturn` | `VERIFIED` | Aprueba comercialmente devolución y reingresa stock como usado. **Exclusivo Vendedor dueño**. Retorna `200 OK` vacío. |
+| `POST` | `/api/returns/{id}/reject` | `ZentricApiPort.rejectReturn` | `VERIFIED` | Rechaza solicitud de devolución. **Exclusivo Vendedor dueño**. Retorna `200 OK` vacío. |
+| `POST` | `/api/returns/{id}/refund` | `ZentricApiPort.refundReturn` | `VERIFIED` | Liquida y acredita reembolso financiero de devolución aprobada. **Exclusivo Administrador**. Retorna `200 OK` vacío. |
+| `GET` | `/api/returns` | `ZentricApiPort.listReturns` | `VERIFIED` | Lista devoluciones con filtro por estado y aislamiento estricto por rol. |
+| `GET` | `/api/returns/{id}` | `ZentricApiPort.getReturnById` | `VERIFIED` | Expediente completo de devolución con dictámenes técnicos y resoluciones. |
 
 ### 2.9 Módulo 8: Facturación y Liquidación Tributaria (`/api/billing`)
 
-| Método | Ruta | Puerto de Entrada | Estado | Descripción de Contrato |
+| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
 |---|---|---|:---:|---|
-| `POST` | `/api/billing/invoices/generate/{orderId}` | `BillingPort.generateInvoices` | `VERIFIED` | Emite Factura Maestra consolidada para comprador, comisión para Zentric y facturas para vendedores. **Exclusivo Administrador**. Retorna `200 OK (bool)`. |
-| `POST` | `/api/billing/invoices/annul/{orderId}` | `BillingPort.annulInvoices` | `VERIFIED` | Anula formalmente la Factura Maestra ante reversión de pago post-recaudo. **Exclusivo Administrador**. Retorna `200 OK` vacío. |
-| `GET` | `/api/billing/invoices` | `BillingPort.listInvoices` | `VERIFIED` | Lista facturas con aislamiento por rol (vendedor ve solo `VendorDetail`; admin/supervisor ven todo; operador logístico denegado). |
-| `GET` | `/api/billing/invoices/order/{orderId}` | `BillingPort.getInvoicesByOrder` | `VERIFIED` | Consulta comprobantes fiscales vinculados a un pedido pagado. |
+| `POST` | `/api/billing/invoices/generate/{orderId}` | `ZentricApiPort.generateInvoices` | `VERIFIED` | Emite Factura Maestra consolidada para comprador, comisión para Zentric y facturas para vendedores. **Exclusivo Administrador**. Retorna `200 OK (bool)`. |
+| `POST` | `/api/billing/invoices/annul/{orderId}` | `ZentricApiPort.annulInvoices` | `VERIFIED` | Anula formalmente la Factura Maestra ante reversión de pago post-recaudo. **Exclusivo Administrador**. Retorna `200 OK` vacío. |
+| `GET` | `/api/billing/invoices` | `ZentricApiPort.listInvoices` | `VERIFIED` | Lista facturas con aislamiento por rol (vendedor ve solo `VendorDetail`; admin/supervisor ven todo; operador logístico denegado). |
+| `GET` | `/api/billing/invoices/order/{orderId}` | `ZentricApiPort.getInvoicesByOrder` | `VERIFIED` | Consulta comprobantes fiscales vinculados a un pedido pagado. |
 
 ### 2.10 Módulo 9: Infraestructura y Disponibilidad (`/health`)
 
-| Método | Ruta | Puerto de Entrada | Estado | Descripción de Contrato |
+| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
 |---|---|---|:---:|---|
-| `GET` | `/health` | `HealthPort.getHealth` | `VERIFIED` | Sonda de salud técnica de la API y conectividad con PostgreSQL. Acceso anónimo permitido. |
+| `GET` | `/health` | `ZentricApiPort.getHealth` | `VERIFIED` | Sonda de salud técnica de la API y conectividad con PostgreSQL. Acceso anónimo permitido. |
 
 ---
 
@@ -224,10 +224,10 @@ Los comandos de transición de estado (`checkout`, `pay`, `pack`, `dispatch`, `d
 
 ## 4. Gestión de Sesión Volátil en Memoria (`MemorySessionAdapter.ts`)
 
-Conforme a la política de seguridad establecida en **ADR-0009** y ratificada por la dirección de arquitectura:
+Conforme a la política de seguridad establecida en **[ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)** y ratificada por la dirección de arquitectura:
 
 > [!WARNING]
-> **Prohibición de Persistencia en Disco / Web Storage:** Queda terminantemente prohibido almacenar tokens Bearer JWT en `localStorage`, `sessionStorage` o cookies legibles por JavaScript. El token de sesión reside **exclusivamente en memoria RAM** en el singleton `MemorySessionAdapter.ts`.
+> **Prohibición de Persistencia en Disco / Web Storage:** Queda terminantemente prohibido almacenar tokens Bearer JWT en `localStorage`, `sessionStorage` o cookies legibles por JavaScript. El token de sesión reside **exclusivamente en memoria RAM** en el singleton `MemorySessionAdapter.ts` (`apps/frontend/src/adapters/session/MemorySessionAdapter.ts`).
 
 ### 4.1 Ciclo de Vida y Políticas de Sesión
 
@@ -246,8 +246,8 @@ El sistema desacopla la lógica de solicitud de notificaciones y diálogos de co
 
 | Componente | Capa / Ubicación | Responsabilidad |
 |---|---|---|
-| `AlertAdapter` | `application/adapters/alert/` | Mantiene la cola de solicitudes en memoria y resuelve promesas asíncronas (`confirm`, `show`). Código TypeScript puro sin JSX ni dependencias de React. |
-| `AlertHost` | `presentation/components/alert/` | Componente de UI montado en la raíz de la aplicación (`App.tsx` o `main.tsx`). Escucha los eventos de `AlertAdapter` y renderiza los componentes `AlertDialog` y `Toaster` del Design System. |
+| `AlertAdapter` | `adapters/alert/AlertAdapter.ts` | Mantiene la cola de solicitudes en memoria y resuelve promesas asíncronas (`confirm`, `show`). Código TypeScript puro sin JSX ni dependencias de React. |
+| `AlertHost` | `components/alert/AlertHost.tsx` | Componente de UI montado en la raíz de la aplicación (`App.tsx` o `main.tsx`). Escucha los eventos de `AlertAdapter` y renderiza los componentes `AlertDialog` y `Toaster` del Design System. |
 
 ### 5.1 Reglas para Diálogos de Confirmación
 Es obligatorio invocar `AlertPort.confirm()` antes de ejecutar las siguientes operaciones:
@@ -263,7 +263,7 @@ Es obligatorio invocar `AlertPort.confirm()` antes de ejecutar las siguientes op
 
 | Referencia de Decisión | Situación Contractual Previa | Resolución Formalizada |
 |---|---|---|
-| **ADR-0009** | Cabecera insegura `X-Buyer-Id` y ausencia de autenticación centralizada. | Implementación de `POST /api/auth/login` con emisión de JWT HS256 (60 min) y almacenamiento exclusivo en memoria RAM. Eliminación definitiva de `X-Buyer-Id`. |
-| **ADR-0012** | Inconsistencia de tipos numéricos vs texto en serializadores de enums. | Normalización estricta: los JSON de solicitud y respuesta solo aceptan nombres canónicos de enumeradores en formato string. |
-| **ADR-0017** | Endpoints de consulta no disponibles para listados de pedidos y logística. | Creación de `GET /api/orders` y `GET /api/logistics/fulfillments` (en plural) con filtrado y aislamiento forzado por rol. |
-| **ADR-0021** | Inconsistencia en la identificación de variantes tras el alta de catálogo. | `POST /api/catalog/products` retorna `CreatedProductDto` con los identificadores generados de producto y variantes para su uso inmediato en inventario y pedidos. |
+| **[ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)** | Cabecera insegura `X-Buyer-Id` y ausencia de autenticación centralizada. | Implementación de `POST /api/auth/login` con emisión de JWT HS256 (60 min) y almacenamiento exclusivo en memoria RAM. Eliminación definitiva de `X-Buyer-Id`. |
+| **[ADR-0012](../backendSDD/Adr/0012-contrato-json-de-los-enum-por-nombre.md)** | Inconsistencia de tipos numéricos vs texto en serializadores de enums. | Normalización estricta: los JSON de solicitud y respuesta solo aceptan nombres canónicos de enumeradores en formato string. |
+| **[ADR-0017](../backendSDD/Adr/0017-listados-de-recurso-propio.md)** | Endpoints de consulta no disponibles para listados de pedidos y logística, ni retorno de variantes al crear productos. | Creación de `GET /api/orders` y `GET /api/logistics/fulfillments` (en plural) con filtrado por rol, y retorno de `CreatedProductDto` (`{ productId, variantIds }`) en `POST /api/catalog/products`. |
+| **[ADR-0021](../backendSDD/Adr/0021-ajuste-de-stock-sin-cuello-de-botella.md)** | Ajuste de existencias físicas en almacén sin contención global. | `POST /api/inventories/{id}/adjust` registra el ajuste por conteo físico retornando `AdjustInventoryResult` con cantidades previas y nuevas. |

@@ -38,12 +38,12 @@ El inventario de la API de Zentric se encuentra distribuido en 9 módulos funcio
 
 ---
 
-## 3. Modelo de Seguridad y Ciclo de Vida del Token Bearer JWT (ADR-0009)
+## 3. Modelo de Seguridad y Ciclo de Vida del Token Bearer JWT ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md))
 
 1. **Autenticación Centralizada:** Obtenido exclusivamente mediante `POST /api/auth/login`. El servidor valida credenciales mediante hash criptográfico PBKDF2-HMAC-SHA256 con salt dinámico y emite un token firmado con HMAC-SHA256 y vigencia de 60 minutos.
 2. **Eliminación Definitiva de Cabeceras Forjables:** La cabecera histórica insegura `X-Buyer-Id` ha sido totalmente purgada de la solución; cualquier intento de inyección es ignorado por el servidor. La identidad se extrae exclusivamente del claim criptográfico `sub`.
-3. **Reserva en Memoria RAM (*Volatile In-Memory Session*):** Conforme a las reglas de mitigación de vulnerabilidades XSS de ADR-0009, el token reside exclusivamente en memoria RAM en `MemorySessionAdapter.ts`. Queda prohibido el uso de `localStorage` o `sessionStorage`.
-4. **Política de Cero Renovación (*No Refresh Token*):** El backend no dispone de endpoints de refresco. Al expirar la ventana de 60 minutos o al recibir una respuesta `401 Unauthorized`, la sesión se cierra de manera fail-closed y se redirecciona al usuario a la pantalla de ingreso.
+3. **Reserva en Memoria RAM (*Volatile In-Memory Session*):** Conforme a las reglas de mitigación de vulnerabilidades XSS de [ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md), el token reside exclusivamente en memoria RAM en `MemorySessionAdapter.ts`. Queda prohibido el uso de `localStorage` o `sessionStorage`.
+4. **Política de Cero Renovación (*No Refresh Token*):** El backend no dispone de endpoints de refresco. Al expirar la ventana de 60 minutos o al recibir una respuesta `401 Unauthorized`, la sesión se cierra de manera fail-closed y se redirecciona al usuario a `/login`.
 
 ---
 
@@ -67,7 +67,7 @@ La API implementa una política CORS estricta en `Zentric.Api` gobernada por la 
 
 ---
 
-## 6. Aislamiento por Propiedad de Recurso (*Resource Ownership*, ADR-0013)
+## 6. Aislamiento por Propiedad de Recurso (*Resource Ownership*, [ADR-0013](../backendSDD/Adr/0013-propiedad-del-recurso-por-rol.md))
 
 El sistema impone un doble anillo de defensa: una vez superada la política de rol, el servidor verifica la propiedad del recurso:
 
@@ -86,20 +86,20 @@ El sistema impone un doble anillo de defensa: una vez superada la política de r
 
 | Referencia Canónica | Desafío Contractual Detectado | Solución Formalizada y Verificada |
 |---|---|---|
-| **ADR-0003** | Ambigüedad en productos físicos y catálogo heterogéneo. | Un producto de tipo `Physical` exige obligatoriamente al menos una variante con SKU. |
-| **ADR-0006** | Contradicción sobre la potestad de aprobar devoluciones. | La aprobación o rechazo comercial es potestad **exclusiva del Vendedor dueño del producto** (`ReturnApprove`); el Administrador solo ejecuta el reembolso monetario (`ReturnRefund`). |
-| **ADR-0009** | Ausencia de autenticación unificada y cabecera forjable. | Introducción de `POST /api/auth/login` con tokens JWT HS256, vigencia de 60 minutos, sesión en memoria RAM y eliminación de `X-Buyer-Id`. |
-| **ADR-0012** | Tipado numérico incoherente en la serialización de enumeradores. | Los cuerpos JSON de solicitud y respuesta se restringen estrictamente a nombres canónicos en formato de texto (ej. `"Seller"`, `"Physical"`, `"Cart"`). |
-| **ADR-0013** | Vulnerabilidad de acceso transversal a datos de otros usuarios. | Implementación de filtros forzados en EF Core por propiedad de recurso y respuesta `404 Not Found` ante recursos ajenos. |
-| **ADR-0014** | Enmiendas a la matriz de roles y facultades operativas. | El Operador Logístico adquiere facultad de reportar quiebres (*stock fantasma*); la facturación split se traslada al Administrador; inclusión plena del Supervisor como perfil de consulta. |
-| **ADR-0017** | Ausencia de endpoints para listado y consulta transversal. | Creación de `GET /api/orders` y `GET /api/logistics/fulfillments` (pluralizado) con filtrado y aislamiento por rol. |
-| **ADR-0021** | Retorno inconsistente de identificadores en el alta de catálogo. | `POST /api/catalog/products` retorna `CreatedProductDto` conteniendo tanto el `productId` como los `variantIds` para su uso directo en inventario y pedidos. |
+| **[ADR-0003](../backendSDD/Adr/0003-variante-obligatoria-productos-fisicos.md)** | Ambigüedad en productos físicos y catálogo heterogéneo. | Un producto de tipo `Physical` exige obligatoriamente al menos una variante con SKU. |
+| **[ADR-0006](../backendSDD/Adr/0006-resolucion-contradiccion-ley-addendum.md)** | Contradicción sobre la potestad de aprobar devoluciones. | La aprobación o rechazo comercial es potestad **exclusiva del Vendedor dueño del producto** (`ReturnApprove`); el Administrador solo ejecuta el reembolso monetario (`ReturnRefund`). |
+| **[ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)** | Ausencia de autenticación unificada y cabecera forjable. | Introducción de `POST /api/auth/login` con tokens JWT HS256, vigencia de 60 minutos, sesión en memoria RAM y eliminación de `X-Buyer-Id`. |
+| **[ADR-0012](../backendSDD/Adr/0012-contrato-json-de-los-enum-por-nombre.md)** | Tipado numérico incoherente en la serialización de enumeradores. | Los cuerpos JSON de solicitud y respuesta se restringen estrictamente a nombres canónicos en formato de texto (ej. `"Seller"`, `"Physical"`, `"Cart"`). |
+| **[ADR-0013](../backendSDD/Adr/0013-propiedad-del-recurso-por-rol.md)** | Vulnerabilidad de acceso transversal a datos de otros usuarios. | Implementación de filtros forzados en EF Core por propiedad de recurso y respuesta `404 Not Found` ante recursos ajenos. |
+| **[ADR-0014](../backendSDD/Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md)** | Enmiendas a la matriz de roles y facultades operativas. | El Operador Logístico adquiere facultad de reportar quiebres (*stock fantasma*); la facturación split se traslada al Administrador; inclusión plena del Supervisor como perfil de consulta. |
+| **[ADR-0017](../backendSDD/Adr/0017-listados-de-recurso-propio.md)** | Ausencia de endpoints para listado transversal y retorno de variantes en catálogo. | Creación de `GET /api/orders` y `GET /api/logistics/fulfillments` (pluralizado) con aislamiento por rol, y retorno de `CreatedProductDto` (`{ productId, variantIds }`) en `POST /api/catalog/products`. |
+| **[ADR-0021](../backendSDD/Adr/0021-ajuste-de-stock-sin-cuello-de-botella.md)** | Ajuste de existencias físicas sin contención global. | `POST /api/inventories/{id}/adjust` registra conteos físicos retornando `AdjustInventoryResult` para Administrador y Supervisor. |
 
 ---
 
 ## 8. Veredicto Final de Alineación
 
-- **Conformidad Estructural:** 100% de los 45 endpoints del backend están plenamente especificados y mapeados a los puertos de entrada del frontend.
-- **Seguridad y Criptografía:** Cumplimiento total de ADR-0009 (tokens Bearer, expiración de 60 minutos, sesión volátil en memoria RAM, eliminación de cabeceras forjables).
+- **Conformidad Estructural:** 100% de los 45 endpoints del backend están plenamente especificados y mapeados a la interfaz `ZentricApiPort` del frontend.
+- **Seguridad y Criptografía:** Cumplimiento total de [ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md) (tokens Bearer, expiración de 60 minutos, sesión volátil en memoria RAM, eliminación de cabeceras forjables).
 - **Consistencia de Tipos:** Esquemas Zod y DTOs tipados en estricta sincronía con los contratos C# de la API REST.
 - **Estado Global:** **VERIFICADO (READY FOR WAVE 1)**.

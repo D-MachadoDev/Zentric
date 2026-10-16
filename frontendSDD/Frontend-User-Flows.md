@@ -16,7 +16,7 @@
 | **4** | **Confirmación Obligatoria (*Double-Check*)** | Toda acción financiera, destructiva o irreversible (pago, cancelación por stock fantasma, anulación fiscal, reembolso) exige un diálogo modal de confirmación con `AlertPort.confirm()`. |
 | **5** | **Colecciones Vacías Guiadas** | Una consulta sin resultados no muestra una tabla desierta; presenta un estado vacío explicativo (`EmptyState`) con una acción principal recomendada para salir del estado vacío. |
 | **6** | **Tratamiento Contextual de 404** | Un recurso inexistente o no autorizado por propiedad de recurso muestra un estado vacío contextual dentro de la consola, evitando la caída catastrófica de la aplicación. |
-| **7** | **Expiración de Sesión (*Fail-Closed*)** | Un código HTTP `401 Unauthorized` purga de inmediato el token JWT de la memoria RAM (`MemorySessionAdapter`) y redirige al usuario a `/entrar` con un aviso informativo de sesión expirada (política sin tokens de refresco, formalizada en ADR-0009). |
+| **7** | **Expiración de Sesión (*Fail-Closed*)** | Un código HTTP `401 Unauthorized` purga de inmediato el token JWT de la memoria RAM (`MemorySessionAdapter`) y redirige al usuario a `/login` con un aviso informativo de sesión expirada (política sin tokens de refresco, formalizada en [ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)). |
 | **8** | **Conservación de Sesión ante Denegación (403)** | Un código HTTP `403 Forbidden` mantiene la sesión de usuario activa y presenta un banner o diálogo notificando permisos insuficientes para la acción solicitada. |
 | **9** | **Reserva de Entradas ante Conflictos (409 / 400)** | Un fallo de validación del servidor o conflicto de concurrencia mantiene intactos todos los valores ingresados por el usuario en el formulario. |
 | **10** | **Trazabilidad de Navegación** | Toda pantalla exhibe su título jerárquico, migas de pan (*breadcrumbs*) legibles y la ruta activa resaltada en la navegación lateral. |
@@ -28,7 +28,7 @@
 ```mermaid
 sequenceDiagram
     actor Usuario
-    participant UI as Pantalla de Acceso (/entrar)
+    participant UI as Pantalla de Acceso (/login)
     participant Session as MemorySessionAdapter
     participant API as Backend (POST /api/auth/login)
     participant Router as TanStack Router
@@ -40,7 +40,7 @@ sequenceDiagram
     alt Credenciales Válidas (200 OK)
         API-->>UI: { token, role, userId, fullName }
         UI->>Session: Almacena token JWT en memoria RAM
-        UI->>Router: Redirige al módulo del rol (/buyer, /seller, etc.)
+        UI->>Router: Redirige al módulo del rol (/buyer, /seller, /admin, /logistics, /supervisor)
     else Credenciales Inválidas (401 Unauthorized)
         API-->>UI: ProblemDetails ("Credenciales inválidas")
         UI->>UI: Muestra mensaje de error, habilita botón
@@ -51,7 +51,7 @@ sequenceDiagram
 - **Carga:** Botón de envío con estado ocupado (`aria-busy="true"`).
 - **Error:** Notificación roja contextual sin vaciar los campos de entrada.
 - **Éxito:** Redirección inmediata según el rol contenido en el token JWT.
-- **Cierre de Sesión:** Opción accesible en la cabecera del usuario que purga la memoria RAM y redirige a `/entrar`.
+- **Cierre de Sesión:** Opción accesible en la cabecera del usuario que purga la memoria RAM y redirige a `/login`.
 
 ---
 
@@ -62,10 +62,10 @@ El recorrido transaccional crítico del Comprador implementa la regla de negocio
 ```mermaid
 sequenceDiagram
     actor Comprador
-    participant Catalogo as /catalogo
-    participant Carrito as /carrito
+    participant Catalogo as /buyer/catalog
+    participant Carrito as /buyer/cart
     participant API as Backend Orders API
-    participant Pago as /pedidos/:id/pagar
+    participant Pago as /buyer/orders/$orderId/pay
 
     Comprador->>Catalogo: Selecciona producto y variante física
     Comprador->>Carrito: Agrega ítem (POST /api/orders/cart/items)
@@ -87,7 +87,7 @@ sequenceDiagram
 ```
 
 ### Reglas de Negocio en la Interfaz:
-1. **Precio Congelado:** El carrito refleja el precio unitario pactado al momento de añadir el ítem, sin fluctuaciones posteriores.
+1. **Precio Congelado:** El carrito refleja el precio unitario pactado al momento de añadir el ítem, sin fluctuaciones posteriores ([ADR-0020](../backendSDD/Adr/0020-precio-congelado-y-credito-parcial-por-linea.md)).
 2. **Temporizador Visible:** La vista de pago muestra un contador regresivo visible sincronizado con la marca temporal devuelta por el backend.
 3. **Inmutabilidad Post-Pago:** Un pedido en estado `Paid` bloquea cualquier intento de mutación; se muestra exclusivamente en modo de lectura con sus líneas e importes finales.
 
@@ -96,12 +96,12 @@ sequenceDiagram
 ## 4. Flujo 3: Carga de Catálogo e Inventario por el Vendedor
 
 ```text
-1. Vendedor accede a /seller/productos/nuevo.
+1. Vendedor accede a /seller/products/new.
 2. Ingresa título, descripción, precio unitario, moneda y tipo de producto (Physical o Digital).
 3. Si el tipo es Physical, la interfaz exige obligatoriamente registrar al menos una variante con su código SKU (Regla de negocio formalizada en ADR-0003).
-4. Al enviar el formulario, el backend retorna CreatedProductDto conteniendo el productId y la lista de variantIds.
+4. Al enviar el formulario, el backend retorna CreatedProductDto conteniendo el productId y la lista de variantIds (ADR-0017).
 5. La interfaz presenta una tarjeta informativa con el SKU y el variantId generado.
-6. El vendedor navega a /seller/inventario.
+6. El vendedor navega a /seller/inventory.
 7. Selecciona la variante física, la bodega de destino y la cantidad mayor que cero (Invariante de existencias no negativas).
 8. Clasifica las existencias entre nuevas o reacondicionadas (isUsed = true/false).
 9. La tabla de inventarios actualiza y desglosa las cantidades disponibles, reservadas y dañadas.
@@ -114,12 +114,12 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor Operador as Operador Logístico
-    participant Vista as /logistics
+    participant Vista as /logistics/fulfillments
     participant API as Backend Logistics API
     actor Comprador
 
     Operador->>Vista: Consulta bandeja de órdenes (GET /api/logistics/fulfillments)
-    Operador->>Vista: Selecciona orden en estado PendingPack
+    Operador->>Vista: Selecciona orden pendiente de empaque (Pending / Assigned / InPicking)
     Operador->>API: Empacar ítems (POST /api/logistics/fulfillment/{id}/pack)
     API-->>Vista: 200 OK (Estado transiciona a Packed)
     Operador->>Vista: Asigna transportadora y número de guía
@@ -134,10 +134,10 @@ sequenceDiagram
 
 ### Flujo Alternativo: Reporte de Faltante Físico (*Stock Fantasma*)
 Si el operador logístico o el vendedor descubren en bodega que el producto físico no existe en estantería a pesar de figurar en el sistema:
-1. Pulsa el botón "Reportar Quiebre de Stock".
+1. Pulsa el botón "Reportar Quiebre de Stock" (`/logistics/fulfillments/$id/ghost-stock`).
 2. `AlertPort.confirm()` solicita confirmación explicando que se cancelará el despacho y se reembolsará al comprador.
 3. Se invoca `POST /api/logistics/fulfillment/cancel-ghost-stock`.
-4. El backend cancela la orden logística, libera reservas y genera automáticamente la solicitud de devolución con reembolso para el comprador.
+4. El backend cancela la orden logística, libera reservas y genera automáticamente la solicitud de devolución con reembolso para el comprador ([ADR-0022](../backendSDD/Adr/0022-pedido-resuelto-pasa-a-cancelled.md)).
 
 ---
 
@@ -153,7 +153,7 @@ sequenceDiagram
 
     Comprador->>API: Solicita devolución de producto entregado (POST /api/returns/request)
     Note over Comprador: Solo habilitado para productos físicos dentro de la ventana de garantía
-    API-->>Comprador: Retorna identificador de devolución (Estado: Submitted)
+    API-->>Comprador: Retorna identificador de devolución (Estado: Requested)
     Operador->>API: Inspecciona mercancía en bodega (POST /api/returns/{id}/inspect)
     Note over Operador: Registra dictamen técnico (buen estado o averiado)
     API-->>Operador: 200 OK (Estado: Inspected)
@@ -172,19 +172,19 @@ sequenceDiagram
 > [!IMPORTANT]
 > **Separación de Responsabilidades en Devoluciones:**
 > - La inspección técnica en bodega es facultad del **Operador Logístico** (o custodio físico).
-> - La aprobación o rechazo comercial es potestad **exclusiva del Vendedor dueño del producto** (formalizado en ADR-0006). El Administrador no puede aprobar devoluciones comerciales.
+> - La aprobación o rechazo comercial es potestad **exclusiva del Vendedor dueño del producto** (formalizado en [ADR-0006](../backendSDD/Adr/0006-resolucion-contradiccion-ley-addendum.md)). El Administrador no puede aprobar devoluciones comerciales.
 > - La acreditación económica del reembolso es potestad **exclusiva del Administrador**, garantizando la segregación de funciones sobre el balance financiero de la plataforma.
 
 ---
 
 ## 7. Flujo 6: Facturación Split y Anulación Fiscal (Administrador)
 
-1. El Administrador ingresa a `/admin/facturas`.
+1. El Administrador ingresa a `/admin/invoices`.
 2. Filtra pedidos en estado pagado (`Paid`) que aún no cuentan con comprobantes tributarios.
 3. Al pulsar "Generar Facturas", el backend emite atómicamente:
-   - **Factura Maestra:** Por el importe total abonado por el comprador.
-   - **Detalle Zentric:** Liquidando el porcentaje correspondiente a la comisión de la plataforma.
-   - **Facturas de Vendedor:** Liquidando a cada vendedor el importe neto que le corresponde por sus productos.
+   - **Factura Maestra (`Master`):** Por el importe total abonado por el comprador.
+   - **Detalle Zentric (`ZentricDetail`):** Liquidando el porcentaje correspondiente a la comisión de la plataforma.
+   - **Facturas de Vendedor (`VendorDetail`):** Liquidando a cada vendedor el importe neto que le corresponde por sus productos ([ADR-0023](../backendSDD/Adr/0023-split-de-pagos-documentos-no-transferencias.md)).
 4. Si ocurre una revocación bancaria o cancelación post-recaudo, el Administrador pulsa "Anular Facturación".
 5. Se solicita el motivo de anulación mediante diálogo modal y se ejecuta `POST /api/billing/invoices/annul/{orderId}`, marcando la Factura Maestra como anulada e impidiendo futuras modificaciones.
 

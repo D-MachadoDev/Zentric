@@ -53,22 +53,24 @@ frontend/                        # Raíz del monorepo (entorno contenerizado en 
 │       ├── index.html
 │       ├── src/
 │       │   ├── app/            # Composition Root: TanStack Router, providers y guardas
-│       │   │   ├── routes/     # Árbol de rutas tipadas con code-splitting automático
-│       │   │   └── providers/  # QueryClientProvider, ThemeProvider, AuthProvider
+│       │   │   ├── routes/     # Árbol de rutas tipadas (routeTree.tsx, guards.ts)
+│       │   │   └── providers/  # AppQueryClientProvider, AuthProvider, appServices
 │       │   ├── domain/         # Núcleo de Dominio Frontend (TypeScript puro sin dependencias)
-│       │   │   ├── models/     # Entidades: Product, Order, Inventory, Warehouse, Invoice
+│       │   │   ├── models/     # Entidades: User, Product, Order, Inventory, Warehouse, Invoice, Return
 │       │   │   ├── enums/      # Enumeraciones exactas de la Ley (cero sinónimos)
-│       │   │   └── ports/      # Interfaces: ZentricApiPort, SessionPort, NotificationPort
-│       │   ├── application/    # Casos de uso y orquestación de cliente
-│       │   │   ├── services/   # Hooks de TanStack Query (useQuery, useMutation)
-│       │   │   ├── schemas/    # Esquemas Zod que replican FluentValidation
+│       │   │   ├── rules/      # Reglas puras de presentación (isOrderModifiable, isReturnAllowed)
+│       │   │   └── ports/      # Interfaces: ZentricApiPort, SessionPort, AlertPort
+│       │   ├── application/    # Casos de uso, estado remoto y validación en cliente
+│       │   │   ├── services/   # Hooks de TanStack Query en inglés (useQuery, useMutation, queryKeys)
+│       │   │   ├── schemas/    # Esquemas Zod en inglés que replican FluentValidation
 │       │   │   └── dto/        # Objetos de transferencia y contratos de formulario
 │       │   ├── adapters/       # Implementación técnica de infraestructura
-│       │   │   ├── http/       # Cliente HTTP nativo con inyección Bearer y Problem Details
-│       │   │   ├── session/    # Retención de token JWT en memoria RAM (Sin refresh)
-│       │   │   └── notify/     # Adaptador de notificaciones accesibles (Toasts)
-│       │   ├── layouts/        # Layouts estructurales por rol (DashboardLayout, AuthLayout)
-│       │   ├── modules/        # Pantallas por rol (buyer, seller, admin, logistics, supervisor)
+│       │   │   ├── http/       # HttpClient.ts con inyección Bearer y Problem Details (RFC 7807)
+│       │   │   ├── session/    # MemorySessionAdapter.ts (token JWT en RAM, sin refresh)
+│       │   │   └── alert/      # AlertAdapter.ts (cola de confirmaciones y toasts sin React)
+│       │   ├── components/     # Puente de presentación (domainLabels.ts, errorMessage.ts, alert/AlertHost.tsx)
+│       │   ├── layouts/        # Layouts estructurales (RootLayout, ConsoleLayout, navigation.ts)
+│       │   ├── modules/        # Pantallas por rol (auth, buyer, seller, admin, logistics, supervisor)
 │       │   └── styles/         # Variables globales y directivas CSS
 │       ├── package.json
 │       └── vite.config.ts
@@ -76,11 +78,10 @@ frontend/                        # Raíz del monorepo (entorno contenerizado en 
 │   ├── ui/                     # Design System agnóstico al negocio y a la red
 │   │   └── src/
 │   │       ├── tokens/         # Tokens semánticos: colors.ts, typography.ts, spacing.ts
-│   │       ├── primitives/     # Primitivas atómicas Radix UI (Button, Input, Badge, Skeleton)
-│   │       ├── composite/      # Componentes ricos (DataTable, ResponsiveDrawer, StatCard)
+│   │       ├── primitives/     # Primitivas atómicas Radix UI (Button, Input, Badge, Skeleton, etc.)
+│   │       ├── composite/      # Componentes ricos (DataTable, ResponsiveDrawer, ModalDialog, StatCard, OrderTimeline)
 │   │       └── logo/           # Monograma y logomarca oficial Zentric (SVG propio)
-│   ├── config/                 # Presets compartidos de TypeScript, Tailwind v4 y ESLint
-│   └── api-client/             # Tipos derivados del contrato OpenAPI del backend
+│   └── config/                 # Presets compartidos de TypeScript y ESLint
 ├── turbo.json
 ├── pnpm-workspace.yaml
 ├── package.json
@@ -90,15 +91,12 @@ frontend/                        # Raíz del monorepo (entorno contenerizado en 
 **Regla de Dependencia de Paquetes:**
 ```text
 apps/frontend  ───▶  packages/ui  ───▶  packages/config
-      │                     ▲
-      ▼                     │
-packages/api-client ────────┘
 ```
 `packages/ui` **nunca** importa de `apps/frontend`. `packages/config` no importa de nadie.
 
 ---
 
-## 4. Puertos del Dominio Frontend
+## 4. Puertos del Dominio Frontend (Cobertura de 45 Endpoints)
 
 Interfaces que dictan **qué** necesita el sistema, sin depender del **cómo**:
 
@@ -108,55 +106,70 @@ Interfaces que dictan **qué** necesita el sistema, sin depender del **cómo**:
 // Los inputs no contienen CallerId ni CallerRole: la identidad se extrae
 // directamente del token JWT en el backend (ADR-0013 / Propiedad del recurso).
 export interface ZentricApiPort {
+  // 0. Salud e Infraestructura (1 endpoint)
   getHealth(): Promise<HealthStatus>;
 
-  // Autenticación y Usuarios
+  // 1. Autenticación e Identidad (2 endpoints)
   login(input: LoginInput): Promise<AuthToken>;
-  currentUser(): Promise<CurrentUser>;
-  listUsers(role?: UserRole): Promise<User[]>;
+  getCurrentUser(): Promise<CurrentUser>;
+
+  // 2. Usuarios y Gestión de Acceso (5 endpoints)
   createUser(input: CreateUserInput): Promise<string>;
+  listUsers(role?: UserRole): Promise<User[]>;
+  getUserById(id: string): Promise<User>;
   blockUser(id: string): Promise<void>;
   activateUser(id: string): Promise<void>;
 
-  // Catálogo de Productos
-  // El parámetro vendorId opcional permite al vendedor consultar sus productos suspendidos
-  listProducts(vendorId?: string): Promise<Product[]>;
-  getProduct(id: string): Promise<Product>;
+  // 3. Bodegas y Centros de Almacenamiento (3 endpoints)
+  createWarehouse(input: CreateWarehouseInput): Promise<string>;
+  listWarehouses(vendorId?: string): Promise<Warehouse[]>;
+  getWarehouseById(id: string): Promise<Warehouse>;
+
+  // 4. Inventarios y Control de Stock (4 endpoints)
+  addStock(input: AddStockInput): Promise<string>;
+  listInventories(): Promise<Inventory[]>;
+  listInventoryByVariant(variantId: string): Promise<Inventory[]>;
+  adjustInventory(id: string, input: AdjustInventoryInput): Promise<AdjustInventoryResult>;
+
+  // 5. Catálogo de Productos (6 endpoints)
   createProduct(input: CreateProductInput): Promise<CreatedProduct>;
   publishProduct(productId: string): Promise<void>;
   suspendProduct(productId: string): Promise<void>;
+  listProducts(vendorId?: string): Promise<Product[]>;
+  listProductsPaged(params: PagedProductsQuery): Promise<PagedResult<Product>>;
+  getProductById(id: string): Promise<Product>;
 
-  // Inventarios y Bodegas
-  addStock(input: AddStockInput): Promise<string>;
-  listInventoryByVariant(variantId: string): Promise<Inventory[]>;
-  listWarehouses(vendorId?: string): Promise<Warehouse[]>;
-  createWarehouse(input: CreateWarehouseInput): Promise<string>;
-
-  // Pedidos y Checkout (Ventana de 15 minutos)
+  // 6. Carrito y Pedidos de Compra — Ventana de 15 minutos (6 endpoints)
   createCart(): Promise<string>;
   addCartItem(input: AddCartItemInput): Promise<void>;
-  getOrder(id: string): Promise<Order>;
   checkoutOrder(orderId: string): Promise<void>;
   payOrder(orderId: string): Promise<void>;
+  listOrders(status?: OrderStatus): Promise<OrderListItem[]>;
+  getOrderById(id: string): Promise<Order | SellerOrderView>;
 
-  // Facturación y Liquidación Split
-  generateInvoices(orderId: string): Promise<boolean>;
-  getInvoicesByOrder(orderId: string): Promise<Invoice[]>;
-
-  // Logística y Despachos
+  // 7. Logística y Órdenes de Despacho (7 endpoints)
   createFulfillment(input: CreateFulfillmentInput): Promise<string>;
   packFulfillment(id: string): Promise<void>;
   dispatchFulfillment(id: string): Promise<void>;
   deliverFulfillment(id: string): Promise<void>;
-  cancelGhostStock(input: CancelGhostStockInput): Promise<boolean>;
+  cancelGhostStock(input: CancelGhostStockInput): Promise<string>;
+  listFulfillments(status?: FulfillmentStatus): Promise<FulfillmentOrder[]>;
+  getFulfillmentById(id: string): Promise<FulfillmentOrder>;
 
-  // Devoluciones y Garantías
+  // 8. Devoluciones y Garantías (7 endpoints)
   requestReturn(input: RequestReturnInput): Promise<string>;
   inspectReturn(id: string, input: InspectReturnInput): Promise<void>;
-  approveReturn(returnRequestId: string): Promise<void>;
-  rejectReturn(returnRequestId: string): Promise<void>;
-  listReturns(): Promise<ReturnRequest[]>;
+  approveReturn(id: string): Promise<void>;
+  rejectReturn(id: string): Promise<void>;
   refundReturn(id: string): Promise<void>;
+  listReturns(status?: ReturnStatus): Promise<ReturnRequest[]>;
+  getReturnById(id: string): Promise<ReturnRequest>;
+
+  // 9. Facturación y Liquidación Split (4 endpoints)
+  generateInvoices(orderId: string): Promise<boolean>;
+  annulInvoices(orderId: string, input: AnnulInvoiceInput): Promise<void>;
+  listInvoices(): Promise<Invoice[]>;
+  getInvoicesByOrder(orderId: string): Promise<Invoice[]>;
 }
 ```
 
@@ -173,6 +186,16 @@ export interface SessionPort {
   setRole(role: UserRole): void;
   getUserId(): string | null;
   setUserId(id: string): void;
+}
+```
+
+```typescript
+// domain/ports/AlertPort.ts
+//
+// Desacopla las confirmaciones destructivas/financieras y notificaciones de los componentes React.
+export interface AlertPort {
+  confirm(options: ConfirmDialogOptions): Promise<boolean>;
+  show(notification: ToastNotification): void;
 }
 ```
 

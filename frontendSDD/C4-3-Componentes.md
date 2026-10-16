@@ -55,21 +55,21 @@ flowchart TB
       end
 
       subgraph domainLayer["4. Dominio Frontend Puro"]
-        domainModels["Modelos & Entidades Frontend<br/>[domain/models/]<br/>Buyer, Order, Product, Fulfillment, Invoice"]
-        domainPorts["Puertos de Entrada y Salida<br/>[domain/ports/]<br/>IHttpClient, ISessionPort, INotificationPort"]
+        domainModels["Modelos & Entidades Frontend<br/>[domain/models/]<br/>User, Order, Product, Fulfillment, Invoice"]
+        domainPorts["Puertos de Entrada y Salida<br/>[domain/ports/]<br/>ZentricApiPort, SessionPort, AlertPort"]
         domainEnums["Enumeraciones Ubicuas<br/>[domain/enums/]<br/>UserRole, OrderStatus, FulfillmentStatus"]
       end
 
       subgraph adaptersLayer["5. Adaptadores de Infraestructura"]
-        httpAdapter["Adaptador HTTP Nativo<br/>[adapters/http/]<br/>Fetch client tipado, Bearer JWT, RFC 7807"]
-        sessionAdapter["Adaptador de Sesión Volátil<br/>[adapters/session/]<br/>Almacenamiento exclusivo en RAM (Sin Refresh)"]
-        notificationAdapter["Adaptador de Notificaciones<br/>[adapters/notifications/]<br/>Toasts y alertas contextuales"]
+        httpAdapter["Adaptador HTTP Nativo<br/>[adapters/http/HttpClient.ts]<br/>Fetch client tipado, Bearer JWT, RFC 7807"]
+        sessionAdapter["Adaptador de Sesión Volátil<br/>[adapters/session/MemorySessionAdapter.ts]<br/>Almacenamiento exclusivo en RAM (Sin Refresh)"]
+        notificationAdapter["Adaptador de Alertas y Confirmaciones<br/>[adapters/alert/AlertAdapter.ts]<br/>Cola de promesas para diálogos y toasts"]
       end
 
     end
   end
 
-  apiBackend["API Backend Externa<br/>[Zentric Web API :5076]<br/>44 Endpoints REST + Problem Details"]
+  apiBackend["API Backend Externa<br/>[Zentric Web API :5076]<br/>45 Endpoints REST (44 + /health) + Problem Details"]
 
   %% Conexiones entre capas
   guards --> modulesLayer
@@ -113,11 +113,12 @@ Este paquete es completamente agnóstico al negocio y a la red; no conoce endpoi
 | Componente | Directorio | Responsabilidad Técnica | Dependencias Permitidas |
 |---|---|---|---|
 | **Tokens Semánticos** | `packages/ui/src/tokens/` | Define paletas de neutros tintados (`#0B0F19`, `#111827`, `#1F293D`), acento semántico (`#00D4AA`, `#FFB800`) y fuentes Geist. | Ninguna (CSS nativo `@theme`). |
-| **Primitivas Atómicas** | `packages/ui/src/primitives/` | Controles elementales accesibles: `Button`, `Input`, `Badge`, `Skeleton`, `Textarea`, `Checkbox`. Basados en Radix UI. | `tokens/`. |
+| **Primitivas Atómicas** | `packages/ui/src/primitives/` | Controles elementales accesibles: `Button`, `Input`, `Badge`, `Skeleton`, `Textarea`, `Checkbox`, `Select`, `Label`, `Card`, `Alert`, `Dialog`, `AlertDialog`, `Table`. Basados en Radix UI. | `tokens/`. |
 | **DataTable Compuesta** | `packages/ui/src/composite/DataTable/` | Tabla de alta densidad para inventarios y órdenes con ordenamiento, filtrado, paginación y renderizado en Geist Mono. | `primitives/`, TanStack Table. |
 | **ResponsiveDrawer** | `packages/ui/src/composite/Drawer/` | Panel lateral deslizante para edición de recursos y detalles rápidos sin perder el contexto de la tabla. | `primitives/`. |
 | **ModalDialog** | `packages/ui/src/composite/Modal/` | Diálogos modales para confirmaciones críticas (cancelación de órdenes, ajustes de inventario). | `primitives/`. |
 | **StatCard** | `packages/ui/src/composite/StatCard/` | Tarjeta asimétrica de métricas operativas con bordes de bajo contraste y tipografía 600/700. | `primitives/`. |
+| **OrderTimeline** | `packages/ui/src/composite/OrderTimeline/` | Línea de tiempo secuencial del ciclo de vida de pedidos y despachos. | `primitives/`. |
 
 ---
 
@@ -125,29 +126,31 @@ Este paquete es completamente agnóstico al negocio y a la red; no conoce endpoi
 
 #### Capa 1: Inicialización, Enrutamiento y Shell (`src/app/`)
 - **`main.tsx` (Punto de Entrada):** Inicializa la instancia única de `QueryClient` con políticas de stale-time y reintentos, monta el árbol React en `#root` y encapsula la aplicación en `ErrorBoundary`.
-- **`router.tsx` (TanStack Router Shell):** Define la jerarquía de rutas basada en código (`createRouter`), asociando layouts principales (`DashboardLayout`, `AuthLayout`, `PublicLayout`) y habilitando carga perezosa (`lazy`).
-- **`beforeLoad` Route Guards:** Interceptores de navegación ejecutados síncronamente antes de renderizar una ruta protegida. Verifican la presencia de sesión activa en `ISessionPort` y comprueban que el rol del usuario coincida con las políticas autorizadas para la sección.
+- **`router.tsx` (TanStack Router Shell):** Define la jerarquía de rutas basada en código (`createRouter`), asociando layouts principales (`ConsoleLayout`, `AuthLayout`) y habilitando carga perezosa (`lazy`).
+- **`beforeLoad` Route Guards:** Interceptores de navegación ejecutados síncronamente antes de renderizar una ruta protegida. Verifican la presencia de sesión activa en `SessionPort` y comprueban que el rol del usuario coincida con las políticas autorizadas para la sección.
 
 #### Capa 2: Módulos Funcionales por Rol (`src/modules/`)
 Cada módulo encapsula las pantallas de un actor del marketplace:
-- **`modules/buyer/`:** Vistas de catálogo público, ficha de producto, carrito reactivo con precio congelado, asistente de checkout de 15 minutos y seguimiento de pedidos y garantías.
-- **`modules/seller/`:** Dashboard de métricas comerciales, administración de productos (publicación/suspensión), monitoreo de existencias por SKU y empaque de órdenes de despacho.
-- **`modules/admin/`:** Panel de control de usuarios, apertura de bodegas volumétricas, liquidación de facturas maestras/split y auditoría de reembolsos.
-- **`modules/logistics/`:** Cola de despachos en bodega, certificación de entrega con número de guía y protocolo de inspección física para devoluciones.
-- **`modules/supervisor/`:** Vistas de solo lectura para fiscalización transversal de inventarios, traza de auditoría y reportes operacionales.
+- **`modules/auth/`:** Pantallas públicas de autenticación (`/login`), auto-registro de comprador (`/register`) y diagnóstico de salud (`/health`).
+- **`modules/buyer/`:** Vistas de catálogo, ficha de producto, carrito reactivo con precio congelado, asistente de checkout de 15 minutos y seguimiento de pedidos y garantías (`/buyer/*`).
+- **`modules/seller/`:** Dashboard de métricas comerciales, administración de productos (publicación/suspensión), monitoreo de existencias por SKU, empaque de órdenes de despacho y resolución comercial de devoluciones (`/seller/*`).
+- **`modules/admin/`:** Panel de control de usuarios, apertura de bodegas volumétricas, ajuste de inventario, liquidación de facturas maestras/split y reembolsos financieros (`/admin/*`).
+- **`modules/logistics/`:** Cola de despachos en bodega, empaque, despacho con guía, certificación exclusiva de entrega, reporte de stock fantasma e inspección física de devoluciones (`/logistics/*`).
+- **`modules/supervisor/`:** Vistas de solo lectura para fiscalización transversal de pedidos, despachos, devoluciones, facturas y auditoría de inventario (`/supervisor/*`).
 
 #### Capa 3: Lógica de Aplicación (`src/application/`)
-- **`application/services/` (Hooks de Consulta y Mutación):** Encapsulan `useQuery` y `useMutation` de TanStack Query. Orquestan la invalidación de claves de caché ante mutaciones exitosas (ej. tras `payOrder`, invalidar `orders` y `cart`).
-- **`application/schemas/` (Validación con Zod):** Esquemas fuertemente tipados que replican los contratos de validación de FluentValidation del backend. Validan formularios antes del envío y generan tipos TypeScript derivados (`z.infer<typeof schema>`).
+- **`application/services/` (Hooks de Consulta y Mutación en Inglés):** Encapsulan `useQuery` y `useMutation` de TanStack Query (`useProductsQuery`, `useCheckoutOrderMutation`, etc.). Orquestan la invalidación de claves de caché ante mutaciones exitosas.
+- **`application/schemas/` (Validación con Zod en Inglés):** Esquemas fuertemente tipados (`CreateProductSchema`, `AddStockSchema`, etc.) que replican los contratos de validación de FluentValidation del backend. Validan formularios antes del envío y generan tipos TypeScript derivados (`z.infer<typeof schema>`).
 
 #### Capa 4: Dominio Frontend Puro (`src/domain/`)
-- **Modelos y Value Objects:** Representaciones inmutables de las entidades del marketplace (`Buyer`, `CustomerOrder`, `FulfillmentOrder`, `Invoice`, `Money`).
-- **Puertos Abstractos:** Interfaces (`IHttpClient`, `ISessionPort`, `INotificationPort`) que desacoplan las reglas del cliente de las librerías técnicas.
-- **Enumeraciones:** Mapeo 1:1 con los enums del backend (`UserRole`, `OrderStatus`, `FulfillmentStatus`, etc.), garantizando cero sinónimos y serialización estricta como texto.
+- **Modelos y Value Objects:** Representaciones inmutables de las entidades del marketplace (`User`, `Order`, `Product`, `FulfillmentOrder`, `ReturnRequest`, `Invoice`).
+- **Puertos Abstractos:** Interfaces (`ZentricApiPort`, `SessionPort`, `AlertPort`) que desacoplan las reglas del cliente de las librerías técnicas.
+- **Enumeraciones:** Mapeo 1:1 con los enums del backend (`UserRole`, `OrderStatus`, `FulfillmentStatus`, `ReturnStatus`, `ProductStatus`, `ProductType`, `WarehouseType`, `InvoiceType`), garantizando cero sinónimos y serialización estricta como texto ([ADR-0012](../backendSDD/Adr/0012-contrato-json-de-los-enum-por-nombre.md)).
 
 #### Capa 5: Adaptadores de Infraestructura (`src/adapters/`)
 - **`adapters/http/HttpClient.ts`:** **Único componente autorizado en todo el proyecto para ejecutar `fetch()`**. Aplica el token Bearer en las cabeceras, intercepta respuestas no exitosas y transforma las cargas RFC 7807 (`application/problem+json`) en instancias de error de dominio tipadas.
-- **`adapters/session/MemorySessionAdapter.ts`:** Implementa `ISessionPort` reteniendo el token JWT exclusivamente en la memoria RAM de JavaScript. Ante recarga del navegador o recepción de un HTTP `401 Unauthorized`, purga la sesión inmediatamente sin recurrir a `localStorage`, cumpliendo la política estricta de sesión volátil sin refresh token ([ADR-0009](./backendSDD/Adr/0009-autenticacion-jwt-rg01.md)).
+- **`adapters/session/MemorySessionAdapter.ts`:** Implementa `SessionPort` reteniendo el token JWT exclusivamente en la memoria RAM de JavaScript. Ante recarga del navegador o recepción de un HTTP `401 Unauthorized`, purga la sesión inmediatamente sin recurrir a `localStorage`, cumpliendo la política estricta de sesión volátil sin refresh token ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)).
+- **`adapters/alert/AlertAdapter.ts`:** Implementa `AlertPort` gestionando la cola de promesas de confirmación y notificaciones sin acoplarse a React, delegando su renderizado visual a `AlertHost.tsx`.
 
 ---
 
