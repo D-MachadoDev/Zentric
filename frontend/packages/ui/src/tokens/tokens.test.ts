@@ -84,7 +84,7 @@ describe('tokens de color y paridad con theme.css', () => {
     expect(colors.borderSubtle).toBe('#192231');
     expect(colors.foreground).toBe('#F1F5F9');
     expect(colors.foregroundMuted).toBe('#94A3B8');
-    expect(colors.foregroundSubtle).toBe('#64748B');
+    expect(colors.foregroundSubtle).toBe('#728399');
     expect(colors.brand).toBe('#00D4AA');
     expect(colors.brandStrong).toBe('#00B896');
     expect(colors.warning).toBe('#FFB800');
@@ -119,9 +119,11 @@ describe('accesibilidad y contraste WCAG 2.1 (AA / AAA)', () => {
     expect(ratio).toBeGreaterThanOrEqual(6.2);
   });
 
-  it('el texto terciario / metadato (foregroundSubtle) sobre lienzo base supera 4.0:1', () => {
-    const ratio = contrastRatio(colors.foregroundSubtle, colors.background);
-    expect(ratio).toBeGreaterThanOrEqual(4.0);
+  it('el texto terciario / metadato (foregroundSubtle) sobre lienzo base y superficie supera 4.5:1 (WCAG AA)', () => {
+    const onBackground = contrastRatio(colors.foregroundSubtle, colors.background);
+    const onSurface = contrastRatio(colors.foregroundSubtle, colors.surface);
+    expect(onBackground).toBeGreaterThanOrEqual(4.5);
+    expect(onSurface).toBeGreaterThanOrEqual(4.5);
   });
 
   it('el boton primario de accion (texto background sobre marca brand) cumple contraste AAA (> 7:1)', () => {

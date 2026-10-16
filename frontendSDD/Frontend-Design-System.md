@@ -34,7 +34,7 @@ Para erradicar la apariencia de plantilla genérica de IA (tarjetas clonadas de 
      - *Zona Secundaria (30%–35%):* Panel contextual de inspección rápida (`ResponsiveDrawer`), resumen de carrito con precio congelado o desglose tributario de facturación split.
    - **Banda Asimétrica de Indicadores (KPI Strip):** Los paneles ejecutivos (`/admin`, `/seller`, `/supervisor`) destacan **una métrica principal dominante** acompañada de contadores secundarios compactos en línea, prohibiendo las cuadrículas de 4 tarjetas clonadas idénticas.
 3. **Capa 3 — Telemetría, Insignias y Foco Activo (`Foreground Layer`):**
-   - Texto primario en blanco hueso tintado (`--color-foreground: #F1F5F9`), texto secundario en gris pizarra claro (`--color-foreground-muted: #94A3B8`) y metadatos técnicos en gris pizarra medio (`--color-foreground-subtle: #64748B`).
+   - Texto primario en blanco hueso tintado (`--color-foreground: #F1F5F9`), texto secundario en gris pizarra claro (`--color-foreground-muted: #94A3B8`) y metadatos técnicos en gris pizarra medio (`--color-foreground-subtle: #728399`).
    - Indicadores semánticos (`StatusBadge`), importes tabulares (`MoneyAmount`), píldoras de código SKU/GUID y anillos de foco accesibles (`2px solid #00D4AA` con `offset` de `2px`).
 
 ### 2.2 Patrones Visuales Estrictamente Prohibidos (Anti-IA Genérica)
@@ -56,7 +56,7 @@ En Tailwind CSS v4, la fuente de verdad estilística reside en `packages/ui/src/
 | `--color-surface-muted` | `#161F30` | Superficie secundaria para cabeceras de tabla, filas en *hover* y bloques de código. |
 | `--color-foreground` | `#F1F5F9` | Texto primario de alto contraste (razón de contraste $> 14:1$ sobre `#0A0E1A`). |
 | `--color-foreground-muted` | `#94A3B8` | Texto secundario para descripciones, subtítulos y etiquetas de soporte (contraste $\ge 6.2:1$). |
-| `--color-foreground-subtle` | `#64748B` | Texto terciario para marcas de agua, *placeholders* y metadatos no críticos (contraste $\ge 4.5:1$). |
+| `--color-foreground-subtle` | `#728399` | Texto terciario para marcas de agua, *placeholders* y metadatos no críticos (contraste $\ge 4.5:1$). |
 | `--color-border` | `#1F293D` | Borde estructural estándar (`1px solid`) de tarjetas, entradas de formulario y celdas. |
 | `--color-border-subtle` | `#192231` | Líneas divisorias internas (*hairlines*) entre filas de tabla y secciones de panel. |
 | `--color-brand` | `#00D4AA` | Acento primario único (esmeralda/cian suave) para botones de acción principal y anillos de foco. |

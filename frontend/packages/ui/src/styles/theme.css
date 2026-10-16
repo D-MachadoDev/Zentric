@@ -40,7 +40,7 @@
   /* --- Jerarquía de texto y contraste (Foreground) --- */
   --color-foreground: #F1F5F9; /* Texto primario (hueso tintado, contraste > 14:1) */
   --color-foreground-muted: #94A3B8; /* Texto secundario (pizarra claro, contraste >= 6.2:1) */
-  --color-foreground-subtle: #64748B; /* Texto terciario / metadato (contraste >= 4.5:1) */
+  --color-foreground-subtle: #728399; /* Texto terciario / metadato (contraste > 4.5:1 WCAG AA verificado: 4.97:1 sobre #0A0E1A, 4.58:1 sobre #111827) */
 
   /* --- Acentos semánticos y estados de dominio --- */
   --color-brand: #00D4AA; /* Acento primario de acción (esmeralda/cian suave) */

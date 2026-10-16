@@ -14,7 +14,7 @@ export const colors = {
   /** Texto secundario para descripciones y etiquetas (contraste >= 6.2:1). */
   foregroundMuted: '#94A3B8',
   /** Texto terciario / placeholders / metadatos (contraste >= 4.5:1). */
-  foregroundSubtle: '#64748B',
+  foregroundSubtle: '#728399',
 
   /** Cian Zentric — acción primaria, foco y éxito de marca. */
   brand: '#00D4AA',
