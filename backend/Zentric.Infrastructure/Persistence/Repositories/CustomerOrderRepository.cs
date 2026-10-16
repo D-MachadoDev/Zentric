@@ -28,6 +28,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             var dbModel = await _dbContext.CustomerOrders
                 .AsNoTracking()
                 .Include(o => o.Items)
+                .Include(o => o.DigitalDeliveries)
                 .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
             return dbModel == null ? null : CustomerOrderMapper.ToDomain(dbModel);
         }
@@ -40,6 +41,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             var dbModel = await _dbContext.CustomerOrders
                 .AsNoTracking()
                 .Include(o => o.Items)
+                .Include(o => o.DigitalDeliveries)
                 .FirstOrDefaultAsync(o => o.Id == id && o.BuyerId == buyerId, cancellationToken);
 
             return dbModel == null ? null : CustomerOrderMapper.ToDomain(dbModel);
@@ -53,6 +55,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             var dbModel = await _dbContext.CustomerOrders
                 .AsNoTracking()
                 .Include(o => o.Items)
+                .Include(o => o.DigitalDeliveries)
                 .FirstOrDefaultAsync(
                     o => o.Id == id && o.Items.Any(i => i.VendorId == vendorId),
                     cancellationToken);
@@ -70,7 +73,8 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             // una consulta que ya trae Include, y el error aparece lejos de la causa.
             IQueryable<CustomerOrderDbModel> query = _dbContext.CustomerOrders
                 .AsNoTracking()
-                .Include(o => o.Items);
+                .Include(o => o.Items)
+                .Include(o => o.DigitalDeliveries);
 
             if (buyerId.HasValue)
             {
@@ -106,6 +110,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             var list = await _dbContext.CustomerOrders
                 .AsNoTracking()
                 .Include(o => o.Items)
+                .Include(o => o.DigitalDeliveries)
                 .Where(o => (o.Status == OrderStatus.Cart || o.Status == OrderStatus.PendingPayment) && o.UpdatedAt < threshold)
                 .ToListAsync(cancellationToken);
 
@@ -130,6 +135,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             // existentes y se eliminan las que ya no formen parte del pedido.
             var tracked = _dbContext.CustomerOrders
                 .Include(o => o.Items)
+                .Include(o => o.DigitalDeliveries)
                 .FirstOrDefault(o => o.Id == order.Id);
 
             if (tracked == null)
@@ -152,7 +158,8 @@ namespace Zentric.Infrastructure.Persistence.Repositories
                     VariantId = i.VariantId,
                     VendorId = i.VendorId,
                     Quantity = i.Quantity,
-                    UnitPrice = new MoneyDbModel { Amount = i.UnitPrice.Amount, Currency = i.UnitPrice.Currency }
+                    UnitPrice = new MoneyDbModel { Amount = i.UnitPrice.Amount, Currency = i.UnitPrice.Currency },
+                    DeliveredAt = i.DeliveredAt
                 })
                 .ToList();
 
@@ -181,10 +188,60 @@ namespace Zentric.Infrastructure.Persistence.Repositories
                     current.VariantId = item.VariantId;
                     current.Quantity = item.Quantity;
                     current.UnitPrice = item.UnitPrice;
+                    current.DeliveredAt = item.DeliveredAt;
                 }
                 else
                 {
                     _dbContext.Set<OrderItemDbModel>().Add(item);
+                }
+            }
+
+            // Reconciliar la coleccion de entregas digitales (CAT-02).
+            var incomingDd = order.DigitalDeliveries
+                .Select(dd => new DigitalDeliveryRecordDbModel
+                {
+                    Id = dd.Id,
+                    OrderId = dd.OrderId,
+                    OrderItemId = dd.OrderItemId,
+                    ProductId = dd.ProductId,
+                    VariantId = dd.VariantId,
+                    ProductName = dd.ProductName,
+                    VariantSku = dd.VariantSku,
+                    DeliveredAt = dd.DeliveredAt,
+                    DeliveredBy = dd.DeliveredBy
+                })
+                .ToList();
+
+            var incomingDdIds = incomingDd.Select(d => d.Id).ToHashSet();
+
+            var toRemoveDd = _dbContext.Set<DigitalDeliveryRecordDbModel>()
+                .Where(e => e.OrderId == order.Id && !incomingDdIds.Contains(e.Id))
+                .ToList();
+
+            if (toRemoveDd.Count > 0)
+            {
+                _dbContext.RemoveRange(toRemoveDd);
+            }
+
+            var existingDd = _dbContext.Set<DigitalDeliveryRecordDbModel>()
+                .Where(e => e.OrderId == order.Id)
+                .ToDictionary(e => e.Id);
+
+            foreach (var dd in incomingDd)
+            {
+                if (existingDd.TryGetValue(dd.Id, out var currentDd))
+                {
+                    currentDd.OrderItemId = dd.OrderItemId;
+                    currentDd.ProductId = dd.ProductId;
+                    currentDd.VariantId = dd.VariantId;
+                    currentDd.ProductName = dd.ProductName;
+                    currentDd.VariantSku = dd.VariantSku;
+                    currentDd.DeliveredAt = dd.DeliveredAt;
+                    currentDd.DeliveredBy = dd.DeliveredBy;
+                }
+                else
+                {
+                    _dbContext.Set<DigitalDeliveryRecordDbModel>().Add(dd);
                 }
             }
 

@@ -181,6 +181,7 @@ builder.Services.AddDbContext<ZentricDbContext>(options =>
 builder.Services.AddScoped<Zentric.Application.Common.Ports.IUnitOfWork, Zentric.Infrastructure.Persistence.UnitOfWork>();
 builder.Services.AddScoped<Zentric.Infrastructure.Persistence.IDomainEventDispatcher, Zentric.Infrastructure.Persistence.DomainEventDispatcher>();
 builder.Services.AddScoped<Zentric.Domain.Users.Ports.IUserRepository, UserRepository>();
+builder.Services.AddScoped<Zentric.Domain.Buyers.Ports.IBuyerRepository, BuyerRepository>();
 builder.Services.AddScoped<Zentric.Domain.Products.Ports.IProductRepository, ProductRepository>();
 builder.Services.AddScoped<Zentric.Domain.Inventories.Ports.IInventoryRepository, InventoryRepository>();
 builder.Services.AddScoped<Zentric.Domain.Warehouses.Ports.IWarehouseRepository, WarehouseRepository>();

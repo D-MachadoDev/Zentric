@@ -11,7 +11,7 @@
             forma significativa. Excluirlo corrige la medicion, no relaja
             invariantes (las reglas de negocio siguen exigiendose al 100%).
           -->
-          <ExcludeByFile>**/*.generated.cs</ExcludeByFile>
+          <ExcludeByFile>**/Migrations/**,**/*.generated.cs</ExcludeByFile>
         </Configuration>
       </DataCollector>
     </DataCollectors>
