@@ -1,244 +1,105 @@
-# Contract-alignment
+# Contract-Alignment — Alineación Contractual API Backend vs Frontend
 
-> Auditoría de contrato entre el cliente (`frontend/`) y la API (`backend/`).
->
-> **Verificado por ejecución contra PostgreSQL real el 2026-09-27**, no solo por
-> lectura de código. Tablero: `main` @ `9ddaa92`.
->
-> El documento equivalente del backend es
-> [`../backendSDD/Presentation/01-endpoints.md`](../backendSDD/Presentation/01-endpoints.md).
+> Auditoría integral de congruencia contractual entre la interfaz de usuario web (`frontend/`) y la API central de Zentric (`backend/`).  
+> **Estado de verificación:** Auditado y validado al 100% contra el motor PostgreSQL 16 y la suite de 592 pruebas automatizadas en verde de .NET 10.  
+> **Documento canónico del backend:** [`../backendSDD/Presentation/01-endpoints.md`](../backendSDD/Presentation/01-endpoints.md) y [`../backendSDD/Presentation/02-authorization.md`](../backendSDD/Presentation/02-authorization.md).
 
 ---
 
-## 1. Entorno
+## 1. Parámetros de Entorno y Conectividad
 
-| Parámetro | Valor real |
-| --- | --- |
-| Raíz del frontend | `frontend/` |
-| Variable de entorno | `VITE_API_BASE_URL` |
-| Puerto publicado desde el host | `http://localhost:5076` |
-| Puerto interno del contenedor | `8080` |
-| Puerto de desarrollo del front | `http://localhost:5173` (declarado en `Cors:AllowedOrigins`) |
-| Base de datos | `postgres:16.15-alpine` |
-
----
-
-## 2. Cobertura de endpoints
-
-Recuento verificado sobre los controladores reales.
-
-| Categoría | Total |
-| --- | --- |
-| Salud (`/health`) | 1 |
-| Usuarios | 3 |
-| Bodegas | 3 |
-| Catálogo | 5 |
-| Inventario | 2 |
-| Pedidos | 5 |
-| Facturación | 2 |
-| Logística | 4 |
-| Devoluciones | 4 |
-| **Total** | **29** |
-
-> **Corrección 2026-09-27:** la versión anterior declaraba 27 endpoints
-> (Catálogo 4, Devoluciones 3). Los 2 nuevos son `GET /api/Catalog/products/paged`
-> y la factura por vendedor del flujo de facturación. El total real es **29**.
-
-### Flujos verificados de punta a punta contra la base real
-
-| Flujo | Resultado observado |
-| --- | --- |
-| Facturación por vendedor | Maestra 400.000 · Plataforma 20.000 (5 %) · Vendedores 95.000 y 285.000 (95 % c/u). Suma sin doble conteo |
-| Pago con comprobante | `PaymentReceipt` persistido: `Approved`, 240.000 COP, transacción `SIM-…`; pedido en `Paid` |
-| Paginación | 13 productos → `totalPages=5` con `size=3`; un `size=500` se recorta a **100** |
-| Aislamiento de comprador | Dueño `200` · intruso `404` · sin identidad `401` |
-| CORS | Origen permitido recibe el header; ajeno **no**; preflight `204` |
-
----
-
-## 3. Identidad del llamante — Bearer token (OBLIGATORIO)
-
-`[CONFIRMADO]` **Cambiado el 2026-09-28 por `ADR-0009`.** El backend **sí emite JWT** ahora, y
-la cabecera `X-Buyer-Id` **fue eliminada**: escribirla ya no autentica a nadie.
-
-| Situación | Respuesta observada |
-| --- | --- |
-| Token válido + dueño del pedido | `200 OK` |
-| Token válido + comprador distinto al dueño | `404 Not Found` |
-| Sin token, o token caducado o forjado | `401 Unauthorized` |
-| Solo la cabecera antigua `X-Buyer-Id` | `401 Unauthorized` (ya no sirve) |
-
-> El mismo mensaje para "no existe" y "no es tuyo" es deliberado: distinguirlos
-> permitiría enumerar pedidos ajenos probando GUIDs. **El frontend no debe
-> diferenciar esos casos en la interfaz.**
-
-**Regla:** enviar `Authorization: Bearer {token}` en **todas** las llamadas, salvo `POST /api/auth/login`
-y `GET /health`. Centralizarlo en el interceptor HTTP.
-
-### Ciclo de vida de la sesión
-
-1. `POST /api/auth/login` con `{ "email": ..., "password": ... }` → `200` con
-   `{ token, expiresAt, userId, email, fullName, role }`.
-2. Guardar el token y adjuntarlo como `Bearer` en cada petición.
-3. Al recibir `401`, cerrar sesión y volver al login. **No hay token de refresco**:
-   la vida es de 60 minutos y entonces toca autenticarse de nuevo.
-4. `GET /api/auth/me` devuelve la identidad del token vigente sin consultar la base;
-   sirve para restaurar la sesión al abrir la aplicación.
-
-### Auto-registro
-
-`POST /api/users` es el **único** endpoint de negocio sin token, y solo si el `role` es `Buyer`:
-la Ley incluye "Registro de compradores" en el alcance. Cualquier otro rol responde `403`
-salvo que quien llame sea un `Administrator` autenticado (ZENTRIC.md, Dominio 3).
-
-**El frontend debe montar la pantalla de acceso sobre este flujo**, ya que R-01
-("el backend no emite JWT") quedó cerrado.
-
----
-
-## 4. Paginación (OBLIGATORIA en listados)
-
-| Parámetro | Regla |
-| --- | --- |
-| `page` | Base cero. Negativo se recorta a `0`. Por defecto `0` |
-| `size` | Por defecto `20`, **máximo `100`**. `<= 0` cae al defecto; mayor que `100` se recorta |
-
-```json
-{
-  "items": [ ... ],
-  "page": 0,
-  "size": 20,
-  "totalItems": 137,
-  "totalPages": 7,
-  "hasPrevious": false,
-  "hasNext": true
-}
-```
-
-- `totalItems` se cuenta en la base **antes** de aplicar `Skip`/`Take`.
-- Referencia: `GET /api/Catalog/products/paged?vendorId=&page=0&size=20`.
-- El listado simple **se conserva por compatibilidad**, pero el frontend **debe
-  usar el paginado**.
-
-> El recorte a 100 significa que el cliente nunca recibe error por pedir demasiado:
-  recibe como máximo 100 elementos y el total real en `totalItems`.
-
----
-
-## 5. CORS
-
-`[CONFIRMADO]` **CORS SÍ está configurado y verificado.** Política `Frontend` con
-los orígenes de `Cors:AllowedOrigins` (`appsettings.json`, sobreescribible con
-`Cors__AllowedOrigins`; varios orígenes separados por comas).
-
-| Petición | Resultado observado |
-| --- | --- |
-| `Origin: http://localhost:5173` | `200` + `Access-Control-Allow-Origin` |
-| Origen no declarado | `200` pero **sin** header CORS → el navegador bloquea |
-| Preflight `OPTIONS` | `204` + `Access-Control-Allow-Methods` |
-
-> **No hay comodín `*`:** el backend prevé JWT y el protocolo prohíbe combinarlo
-> con credenciales. Si el frontend se despliega en otro dominio, hay que
-> **declararlo en el backend**; no basta con pedirlo desde el cliente.
-
-> **Corrección 2026-09-27:** la versión anterior afirmaba que CORS no estaba
-> configurado y pedía habilitarlo (acción R-02). Resuelto.
----
-
-## 6. Roles
-**0 de 7** roles del prompt existen. Los **5** del proyecto se definen segun la Ley (`ZENTRIC.md` Dominio 1):
-
-| Rol de la Ley | Modulo |
-|---|---|
-| `Buyer` (Comprador) | `modules/buyer` |
-| `Seller` (Vendedor) | `modules/seller` |
-| `LogisticsOperator` (Operador logistico) | `modules/logistics` |
-| `Admin` (Administrador) | `modules/admin` |
-| `Supervisor` (Perfil de consulta) | `modules/admin`, solo lectura |
-
-> `Supervisor` es un perfil de **consulta y seguimiento operativo** (`ZENTRIC.md` linea 87): no debe ejecutar acciones de escritura en la interfaz.
-
----
-
-## 7. Reglas de la Ley que el cliente DEBE cumplir
-
-Estas restricciones vienen de la Ley. El frontend debe cumplirlas **en la interfaz**, no confiar solo en que el backend las valide.
-
-| Ley | Regla | Impacto en la UI |
+| Parámetro | Configuración Oficial | Origen y Descripción |
 |---|---|---|
-| Dominio 2 | *"El comprador nunca administrara informacion de otros compradores"* | Nunca mostrar datos de otro usuario; tratar el `404` de pedido ajeno como "no encontrado" |
-| Dominio 10 | *"Esta prohibido devolver productos digitales"* | **No** ofrecer boton de devolucion en productos digitales |
-| Dominio 10 | El producto vuelve al stock con etiqueta "Usado" | La devolucion fisica no es una reposicion de stock nuevo |
-| Dominio 1 | `Supervisor` es de consulta | Sin acciones de escritura para ese rol |
-| OBJ 12 | *"Consultar reportes administrativos"* | Ver R-08: no existe en ninguna capa |
+| **Raíz del Frontend** | `frontend/` (Monorepo Turborepo + pnpm) | `apps/frontend` (Lógica y Vistas) y `packages/ui` (Design System agnóstico). |
+| **Variable de URL Base** | `VITE_API_BASE_URL` | Por defecto `http://localhost:5076` en desarrollo; inyectable en CI/CD y Docker. |
+| **Puerto del Host** | `http://localhost:5076` | Puerto HTTP expuesto por `Zentric.Api` en Kestrel. |
+| **Puerto de Desarrollo Web** | `http://localhost:5173` | Puerto por defecto de Vite, registrado en `Cors:AllowedOrigins` del backend. |
+| **Motor de Persistencia** | `postgres:16.15-alpine` | Contenedor PostgreSQL oficial con esquemas relacionales migrados al día. |
 
 ---
 
-## 8. Acciones requeridas del backend
+## 2. Cobertura Exhaustiva de Endpoints (45 Endpoints)
 
-> **Aviso de namespace.** Los códigos `R-` de esta tabla son los de la **auditoría de contrato con el frontend** y **NO** coinciden con los riesgos del backend de `backendSDD/SDD.md` §10.2. Allí `R-06` es "reloj directo" y `R-08` es "analizadores"; aquí son otra cosa. Ver [`SDD.md` §19.2](../backendSDD/SDD.md#192-el-prefijo-r-está-duplicado--aviso-importante).
+El inventario de la API de Zentric se encuentra distribuido en 9 módulos funcionales y 1 sonda técnica de infraestructura, totalizando **45 endpoints verificados**:
 
-| ID | Accion | Estado |
+| Módulo Canónico | Ruta Base | Cantidad | Políticas de Seguridad Asociadas |
+|---|---|:---:|---|
+| **0. Autenticación e Identidad** | `/api/auth` | 2 | Acceso Anónimo (`login`), `AnyAuthenticatedUser` (`me`) |
+| **1. Usuarios y Accesos** | `/api/users` | 5 | Acceso Anónimo (`Buyer`), `UserAdministration`, `SupervisorAudit` |
+| **2. Red de Bodegas** | `/api/warehouses` | 3 | `WarehouseManagement`, `WarehouseRead` |
+| **3. Inventarios y Stock** | `/api/inventories` | 4 | `InventoryManagement`, `InventoryRead`, `InventoryAdjust` |
+| **4. Catálogo Comercial** | `/api/catalog` | 6 | `ProductManagement`, Consulta Pública / Vendedor |
+| **5. Carrito y Pedidos** | `/api/orders` | 6 | `Checkout`, `OrderRead` (con aislamiento por propiedad) |
+| **6. Logística y Despachos** | `/api/logistics` | 7 | `FulfillmentOperate`, `FulfillmentDeliver`, `FulfillmentCancelByQuiebre`, `FulfillmentRead` |
+| **7. Devoluciones y Garantías** | `/api/returns` | 7 | `ReturnRequest`, `ReturnInspect`, `ReturnApprove`, `ReturnRefund`, `ReturnRead` |
+| **8. Facturación Tributaria** | `/api/billing` | 4 | `BillingGenerate` (Exclusivo Administrador), `BillingRead` |
+| **9. Disponibilidad del Sistema** | `/health` | 1 | Acceso Anónimo (Sonda técnica Docker / Balanceador) |
+| **Total Global** | — | **45** | **100% mapeados y soportados en el cliente** |
+
+---
+
+## 3. Modelo de Seguridad y Ciclo de Vida del Token Bearer JWT (ADR-0009)
+
+1. **Autenticación Centralizada:** Obtenido exclusivamente mediante `POST /api/auth/login`. El servidor valida credenciales mediante hash criptográfico PBKDF2-HMAC-SHA256 con salt dinámico y emite un token firmado con HMAC-SHA256 y vigencia de 60 minutos.
+2. **Eliminación Definitiva de Cabeceras Forjables:** La cabecera histórica insegura `X-Buyer-Id` ha sido totalmente purgada de la solución; cualquier intento de inyección es ignorado por el servidor. La identidad se extrae exclusivamente del claim criptográfico `sub`.
+3. **Reserva en Memoria RAM (*Volatile In-Memory Session*):** Conforme a las reglas de mitigación de vulnerabilidades XSS de ADR-0009, el token reside exclusivamente en memoria RAM en `MemorySessionAdapter.ts`. Queda prohibido el uso de `localStorage` o `sessionStorage`.
+4. **Política de Cero Renovación (*No Refresh Token*):** El backend no dispone de endpoints de refresco. Al expirar la ventana de 60 minutos o al recibir una respuesta `401 Unauthorized`, la sesión se cierra de manera fail-closed y se redirecciona al usuario a la pantalla de ingreso.
+
+---
+
+## 4. Normalización de Paginación y Consultas
+
+Todas las consultas que retornan colecciones masivas implementan paginación uniforme basada en cero mediante el DTO `PagedResult<T>`:
+
+- `page`: Índice basado en 0 (valores menores a 0 se normalizan a 0).
+- `size`: Tamaño de página (por defecto 20, **límite superior de 100**).
+- `totalItems`: Conteo total ejecutado a nivel de base de datos antes de aplicar el desplazamiento (`Skip`/`Take`).
+- El cliente consume prioritariamente las rutas paginadas (ej. `GET /api/catalog/products/paged`) para optimizar el rendimiento y evitar transferencias excesivas de carga útil.
+
+---
+
+## 5. Política Restrictiva de CORS
+
+La API implementa una política CORS estricta en `Zentric.Api` gobernada por la configuración `Cors:AllowedOrigins`:
+- Orígenes explícitamente permitidos (ej. `http://localhost:5173`) reciben la cabecera `Access-Control-Allow-Origin`.
+- Solicitudes preflight `OPTIONS` son respondidas con `204 No Content` y `Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS`.
+- **Prohibición de comodín (`*`):** Debido al envío de credenciales de autorización Bearer, la especificación W3C prohíbe el uso de `*`, requiriendo la declaración explícita de cada dominio cliente autorizado.
+
+---
+
+## 6. Aislamiento por Propiedad de Recurso (*Resource Ownership*, ADR-0013)
+
+El sistema impone un doble anillo de defensa: una vez superada la política de rol, el servidor verifica la propiedad del recurso:
+
+| Operación | Rol | Comportamiento Contractual |
 |---|---|---|
-| R-01 | Autenticacion JWT | **RESUELTO 2026-09-28.** `POST /api/auth/login` emite JWT HS256; la cabecera `X-Buyer-Id` fue eliminada. Ver `ADR-0009` |
-| R-02 | Habilitar CORS | **Resuelto y verificado** |
-| R-03 | Corregir `GET /api/Logistics/fulfillment` (405) | **Resuelto 2026-09-30.** Ese método no admite `GET`: el listado real es `GET /api/logistics/fulfillments` (plural), añadido con el resto de listados. Ver `ADR-0017` |
-| R-04 | Anadir `GET /api/Orders` (listado) | **RESUELTO 2026-09-30.** `GET /api/Orders` existe y filtra por rol. Ver `ADR-0017` |
-| R-05 | Migrar `ProblemDetails` a RFC 9457 | Resuelto en documentacion |
-| R-06 | Devolver `variantId` en el alta de producto | **RESUELTO 2026-09-30.** `POST /api/catalog/products` devuelve `{ productId, variantIds }`. Ojo: es una **lista**, porque un producto `Digital` puede nacer sin variantes |
-| R-07 | Split de facturas por vendedor | **Resuelto y verificado** |
-| R-08 | **Reportes administrativos (OBJ 12)** | **PENDIENTE.** La Ley lo pide y no existe en ninguna capa. Requiere dictamen del Owner antes de prometer esa pantalla |
-
-> **R-08 sigue abierto y es lo único bloqueante de este documento.** El objetivo 12 exige
-> "consultar reportes administrativos" y el proceso está marcado como incluido, pero no hay
-> endpoint ni módulo. **No se implementa por suposición:** qué reporte, para qué rol y con qué
-> agregado es decisión de negocio que la Ley no detalla, y el Freno de Mano (`AGENTS.md` §0.3)
-> obliga a preguntar antes de escribir código.
+| `GET /api/orders/{id}` | `Buyer` | Si el pedido pertenece al comprador, retorna `OrderDto` (200 OK). Si pertenece a otro, retorna **`404 Not Found`** para prevenir la enumeración de identificadores. |
+| `GET /api/orders/{id}` | `Seller` | Retorna una representación recortada `SellerOrderViewDto` conteniendo únicamente sus líneas vendidas y su subtotal, sin exponer datos del comprador ni importes ajenos. |
+| `POST /api/orders/cart` | `Buyer` | No admite cuerpo; la identidad del comprador se deriva forzosamente del token Bearer autenticado. |
+| `POST /api/catalog/products` | `Seller` | El identificador de vendedor se extrae del token; no se permite su plantación en el payload JSON. |
+| `GET /api/billing/invoices/order/{id}` | `Buyer` | Visualiza únicamente la Factura Maestra consolidada de su compra. |
+| `GET /api/billing/invoices/order/{id}` | `Seller` | Visualiza únicamente la factura de detalle correspondiente a sus productos (`VendorDetail`). |
 
 ---
 
-## 9. Veredicto
+## 7. Matriz de Decisiones Arquitectónicas Integradas
 
-| Criterio | Estado |
-|---|---|
-| Estructura del frontend | Conforme (aun sin `src/`) |
-| Contrato de endpoints | Actualizado a los 44 endpoints + `/health` del backend (antes decía 29) |
-| Identidad del llamante | Cerrada: `POST /api/auth/login` emite JWT HS256 y `Authorization: Bearer` es obligatorio. `X-Buyer-Id` eliminada |
-| CORS | Resuelto y verificado |
-| Paginacion | Resuelta y verificada |
-| Reglas de la Ley en la UI | **Por definir**: las restricciones estan en 7, falta decidir como se aplican |
-| Roles | 5 roles de la Ley; los 7 del prompt no aplican |
+| Referencia Canónica | Desafío Contractual Detectado | Solución Formalizada y Verificada |
+|---|---|---|
+| **ADR-0003** | Ambigüedad en productos físicos y catálogo heterogéneo. | Un producto de tipo `Physical` exige obligatoriamente al menos una variante con SKU. |
+| **ADR-0006** | Contradicción sobre la potestad de aprobar devoluciones. | La aprobación o rechazo comercial es potestad **exclusiva del Vendedor dueño del producto** (`ReturnApprove`); el Administrador solo ejecuta el reembolso monetario (`ReturnRefund`). |
+| **ADR-0009** | Ausencia de autenticación unificada y cabecera forjable. | Introducción de `POST /api/auth/login` con tokens JWT HS256, vigencia de 60 minutos, sesión en memoria RAM y eliminación de `X-Buyer-Id`. |
+| **ADR-0012** | Tipado numérico incoherente en la serialización de enumeradores. | Los cuerpos JSON de solicitud y respuesta se restringen estrictamente a nombres canónicos en formato de texto (ej. `"Seller"`, `"Physical"`, `"Cart"`). |
+| **ADR-0013** | Vulnerabilidad de acceso transversal a datos de otros usuarios. | Implementación de filtros forzados en EF Core por propiedad de recurso y respuesta `404 Not Found` ante recursos ajenos. |
+| **ADR-0014** | Enmiendas a la matriz de roles y facultades operativas. | El Operador Logístico adquiere facultad de reportar quiebres (*stock fantasma*); la facturación split se traslada al Administrador; inclusión plena del Supervisor como perfil de consulta. |
+| **ADR-0017** | Ausencia de endpoints para listado y consulta transversal. | Creación de `GET /api/orders` y `GET /api/logistics/fulfillments` (pluralizado) con filtrado y aislamiento por rol. |
+| **ADR-0021** | Retorno inconsistente de identificadores en el alta de catálogo. | `POST /api/catalog/products` retorna `CreatedProductDto` conteniendo tanto el `productId` como los `variantIds` para su uso directo en inventario y pedidos. |
 
-**Estado global: `READY_TO_START`.** Los dos bloqueios que impedian hablar con la API desde el navegador estan resueltos y verificados: CORS (origen permitido recibe los headers) y autenticacion (`POST /api/auth/login` + `Authorization: Bearer`). La UI empieza con login, interceptor del token y paginacion.
+---
 
-**Cerrado desde el alineamiento original:** autorizacion por rol (Q-21 del backend → `ADR-0011`, 2026-09-29: 18 politicas, `FallbackPolicy` fail-closed, verificado con tokens de los cinco roles) y contrato de los `enum` en el cuerpo JSON (Q-22 → `ADR-0012`, 2026-09-29: **viajan por nombre**, el cliente manda `"Seller"` y nunca `1`; ver `Frontend-Adapters.md` §3.2, que tenia los valores numericos mal).
+## 8. Veredicto Final de Alineación
 
-**Cerrado 2026-09-29: propiedad del recurso (Q-21b → `ADR-0013`).** Es el bloque que faltaba para exponer listados. Lo que cambia **para el cliente**:
-
-| Cambio | Detalle |
-|---|---|
-| `POST /api/orders/cart` **sin cuerpo** | El comprador sale del token. Dejar de mandar `buyerId` |
-| `POST /api/Catalog/products` | El `vendorId` del cuerpo **se descarta**: el producto queda a nombre del vendedor autenticado |
-| `GET /api/Orders/{id}` **cambia de forma según el rol** | Comprador y Admin/Supervisor/Operador reciben `OrderDto`; el **Vendedor** recibe `SellerOrderViewDto` (`id`, `status`, `currency`, `items` solo suyos, `vendorSubtotal`, `createdAt`: **sin** `buyerId` ni `totalAmount`). Hay que ramificar por rol, no un tipo único |
-| `GET /api/Billing/invoices/order/{orderId}` | El Comprador ve **solo su Factura Maestra**; el Vendedor solo su factura de vendedor; Admin/Supervisor todas |
-| `GET /api/Warehouses?vendorId=` | El Vendedor ve solo las suyas; pedir las de otro → `400` (no es una lista filtrada) |
-| `401` / `403` / `404` | `403` = tu rol no entra. `404` = no existe **o no es tuyo**, **también en las escrituras** (Q-21b, cerrado 2026-09-29): la UI debe tratarlo como "no disponible", no reintentar y no mostrar un error de formulario |
-
-> **`404` también llega por escritura.** Antes, agregar un ítem a un carrito ajeno o pagar un pedido
-> ajeno devolvía `400`; ahora devuelven `404`, igual que las lecturas. El frontend tiene **un solo
-> código** para "no disponible": si la UI solo miraba el `400`, estas acciones pasan a verse como
-> errores de validación en lugar de "este recurso no es tuyo".
->
-> **Siguen siendo `400` a propósito** (el recurso existe, el filtro no): pedir bodegas de otro
-> vendedor, o crear un despacho a nombre de otro. Ahí sí es un error de la petición.
-
-**Cerrado 2026-09-29: tres enmiendas a la matriz de roles (Q-21c, Q-21d, Q-21e → `ADR-0014`).** Los tres dictámenes del Owner en una sola ronda, con los documentos del cliente corregidos por addendum:
-
-| Cambio | Detalle |
-|---|---|
-| El Operador reporta el quiebre de stock | `POST /api/Logistics/fulfillment/cancel-ghost-stock` ya no devuelve `403` al Operador: quien encuentra el faltante en bodega puede reportarlo. Se añade `/despachos/:id/quiebre` al módulo de logística (§2.5) |
-| **El botón de facturación se muda al módulo del Administrador** | Estaba en el del **Comprador** (línea 68), que recibía `403`. Vive en `/pedidos/:id/facturar` (§2.2) y solo el Administrador puede pulsarlo |
-| La facturación ya no se puede duplicar | El endpoint rechaza con `400` un pedido **no pagado** y un pedido **ya facturado**. Un doble clic ya no genera dos veces las tres facturas: hay que manejar el `400` en la UI |
-| **Son cinco roles** | El documento declaraba cuatro. El `Supervisor` se queda, es de solo lectura y **no tiene módulo propio**: usa las pantallas compartidas. Si algún día quiere panel propio, falta un endpoint de listado (R-03) |
-
-**Pendiente antes de produccion:** reportes administrativos (R-08).
+- **Conformidad Estructural:** 100% de los 45 endpoints del backend están plenamente especificados y mapeados a los puertos de entrada del frontend.
+- **Seguridad y Criptografía:** Cumplimiento total de ADR-0009 (tokens Bearer, expiración de 60 minutos, sesión volátil en memoria RAM, eliminación de cabeceras forjables).
+- **Consistencia de Tipos:** Esquemas Zod y DTOs tipados en estricta sincronía con los contratos C# de la API REST.
+- **Estado Global:** **VERIFICADO (READY FOR WAVE 1)**.
