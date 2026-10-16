@@ -1,0 +1,25 @@
+name: frontend
+on:
+  push:
+    paths: ["frontend/**", "orchestrator-state.json", ".github/workflows/frontend.yml"]
+  pull_request:
+    paths: ["frontend/**"]
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.6.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - working-directory: frontend
+        run: pnpm install --frozen-lockfile
+      - working-directory: frontend
+        run: pnpm --filter frontend typecheck
+      - working-directory: frontend
+        run: pnpm --filter frontend test:run --coverage
