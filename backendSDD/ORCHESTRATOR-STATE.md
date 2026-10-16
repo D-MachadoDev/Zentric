@@ -8,13 +8,13 @@
 
 - **runId:** `run-backend-orchestration-01`
 - **rama:** `develop`
-- **ultimo commit verificado:** `a21eca8`
+- **ultimo commit verificado:** `967cfee`
 
 ## Estado por paso
 
 | Paso | Alcance | Estado | Evidencia | Commit | Next action |
 |---|---|---|---|---|---|
-| PASO-00 | Boot: estado + agentes + prompt creados | done | este archivo + `.agents/orchestration/` | _pendiente_ | medir cobertura real |
+| PASO-00 | Boot: estado + agentes + prompt creados | done | este archivo + `.agents/orchestration/` | 967cfee | medir cobertura real |
 | PASO-A1 | Domain: Identity/Buyers/Catalog | done | build 0/0; 580/580 tests verde (2026-10-15) | a21eca8 (previo) | re-verificar por grupo |
 | PASO-A2 | Domain: Inventory/Warehouse | done | build 0/0; 580/580 tests verde (2026-10-15) | a21eca8 (previo) | re-verificar por grupo |
 | PASO-A3 | Domain: Orders/Fulfillment/Billing/Payments/Returns | done | build 0/0; 580/580 tests verde (2026-10-15) | a21eca8 (previo) | re-verificar por grupo |
