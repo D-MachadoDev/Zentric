@@ -1,264 +1,78 @@
-# C4 - Nivel 3: Componentes del Frontend
+# Arquitectura C4 — Nivel 3: Diagrama de Componentes Internos (Frontend SDD)
 
-## 1. Alcance y Propósito del Nivel 3
-
-En el modelo C4 (Simon Brown), el **Nivel 3 (Componentes)** descompone los contenedores en sus bloques funcionales constitutivos de código fuente, delimitando:
-1. Las responsabilidades específicas de cada componente dentro de la arquitectura frontend.
-2. El grafo estricto y unidireccional de dependencias entre paquetes y capas.
-3. El aislamiento de la interfaz respecto a detalles de transporte de red y serialización.
-4. Los contratos de colaboración para la gestión de estado de servidor, validación y sesión en memoria.
-
-En Zentric, el frontend está organizado como un **Monorepo gestionado por Turborepo y pnpm** (`frontend/apps/frontend` y `frontend/packages/*`), garantizando desacoplamiento físico entre el **Design System**, la **Lógica de Aplicación**, y las **Vistas de Negocio por Rol**.
+> **Propósito:** Descomponer los contenedores `apps/frontend` y `packages/ui` en sus componentes internos bajo el patrón de **Arquitectura Hexagonal Adaptada al Frontend**, delimitando con precisión las fronteras de propiedad entre los agentes `07`, `08`, `09`, `10` y `11` y las reglas compositivas de **`hyperframes-creative`**.
 
 ---
 
-## 2. Diagrama de Componentes del Sistema
-
-El siguiente diagrama detalla la arquitectura de componentes de la aplicación cliente SPA (`apps/frontend`) y su interacción con el sistema de diseño compartido (`packages/ui`) y la API backend:
+## 1. Diagrama de Componentes Internos (C4 Nivel 3)
 
 ```mermaid
 flowchart TB
-  subgraph monorepo["Monorepo Zentric Frontend (Turborepo + pnpm)"]
-
-    subgraph pkgUI["Paquete Compartido: packages/ui (Design System)"]
-      tokens["Tokens Semánticos<br/>[tokens/colors.ts, typography.ts]<br/>Paleta carbón tintado y Geist Mono/Sans"]
-      primitives["Primitivas Atómicas<br/>[primitives/]<br/>Button, Input, Badge, Skeleton, Label"]
-      composite["Componentes Compuestos<br/>[composite/]<br/>DataTable, ResponsiveDrawer, ModalDialog, StatCard"]
-      tokens --> primitives
-      primitives --> composite
+    subgraph AppLayer["Capa 1: Enrutamiento y Shells (Agente 10 — apps/frontend/src/app/)"]
+        Router["🧭 TanStack Router Tree\nRutas en inglés + Guardas beforeLoad RBAC"]
+        Shells["🖼️ Role Shells (5 Roles + AuthShell)\nNavegación lateral, Topbar, Reloj de Sesión y Banner Offline"]
     end
 
-    subgraph appFrontend["Aplicación Principal: apps/frontend/src/"]
-
-      subgraph entryLayer["1. Inicialización y Shell"]
-        entry["Punto de Entrada<br/>[main.tsx]<br/>Montaje React 19 y Bootstrap"]
-        router["Enrutamiento TanStack Router<br/>[app/router.tsx]<br/>Árbol de rutas perezosas (lazy)"]
-        guards["Guardas de Autorización<br/>[app/routes/ (beforeLoad)]<br/>Validación síncrona de rol y sesión"]
-        providers["Proveedores de Contexto<br/>[app/providers/]<br/>QueryClient, AuthContext, ThemeProvider"]
-        entry --> providers
-        providers --> router
-        router --> guards
-      end
-
-      subgraph modulesLayer["2. Vistas y Módulos por Rol"]
-        modBuyer["Módulo Comprador<br/>[modules/buyer/]<br/>Catálogo, Carrito, Checkout, Devoluciones"]
-        modSeller["Módulo Vendedor<br/>[modules/seller/]<br/>Gestión Catálogo, Stock, Despachos"]
-        modAdmin["Módulo Administrador<br/>[modules/admin/]<br/>Usuarios, Bodegas, Facturación, Reembolsos"]
-        modLogistics["Módulo Logística<br/>[modules/logistics/]<br/>Empaque, Despacho, Inspección Devoluciones"]
-        modSupervisor["Módulo Supervisor<br/>[modules/supervisor/]<br/>Auditoría y Monitoreo (Solo Lectura)"]
-        modAuth["Módulo Autenticación<br/>[modules/auth/]<br/>Login y Registro de Comprador"]
-      end
-
-      subgraph applicationLayer["3. Lógica de Aplicación y Estado Remoto"]
-        appServices["Servicios de Aplicación & Hooks<br/>[application/services/]<br/>TanStack Query Hooks (useQuery, useMutation)"]
-        zodSchemas["Esquemas de Validación Zod<br/>[application/schemas/]<br/>Validación defensiva tipada para formularios"]
-      end
-
-      subgraph domainLayer["4. Dominio Frontend Puro"]
-        domainModels["Modelos & Entidades Frontend<br/>[domain/models/]<br/>User, Order, Product, Fulfillment, Invoice"]
-        domainPorts["Puertos de Entrada y Salida<br/>[domain/ports/]<br/>ZentricApiPort, SessionPort, AlertPort"]
-        domainEnums["Enumeraciones Ubicuas<br/>[domain/enums/]<br/>UserRole, OrderStatus, FulfillmentStatus"]
-      end
-
-      subgraph adaptersLayer["5. Adaptadores de Infraestructura"]
-        httpAdapter["Adaptador HTTP Nativo<br/>[adapters/http/HttpClient.ts]<br/>Fetch client tipado, Bearer JWT, RFC 7807"]
-        sessionAdapter["Adaptador de Sesión Volátil<br/>[adapters/session/MemorySessionAdapter.ts]<br/>Almacenamiento exclusivo en RAM (Sin Refresh)"]
-        notificationAdapter["Adaptador de Alertas y Confirmaciones<br/>[adapters/alert/AlertAdapter.ts]<br/>Cola de promesas para diálogos y toasts"]
-      end
-
+    subgraph ModulesLayer["Capa 2: Módulos Funcionales por Rol (Agente 11 — apps/frontend/src/modules/)"]
+        AuthMod["🔑 Auth & Health\n(/login, /register, /health)"]
+        BuyerMod["🛒 Buyer Module\n(Catálogo, Carrito 15m, Checkout, Pedidos, Devoluciones, Perfil)"]
+        SellerMod["🏪 Seller Module\n(Productos, Inventario Nuevo, Devoluciones, Finanzas)"]
+        AdminMod["🛡️ Admin Module\n(Finanzas, Comisiones, Bodegas, Inventario, Usuarios)"]
+        LogisticsMod["📦 Logistics Module\n(Empaque, Despachos, Inspección, Bodegas)"]
+        SupervisorMod["🔍 Supervisor Module\n(Auditoría Pedidos, Inventario/Ajuste Físico, Logística, Devoluciones, Finanzas)"]
     end
-  end
 
-  apiBackend["API Backend Externa<br/>[Zentric Web API :5076]<br/>45 Endpoints REST (44 + /health) + Problem Details"]
+    subgraph ApplicationLayer["Capa 3: Aplicación y Dominio Frontend (Agente 09 — src/application/ & src/domain/)"]
+        Hooks["⚡ TanStack Query Hooks (46 Hooks)\nuseAuth, useCatalog, useOrders, useInventory,\nuseLogistics, useReturns, useBilling, useBuyers, useUsers, useHealth"]
+        ZodSchemas["📐 Zod Schemas (12 Esquemas)\nEspejo de FluentValidation de Zentric.Application"]
+        DomainRules["🧠 Reglas Puras de Presentación\nisOrderModifiable, isOrderPayable, isReturnAllowed,\nisReturnApprovable, verifyInvoiceSplitInvariant"]
+        Ports["🔌 Puertos (ZentricApiPort + SessionPort)\nContratos puros sin acoplamiento a red"]
+    end
 
-  %% Conexiones entre capas
-  guards --> modulesLayer
-  modulesLayer --> composite
-  modulesLayer --> appServices
-  modulesLayer --> zodSchemas
+    subgraph AdaptersLayer["Capa 4: Adaptadores de Infraestructura (Agente 09 — src/adapters/)"]
+        HttpAdapter["🌐 httpZentricApiAdapter + httpClient.ts\nFetch nativo + Bearer JWT + RFC 7807 Problem Details"]
+        MockAdapter["🧪 mockZentricApiAdapter\nSemillas deterministas en memoria para desarrollo y tests"]
+        SessionAdapter["🔐 memorySessionAdapter\nMemoria volátil JS + respaldo en sessionStorage (ADR-0009)"]
+    end
 
-  appServices --> domainModels
-  appServices --> domainPorts
-  appServices --> httpAdapter
+    subgraph DesignSystem["Paquete @zentric/ui (Agentes 07 y 08 — packages/ui/src/)"]
+        Tokens["🎨 tokens/ (Agente 07)\nTailwind v4 @theme + 3-Layer Depth + Geist Sans/Mono"]
+        Primitives["🧱 primitives/ (Agente 07)\nButton, Input, Select, Textarea, Checkbox, Badge, Skeleton, Card, Tooltip"]
+        Composites["🏗️ composite/ (Agente 08)\nDataTable, ResponsiveDrawer, ModalDialog, StatCard,\nOrderTimeline, CheckoutCountdown, EmptyState, Toast"]
+        LabelsAndLogo["🏷️ components/domainLabels.ts + logo/ (Agente 07)\nTraducción de 11 Enums C# al Español + Isotipo SVG"]
+    end
 
-  httpAdapter --> sessionAdapter
-  httpAdapter --> domainPorts
-  httpAdapter -->|"Peticiones HTTPS (JSON)"| apiBackend
-
-  %% Clases de estilo C4
-  classDef entryStyle fill:#1e293b,stroke:#334155,stroke-width:2px,color:#f8fafc;
-  classDef moduleStyle fill:#0369a1,stroke:#0284c7,stroke-width:2px,color:#ffffff;
-  classDef appStyle fill:#0f766e,stroke:#0d9488,stroke-width:2px,color:#ffffff;
-  classDef domainStyle fill:#4338ca,stroke:#4f46e5,stroke-width:2px,color:#ffffff;
-  classDef adapterStyle fill:#b45309,stroke:#d97706,stroke-width:2px,color:#ffffff;
-  classDef uiStyle fill:#374151,stroke:#4b5563,stroke-width:2px,color:#ffffff;
-  classDef externalStyle fill:#1f2937,stroke:#111827,stroke-width:2px,color:#9ca3af;
-
-  class entry,router,guards,providers entryStyle;
-  class modBuyer,modSeller,modAdmin,modLogistics,modSupervisor,modAuth moduleStyle;
-  class appServices,zodSchemas appStyle;
-  class domainModels,domainPorts,domainEnums domainStyle;
-  class httpAdapter,sessionAdapter,notificationAdapter adapterStyle;
-  class tokens,primitives,composite uiStyle;
-  class apiBackend externalStyle;
+    Router --> Shells
+    Shells --> AuthMod & BuyerMod & SellerMod & AdminMod & LogisticsMod & SupervisorMod
+    AuthMod & BuyerMod & SellerMod & AdminMod & LogisticsMod & SupervisorMod --> Hooks & ZodSchemas & DomainRules
+    AuthMod & BuyerMod & SellerMod & AdminMod & LogisticsMod & SupervisorMod --> Primitives & Composites & LabelsAndLogo
+    Composites --> Primitives & Tokens & LabelsAndLogo
+    Primitives --> Tokens
+    Hooks --> Ports
+    Ports -.->|"Implementado por"| HttpAdapter & MockAdapter & SessionAdapter
 ```
 
 ---
 
-## 3. Catálogo Detallado de Componentes
+## 2. Catálogo de Componentes de `apps/frontend` y Regla de Dependencia
 
-### 3.1 Paquete Compartido `packages/ui` (Design System)
-Este paquete es completamente agnóstico al negocio y a la red; no conoce endpoints, rutas ni tokens JWT:
+| Componente Interno | Ubicación Física | Agente Propietario | Dependencias Permitidas | Restricciones Inviolables |
+|---|---|---|---|---|
+| **Contratos y Reglas de Dominio (`domain/`)** | `apps/frontend/src/domain/` | `09-frontend-application-architect` | Ninguna (TypeScript puro). | Prohibido importar React, TanStack Query, `fetch` o componentes UI. |
+| **Hooks CQRS y Esquemas Zod (`application/`)** | `apps/frontend/src/application/` | `09-frontend-application-architect` | `src/domain/**`, `@tanstack/react-query`, `zod`. | Invoca exclusivamente `ZentricApiPort` y `SessionPort`; prohibido llamar a `fetch` directamente. |
+| **Adaptadores de Salida (`adapters/`)** | `apps/frontend/src/adapters/` | `09-frontend-application-architect` | `src/domain/**`, API nativa `fetch`, `sessionStorage`. | Único lugar autorizado para construir URLs `/api/*`, inyectar cabeceras `Authorization` y parsear RFC 7807. |
+| **Enrutador y Shells (`app/`)** | `apps/frontend/src/app/` | `10-frontend-routing-shell` | `src/application/**`, `src/domain/**`, `@zentric/ui`, `@tanstack/react-router`. | Ejecuta las guardas `beforeLoad` por rol; no contiene formularios de negocio específicos de una vista. |
+| **Módulos de Rol (`modules/`)** | `apps/frontend/src/modules/` | `11-frontend-role-modules` | `src/application/**`, `src/domain/**`, `@zentric/ui`. | Prohibido importar `src/adapters/api/httpClient.ts` directamente; toda lectura o mutación pasa por los hooks de `src/application/hooks/`. |
 
-| Componente | Directorio | Responsabilidad Técnica | Dependencias Permitidas |
+---
+
+## 3. Catálogo de Componentes de `@zentric/ui` y Arquitectura Visual (`hyperframes-creative`)
+
+Para prevenir colisiones de archivos durante la ejecución paralela de la **Oleada 1** y la **Oleada 2**, el paquete `packages/ui/src/` divide físicamente sus directorios:
+
+| Submódulo de `@zentric/ui` | Ubicación Física | Agente Propietario | Reglas de Diseño y Accesibilidad (`hyperframes-creative`) |
 |---|---|---|---|
-| **Tokens Semánticos** | `packages/ui/src/tokens/` | Define paletas de neutros tintados (`#0B0F19`, `#111827`, `#1F293D`), acento semántico (`#00D4AA`, `#FFB800`) y fuentes Geist. | Ninguna (CSS nativo `@theme`). |
-| **Primitivas Atómicas** | `packages/ui/src/primitives/` | Controles elementales accesibles: `Button`, `Input`, `Badge`, `Skeleton`, `Textarea`, `Checkbox`, `Select`, `Label`, `Card`, `Alert`, `Dialog`, `AlertDialog`, `Table`. Basados en Radix UI. | `tokens/`. |
-| **DataTable Compuesta** | `packages/ui/src/composite/DataTable/` | Tabla de alta densidad para inventarios y órdenes con ordenamiento, filtrado, paginación y renderizado en Geist Mono. | `primitives/`, TanStack Table. |
-| **ResponsiveDrawer** | `packages/ui/src/composite/Drawer/` | Panel lateral deslizante para edición de recursos y detalles rápidos sin perder el contexto de la tabla. | `primitives/`. |
-| **ModalDialog** | `packages/ui/src/composite/Modal/` | Diálogos modales para confirmaciones críticas (cancelación de órdenes, ajustes de inventario). | `primitives/`. |
-| **StatCard** | `packages/ui/src/composite/StatCard/` | Tarjeta asimétrica de métricas operativas con bordes de bajo contraste y tipografía 600/700. | `primitives/`. |
-| **OrderTimeline** | `packages/ui/src/composite/OrderTimeline/` | Línea de tiempo secuencial del ciclo de vida de pedidos y despachos. | `primitives/`. |
-
----
-
-### 3.2 Aplicación Principal `apps/frontend`
-
-#### Capa 1: Inicialización, Enrutamiento y Shell (`src/app/`)
-- **`main.tsx` (Punto de Entrada):** Inicializa la instancia única de `QueryClient` con políticas de stale-time y reintentos, monta el árbol React en `#root` y encapsula la aplicación en `ErrorBoundary`.
-- **`router.tsx` (TanStack Router Shell):** Define la jerarquía de rutas basada en código (`createRouter`), asociando layouts principales (`ConsoleLayout`, `AuthLayout`) y habilitando carga perezosa (`lazy`).
-- **`beforeLoad` Route Guards:** Interceptores de navegación ejecutados síncronamente antes de renderizar una ruta protegida. Verifican la presencia de sesión activa en `SessionPort` y comprueban que el rol del usuario coincida con las políticas autorizadas para la sección.
-
-#### Capa 2: Módulos Funcionales por Rol (`src/modules/`)
-Cada módulo encapsula las pantallas de un actor del marketplace:
-- **`modules/auth/`:** Pantallas públicas de autenticación (`/login`), auto-registro de comprador (`/register`) y diagnóstico de salud (`/health`).
-- **`modules/buyer/`:** Vistas de catálogo, ficha de producto, carrito reactivo con precio congelado, asistente de checkout de 15 minutos y seguimiento de pedidos y garantías (`/buyer/*`).
-- **`modules/seller/`:** Dashboard de métricas comerciales, administración de productos (publicación/suspensión), monitoreo de existencias por SKU, empaque de órdenes de despacho y resolución comercial de devoluciones (`/seller/*`).
-- **`modules/admin/`:** Panel de control de usuarios, apertura de bodegas volumétricas, ajuste de inventario, liquidación de facturas maestras/split y reembolsos financieros (`/admin/*`).
-- **`modules/logistics/`:** Cola de despachos en bodega, empaque, despacho con guía, certificación exclusiva de entrega, reporte de stock fantasma e inspección física de devoluciones (`/logistics/*`).
-- **`modules/supervisor/`:** Vistas de solo lectura para fiscalización transversal de pedidos, despachos, devoluciones, facturas y auditoría de inventario (`/supervisor/*`).
-
-#### Capa 3: Lógica de Aplicación (`src/application/`)
-- **`application/services/` (Hooks de Consulta y Mutación en Inglés):** Encapsulan `useQuery` y `useMutation` de TanStack Query (`useProductsQuery`, `useCheckoutOrderMutation`, etc.). Orquestan la invalidación de claves de caché ante mutaciones exitosas.
-- **`application/schemas/` (Validación con Zod en Inglés):** Esquemas fuertemente tipados (`CreateProductSchema`, `AddStockSchema`, etc.) que replican los contratos de validación de FluentValidation del backend. Validan formularios antes del envío y generan tipos TypeScript derivados (`z.infer<typeof schema>`).
-
-#### Capa 4: Dominio Frontend Puro (`src/domain/`)
-- **Modelos y Value Objects:** Representaciones inmutables de las entidades del marketplace (`User`, `Order`, `Product`, `FulfillmentOrder`, `ReturnRequest`, `Invoice`).
-- **Puertos Abstractos:** Interfaces (`ZentricApiPort`, `SessionPort`, `AlertPort`) que desacoplan las reglas del cliente de las librerías técnicas.
-- **Enumeraciones:** Mapeo 1:1 con los enums del backend (`UserRole`, `OrderStatus`, `FulfillmentStatus`, `ReturnStatus`, `ProductStatus`, `ProductType`, `WarehouseType`, `InvoiceType`), garantizando cero sinónimos y serialización estricta como texto ([ADR-0012](../backendSDD/Adr/0012-contrato-json-de-los-enum-por-nombre.md)).
-
-#### Capa 5: Adaptadores de Infraestructura (`src/adapters/`)
-- **`adapters/http/HttpClient.ts`:** **Único componente autorizado en todo el proyecto para ejecutar `fetch()`**. Aplica el token Bearer en las cabeceras, intercepta respuestas no exitosas y transforma las cargas RFC 7807 (`application/problem+json`) en instancias de error de dominio tipadas.
-- **`adapters/session/MemorySessionAdapter.ts`:** Implementa `SessionPort` reteniendo el token JWT exclusivamente en la memoria RAM de JavaScript. Ante recarga del navegador o recepción de un HTTP `401 Unauthorized`, purga la sesión inmediatamente sin recurrir a `localStorage`, cumpliendo la política estricta de sesión volátil sin refresh token ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)).
-- **`adapters/alert/AlertAdapter.ts`:** Implementa `AlertPort` gestionando la cola de promesas de confirmación y notificaciones sin acoplarse a React, delegando su renderizado visual a `AlertHost.tsx`.
-
----
-
-## 4. Invariantes y Reglas de Dependencia Hexagonal
-
-Para preservar la mantenibilidad y evitar el acoplamiento cruzado, se establecen las siguientes reglas arquitectónicas inviolables:
-
-```mermaid
-flowchart LR
-    modules["modules (Vistas)"]
-    app["application (Hooks/Zod)"]
-    domain["domain (Modelos/Puertos)"]
-    adapters["adapters (Fetch/RAM)"]
-    ui["packages/ui (Design System)"]
-
-    modules -->|Consume| app
-    modules -->|Dibuja con| ui
-    app -->|Orquesta| domain
-    app -->|Invoca| adapters
-    adapters -->|Implementa| domain
-
-    style domain fill:#4338ca,stroke:#4f46e5,stroke-width:2px,color:#fff
-    style ui fill:#374151,stroke:#4b5563,stroke-width:2px,color:#fff
-```
-
-1. **Aislamiento de `packages/ui`:** `packages/ui` tiene **estrictamente prohibido** importar cualquier archivo de `apps/frontend`. No contiene lógica de negocio, no conoce endpoints ni accede a tokens.
-2. **Dominio Agnóstico:** `domain/` no puede importar React, hooks, APIs del navegador (`window`, `document`) ni librerías de transporte (`fetch`). Es TypeScript puro.
-3. **Monopolio de Red:** Queda prohibido el uso de `fetch` o clientes HTTP fuera de `adapters/http/`. Las vistas nunca construyen URLs ni gestionan cabeceras `Authorization`.
-4. **Almacenamiento Seguro de Credenciales:** Prohibido el uso de `localStorage` o `sessionStorage` para guardar tokens JWT. La sesión reside en RAM; si el token expira (60 min), el usuario debe reautenticarse.
-5. **Manejo Cuádruple de Estado en Vistas:** Toda pantalla o componente que consuma datos asíncronos debe manejar explícitamente los 4 estados de la UI:
-   - **Cargando (`isLoading`):** Muestra primitivas `Skeleton` con dimensiones proporcionales.
-   - **Vacío (`isEmpty`):** Muestra vista de estado vacío con acción de recuperación.
-   - **Error (`isError`):** Muestra Problem Details amigable con opción de reintento (`refetch`).
-   - **Éxito (`isSuccess`):** Renderiza la tabla o formulario con datos frescos.
-
----
-
-## 5. Dinámica de Colaboración entre Componentes
-
-### 5.1 Flujo de Consulta Remota (Query Pipeline)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as Usuario
-    participant View as Página / Módulo (modules/)
-    participant Hook as Application Service (useQuery)
-    participant Cache as TanStack Query Cache
-    participant Adapter as HttpClient (adapters/http)
-    participant Backend as Zentric Web API (:5076)
-
-    User->>View: Accede a la pantalla de inventario
-    View->>Hook: Invoca useInventoryQuery(filters)
-    Hook->>Cache: Consulta datos existentes por QueryKey
-    alt Datos en caché válidos (fresh)
-        Cache-->>View: Retorna datos en memoria inmediatamente
-    else Datos obsoletos o ausentes (stale)
-        Hook->>Adapter: get("/api/inventories", filters)
-        Adapter->>Adapter: Inyecta Bearer Token desde MemorySession
-        Adapter->>Backend: GET /api/inventories (HTTPS JSON)
-        alt Respuesta Exitosa 200 OK
-            Backend-->>Adapter: 200 OK [JSON Payload]
-            Adapter-->>Cache: Guarda payload en caché
-            Cache-->>View: Emite estado isSuccess con datos frescos
-            View->>View: Renderiza DataTable (packages/ui)
-        else Error de Negocio 400 / 403 / 404
-            Backend-->>Adapter: Problem Details (RFC 7807)
-            Adapter->>Adapter: Traduce a DomainError tipado
-            Adapter-->>Cache: Registra fallo
-            Cache-->>View: Emite estado isError con mensaje estructurado
-            View->>View: Muestra alerta contextual con botón de reintento
-        end
-    end
-```
-
-### 5.2 Flujo de Autenticación y Expiración Ineludible
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as Usuario
-    participant LoginView as Módulo Auth (LoginForm)
-    participant AuthContext as AuthProvider (app/providers)
-    participant SessionAdapter as MemorySessionAdapter (adapters/session)
-    participant Adapter as HttpClient (adapters/http)
-    participant Backend as Zentric Web API (:5076)
-
-    User->>LoginView: Ingresa correo y contraseña
-    LoginView->>Adapter: POST /api/auth/login
-    Backend-->>Adapter: 200 OK { token, role, email }
-    Adapter-->>AuthContext: Emite credencial validada
-    AuthContext->>SessionAdapter: setToken(token) (Solo en RAM)
-    AuthContext-->>LoginView: Redirección automática según rol
-
-    Note over Adapter,Backend: Tras 60 minutos de inactividad, el token expira en el servidor
-    User->>LoginView: Ejecuta acción protegida
-    Adapter->>Backend: GET /api/orders (Token expirado)
-    Backend-->>Adapter: 401 Unauthorized (Token expired)
-    Adapter->>SessionAdapter: clearToken() (Purga inmediata de RAM)
-    Adapter-->>AuthContext: Notifica evento de sesión cerrada
-    AuthContext->>User: Redirección forzada a /login con aviso de expiración
-```
-
----
-
-## 6. Integración con la Doctrina Visual Anti-IA Genérica
-
-Los componentes del Nivel 3 reflejan en su implementación las directrices semánticas de diseño:
-1. **Neutros Tintados:** Superficies y tarjetas utilizan fondos carbón (`#111827`) con bordes atenuados (`#1F293D`), eliminando fondos negros puros `#000000` o grises desaturados genéricos.
-2. **Jerarquía Tipográfica Robusta:** Las cabeceras de módulos y títulos de modales aplican Geist Sans con peso 600 o 700; los identificadores (SKUs, IDs de orden, importes monetarios y estados) se renderizan obligatoriamente con **Geist Mono** para máxima legibilidad tabular.
-3. **Color de Acento Unificado:** Las acciones primarias emplean el tono esmeralda/cian suave (`#00D4AA`), reservando el ámbar (`#FFB800`) para estados de advertencia (órdenes pendientes de pago, ventanas de 15 minutos activas). Quedan excluidos los degradados multicolores ("AI gradient text") y los bordes con barras de colores chillones en tarjetas.
+| **Tokens y Tema (`tokens/`)** | `packages/ui/src/tokens/` | `07-frontend-tokens-primitives` (Oleada 1) | Define la arquitectura de profundidad en 3 capas (`#0A0E1A` canvas, `#111827` surface, `#161F30` elevated, `#1F293D` hairline border), acento primario único `#00D4AA`, ámbar `#FFB800` y las 3 voces tipográficas (`Geist Sans` y `Geist Mono` con `tabular-nums`). |
+| **Primitivas Atómicas (`primitives/`)** | `packages/ui/src/primitives/` | `07-frontend-tokens-primitives` (Oleada 1) | `Button`, `Input`, `Select`, `Textarea`, `Checkbox`, `Badge`, `Skeleton`, `Card`, `Tooltip`. Todos soportan foco visible (`2px solid #00D4AA`), atributos `aria-invalid` / `aria-describedby` y alturas táctiles mínimas de `36px`/`40px`. |
+| **Diccionario y Marca (`domainLabels.ts` + `logo/`)** | `packages/ui/src/components/domainLabels.ts` y `packages/ui/src/logo/` | `07-frontend-tokens-primitives` (Oleada 1) | Traduce al español los **11 enums de dominio de C#** y provee el isotipo vectorial (`ZentricLogo`, `ZentricMark`) con trazo geométrico `#00D4AA`. |
+| **Componentes Compuestos (`composite/`)** | `packages/ui/src/composite/` | `08-frontend-composite-ui` (Oleada 2) | `DataTable` (columnas numéricas alineadas a la derecha con `Geist Mono tabular-nums`), `ResponsiveDrawer` (`role="dialog"`, foco atrapado y cierre con `Escape`), `ModalDialog` (`role="alertdialog"`), `StatCard` (variante `hero` y `secondary` para evitar grillas de 4 tarjetas clonadas), `OrderTimeline`, `CheckoutCountdown`, `EmptyState` y `Toast`. |

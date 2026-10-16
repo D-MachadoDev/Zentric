@@ -1,252 +1,210 @@
-# Arquitectura del Frontend (Frontend Architecture)
+# Arquitectura Hexagonal y Mapa de Modelos del Frontend (Frontend Architecture)
 
-> Especificación formal de la arquitectura del cliente web Zentric. Deriva de la Arquitectura Hexagonal del sistema ([`backendSDD/02-software-architecture.md`](../backendSDD/02-software-architecture.md)), la Ley funcional ([`ZENTRIC.md`](../ZENTRIC.md)) y los 25 Architecture Decision Records (ADRs).
+> Especificación arquitectónica del cliente web de **Zentric Marketplace** (`frontend/`).  
+> Establece los límites de la Arquitectura Hexagonal en el cliente, el flujo unidireccional de dependencias entre paquetes del monorepo, la matriz anti-amnesia de modelos y DTOs con procedencia exacta del backend C# (`.NET 10`) y los contratos de los puertos de salida (`ZentricApiPort`, `SessionPort`, `AlertPort`).
 
 ---
 
 ## 1. Principio Rector: Arquitectura Hexagonal en el Cliente
 
-El cliente replica la **regla de dependencia unidireccional hacia el centro** del backend: los detalles tecnológicos (transporte HTTP, almacenamiento volátil, diálogos visuales) se ubican en la periferia como adaptadores, mientras que el núcleo de dominio del cliente permanece desacoplado de librerías externas o APIs de red:
+El frontend replica la **regla de dependencia unidireccional hacia el centro** definida en [`backendSDD/02-software-architecture.md`](../backendSDD/02-software-architecture.md). Los detalles tecnológicos (transporte HTTP, almacenamiento volátil en memoria RAM, renderizado de modales) residen en la periferia como adaptadores, mientras que el núcleo de dominio del cliente permanece libre de librerías de interfaz o clientes de red:
 
-```text
-              UI (Módulos por Rol, Páginas y Vistas)
-                            │  depende de
-                            ▼
-           Lógica de Aplicación (Servicios, ViewModels, Zod)
-                            │  depende de puertos
-                            ▼
-              Dominio Frontend (Modelos, Invariantes, Puertos)
-                            ▲
-                            │  implementa puertos
-           Adaptadores (HTTP Fetch, Sesión en RAM, Notificaciones)
-                            │
-                            ▼
-                 API Zentric Backend (Servicio Externo .NET 10)
+```mermaid
+flowchart TD
+    subgraph UI_LAYER["1. Capa de Presentación y Rutas (modules/, layouts/, app/)"]
+        VIEWS["Pantallas por Rol y Guardas beforeLoad (TanStack Router)"]
+        DS["Design System Agnóstico (@zentric/ui: tokens, primitives, composite)"]
+    end
+
+    subgraph APP_LAYER["2. Capa de Aplicación (application/services/, application/schemas/)"]
+        HOOKS["Casos de Uso Reactivos (Hooks de TanStack Query + queryKeys)"]
+        ZOD["Esquemas de Validación Defensiva (Zod)"]
+    end
+
+    subgraph DOMAIN_LAYER["3. Núcleo de Dominio Frontend (domain/models/, enums/, rules/, ports/)"]
+        MODELS["Modelos Inmutables, Enumeraciones Ubicuas y Reglas Puras"]
+        PORTS["Puertos Abstractos (ZentricApiPort, SessionPort, AlertPort)"]
+    end
+
+    subgraph ADAPTERS_LAYER["4. Adaptadores de Infraestructura (adapters/http/, session/, alert/)"]
+        HTTP["HttpClient.ts (Monopolio Fetch, Bearer JWT, RFC 7807)"]
+        RAM["MemorySessionAdapter.ts (Token en RAM, 60 min, Sin Refresh)"]
+        ALERT["AlertAdapter.ts (Cola Asíncrona de Confirmaciones y Toasts)"]
+    end
+
+    VIEWS -->|Consume estado e intenciones| HOOKS
+    VIEWS -->|Valida formularios con| ZOD
+    VIEWS -->|Ensambla vistas con| DS
+    HOOKS -->|Orquesta contratos de| PORTS
+    ZOD -->|Verifica tipos de| MODELS
+    HTTP -.->|Implementa| PORTS
+    RAM -.->|Implementa| PORTS
+    ALERT -.->|Implementa| PORTS
 ```
 
 ---
 
-## 2. Capas y Reglas de Dependencia Inviolables
+## 2. Reglas de Dependencia Inviolables por Capa
 
-| Capa | Puede Importar | **Estrictamente Prohibido** Importar |
-|---|---|---|
-| **`domain/`** | Nada del proyecto (TypeScript puro) | React, `fetch`, `axios`, `window`, `localStorage`, `sessionStorage`. |
-| **`application/`** | `domain/` | React (salvo tipos de presentación), llamadas a `fetch()`, manipulación de red. |
-| **`adapters/`** | `domain/`, `application/` | Componentes visuales de UI, hooks de React contextuales. |
-| **`packages/ui`** | `tokens/`, Primitivas Radix UI | Código de `apps/frontend`, endpoints, tokens JWT, lógica de negocio. |
-| **`modules/`** | `packages/ui`, `application/`, `domain/` (modelos), `useAuth` | Invocar `fetch()` directamente, construir URLs `/api/...` manualmente. |
-| **`app/`** | Todas las capas anteriores | — (Es el Composition Root del frontend). |
-
-### Monopolio Absoluto de Red:
-El archivo `src/adapters/http/HttpClient.ts` es el **único punto autorizado en todo el proyecto** para ejecutar la instrucción `fetch()`. Ninguna vista, servicio o componente puede comunicarse con la red saltándose este adaptador.
+| Capa / Paquete | Ubicación Física | Dependencias Permitidas | Dependencias Estrictamente Prohibidas |
+|---|---|---|---|
+| **`packages/config`** | `frontend/packages/config/` | Ninguna (configuración base de TypeScript y ESLint) | Cualquier paquete de aplicación o librería de runtime. |
+| **`packages/ui`** | `frontend/packages/ui/src/` | `tokens/`, primitivas accesibles de Radix UI, TanStack Table, Lucide Icons | Importar de `apps/frontend`, conocer endpoints `/api/*`, leer tokens JWT o lógica de dominio. |
+| **`domain/`** | `frontend/apps/frontend/src/domain/` | Ninguna dependencia externa (TypeScript puro) | React, TanStack Query, `fetch`, `axios`, `window`, `localStorage`, `sessionStorage`. |
+| **`application/`** | `frontend/apps/frontend/src/application/` | `domain/`, TanStack Query, Zod | Invocar `fetch()` directamente, construir URLs `/api/...`, importar vistas de `modules/`. |
+| **`adapters/`** | `frontend/apps/frontend/src/adapters/` | `domain/`, `application/` (tipos DTO) | Componentes JSX de React, hojas de estilo o vistas de `modules/`. |
+| **`components/` y `layouts/`** | `frontend/apps/frontend/src/components/`, `layouts/` | `packages/ui`, `domain/enums/`, `application/` | Llamadas directas a `fetch()` o manipulación directa del token fuera de `useAuth`. |
+| **`modules/`** | `frontend/apps/frontend/src/modules/` | `packages/ui`, `components/`, `application/`, `domain/` | Invocar `fetch()`, instanciar `HttpClient` manualmente o leer `MemorySessionAdapter` sin pasar por `AuthProvider`. |
+| **`app/` (Composition Root)** | `frontend/apps/frontend/src/app/` | Todas las capas anteriores (ensambla DI, Router y Providers) | Lógica de negocio incrustada fuera de los casos de uso. |
 
 ---
 
-## 3. Estructura de Carpetas (Monorepo Turborepo + pnpm)
-
-El proyecto se estructura como un monorepo administrado con **Turborepo y pnpm workspaces**, separando físicamente el sistema de diseño reutilizable de la aplicación web del marketplace:
+## 3. Topología Física del Monorepo (Turborepo + pnpm)
 
 ```text
-frontend/                        # Raíz del monorepo (entorno contenerizado en Docker)
+frontend/
 ├── apps/
-│   └── frontend/               # Aplicación SPA cliente (Vite + React 19 + TypeScript)
+│   └── frontend/                          # Aplicación SPA Cliente (Vite + React 19 + TypeScript)
 │       ├── index.html
 │       ├── src/
-│       │   ├── app/            # Composition Root: TanStack Router, providers y guardas
-│       │   │   ├── routes/     # Árbol de rutas tipadas (routeTree.tsx, guards.ts)
-│       │   │   └── providers/  # AppQueryClientProvider, AuthProvider, appServices
-│       │   ├── domain/         # Núcleo de Dominio Frontend (TypeScript puro sin dependencias)
-│       │   │   ├── models/     # Entidades: User, Product, Order, Inventory, Warehouse, Invoice, Return
-│       │   │   ├── enums/      # Enumeraciones exactas de la Ley (cero sinónimos)
-│       │   │   ├── rules/      # Reglas puras de presentación (isOrderModifiable, isReturnAllowed)
-│       │   │   └── ports/      # Interfaces: ZentricApiPort, SessionPort, AlertPort
-│       │   ├── application/    # Casos de uso, estado remoto y validación en cliente
-│       │   │   ├── services/   # Hooks de TanStack Query en inglés (useQuery, useMutation, queryKeys)
-│       │   │   ├── schemas/    # Esquemas Zod en inglés que replican FluentValidation
-│       │   │   └── dto/        # Objetos de transferencia y contratos de formulario
-│       │   ├── adapters/       # Implementación técnica de infraestructura
-│       │   │   ├── http/       # HttpClient.ts con inyección Bearer y Problem Details (RFC 7807)
-│       │   │   ├── session/    # MemorySessionAdapter.ts (token JWT en RAM, sin refresh)
-│       │   │   └── alert/      # AlertAdapter.ts (cola de confirmaciones y toasts sin React)
-│       │   ├── components/     # Puente de presentación (domainLabels.ts, errorMessage.ts, alert/AlertHost.tsx)
-│       │   ├── layouts/        # Layouts estructurales (RootLayout, ConsoleLayout, navigation.ts)
-│       │   ├── modules/        # Pantallas por rol (auth, buyer, seller, admin, logistics, supervisor)
-│       │   └── styles/         # Variables globales y directivas CSS
+│       │   ├── app/                       # Composition Root (Agente 10)
+│       │   │   ├── routes/                # Árbol de rutas tipadas y guardas beforeLoad
+│       │   │   └── providers/             # AppQueryClientProvider, AuthProvider, ServiceContainer
+│       │   ├── domain/                    # Dominio Puro del Cliente (Agente 09)
+│       │   │   ├── models/                # 21 modelos y DTOs inmutables sincronizados con C#
+│       │   │   ├── enums/                 # 11 enumeraciones canónicas (serialización por nombre)
+│       │   │   ├── rules/                 # Reglas puras de presentación (isOrderModifiable, isReturnAllowed)
+│       │   │   └── ports/                 # ZentricApiPort (45 métodos), SessionPort, AlertPort
+│       │   ├── application/               # Casos de Uso y Validación en Cliente (Agente 09)
+│       │   │   ├── services/              # Hooks de TanStack Query en inglés + fábrica queryKeys.ts
+│       │   │   └── schemas/               # Esquemas Zod sincronizados con FluentValidation
+│       │   ├── adapters/                  # Adaptadores de Infraestructura (Agente 09)
+│       │   │   ├── http/                  # HttpClient.ts (monopolio de red y traductor RFC 7807)
+│       │   │   ├── session/               # MemorySessionAdapter.ts (sesión volátil en RAM)
+│       │   │   ├── alert/                 # AlertAdapter.ts (cola de diálogos y notificaciones)
+│       │   │   └── mocks/                 # Adaptadores deterministas en memoria para pruebas Vitest
+│       │   ├── components/                # Puente de Presentación (domainLabels.ts, AlertHost.tsx)
+│       │   ├── layouts/                   # RootLayout,AuthLayout, ConsoleLayout, navigation.ts (Agente 10)
+│       │   └── modules/                   # Vistas por Rol en Inglés: auth, buyer, seller, admin, logistics, supervisor (Agente 11)
 │       ├── package.json
 │       └── vite.config.ts
 ├── packages/
-│   ├── ui/                     # Design System agnóstico al negocio y a la red
+│   ├── ui/                                # Sistema de Diseño Agnóstico
 │   │   └── src/
-│   │       ├── tokens/         # Tokens semánticos: colors.ts, typography.ts, spacing.ts
-│   │       ├── primitives/     # Primitivas atómicas Radix UI (Button, Input, Badge, Skeleton, etc.)
-│   │       ├── composite/      # Componentes ricos (DataTable, ResponsiveDrawer, ModalDialog, StatCard, OrderTimeline)
-│   │       └── logo/           # Monograma y logomarca oficial Zentric (SVG propio)
-│   └── config/                 # Presets compartidos de TypeScript y ESLint
+│   │       ├── styles/theme.css           # Directiva @theme de Tailwind CSS v4 (Agente 07)
+│   │       ├── tokens/                    # colors.ts, typography.ts, spacing.ts (Agente 07)
+│   │       ├── primitives/                # Button, Input, Select, Badge, Skeleton, Card, Dialog (Agente 07)
+│   │       ├── composite/                 # DataTable, ResponsiveDrawer, ModalDialog, StatCard, OrderTimeline, StatusBadge, MoneyAmount, StateView (Agente 08)
+│   │       └── logo/                      # LogoMark, LogoWordmark, Logo en SVG nativo (Agente 07)
+│   └── config/                            # Presets compartidos de TypeScript y ESLint
 ├── turbo.json
 ├── pnpm-workspace.yaml
-├── package.json
-└── tsconfig.json
-```
-
-**Regla de Dependencia de Paquetes:**
-```text
-apps/frontend  ───▶  packages/ui  ───▶  packages/config
-```
-`packages/ui` **nunca** importa de `apps/frontend`. `packages/config` no importa de nadie.
-
----
-
-## 4. Puertos del Dominio Frontend (Cobertura de 45 Endpoints)
-
-Interfaces que dictan **qué** necesita el sistema, sin depender del **cómo**:
-
-```typescript
-// domain/ports/ZentricApiPort.ts
-//
-// Los inputs no contienen CallerId ni CallerRole: la identidad se extrae
-// directamente del token JWT en el backend (ADR-0013 / Propiedad del recurso).
-export interface ZentricApiPort {
-  // 0. Salud e Infraestructura (1 endpoint)
-  getHealth(): Promise<HealthStatus>;
-
-  // 1. Autenticación e Identidad (2 endpoints)
-  login(input: LoginInput): Promise<AuthToken>;
-  getCurrentUser(): Promise<CurrentUser>;
-
-  // 2. Usuarios y Gestión de Acceso (5 endpoints)
-  createUser(input: CreateUserInput): Promise<string>;
-  listUsers(role?: UserRole): Promise<User[]>;
-  getUserById(id: string): Promise<User>;
-  blockUser(id: string): Promise<void>;
-  activateUser(id: string): Promise<void>;
-
-  // 3. Bodegas y Centros de Almacenamiento (3 endpoints)
-  createWarehouse(input: CreateWarehouseInput): Promise<string>;
-  listWarehouses(vendorId?: string): Promise<Warehouse[]>;
-  getWarehouseById(id: string): Promise<Warehouse>;
-
-  // 4. Inventarios y Control de Stock (4 endpoints)
-  addStock(input: AddStockInput): Promise<string>;
-  listInventories(): Promise<Inventory[]>;
-  listInventoryByVariant(variantId: string): Promise<Inventory[]>;
-  adjustInventory(id: string, input: AdjustInventoryInput): Promise<AdjustInventoryResult>;
-
-  // 5. Catálogo de Productos (6 endpoints)
-  createProduct(input: CreateProductInput): Promise<CreatedProduct>;
-  publishProduct(productId: string): Promise<void>;
-  suspendProduct(productId: string): Promise<void>;
-  listProducts(vendorId?: string): Promise<Product[]>;
-  listProductsPaged(params: PagedProductsQuery): Promise<PagedResult<Product>>;
-  getProductById(id: string): Promise<Product>;
-
-  // 6. Carrito y Pedidos de Compra — Ventana de 15 minutos (6 endpoints)
-  createCart(): Promise<string>;
-  addCartItem(input: AddCartItemInput): Promise<void>;
-  checkoutOrder(orderId: string): Promise<void>;
-  payOrder(orderId: string): Promise<void>;
-  listOrders(status?: OrderStatus): Promise<OrderListItem[]>;
-  getOrderById(id: string): Promise<Order | SellerOrderView>;
-
-  // 7. Logística y Órdenes de Despacho (7 endpoints)
-  createFulfillment(input: CreateFulfillmentInput): Promise<string>;
-  packFulfillment(id: string): Promise<void>;
-  dispatchFulfillment(id: string): Promise<void>;
-  deliverFulfillment(id: string): Promise<void>;
-  cancelGhostStock(input: CancelGhostStockInput): Promise<string>;
-  listFulfillments(status?: FulfillmentStatus): Promise<FulfillmentOrder[]>;
-  getFulfillmentById(id: string): Promise<FulfillmentOrder>;
-
-  // 8. Devoluciones y Garantías (7 endpoints)
-  requestReturn(input: RequestReturnInput): Promise<string>;
-  inspectReturn(id: string, input: InspectReturnInput): Promise<void>;
-  approveReturn(id: string): Promise<void>;
-  rejectReturn(id: string): Promise<void>;
-  refundReturn(id: string): Promise<void>;
-  listReturns(status?: ReturnStatus): Promise<ReturnRequest[]>;
-  getReturnById(id: string): Promise<ReturnRequest>;
-
-  // 9. Facturación y Liquidación Split (4 endpoints)
-  generateInvoices(orderId: string): Promise<boolean>;
-  annulInvoices(orderId: string, input: AnnulInvoiceInput): Promise<void>;
-  listInvoices(): Promise<Invoice[]>;
-  getInvoicesByOrder(orderId: string): Promise<Invoice[]>;
-}
-```
-
-```typescript
-// domain/ports/SessionPort.ts
-//
-// Política de seguridad estricta: El token JWT vive exclusivamente en la memoria RAM
-// de JavaScript. No hay refresh token (ADR-0009); al recargar o expirar, se solicita reautenticación.
-export interface SessionPort {
-  getAccessToken(): string | null;
-  setAccessToken(token: string): void;
-  clear(): void;
-  getRole(): UserRole | null;
-  setRole(role: UserRole): void;
-  getUserId(): string | null;
-  setUserId(id: string): void;
-}
-```
-
-```typescript
-// domain/ports/AlertPort.ts
-//
-// Desacopla las confirmaciones destructivas/financieras y notificaciones de los componentes React.
-export interface AlertPort {
-  confirm(options: ConfirmDialogOptions): Promise<boolean>;
-  show(notification: ToastNotification): void;
-}
+└── package.json
 ```
 
 ---
 
-## 5. Manejo Centralizado de Errores (RFC 7807)
+## 4. Matriz Anti-Amnesia de Modelos y DTOs del Dominio Frontend (`domain/models/`)
 
-El cliente mapea de forma estructurada los errores devueltos por el backend:
+En cumplimiento de la regla de trazabilidad SDD, cada interfaz de datos en `apps/frontend/src/domain/models/` se deriva 1:1 de los contratos C# de `Zentric.Application` y `Zentric.Api` sin omitir ni renombrar campos:
 
-```typescript
-// domain/models/ApiProblemDetails.ts
-export interface ApiProblemDetails {
-  type: string;
-  title: string;
-  status: number;
-  detail: string;
-  instance?: string;
-  errors?: Record<string, string[]>;
-}
-```
+| ID Modelo | Interfaz en `domain/models/` | Procedencia Exacta en Backend C# (`archivo:línea`) | Estructura Exacta de Campos (JSON CamelCase) | Endpoints Asociados |
+|---|---|---|---|---|
+| **`E-FE-001`** | `HealthStatus` | [`Program.cs:281-293`](../backend/Zentric.Api/Program.cs#L281-L293) | `status: 'healthy' \| 'degraded' \| 'unhealthy'`, `database: 'up' \| 'down'`, `timestamp?: string`, `error?: string` | `GET /health` |
+| **`E-FE-002`** | `AuthToken` | [`LoginCommand.cs:1277-1283`](../backend/Zentric.Application/Users/Commands/LoginCommand.cs#L1277-L1283) | `token: string`, `expiresAt: string`, `userId: string`, `email: string`, `fullName: string`, `role: UserRole` | `POST /api/auth/login` |
+| **`E-FE-003`** | `CurrentUser` | [`AuthController.cs:101`](../backend/Zentric.Api/Controllers/AuthController.cs#L101) | `userId: string`, `email: string`, `fullName: string`, `role: UserRole` | `GET /api/auth/me` |
+| **`E-FE-004`** | `User` | [`GetUsersQuery.cs:1308`](../backend/Zentric.Application/Users/Queries/GetUsersQuery.cs#L1308) | `id: string`, `name: string`, `email: string`, `role: UserRole`, `identityDocument: string`, `isActive: boolean`, `createdAt: string` | `GET /api/users`, `GET /api/users/{id}` |
+| **`E-FE-005`** | `Warehouse` | [`GetWarehousesQuery.cs:1399`](../backend/Zentric.Application/Warehouses/Queries/GetWarehousesQuery.cs#L1399) | `id: string`, `name: string`, `location: string`, `capacity: number`, `type: WarehouseType`, `vendorId: string \| null`, `isActive: boolean`, `createdAt: string` | `GET /api/warehouses`, `GET /api/warehouses/{id}` |
+| **`E-FE-006`** | `Inventory` | [`GetInventoryByVariantQuery.cs:459-466`](../backend/Zentric.Application/Inventories/Queries/GetInventoryByVariantQuery.cs#L459-L466) | `id: string`, `variantId: string`, `warehouseId: string`, `availableQuantity: number`, `reservedQuantity: number`, `usedQuantity: number`, `damagedQuantity: number` | `GET /api/inventories`, `GET /api/inventories/{variantId}` |
+| **`E-FE-007`** | `AdjustInventoryResult` | [`AdjustInventoryCommand.cs:33-40`](../backend/Zentric.Application/Inventories/Commands/AdjustInventoryCommand.cs#L33-L40) | `adjustmentId: string`, `inventoryId: string`, `previousAvailableQuantity: number`, `newAvailableQuantity: number`, `adjustedQuantity: number`, `reason: string`, `countedAt: string` | `POST /api/inventories/{id}/adjust` |
+| **`E-FE-008`** | `ProductVariant` | [`GetProductsQuery.cs:227`](../backend/Zentric.Application/Catalog/Queries/GetProductsQuery.cs#L227) | `id: string`, `sku: string`, `canBeSold: boolean` | Anidado en `Product` |
+| **`E-FE-009`** | `CreatedProduct` | [`CreateProductCommand.cs:32`](../backend/Zentric.Application/Catalog/Commands/CreateProductCommand.cs#L32) | `productId: string`, `variantIds: string[]` | `POST /api/catalog/products` |
+| **`E-FE-010`** | `Product` | [`GetProductsQuery.cs:229-239`](../backend/Zentric.Application/Catalog/Queries/GetProductsQuery.cs#L229-L239) | `id: string`, `name: string`, `description: string`, `price: number`, `currency: string`, `vendorId: string`, `type: ProductType`, `status: ProductStatus`, `variants: ProductVariant[]`, `createdAt: string` | `GET /api/catalog/products`, `GET /api/catalog/products/paged`, `GET /api/catalog/products/{id}` |
+| **`E-FE-011`** | `PagedResult<T>` | [`PagedResult.cs:330-336`](../backend/Zentric.Application/Common/Models/PagedResult.cs#L330-L336) | `items: T[]`, `page: number`, `size: number`, `totalItems: number`, `totalPages: number` | `GET /api/catalog/products/paged` |
+| **`E-FE-012`** | `OrderItem` | [`GetOrderByIdQuery.cs:831`](../backend/Zentric.Application/Orders/Queries/GetOrderByIdQuery.cs#L831) | `id: string`, `variantId: string`, `quantity: number`, `unitPrice: number`, `totalPrice: number` | Anidado en `Order`, `SellerOrderView`, `OrderListItem` |
+| **`E-FE-013`** | `Order` | [`GetOrderByIdQuery.cs:833-840`](../backend/Zentric.Application/Orders/Queries/GetOrderByIdQuery.cs#L833-L840) | `id: string`, `buyerId: string`, `status: OrderStatus`, `totalAmount: number`, `currency: string`, `items: OrderItem[]`, `createdAt: string` | `GET /api/orders/{id}` (Comprador, Admin, Operador, Supervisor) |
+| **`E-FE-014`** | `SellerOrderView` | [`GetOrderByIdForSellerQuery.cs:812-818`](../backend/Zentric.Application/Orders/Queries/GetOrderByIdForSellerQuery.cs#L812-L818) | `id: string`, `status: OrderStatus`, `currency: string`, `items: OrderItem[]`, `vendorSubtotal: number`, `createdAt: string` | `GET /api/orders/{id}` (Vendedor) |
+| **`E-FE-015`** | `OrderListItem` | [`GetOrdersQuery.cs:879-887`](../backend/Zentric.Application/Orders/Queries/GetOrdersQuery.cs#L879-L887) | `id: string`, `status: OrderStatus`, `currency: string`, `totalAmount: number`, `items: OrderItem[]`, `itemCount: number`, `buyerId: string \| null`, `createdAt: string` | `GET /api/orders` |
+| **`E-FE-016`** | `Shipment` | [`GetFulfillmentByIdQuery.cs:626`](../backend/Zentric.Application/Logistics/Queries/GetFulfillmentByIdQuery.cs#L626) | `id: string`, `warehouseId: string`, `trackingNumber: string` | Anidado en `FulfillmentOrder` |
+| **`E-FE-017`** | `FulfillmentOrder` | [`GetFulfillmentByIdQuery.cs:628-635`](../backend/Zentric.Application/Logistics/Queries/GetFulfillmentByIdQuery.cs#L628-L635) | `id: string`, `customerOrderId: string`, `vendorId: string`, `status: FulfillmentStatus`, `cancellationReason: string \| null`, `shipments: Shipment[]`, `createdAt: string` | `GET /api/logistics/fulfillments`, `GET /api/logistics/fulfillment/{id}` |
+| **`E-FE-018`** | `ReturnRequest` | [`GetReturnByIdQuery.cs:1105-1114`](../backend/Zentric.Application/Returns/Queries/GetReturnByIdQuery.cs#L1105-L1114) | `id: string`, `customerOrderId: string`, `variantId: string`, `warehouseId: string`, `quantity: number`, `status: ReturnStatus`, `isGoodCondition: boolean`, `vendorApproved: boolean`, `createdAt: string` | `GET /api/returns`, `GET /api/returns/{id}` |
+| **`E-FE-019`** | `Invoice` | [`GetInvoicesByOrderQuery.cs:52-59`](../backend/Zentric.Application/Billing/Queries/GetInvoicesByOrderQuery.cs#L52-L59) | `id: string`, `customerOrderId: string`, `vendorId: string \| null`, `type: InvoiceType`, `totalAmount: number`, `currency: string`, `issuedAt: string` | `GET /api/billing/invoices`, `GET /api/billing/invoices/order/{orderId}` |
+| **`E-FE-020`** | `ApiProblemDetails` | [`ProblemDetailsOutputFormatter.cs`](../backend/Zentric.Api/Contracts/ProblemDetailsOutputFormatter.cs) (RFC 7807) | `type?: string`, `title: string`, `status: number`, `detail: string`, `instance?: string`, `traceId?: string`, `errors?: Record<string, string[]>` | Cualquier respuesta de error `4xx` / `5xx` |
 
-| Código HTTP | Diagnóstico de Negocio | Comportamiento en la Interfaz |
+---
+
+## 5. Especificación Contractual de los Puertos de Dominio (`domain/ports/`)
+
+### 5.1 Puerto de Red Unificado: `ZentricApiPort` (45 Métodos)
+Define las 45 operaciones remotas (44 endpoints de negocio + 1 sonda `/health`). Los objetos de entrada omiten `callerId`, `callerRole` y `buyerId` porque el backend los inyecta forzosamente desde el token JWT verificado ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md) y [ADR-0013](../backendSDD/Adr/0013-propiedad-del-recurso-por-rol.md)):
+
+| # | Módulo | Método en `ZentricApiPort` | Contrato de Entrada (Parámetros / Payload) | Tipo de Retorno |
+|---|---|---|---|---|
+| 1 | Salud | `getHealth()` | Sin parámetros | `Promise<HealthStatus>` |
+| 2 | Auth | `login(input)` | `{ email: string, password: string }` | `Promise<AuthToken>` |
+| 3 | Auth | `getCurrentUser()` | Sin parámetros (usa cabecera `Bearer`) | `Promise<CurrentUser>` |
+| 4 | Usuarios | `createUser(input)` | `{ identityDocument: string, fullName: string, email: string, password: string, role: UserRole }` | `Promise<string>` (`Guid`) |
+| 5 | Usuarios | `listUsers(role?)` | `role?: UserRole` | `Promise<User[]>` |
+| 6 | Usuarios | `getUserById(id)` | `id: string` | `Promise<User>` |
+| 7 | Usuarios | `blockUser(id)` | `id: string` | `Promise<void>` |
+| 8 | Usuarios | `activateUser(id)` | `id: string` | `Promise<void>` |
+| 9 | Bodegas | `createWarehouse(input)` | `{ name: string, location: string, capacity: number, type: WarehouseType, vendorId?: string \| null }` | `Promise<string>` (`Guid`) |
+| 10 | Bodegas | `listWarehouses(vendorId?)` | `vendorId?: string` | `Promise<Warehouse[]>` |
+| 11 | Bodegas | `getWarehouseById(id)` | `id: string` | `Promise<Warehouse>` |
+| 12 | Inventario | `addStock(input)` | `{ variantId: string, warehouseId: string, quantity: number }` | `Promise<string>` (`Guid`) |
+| 13 | Inventario | `listInventories()` | Sin parámetros | `Promise<Inventory[]>` |
+| 14 | Inventario | `listInventoryByVariant(variantId)` | `variantId: string` | `Promise<Inventory[]>` |
+| 15 | Inventario | `adjustInventory(id, input)` | `id: string`, `{ countedQuantity: number, reason: string }` | `Promise<AdjustInventoryResult>` |
+| 16 | Catálogo | `createProduct(input)` | `{ name: string, description: string, priceAmount: number, priceCurrency: string, type: ProductType, variants?: Array<{ sku: string, attributes: Array<{ name: string, value: string }> }> }` | `Promise<CreatedProduct>` |
+| 17 | Catálogo | `publishProduct(productId)` | `productId: string` | `Promise<void>` |
+| 18 | Catálogo | `suspendProduct(productId)` | `productId: string` | `Promise<void>` |
+| 19 | Catálogo | `listProducts(vendorId?)` | `vendorId?: string` | `Promise<Product[]>` |
+| 20 | Catálogo | `listProductsPaged(params)` | `{ vendorId?: string, page?: number, size?: number }` | `Promise<PagedResult<Product>>` |
+| 21 | Catálogo | `getProductById(id)` | `id: string` | `Promise<Product>` |
+| 22 | Pedidos | `createCart()` | Sin parámetros (identidad desde token) | `Promise<string>` (`Guid`) |
+| 23 | Pedidos | `addCartItem(input)` | `{ orderId: string, variantId: string, quantity: number }` | `Promise<void>` |
+| 24 | Pedidos | `checkoutOrder(orderId)` | `orderId: string` | `Promise<void>` |
+| 25 | Pedidos | `payOrder(orderId)` | `orderId: string` | `Promise<void>` |
+| 26 | Pedidos | `listOrders(status?)` | `status?: OrderStatus` | `Promise<OrderListItem[]>` |
+| 27 | Pedidos | `getOrderById(id)` | `id: string` | `Promise<Order \| SellerOrderView>` |
+| 28 | Logística | `createFulfillment(input)` | `{ customerOrderId: string, vendorId: string }` | `Promise<string>` (`Guid`) |
+| 29 | Logística | `packFulfillment(id)` | `id: string` | `Promise<void>` |
+| 30 | Logística | `dispatchFulfillment(id)` | `id: string` | `Promise<void>` |
+| 31 | Logística | `deliverFulfillment(id)` | `id: string` | `Promise<void>` |
+| 32 | Logística | `cancelGhostStock(input)` | `{ fulfillmentOrderId: string, variantId: string, warehouseId: string, quantityToCancel: number }` | `Promise<boolean>` |
+| 33 | Logística | `listFulfillments(status?)` | `status?: FulfillmentStatus` | `Promise<FulfillmentOrder[]>` |
+| 34 | Logística | `getFulfillmentById(id)` | `id: string` | `Promise<FulfillmentOrder>` |
+| 35 | Devoluciones | `requestReturn(input)` | `{ customerOrderId: string, variantId: string, warehouseId: string, quantity: number }` | `Promise<string>` (`Guid`) |
+| 36 | Devoluciones | `inspectReturn(id, input)` | `id: string`, `{ isGoodCondition: boolean }` | `Promise<void>` |
+| 37 | Devoluciones | `approveReturn(id)` | `id: string` (envía `{ returnRequestId: id }` en cuerpo JSON según `ReturnsController.cs:95-97`) | `Promise<void>` |
+| 38 | Devoluciones | `rejectReturn(id)` | `id: string` | `Promise<void>` |
+| 39 | Devoluciones | `refundReturn(id)` | `id: string` | `Promise<void>` |
+| 40 | Devoluciones | `listReturns(status?)` | `status?: ReturnStatus` | `Promise<ReturnRequest[]>` |
+| 41 | Devoluciones | `getReturnById(id)` | `id: string` | `Promise<ReturnRequest>` |
+| 42 | Facturación | `generateInvoices(orderId)` | `orderId: string` | `Promise<boolean>` |
+| 43 | Facturación | `annulInvoices(orderId, input)` | `orderId: string`, `{ reason: string }` | `Promise<void>` |
+| 44 | Facturación | `listInvoices()` | Sin parámetros | `Promise<Invoice[]>` |
+| 45 | Facturación | `getInvoicesByOrder(orderId)` | `orderId: string` | `Promise<Invoice[]>` |
+
+### 5.2 Puerto de Sesión Volátil: `SessionPort`
+Contrato que abstrae el ciclo de vida del token Bearer JWT exclusivamente en memoria RAM ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)):
+- `getAccessToken(): string | null` y `setAccessToken(token: string): void`
+- `getUser(): CurrentUser | null` y `setUser(user: CurrentUser): void`
+- `clear(): void`: Purga instantáneamente la credencial en memoria sin tocar `localStorage` ni `sessionStorage`.
+
+### 5.3 Puerto de Confirmaciones y Notificaciones: `AlertPort`
+Contrato que desacopla la confirmación obligatoria de acciones críticas respecto a los componentes React:
+- `confirm(options: { title: string; description: string; confirmLabel?: string; variant?: 'default' | 'destructive' }): Promise<boolean>`
+- `show(notification: { title: string; description?: string; variant: 'info' | 'success' | 'warning' | 'danger' }): void`
+
+---
+
+## 6. Comportamiento Arquitectónico ante Códigos de Error HTTP (RFC 7807)
+
+| Código HTTP | Diagnóstico Contractual | Reacción Obligatoria de la Arquitectura Cliente |
 |---|---|---|
-| **`400 Bad Request`** | Error de validación o violación de invariante de dominio. | Muestra el detalle junto al formulario; **preserva los datos editados por el usuario**. |
-| **`401 Unauthorized`** | Token expirado (60 min) o firma inválida. | **Purga la sesión de memoria RAM** y redirige forzosamente al login con aviso de sesión caducada. |
-| **`403 Forbidden`** | Privilegios insuficientes para el rol autenticado. | **Conserva la sesión** y despliega una alerta de acceso denegado sin alterar la identidad. |
-| **`404 Not Found`** | Recurso inexistente o propiedad ajena ([ADR-0013](../backendSDD/Adr/0013-propiedad-del-recurso-por-rol.md)). | Renderiza vista de estado vacío contextual (`StateView`), no un error fatal. |
-| **`500 Internal Server Error`** | Excepción técnica no controlada en el backend. | Presenta mensaje amigable de contingencia con botón de reintento (`refetch`). |
-
----
-
-## 6. Estado de Servidor e Invalidación de Caché
-
-TanStack Query administra las consultas remotas mediante políticas estructuradas:
-- **`staleTime: 30_000` (30 segundos):** Los datos se consideran frescos durante 30s para evitar peticiones repetitivas al navegar entre pestañas.
-- **`retry: (failureCount, error) => ...`:** Desactivado para cualquier error de la familia `4xx` (validaciones, autenticación, permisos).
-- **Invalidación Dirigida tras Mutaciones:**
-  - Tras `checkoutOrder`: se invalida `['orders', orderId]` y `['inventories']`.
-  - Tras `payOrder`: se invalidan `['orders']` y `['fulfillments']`.
-  - Tras `addStock`: se invalida `['inventories', variantId]`.
-  - Tras `deliverFulfillment`: se actualiza el estado logístico a `Delivered`.
-
----
-
-## 7. Decisiones Técnicas y Arquitectónicas Vinculantes
-
-| Dimensión Técnica | Solución Arquitectónica | Justificación Técnica Vinculante |
-|---|---|---|
-| **Enrutamiento** | **TanStack Router** | Enrutamiento tipado (Type-Safe Routing) con layouts anidados y guardas de rol síncronas en `beforeLoad`. |
-| **Estado Remoto** | **TanStack Query** | Manejo declarativo del ciclo de vida de peticiones, caché en memoria y sincronización automática. |
-| **Formularios** | **React Hook Form + Zod** | Validación defensiva en cliente que previene peticiones inválidas antes del envío HTTP. |
-| **Seguridad de Sesión** | **Token JWT en memoria RAM (Sin Refresh)** | Máximo aislamiento de credenciales ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)), prohibiendo `localStorage`. |
-| **Sistema de Diseño** | **Tailwind v4 (`@theme`) + Radix UI** | Tokens semánticos en CSS sin archivos JS de configuración, Geist Sans/Mono y doctrina anti-IA genérica. |
-| **Monorepo** | **Turborepo + pnpm workspaces** | Desacoplamiento físico entre UI agnóstica (`packages/ui`) y la aplicación de negocio (`apps/frontend`). |
+| **`400 Bad Request`** | Error de validación de entrada (`FluentValidation`) o violación de invariante de negocio. | Extrae `detail` y `errors` del Problem Details; los proyecta junto a los campos del formulario **conservando intactos los datos ingresados por el usuario**. |
+| **`401 Unauthorized`** | Token ausente, firma inválida o ventana de 60 minutos expirada ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)). | Ejecuta `SessionPort.clear()`, limpia la caché de `QueryClient` y redirige forzosamente a `/login` con aviso de sesión expirada (*Fail-Closed*). |
+| **`403 Forbidden`** | Rol autenticado sin permiso en las 21 políticas de autorización ([ADR-0011](../backendSDD/Adr/0011-matriz-autorizacion-por-rol.md)). | **Preserva la sesión activa en memoria** y despliega alerta o vista contextual de acceso restringido (`/_console/forbidden`). |
+| **`404 Not Found`** | Recurso inexistente o propiedad de otro usuario ([ADR-0013](../backendSDD/Adr/0013-propiedad-del-recurso-por-rol.md)). | Renderiza `StateView` contextual de recurso no encontrado sin revelar si existe para otro titular. |
+| **`500 / 503`** | Fallo técnico no controlado o base de datos no disponible. | Presenta `StateView` de contingencia con botón interactivo de reintento (`refetch`). |

@@ -1,213 +1,79 @@
-# C4 - Nivel 4: Código y Funcionamiento de React
+# Arquitectura C4 — Nivel 4: Patrones de Montaje React 19, Árbol de Rutas y Compuertas QA (Frontend SDD)
 
-## 1. Alcance y Guía de Lectura
-
-El **Nivel 4 (Código)** del modelo C4 desciende desde los componentes arquitectónicos del Nivel 3 hacia los archivos, funciones, hooks, interfaces y flujos de ejecución concretos en TypeScript y React 19.
-
-Este documento establece la **especificación técnica de implementación** para la aplicación SPA (`frontend/apps/frontend`) y sus paquetes compartidos (`frontend/packages/*`):
-- **React 19 + TypeScript:** Construcción declarativa del árbol de componentes con tipado estricto de props y estado.
-- **TanStack Router:** Enrutamiento estático tipado (Type-Safe Routing) con layouts anidados, carga perezosa (`lazy`) y guardas síncronas de autorización (`beforeLoad`).
-- **TanStack Query:** Coordinador del estado de servidor, políticas de caducidad (`staleTime`), invalidación de claves de consulta y reintentos automáticos.
-- **React Hook Form + Zod:** Gestión controlada de formularios con validación defensiva derivada de los contratos del backend.
-- **Doctrina Visual Anti-IA Genérica:** Jerarquía tipográfica con Geist Sans / Geist Mono, neutros tintados carbón (`#0B0F19`, `#111827`, `#1F293D`) y acento semántico esmeralda (`#00D4AA`).
-
-> [!IMPORTANT]
-> **Frontera Arquitectónica:** Las capas (`domain`, `application`, `adapters`, `modules`) representan límites físicos de código en el monorepo. Ninguna vista puede invocar peticiones HTTP directamente, saltarse la validación Zod o manipular el token JWT fuera de los adaptadores de infraestructura.
+> **Propósito:** Definir la especificación de nivel de código (C4 Nivel 4) para el ensamblaje de proveedores en React 19 (`main.tsx`), el árbol de rutas tipado en TanStack Router con carga perezosa (`lazy`), la máquina de estados visuales de componentes, las invariantes tipográficas y de tokens de **`hyperframes-creative`**, y las compuertas verificables de calidad del agente `13-frontend-qa-guardian`.
 
 ---
 
-## 2. Inicialización y Montaje del Árbol de Proveedores
+## 1. Jerarquía de Montaje de Proveedores (`apps/frontend/src/main.tsx`)
 
-El archivo `apps/frontend/index.html` suministra el nodo raíz `#root` y carga el punto de entrada `src/main.tsx`. La aplicación configura el cliente de estado remoto y ensambla la jerarquía de contextos de forma determinista:
+El punto de entrada de la SPA ensambla los proveedores transversales en el siguiente orden determinista de anidamiento (de exterior a interior):
 
 ```mermaid
-flowchart TD
-  html["index.html (#root)"] --> entry["src/main.tsx (Punto de Entrada)"]
-  entry -->|"Instancia única"| qc["new QueryClient()"]
-  entry -->|"createRoot().render()"| strict["React.StrictMode"]
-  strict --> boundary["ErrorBoundary (Límite Global de Errores)"]
-  boundary --> qcp["QueryClientProvider (Estado Remoto)"]
-  qcp --> theme["ThemeProvider (Tokens Visuales y Modo Oscuro)"]
-  theme --> auth["AuthProvider (Sesión en Memoria RAM)"]
-  auth --> router["RouterProvider (TanStack Router)"]
-  router --> toaster["Toaster (Notificaciones Accesibles)"]
+flowchart TB
+    StrictMode["1. React.StrictMode\nDetección de efectos secundarios y ciclo de vida en React 19"]
+    ErrorBoundary["2. GlobalErrorBoundary\nCaptura fallos de renderizado catastróficos y ofrece reinicio seguro"]
+    QueryProvider["3. QueryClientProvider (TanStack Query v5)\nCaché de servidor, staleTime por dominio e interceptor global 401"]
+    ToastProvider["4. ToastProvider (@zentric/ui)\nCola accesible de notificaciones (aria-live='polite')"]
+    RouterProvider["5. RouterProvider (TanStack Router)\nInyecta contexto { sessionPort, apiPort, queryClient } en beforeLoad"]
 
-  classDef core fill:#1e293b,stroke:#334155,stroke-width:2px,color:#f8fafc;
-  classDef prov fill:#0f766e,stroke:#0d9488,stroke-width:2px,color:#ffffff;
-  classDef route fill:#4338ca,stroke:#4f46e5,stroke-width:2px,color:#ffffff;
-
-  class html,entry,strict,boundary core;
-  class qc,qcp,theme,auth,toaster prov;
-  class router route;
+    StrictMode --> ErrorBoundary --> QueryProvider --> ToastProvider --> RouterProvider
 ```
 
-### Reglas Críticas del Árbol de Montaje:
-1. **`QueryClient` Único Fuera del Ciclo de Render:** La instancia de `QueryClient` se crea a nivel de módulo en `main.tsx`. Esto evita que un re-renderizado accidental destruya la memoria caché.
-2. **Orden Estricto de Dependencia entre Contextos:**
-   - `AuthProvider` reside **dentro** de `QueryClientProvider`, lo que le permite invocar `queryClient.clear()` e invalidar consultas remotas al momento del cierre de sesión.
-   - `RouterProvider` reside **dentro** de `AuthProvider`, asegurando que las guardas `beforeLoad` tengan acceso síncrono al estado de autenticación y rol del usuario.
-   - `Toaster` se monta en el nivel superior para escuchar eventos globales de notificación sin interferir con las rutas.
+### 1.1 Contrato de Contexto Inyectado al Enrutador (`RouterContext`)
+El `RouterProvider` recibe un objeto de contexto inmutable con tres dependencias obligatorias:
+- **`sessionPort` (`SessionPort`):** Permite a cada guarda `beforeLoad` consultar síncronamente la sesión activa (`getSession()`) y verificar `expiresAtUtc` sin realizar llamadas de red adicionales.
+- **`apiPort` (`ZentricApiPort`):** Permite precargar datos críticos en el `loader` de una ruta cuando sea necesario.
+- **`queryClient` (`QueryClient`):** Permite invalidar o hidratar claves de caché (`queryClient.ensureQueryData`) durante las transiciones de ruta.
 
 ---
 
-## 3. Composición de Componentes y Primitivas Accesibles
+## 2. Especificación del Árbol de Rutas y Guardas `beforeLoad` (`apps/frontend/src/app/router/`)
 
-La interfaz se ensambla mediante una jerarquía estricta de responsabilidades:
-- **Páginas (`src/modules/*/pages/`):** Conectan la URL con los hooks de la capa `application` y orquestan las acciones del usuario. No contienen estilos manuales ni construyen tablas desde cero.
-- **Componentes Compuestos (`packages/ui/src/composite/`):** Organismos complejos accesibles (`DataTable`, `ResponsiveDrawer`, `ModalDialog`, `StatCard`).
-- **Primitivas Atómicas (`packages/ui/src/primitives/`):** Controles base adaptados sobre Radix UI (`Button`, `Input`, `Badge`, `Skeleton`).
+Todas las rutas se definen con identificadores en inglés, aplicando división de código (`React.lazy` / `createLazyFileRoute`) por módulo de rol para que el bundle inicial de un comprador nunca descargue el código de administración o logística:
 
-### Contrato de Primitivas UI:
-Todo control interactivo cumple las siguientes garantías de accesibilidad WAI-ARIA:
-1. **Identificadores Estables:** Uso de `useId()` para asociar etiquetas `<label htmlFor={id}>` con sus respectivos campos de entrada `<input id={id}>`.
-2. **Descripción de Estados y Errores:** Enlace de textos de ayuda o mensajes de validación mediante `aria-describedby` y señalización semántica de campos inválidos con `aria-invalid={!!error}`.
-3. **Respeto a Preferencias del Usuario:** Transiciones atenuadas bajo la media query `prefers-reduced-motion`.
+| Ruta en TanStack Router | Archivo de Ruta (`src/app/router/routes/`) | Shell Contenedor | Condición de Guarda `beforeLoad` | Redirección en Caso de Fallo |
+|---|---|---|---|---|
+| `/` | `index.tsx` | Ninguno | Evalúa `sessionPort.getSession()` | Si no hay sesión $\rightarrow$ `/login`; si hay sesión $\rightarrow$ ruta home del `role` |
+| `/login` | `login.tsx` | `AuthShell` | Si `sessionPort.getSession() !== null` | Redirige a la ruta home del `role` activo |
+| `/register` | `register.tsx` | `AuthShell` | Si `sessionPort.getSession() !== null` | Redirige a la ruta home del `role` activo |
+| `/health` | `health.tsx` | `AuthShell` | Público (`AllowAnonymous`) | N/A |
+| `/buyer/*` | `buyer/*.tsx` (`6 rutas`) | `BuyerShell` | Exige `role === 'Buyer' \|\| role === 'Administrator'` | Sin sesión $\rightarrow$ `/login`; rol distinto $\rightarrow$ home de su propio rol |
+| `/seller/*` | `seller/*.tsx` (`5 rutas`) | `SellerShell` | Exige `role === 'Seller' \|\| role === 'Administrator'` | Sin sesión $\rightarrow$ `/login`; rol distinto $\rightarrow$ home de su propio rol |
+| `/admin/*` | `admin/*.tsx` (`4 rutas`) | `AdminShell` | Exige `role === 'Administrator'` | Sin sesión $\rightarrow$ `/login`; rol distinto $\rightarrow$ home de su propio rol |
+| `/logistics/*` | `logistics/*.tsx` (`4 rutas`) | `LogisticsShell` | Exige `role === 'LogisticsOperator' \|\| role === 'Administrator'` | Sin sesión $\rightarrow$ `/login`; rol distinto $\rightarrow$ home de su propio rol |
+| `/supervisor/*` | `supervisor/*.tsx` (`5 rutas`) | `SupervisorShell` | Exige `role === 'Supervisor' \|\| role === 'Administrator'` | Sin sesión $\rightarrow$ `/login`; rol distinto $\rightarrow$ home de su propio rol |
 
 ---
 
-## 4. Gestión del Estado: Local, Compartido y Remoto
+## 3. Reglas de Implementación de Componentes React 19 y Doctrina `hyperframes-creative`
 
-El frontend separa de forma rigurosa los tres tipos de estado de la aplicación:
+### 3.1 Separación Contenedor / Presentación y Prohibición de `fetch` Directo
+1. **Componentes de Vista (`src/modules/<role>/*Page.tsx`):**
+   - Orquestan los hooks de `src/application/hooks/*`, las reglas puras de `src/domain/rules/*` y los esquemas de `src/application/validation/*`.
+   - Implementan obligatoriamente los 4 estados visuales (`Loading`, `Empty`, `Error`, `Populated`).
+2. **Componentes del Design System (`packages/ui/src/primitives/*` y `composite/*`):**
+   - Son componentes puros de interfaz; reciben datos y callbacks por props tipadas y nunca importan hooks de TanStack Query ni `SessionPort`.
 
-| Tipo de Estado | Mecanismo | Ámbito y Ciclo de Vida | Ejemplos en Zentric |
+### 3.2 Invariantes CSS y OpenType Obligatorias (`hyperframes-creative`)
+Todo componente numérico, financiero, de inventario o temporal debe aplicar las siguientes reglas de estilo verificables en el DOM:
+
+| Categoría de Dato en Pantalla | Fuente Requerida | Reglas CSS / OpenType Obligatorias | Alineación en Tablas (`DataTable`) |
 |---|---|---|---|
-| **Estado Local** | `useState` / `useReducer` | Transitorio dentro del ciclo de vida del componente en pantalla. | Despliegue de un menú desplegable, pestaña activa, visibilidad de contraseña. |
-| **Estado Compartido** | React Context (`useAuth`) | Sesión activa en memoria RAM; se destruye al recargar el navegador. | Token JWT Bearer, rol del usuario autenticado (`UserRole`), correo electrónico. |
-| **Estado de Servidor** | TanStack Query (`useQuery`) | Memoria caché compartida, sincronizada y revalidada con el backend. | Catálogo de productos, existencias de bodega, lista de órdenes, facturas. |
-
-### 4.1 Estado Compartido de Autenticación (Sesión en RAM)
-Cumpliendo rigurosamente con la política de seguridad y autenticación ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)):
-- El token JWT reside **exclusivamente en memoria RAM** dentro del estado del `AuthProvider` y del adaptador `MemorySessionAdapter`.
-- Queda **estrictamente prohibido** persistir tokens en `localStorage`, `sessionStorage` o cookies no seguras.
-- Si la página se recarga o el token de 60 minutos expira en el servidor, la API devuelve un HTTP `401 Unauthorized`. El cliente reacciona de forma inmediata: purga el token de la memoria RAM, invalida la caché de TanStack Query y redirige al usuario a la vista de `/login` con un aviso explícito de sesión expirada (**sin mecanismo de refresh token**).
-
-### 4.2 Estado de Servidor y Máquina de Estados Cuádruple
-Toda consulta remota gestionada con TanStack Query modela explícitamente cuatro estados visuales en la interfaz:
-
-```mermaid
-stateDiagram-v2
-    [*] --> Idle: Inicialización
-    Idle --> Loading: Montaje del componente o refetch()
-    Loading --> Success: HTTP 200 OK con datos
-    Loading --> Empty: HTTP 200 OK con lista vacía ([])
-    Loading --> Error: HTTP 4xx / 5xx (RFC 7807)
-    Error --> Loading: Reintento por acción del usuario
-    Success --> Loading: Invalidación de caché por mutación
-    Empty --> Loading: Recarga manual o cambio de filtro
-```
-
-- **`Loading`:** Renderiza esqueletos de carga (`Skeleton`) que replican la estructura y densidad de la tabla o formulario final.
-- **`Empty`:** Presenta una ilustración sobria, mensaje explicativo y botón de acción principal para guiar al usuario (ej. "No hay existencias registradas. Ingresar Stock").
-- **`Error`:** Presenta un componente de alerta estructurado que renderiza el campo `detail` del Problem Details (RFC 7807) y un botón interactivo para reintentar la operación (`refetch`).
-- **`Success`:** Dibuja los datos en la tabla o tarjeta con renderizado de códigos y monedas en Geist Mono.
+| **Importes Monetarios (`GrossAmount`, `CommissionAmount`, `NetVendorAmount`, `Price`)** | `Geist Mono` (`--font-mono`) | `font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 1;` | Derecha (`text-right`) |
+| **Cantidades de Stock (`AvailableQuantity`, `ReservedQuantity`, `UsedQuantity`)** | `Geist Mono` (`--font-mono`) | `font-variant-numeric: tabular-nums;` | Derecha (`text-right`) |
+| **Identificadores Técnicos (`SKU`, `TrackingNumber`, `Guid` truncado, `Error.Code`)** | `Geist Mono` (`--font-mono`) | `font-variant-ligatures: none;` | Izquierda (`text-left`) |
+| **Reloj de Reserva de 15 Minutos (`CheckoutCountdown`) y Sesión de 30 Minutos** | `Geist Mono` (`--font-mono`) | `font-variant-numeric: tabular-nums; letter-spacing: 0.04em;` | Derecha en Topbar / Banner |
+| **Encabezados de Columna (`<th>`) y Kicker Labels de `StatCard`** | `Geist Sans` (`--font-sans`) | `font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #94A3B8;` | Coincidente con la celda (`left` o `right`) |
 
 ---
 
-## 5. Validación Defensiva de Formularios (React Hook Form + Zod)
+## 4. Especificación de Pruebas y Compuerta de Calidad (`13-frontend-qa-guardian`)
 
-Los formularios implementan validación en dos barreras consecutivas:
+El agente `13-frontend-qa-guardian` ejecuta la verificación automatizada con **Vitest + React Testing Library + Happy-DOM** bajo poder de veto estricto (`QA: PASS` o `QA: FAIL`):
 
-1. **Barrera de Interfaz (Zod en Cliente):** 
-   - Se define un esquema Zod fuertemente tipado en `src/application/schemas/` que replica con exactitud las reglas de negocio de los validadores FluentValidation del backend (longitudes, formatos de correo, no-negatividad de cantidades, números de documento válidos).
-   - `react-hook-form` integra el esquema mediante `@hookform/resolvers/zod`.
-   - Si la entrada no es válida, los errores se proyectan inmediatamente bajo cada campo y **el cliente nunca emite la petición HTTP**, ahorrando ancho de banda y latencia.
-2. **Barrera de Autoridad (API Backend):**
-   - Si la petición supera la validación local, viaja a la API.
-   - Si el backend detecta una violación de invariante de negocio (ej. falta de existencias en bodega o precio no coincidente), devuelve un HTTP `400 Bad Request` con cabecera `application/problem+json`. El adaptador HTTP traduce el error y el formulario lo proyecta en el campo correspondiente o en un mensaje de alerta global.
-
----
-
-## 6. Enrutamiento Tipado y Guardas de Rol (TanStack Router)
-
-El sistema de enrutamiento implementa **Code-Based Routing** fuertemente tipado mediante TanStack Router:
-
-```mermaid
-flowchart TD
-  url["Navegación / Cambio de URL"] --> resolve["TanStack Router Resuelve Ruta"]
-  resolve --> guardAuth{"Guarda beforeLoad:<br/>¿Existe sesión en RAM?"}
-
-  guardAuth -->|"No"| redirectLogin["Redirección síncrona a /login<br/>(Almacena redirectUrl)"]
-  guardAuth -->|"Sí"| guardRole{"Guarda beforeLoad:<br/>¿Rol coincide con la política?"}
-
-  guardRole -->|"No coincide"| stateForbidden["Estado 403 Forbidden<br/>(Acceso Restringido para este Rol)"]
-  guardRole -->|"Rol Autorizado"| layout["Carga Layout del Rol<br/>(/buyer, /seller, /admin, etc.)"]
-  layout --> outlet["Outlet Renderiza Página Específica"]
-
-  classDef check fill:#0f766e,stroke:#0d9488,stroke-width:2px,color:#ffffff;
-  classDef ok fill:#1e293b,stroke:#334155,stroke-width:2px,color:#f8fafc;
-  classDef warn fill:#b45309,stroke:#d97706,stroke-width:2px,color:#ffffff;
-
-  class guardAuth,guardRole check;
-  class layout,outlet ok;
-  class redirectLogin,stateForbidden warn;
-```
-
-### Principio de Doble Verificación:
-Las guardas `beforeLoad` proporcionan una experiencia fluida y evitan renderizar pantallas para las que el usuario carece de permisos. Sin embargo, **la interfaz de usuario no es una frontera de seguridad**: cada endpoint del backend valida de forma independiente e innegociable el token Bearer JWT contra su matriz de 21 políticas de autorización fail-closed ([ADR-0011](../backendSDD/Adr/0011-matriz-autorizacion-por-rol.md) y [ADR-0014](../backendSDD/Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md)).
-
----
-
-## 7. Mapeo de Respuestas y Manejo de Errores (RFC 7807)
-
-El cliente estandariza la captura de excepciones y errores de red en la capa de adaptadores:
-
-```typescript
-// Contrato de dominio para errores tipados derivados de Problem Details
-export interface ApiProblemDetails {
-  type: string;
-  title: string;
-  status: number;
-  detail: string;
-  instance?: string;
-  errors?: Record<string, string[]>;
-}
-```
-
-- **HTTP 400 Bad Request:** Contiene detalles de validación de campos (`errors`) o violación de invariante de negocio (`detail`). Se proyecta directamente sobre los formularios.
-- **HTTP 401 Unauthorized:** Token expirado o ausente. Dispara evento global de sesión caducada, purga inmediata de la memoria RAM y redirección forzada a la pantalla de `/login`.
-- **HTTP 403 Forbidden:** El usuario está autenticado pero su rol no posee privilegios para la acción solicitada. Conserva la sesión del usuario y despliega una notificación de acceso denegado.
-- **HTTP 404 Not Found:** Recurso inexistente o ajeno al usuario autenticado ([ADR-0013](../backendSDD/Adr/0013-propiedad-del-recurso-por-rol.md)).
-- **HTTP 500 Internal Server Error:** Error técnico no controlado en el servidor. Muestra mensaje amigable de contingencia sin exponer detalles de infraestructura.
-
----
-
-## 8. Integración de la Doctrina Visual Anti-IA Genérica
-
-La construcción del código visual en React y Tailwind CSS v4 cumple las siguientes directrices de diseño:
-
-1. **Tokens Semánticos en CSS `@theme`:** Los estilos no emplean clases arbitrarias ni grises desaturados (`#888888`). Todo fondo utiliza los neutros tintados carbón (`bg-surface-base`, `bg-surface-card`, `border-subtle`).
-2. **Tipografía Intencional:** 
-   - Texto de navegación, etiquetas y encabezados: **Geist Sans** con pesos 600 o 700 para alto contraste.
-   - Datos tabulares, importes monetarios (`Money`), códigos SKU, fechas y números de guía: **Geist Mono** con alineación tabular a la derecha para lectura rápida.
-3. **Acciones Semánticas:** 
-   - Acento primario único en esmeralda/cian suave (`#00D4AA`) para botones de acción principal (`Confirmar Pago`, `Empacar Orden`, `Guardar Producto`).
-   - Acento de advertencia en ámbar (`#FFB800`) para estados transitorios de atención (contador regresivo de checkout de 15 minutos).
-4. **Patrones Prohibidos en Código:**
-   - ❌ Queda prohibido el uso de degradados multicolores en textos de encabezados (`bg-gradient-to-r text-transparent bg-clip-text`).
-   - ❌ Queda prohibido el uso de bordes izquierdos con barras de colores chillones en tarjetas.
-   - ❌ Queda prohibido el uso de colores cian-neón o violeta-neón saturados sobre fondos negros puros `#000000`.
-
----
-
-## 9. Estrategia de Pruebas Automatizadas (DoD Frontend)
-
-Antes de considerar cualquier componente o módulo como terminado, el código debe satisfacer las siguientes compuertas de verificación:
-
-1. **Verificación de Tipos Estricta:**
-   ```bash
-   pnpm --filter frontend typecheck
-   ```
-   Cero errores de compilación de TypeScript (`tsc --noEmit`).
-2. **Pruebas de Componentes y Lógica con Vitest:**
-   ```bash
-   pnpm --filter frontend test:run
-   ```
-   Pruebas de comportamiento centradas en el usuario utilizando **React Testing Library** y **Happy-DOM**. Las pruebas verifican:
-   - Renderizado correcto de los 4 estados (carga, vacío, éxito, error).
-   - Bloqueo de envíos duplicados mientras `isPending` es verdadero.
-   - Mapeo correcto de mensajes de error de Problem Details (RFC 7807).
-3. **Cobertura Automatizada de Código:**
-   ```bash
-   pnpm --filter frontend test:coverage
-   ```
-   Umbral innegociable de cobertura de líneas y ramas $\ge 90\%$ auditado por `13-frontend-qa-guardian`.
+| Categoría de Prueba | Directorio / Alcance | Escenarios Mínimos Obligatorios a Verificar | Umbral de Aprobación |
+|---|---|---|---|
+| **1. Reglas de Dominio y Diccionario (`domainLabels.ts` + `domain/rules/`)** | `packages/ui/src/__tests__/` y `apps/frontend/src/domain/__tests__/` | Traducción exhaustiva de los **11 enums de C#**; evaluación de bordes en `isOrderModifiable`, `isOrderPayable`, `isReturnAllowed` (día 29, 30 y 31), `isReturnApprovable` e invariante `verifyInvoiceSplitInvariant`. | **100%** de cobertura de líneas y ramas |
+| **2. Esquemas Zod y Adaptadores (`application/` + `adapters/`)** | `apps/frontend/src/application/__tests__/` y `src/adapters/__tests__/` | Validación positiva y negativa de los **12 esquemas Zod** (incluyendo bloqueo de roles internos en `RegisterUserSchema` y `WarehouseType: 'Marketplace' \| 'Vendor'`); serialización de errores RFC 7807 y limpieza de `SessionPort` ante `401 Unauthorized`. | $\ge 90\%$ de cobertura de líneas y ramas |
+| **3. Primitivas y Compuestos UI (`@zentric/ui`)** | `packages/ui/src/__tests__/` | Navegación por teclado (`Tab`, `Enter`, `Escape`), roles WAI-ARIA (`dialog`, `alertdialog`, `status`), alineación numérica `tabular-nums` en `DataTable` y temporizador `CheckoutCountdown` ($\Delta t > 180\text{s}$, $\le 180\text{s}$ y $\le 0\text{s}$). | $\ge 90\%$ de cobertura de líneas y ramas |
+| **4. Guardas de Ruta y Vistas por Rol (`app/` + `modules/`)** | `apps/frontend/src/modules/__tests__/` | Redirección de usuarios no autenticados a `/login`, aislamiento RBAC de las **27 rutas**, bloqueo de `/api/users` para `Supervisor`, uso de `canBeSold` en `BuyerProductDetailPage` y transición completa de los 4 estados (`Loading`, `Empty`, `Error`, `Populated`). | $\ge 90\%$ de cobertura global, `0` errores TypeScript y `0` warnings ESLint |

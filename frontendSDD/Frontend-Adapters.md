@@ -1,269 +1,140 @@
-# Frontend-Adapters — Adaptadores de Infraestructura y Red
+# Adaptadores de Infraestructura, Red y Sesión en Memoria (Frontend Adapters)
 
-> Mapeo exhaustivo del adaptador HTTP del cliente contra la API REST oficial de Zentric (`Zentric.Api`).  
-> **Fuente de verdad canónica del contrato:** [`../backendSDD/Presentation/01-endpoints.md`](../backendSDD/Presentation/01-endpoints.md), el manifiesto OpenAPI vivo (`GET /swagger/v1/swagger.json`) y los Registros de Decisiones de Arquitectura (ADR-0009, ADR-0012, ADR-0017, ADR-0021).  
-> **Cobertura contractual:** La API publica actualmente **44 endpoints de negocio + 1 sonda técnica `/health` (45 endpoints en total)**.
+> Especificación contractual de los adaptadores secundarios del cliente web de **Zentric Marketplace** (`frontend/apps/frontend/src/adapters/`).  
+> Define el monopolio de red en `HttpClient.ts`, la matriz de contrato HTTP de los 45 endpoints verificada contra los controladores de `Zentric.Api`, las reglas de transformación de payloads y errores RFC 7807, el adaptador de sesión volátil en memoria RAM (`MemorySessionAdapter.ts`), el adaptador de confirmaciones (`AlertAdapter.ts`) y los adaptadores deterministas de prueba (`mocks/`).
 
 ---
 
-## 1. Monopolio de Red y Configuración del Adaptador (`HttpClient.ts`)
+## 1. Monopolio de Red y Políticas de Transporte (`HttpClient.ts`)
 
-En cumplimiento de la regla de separación de capas de la Arquitectura Hexagonal, el adaptador HTTP implementa un **monopolio absoluto de red**:
+En cumplimiento de la Arquitectura Hexagonal, `apps/frontend/src/adapters/http/HttpClient.ts` detenta el **monopolio absoluto de red**: ningún componente visual, hook de React, esquema Zod ni servicio de dominio puede invocar `fetch()`, `XMLHttpRequest` o clientes HTTP externos directamente.
 
-> [!IMPORTANT]
-> **Regla de Monopolio de Red:** Queda estrictamente prohibido invocar `fetch()`, `axios` o cualquier cliente de red nativo desde componentes de UI, hooks de React, esquemas o servicios de dominio. Todas las peticiones HTTP del sistema se originan exclusivamente a través del singleton tipado `HttpClient.ts` ubicado en `apps/frontend/src/adapters/http/HttpClient.ts`.
-
-### 1.1 Parámetros de Configuración del Cliente
-
-| Aspecto | Definición Técnica | Origen / Justificación |
+| Parámetro de Transporte | Especificación Contractual | Procedencia y Justificación |
 |---|---|---|
-| **URL Base** | `import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5076'` | Configurable por variable de entorno para entornos Docker, CI y local. |
-| **Cabeceras Fijas** | `Accept: application/json`<br>`Content-Type: application/json` | Contrato JSON estricto en ambos sentidos. |
-| **Autenticación** | `Authorization: Bearer {token}` | Token JWT emitido por `POST /api/auth/login`. Inyectado dinámicamente desde `MemorySessionAdapter`. |
-| **Prohibición de Cabeceras Forjables** | Prohibido enviar `X-Buyer-Id` | La identidad se extrae en el servidor del claim `sub` del JWT (Decisión de seguridad formalizada en [ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)). |
-| **Tiempo Límite (*Timeout*)** | 15 segundos mediante señal `AbortSignal.timeout(15000)` | Previene bloqueos indefinidos en llamadas de red lentas o desconexiones. |
-| **Política de Reintentos** | Máximo 1 reintento automático exclusivamente ante errores de red o códigos `5xx` en operaciones idempotentes (GET). Prohibido reintentar en códigos `4xx` o comandos de pago/checkout. | Evita duplicidad de transacciones financieras o estados inconsistentes. |
+| **Resolución de URL Base** | `window.__ZENTRIC_API_BASE_URL__ ?? import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5076'` | Soporta inyección en tiempo de arranque en contenedor Nginx (`env-config.js`) y desarrollo local en Vite (`Program.cs:218-231`). |
+| **Cabeceras Estándar** | `Accept: application/json, application/problem+json`<br>`Content-Type: application/json` (cuando existe cuerpo) | Cumplimiento estricto del contrato JSON y RFC 7807 ([ADR-0015](../backendSDD/Adr/0015-contrato-de-error-http-problem-json.md)). |
+| **Inyección de Identidad** | `Authorization: Bearer <token>` leído síncronamente desde `SessionPort.getAccessToken()` | Satisface la política de reserva `FallbackPolicy` de [`Program.cs:126-128`](../backend/Zentric.Api/Program.cs#L126-L128) ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)). |
+| **Erradicación de Cabeceras Forjables** | Prohibido adjuntar `X-Buyer-Id`, `X-User-Id` o `X-Role` | La identidad y el rol se extraen exclusivamente de los claims firmados `sub` y `role` en el servidor ([`ClaimsUserAccessor.cs`](../backend/Zentric.Api/Security/ClaimsUserAccessor.cs)). |
+| **Tiempo Límite (*Timeout*)** | `15_000 ms` mediante `AbortSignal.timeout(15000)` | Evita bloqueos indefinidos de interfaz ante caídas de red. |
+| **Política de Reintentos** | Máximo `1` reintento sólo en peticiones `GET` ante fallos de red o códigos `502`/`503`/`504`. **Cero reintentos (`0`)** en comandos `POST` o respuestas `4xx`. | Impide duplicar efectos financieros o reservas de inventario en checkout y pagos. |
 
 ---
 
-## 2. Inventario Canónico de Endpoints (45 Endpoints)
+## 2. Matriz Contractual de los 45 Endpoints en `HttpClient.ts`
 
-Leyenda de verificación: `VERIFIED` (auditado contra código C# de controladores y pruebas de integración) · Todos los métodos pertenecen a la interfaz unificada `ZentricApiPort` (`domain/ports/ZentricApiPort.ts`).
+Cada fila vincula el método de `ZentricApiPort` con la ruta HTTP real, la política de autorización en [`AuthorizationPolicies.cs:279-372`](../backend/Zentric.Api/Security/AuthorizationPolicies.cs#L279-L372), el formato exacto de entrada y el formato de respuesta en el controlador C#:
 
-### 2.1 Módulo 0: Autenticación e Identidad (`/api/auth`)
+### 2.1 Módulo 0: Autenticación e Identidad (`/api/auth` — [`AuthController.cs`](../backend/Zentric.Api/Controllers/AuthController.cs))
 
-| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
-|---|---|---|:---:|---|
-| `POST` | `/api/auth/login` | `ZentricApiPort.login` | `VERIFIED` | Autentica credenciales (email y contraseña PBKDF2), emite JWT de 60 min. Acceso anónimo permitido. |
-| `GET` | `/api/auth/me` | `ZentricApiPort.getCurrentUser` | `VERIFIED` | Resuelve la identidad, rol y reclamos (*claims*) del usuario autenticado a partir del token JWT activo. |
+| Método HTTP y Ruta | Método en `ZentricApiPort` | Política / Roles Autorizados | Cuerpo / Query de Entrada | Cuerpo de Respuesta (`200 OK`) |
+|---|---|---|---|---|
+| `POST /api/auth/login` | `login` | `[AllowAnonymous]` | Body: `{ email, password }` | `AuthTokenResponse` (`{ token, expiresAt, userId, email, fullName, role }`) |
+| `GET /api/auth/me` | `getCurrentUser` | `AnyAuthenticatedUser` (Todos los roles autenticados) | Sin cuerpo (Cabecera `Bearer`) | `CurrentUserResponse` (`{ userId, email, fullName, role }`) |
 
-### 2.2 Módulo 1: Usuarios y Gestión de Acceso (`/api/users`)
+### 2.2 Módulo 1: Usuarios y Gestión de Acceso (`/api/users` — [`UsersController.cs`](../backend/Zentric.Api/Controllers/UsersController.cs))
 
-| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
-|---|---|---|:---:|---|
-| `POST` | `/api/users` | `ZentricApiPort.createUser` | `VERIFIED` | Registra usuario. Acceso anónimo permitido sólo para `role = "Buyer"`. Exige token de Administrador para otros roles. Retorna `Guid` en texto plano JSON. |
-| `GET` | `/api/users` | `ZentricApiPort.listUsers` | `VERIFIED` | Lista usuarios registrados con filtro opcional por rol (`role?`). Exige rol Administrador o Supervisor. |
-| `GET` | `/api/users/{id}` | `ZentricApiPort.getUserById` | `VERIFIED` | Consulta detalle técnico y estado de un usuario por su ID. |
-| `POST` | `/api/users/{id}/block` | `ZentricApiPort.blockUser` | `VERIFIED` | Bloquea el acceso de un usuario. Exclusivo para Administrador. |
-| `POST` | `/api/users/{id}/activate` | `ZentricApiPort.activateUser` | `VERIFIED` | Reactiva un usuario bloqueado. Exclusivo para Administrador. |
+| Método HTTP y Ruta | Método en `ZentricApiPort` | Política / Roles Autorizados | Cuerpo / Query de Entrada | Cuerpo de Respuesta (`200 OK`) |
+|---|---|---|---|---|
+| `POST /api/users` | `createUser` | Anónimo si `role === "Buyer"`; exige `Administrator` para cualquier otro rol (`UsersController.cs:72`) | Body: `{ identityDocument, fullName, email, password, role }` | `Guid` JSON (`string`) |
+| `GET /api/users` | `listUsers` | `UserAdministration` (**Exclusivo `Administrator`** — protege PII, `UsersController.cs:19-23`) | Query: `?role={UserRole}` (opcional) | `UserDto[]` |
+| `GET /api/users/{id}` | `getUserById` | `UserAdministration` (**Exclusivo `Administrator`**) | Path: `id` (`Guid`) | `UserDto` |
+| `POST /api/users/{id}/block` | `blockUser` | `UserAdministration` (**Exclusivo `Administrator`**) | Path: `id` (`Guid`), sin cuerpo | Vacío (`void`) |
+| `POST /api/users/{id}/activate` | `activateUser` | `UserAdministration` (**Exclusivo `Administrator`**) | Path: `id` (`Guid`), sin cuerpo | Vacío (`void`) |
 
-### 2.3 Módulo 2: Bodegas y Centros de Almacenamiento (`/api/warehouses`)
+### 2.3 Módulo 2: Bodegas Físicas (`/api/warehouses` — [`WarehousesController.cs`](../backend/Zentric.Api/Controllers/WarehousesController.cs))
 
-| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
-|---|---|---|:---:|---|
-| `POST` | `/api/warehouses` | `ZentricApiPort.createWarehouse` | `VERIFIED` | Registra una nueva bodega física especificando nombre, ubicación, capacidad ($m^3$) y tipo (`Zentric` o `Vendor`). Retorna `Guid`. |
-| `GET` | `/api/warehouses` | `ZentricApiPort.listWarehouses` | `VERIFIED` | Lista bodegas activas con filtro opcional por vendedor (`vendorId?`). |
-| `GET` | `/api/warehouses/{id}` | `ZentricApiPort.getWarehouseById` | `VERIFIED` | Consulta ficha técnica y capacidad volumétrica de una bodega específica. |
+| Método HTTP y Ruta | Método en `ZentricApiPort` | Política / Roles Autorizados | Cuerpo / Query de Entrada | Cuerpo de Respuesta (`200 OK`) |
+|---|---|---|---|---|
+| `POST /api/warehouses` | `createWarehouse` | `WarehouseManagement` (**Exclusivo `Administrator`**) | Body: `{ name, location, capacity, type: 'Marketplace' \| 'Vendor', vendorId? }` | `Guid` JSON (`string`) |
+| `GET /api/warehouses` | `listWarehouses` | `WarehouseRead` (`Administrator`, `Seller`, `LogisticsOperator`) | Query: `?vendorId={Guid}` (opcional; `Seller` restringido al propio) | `WarehouseDto[]` |
+| `GET /api/warehouses/{id}` | `getWarehouseById` | `WarehouseRead` (`Administrator`, `Seller`, `LogisticsOperator`) | Path: `id` (`Guid`) | `WarehouseDto` |
 
-### 2.4 Módulo 3: Inventarios y Control de Stock (`/api/inventories`)
+### 2.4 Módulo 3: Inventarios y Control de Stock (`/api/inventories` — [`InventoriesController.cs`](../backend/Zentric.Api/Controllers/InventoriesController.cs))
 
-| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
-|---|---|---|:---:|---|
-| `POST` | `/api/inventories/stock` | `ZentricApiPort.addStock` | `VERIFIED` | Ingresa existencias clasificando unidades entre nuevas o reacondicionadas (`isUsed`). Retorna `Guid`. |
-| `GET` | `/api/inventories` | `ZentricApiPort.listInventories` | `VERIFIED` | Lista existencias con aislamiento forzado por rol (vendedor ve solo su stock; admin/operador ven consolidado). |
-| `GET` | `/api/inventories/{variantId}` | `ZentricApiPort.listInventoryByVariant` | `VERIFIED` | Consulta existencias distribuidas por bodega para una variante (disponible, reservado, usado, dañado). |
-| `POST` | `/api/inventories/{id}/adjust` | `ZentricApiPort.adjustInventory` | `VERIFIED` | Registra ajuste por conteo físico en bodega. Solo disminuye unidades disponibles. Exclusivo Administrador y Supervisor. |
+| Método HTTP y Ruta | Método en `ZentricApiPort` | Política / Roles Autorizados | Cuerpo / Query de Entrada | Cuerpo de Respuesta (`200 OK`) |
+|---|---|---|---|---|
+| `POST /api/inventories/stock` | `addStock` | `InventoryManagement` (`Seller`, `LogisticsOperator`) | Body: `{ variantId, warehouseId, quantity }` (`AddStockCommand.cs:17-23`) | `Guid` JSON (`string`) |
+| `GET /api/inventories` | `listInventories` | `InventoryRead` (`Seller`, `LogisticsOperator`) | Sin parámetros (`Seller` ve propios; `LogisticsOperator` ve toda la red) | `InventoryDto[]` |
+| `GET /api/inventories/{variantId}` | `listInventoryByVariant` | `InventoryRead` (`Seller`, `LogisticsOperator`) | Path: `variantId` (`Guid`) | `InventoryDto[]` |
+| `POST /api/inventories/{id}/adjust` | `adjustInventory` | `InventoryAdjust` (`Administrator`, `Supervisor` — [ADR-0021](../backendSDD/Adr/0021-ajuste-de-stock-sin-cuello-de-botella.md)) | Path: `id` (`Guid`), Body: `{ countedQuantity, reason }` | `AdjustInventoryResult` |
 
-### 2.5 Módulo 4: Catálogo de Productos (`/api/catalog`)
+### 2.5 Módulo 4: Catálogo de Productos (`/api/catalog` — [`CatalogController.cs`](../backend/Zentric.Api/Controllers/CatalogController.cs))
 
-| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
-|---|---|---|:---:|---|
-| `POST` | `/api/catalog/products` | `ZentricApiPort.createProduct` | `VERIFIED` | Da de alta producto con precio y variantes. Retorna `CreatedProductDto` (`{ productId, variantIds }`). Exclusivo Vendedor. |
-| `POST` | `/api/catalog/products/{productId}/publish` | `ZentricApiPort.publishProduct` | `VERIFIED` | Reactiva producto suspendido a estado publicado (`Published`). Retorna `200 OK` vacío. |
-| `POST` | `/api/catalog/products/{productId}/suspend` | `ZentricApiPort.suspendProduct` | `VERIFIED` | Suspende producto, ocultándolo de búsquedas públicas y carritos. Retorna `200 OK` vacío. |
-| `GET` | `/api/catalog/products` | `ZentricApiPort.listProducts` | `VERIFIED` | Catálogo de productos. Público ve `Published`; vendedor ve propios (incluidos suspendidos). |
-| `GET` | `/api/catalog/products/paged` | `ZentricApiPort.listProductsPaged` | `VERIFIED` | Versión paginada con metadatos `PagedResult<ProductDto>` (`items`, `page`, `size`, `totalItems`, `totalPages`). |
-| `GET` | `/api/catalog/products/{id}` | `ZentricApiPort.getProductById` | `VERIFIED` | Ficha técnica completa de producto por ID. |
+| Método HTTP y Ruta | Método en `ZentricApiPort` | Política / Roles Autorizados | Cuerpo / Query de Entrada | Cuerpo de Respuesta (`200 OK`) |
+|---|---|---|---|---|
+| `POST /api/catalog/products` | `createProduct` | `ProductManagement` (**Exclusivo `Seller`**) | Body: `{ name, description, priceAmount, priceCurrency, type, variants?: [{ sku, attributes: [{ name, value }] }] }` | `CreatedProductDto` (`{ productId, variantIds }`) |
+| `POST /api/catalog/products/{productId}/publish` | `publishProduct` | `ProductManagement` (**Exclusivo `Seller`**) | Path: `productId` (`Guid`), sin cuerpo | Vacío (`void`) |
+| `POST /api/catalog/products/{productId}/suspend` | `suspendProduct` | `ProductManagement` (**Exclusivo `Seller`**) | Path: `productId` (`Guid`), sin cuerpo | Vacío (`void`) |
+| `GET /api/catalog/products` | `listProducts` | `AnyAuthenticatedUser` (Todos los roles autenticados) | Query: `?vendorId={Guid}` (opcional) | `ProductDto[]` |
+| `GET /api/catalog/products/paged` | `listProductsPaged` | `AnyAuthenticatedUser` (Todos los roles autenticados) | Query: `?vendorId={Guid}&page={0..n}&size={1..100}` | `PagedResult<ProductDto>` |
+| `GET /api/catalog/products/{id}` | `getProductById` | `AnyAuthenticatedUser` (Todos los roles autenticados) | Path: `id` (`Guid`) | `ProductDto` |
 
-### 2.6 Módulo 5: Carrito y Pedidos de Compra (`/api/orders`)
+### 2.6 Módulo 5: Carrito y Pedidos de Compra (`/api/orders` — [`OrdersController.cs`](../backend/Zentric.Api/Controllers/OrdersController.cs))
 
-| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
-|---|---|---|:---:|---|
-| `POST` | `/api/orders/cart` | `ZentricApiPort.createCart` | `VERIFIED` | Crea pedido en estado `Cart` vinculado al comprador autenticado. Retorna `Guid`. |
-| `POST` | `/api/orders/cart/items` | `ZentricApiPort.addCartItem` | `VERIFIED` | Agrega variante al carrito y congela precio unitario. Retorna `200 OK` vacío. |
-| `POST` | `/api/orders/{orderId}/checkout` | `ZentricApiPort.checkoutOrder` | `VERIFIED` | Cierra carrito, reserva stock en bodegas, inicia temporizador de 15 min. Retorna `200 OK` vacío. |
-| `POST` | `/api/orders/{orderId}/pay` | `ZentricApiPort.payOrder` | `VERIFIED` | Procesa pago, consolida reserva y transiciona pedido a `Paid`. Retorna `200 OK` vacío. |
-| `GET` | `/api/orders` | `ZentricApiPort.listOrders` | `VERIFIED` | Lista pedidos con aislamiento por rol (comprador ve compras; vendedor ve líneas propias; admin ve todo). |
-| `GET` | `/api/orders/{id}` | `ZentricApiPort.getOrderById` | `VERIFIED` | Detalle de pedido. Vendedor recibe `SellerOrderViewDto`; comprador y admin reciben `OrderDto` consolidado. |
+| Método HTTP y Ruta | Método en `ZentricApiPort` | Política / Roles Autorizados | Cuerpo / Query de Entrada | Cuerpo de Respuesta (`200 OK`) |
+|---|---|---|---|---|
+| `POST /api/orders/cart` | `createCart` | `Checkout` (**Exclusivo `Buyer`**) | Sin cuerpo (identidad desde claim `sub`) | `Guid` JSON (`string`) |
+| `POST /api/orders/cart/items` | `addCartItem` | `Checkout` (**Exclusivo `Buyer`**) | Body: `{ orderId, variantId, quantity }` | Vacío (`void`) |
+| `POST /api/orders/{orderId}/checkout` | `checkoutOrder` | `Checkout` (**Exclusivo `Buyer`**) | Path: `orderId` (`Guid`), sin cuerpo | Vacío (`void`) |
+| `POST /api/orders/{orderId}/pay` | `payOrder` | `Checkout` (**Exclusivo `Buyer`**) | Path: `orderId` (`Guid`), sin cuerpo | Vacío (`void`) |
+| `GET /api/orders` | `listOrders` | `OrderRead` (Todos los 5 roles, filtrado por propiedad en servidor) | Query: `?status={OrderStatus}` (opcional) | `OrderListItemDto[]` |
+| `GET /api/orders/{id}` | `getOrderById` | `OrderRead` (Todos los 5 roles, filtrado por propiedad) | Path: `id` (`Guid`) | `OrderDto` o `SellerOrderViewDto` (si `role === 'Seller'`) |
 
-### 2.7 Módulo 6: Logística y Órdenes de Despacho (`/api/logistics`)
+### 2.7 Módulo 6: Logística y Despacho (`/api/logistics` — [`LogisticsController.cs`](../backend/Zentric.Api/Controllers/LogisticsController.cs))
 
-| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
-|---|---|---|:---:|---|
-| `POST` | `/api/logistics/fulfillment` | `ZentricApiPort.createFulfillment` | `VERIFIED` | Crea orden manual de despacho para bodega y vendedor específicos. Retorna `Guid`. |
-| `POST` | `/api/logistics/fulfillment/{id}/pack` | `ZentricApiPort.packFulfillment` | `VERIFIED` | Transiciona orden a `Packed`. Operador puede empacar cualquiera; vendedor solo propias. Retorna `200 OK` vacío. |
-| `POST` | `/api/logistics/fulfillment/{id}/dispatch` | `ZentricApiPort.dispatchFulfillment` | `VERIFIED` | Marca como `Dispatched`, asigna transportadora y tracking, descuenta stock definitivamente. Retorna `200 OK` vacío. |
-| `POST` | `/api/logistics/fulfillment/{id}/deliver` | `ZentricApiPort.deliverFulfillment` | `VERIFIED` | Certifica entrega física (`Delivered`). **Exclusivo Operador Logístico**; prohibido al vendedor. Retorna `200 OK` vacío. |
-| `POST` | `/api/logistics/fulfillment/cancel-ghost-stock` | `ZentricApiPort.cancelGhostStock` | `VERIFIED` | Reporta faltante físico no detectado (*stock fantasma*). Cancela orden y genera reembolso automático. Retorna `Guid`. |
-| `GET` | `/api/logistics/fulfillments` | `ZentricApiPort.listFulfillments` | `VERIFIED` | Lista despachos con filtro de rol y estado (`status?`). Nota: pluralizado formalmente en [ADR-0017](../backendSDD/Adr/0017-listados-de-recurso-propio.md). |
-| `GET` | `/api/logistics/fulfillment/{id}` | `ZentricApiPort.getFulfillmentById` | `VERIFIED` | Ficha técnica de despacho, paquetes, transportadora y guía. |
+| Método HTTP y Ruta | Método en `ZentricApiPort` | Política / Roles Autorizados | Cuerpo / Query de Entrada | Cuerpo de Respuesta (`200 OK`) |
+|---|---|---|---|---|
+| `POST /api/logistics/fulfillment` | `createFulfillment` | `FulfillmentOperate` (`Seller`, `LogisticsOperator`) | Body: `{ customerOrderId, vendorId }` | `Guid` JSON (`string`) |
+| `POST /api/logistics/fulfillment/{id}/pack` | `packFulfillment` | `FulfillmentOperate` (`Seller`, `LogisticsOperator`) | Path: `id` (`Guid`), sin cuerpo | Vacío (`void`) |
+| `POST /api/logistics/fulfillment/{id}/dispatch` | `dispatchFulfillment` | `FulfillmentOperate` (`Seller`, `LogisticsOperator`) | Path: `id` (`Guid`), sin cuerpo | Vacío (`void`) |
+| `POST /api/logistics/fulfillment/{id}/deliver` | `deliverFulfillment` | `FulfillmentDeliver` (**Exclusivo `LogisticsOperator`**) | Path: `id` (`Guid`), sin cuerpo | Vacío (`void`) |
+| `POST /api/logistics/fulfillment/cancel-ghost-stock` | `cancelGhostStock` | `FulfillmentCancelByQuiebre` (`Seller`, `LogisticsOperator`) | Body: `{ fulfillmentOrderId, variantId, warehouseId, quantityToCancel }` | `boolean` (`true`, [`CancelFulfillmentOrderDueToNoStockCommand.cs:101`](../backend/Zentric.Application/Logistics/Commands/CancelFulfillmentOrderDueToNoStockCommand.cs#L101)) |
+| `GET /api/logistics/fulfillments` | `listFulfillments` | `FulfillmentRead` (Todos los 5 roles, filtrado por propiedad) | Query: `?status={FulfillmentStatus}` (opcional) | `FulfillmentOrderDto[]` |
+| `GET /api/logistics/fulfillment/{id}` | `getFulfillmentById` | `FulfillmentRead` (Todos los 5 roles, filtrado por propiedad) | Path: `id` (`Guid`) | `FulfillmentOrderDto` |
 
-### 2.8 Módulo 7: Devoluciones y Garantías (`/api/returns`)
+### 2.8 Módulo 7: Devoluciones y Garantías (`/api/returns` — [`ReturnsController.cs`](../backend/Zentric.Api/Controllers/ReturnsController.cs))
 
-| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
-|---|---|---|:---:|---|
-| `POST` | `/api/returns/request` | `ZentricApiPort.requestReturn` | `VERIFIED` | Radica devolución de producto entregado dentro de plazo de garantía. Retorna `Guid`. |
-| `POST` | `/api/returns/{id}/inspect` | `ZentricApiPort.inspectReturn` | `VERIFIED` | Registra dictamen técnico en bodega (buen estado o dañado). Operador u Vendedor según bodega. Retorna `200 OK` vacío. |
-| `POST` | `/api/returns/{id}/approve` | `ZentricApiPort.approveReturn` | `VERIFIED` | Aprueba comercialmente devolución y reingresa stock como usado. **Exclusivo Vendedor dueño**. Retorna `200 OK` vacío. |
-| `POST` | `/api/returns/{id}/reject` | `ZentricApiPort.rejectReturn` | `VERIFIED` | Rechaza solicitud de devolución. **Exclusivo Vendedor dueño**. Retorna `200 OK` vacío. |
-| `POST` | `/api/returns/{id}/refund` | `ZentricApiPort.refundReturn` | `VERIFIED` | Liquida y acredita reembolso financiero de devolución aprobada. **Exclusivo Administrador**. Retorna `200 OK` vacío. |
-| `GET` | `/api/returns` | `ZentricApiPort.listReturns` | `VERIFIED` | Lista devoluciones con filtro por estado y aislamiento estricto por rol. |
-| `GET` | `/api/returns/{id}` | `ZentricApiPort.getReturnById` | `VERIFIED` | Expediente completo de devolución con dictámenes técnicos y resoluciones. |
+| Método HTTP y Ruta | Método en `ZentricApiPort` | Política / Roles Autorizados | Cuerpo / Query de Entrada | Cuerpo de Respuesta (`200 OK`) |
+|---|---|---|---|---|
+| `POST /api/returns/request` | `requestReturn` | `ReturnRequest` (**Exclusivo `Buyer`**) | Body: `{ customerOrderId, variantId, warehouseId, quantity }` | `Guid` JSON (`string`) |
+| `POST /api/returns/{id}/inspect` | `inspectReturn` | `ReturnInspect` (**Exclusivo `LogisticsOperator`**) | Path: `id` (`Guid`), Body: `{ isGoodCondition: boolean }` | Vacío (`void`) |
+| `POST /api/returns/{id}/approve` | `approveReturn` | `ReturnApprove` (**Exclusivo `Seller`**) | Path: `id` (`Guid`), Body: `{ returnRequestId: id }` (`ReturnsController.cs:95-97`) | Vacío (`void`) |
+| `POST /api/returns/{id}/reject` | `rejectReturn` | `ReturnApprove` (**Exclusivo `Seller`**) | Path: `id` (`Guid`), sin cuerpo | Vacío (`void`) |
+| `POST /api/returns/{id}/refund` | `refundReturn` | `ReturnRefund` (**Exclusivo `Administrator`**) | Path: `id` (`Guid`), sin cuerpo | Vacío (`void`) |
+| `GET /api/returns` | `listReturns` | `ReturnRead` (Todos los 5 roles, filtrado por propiedad) | Query: `?status={ReturnStatus}` (opcional) | `ReturnRequestDto[]` |
+| `GET /api/returns/{id}` | `getReturnById` | `ReturnRead` (Todos los 5 roles, filtrado por propiedad) | Path: `id` (`Guid`) | `ReturnRequestDto` |
 
-### 2.9 Módulo 8: Facturación y Liquidación Tributaria (`/api/billing`)
+### 2.9 Módulo 8: Facturación Split (`/api/billing` — [`BillingController.cs`](../backend/Zentric.Api/Controllers/BillingController.cs))
 
-| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
-|---|---|---|:---:|---|
-| `POST` | `/api/billing/invoices/generate/{orderId}` | `ZentricApiPort.generateInvoices` | `VERIFIED` | Emite Factura Maestra consolidada para comprador, comisión para Zentric y facturas para vendedores. **Exclusivo Administrador**. Retorna `200 OK (bool)`. |
-| `POST` | `/api/billing/invoices/annul/{orderId}` | `ZentricApiPort.annulInvoices` | `VERIFIED` | Anula formalmente la Factura Maestra ante reversión de pago post-recaudo. **Exclusivo Administrador**. Retorna `200 OK` vacío. |
-| `GET` | `/api/billing/invoices` | `ZentricApiPort.listInvoices` | `VERIFIED` | Lista facturas con aislamiento por rol (vendedor ve solo `VendorDetail`; admin/supervisor ven todo; operador logístico denegado). |
-| `GET` | `/api/billing/invoices/order/{orderId}` | `ZentricApiPort.getInvoicesByOrder` | `VERIFIED` | Consulta comprobantes fiscales vinculados a un pedido pagado. |
+| Método HTTP y Ruta | Método en `ZentricApiPort` | Política / Roles Autorizados | Cuerpo / Query de Entrada | Cuerpo de Respuesta (`200 OK`) |
+|---|---|---|---|---|
+| `POST /api/billing/invoices/generate/{orderId}` | `generateInvoices` | `BillingGenerate` (**Exclusivo `Administrator`**) | Path: `orderId` (`Guid`), sin cuerpo | `boolean` (`true`) |
+| `POST /api/billing/invoices/annul/{orderId}` | `annulInvoices` | `BillingGenerate` (**Exclusivo `Administrator`**) | Path: `orderId` (`Guid`), Body: `{ reason: string }` | Vacío (`void`) |
+| `GET /api/billing/invoices` | `listInvoices` | `BillingRead` (`Buyer`, `Seller`, `Administrator`, `Supervisor`) | Sin parámetros (aislamiento por rol en `GetInvoicesQuery.cs:98-100`) | `InvoiceDto[]` |
+| `GET /api/billing/invoices/order/{orderId}` | `getInvoicesByOrder` | `BillingRead` (`Buyer`, `Seller`, `Administrator`, `Supervisor`) | Path: `orderId` (`Guid`) | `InvoiceDto[]` |
 
-### 2.10 Módulo 9: Infraestructura y Disponibilidad (`/health`)
+### 2.10 Módulo 9: Sonda de Disponibilidad (`/health` — [`Program.cs:276-296`](../backend/Zentric.Api/Program.cs#L276-L296))
 
-| Método | Ruta | Método en `ZentricApiPort` | Estado | Descripción de Contrato |
-|---|---|---|:---:|---|
-| `GET` | `/health` | `ZentricApiPort.getHealth` | `VERIFIED` | Sonda de salud técnica de la API y conectividad con PostgreSQL. Acceso anónimo permitido. |
-
----
-
-## 3. Transformaciones Obligatorias de Datos en el Adaptador
-
-### 3.1 Desenvolvimiento de Respuestas con Identificador `Guid`
-Los comandos de creación en la API REST de Zentric devuelven el identificador generado como una cadena JSON cruda (ej. `"3de3d5d4-7292-491b-85d0-999d3000b080"`). El adaptador HTTP desenvuelve esta respuesta mediante la función utilitaria `readGuid`:
-
-```ts
-export async function readGuid(response: Response): Promise<string> {
-  const rawText = await response.text();
-  try {
-    return JSON.parse(rawText) as string;
-  } catch {
-    return rawText.replace(/^"|"$/g, '');
-  }
-}
-```
-
-*Endpoints que usan `readGuid`:* `createUser`, `createWarehouse`, `addStock`, `createCart`, `createFulfillment`, `cancelGhostStock`, `requestReturn`.  
-*Excepción documentada:* `createProduct` retorna un objeto estructurado `CreatedProductDto` (`{ productId: string, variantIds: string[] }`) en lugar de un Guid crudo, por lo que el adaptador parsea el JSON completo.
-
-### 3.2 Contrato Estricto de Enumeraciones como Cadenas de Texto (ADR-0012)
-El backend de Zentric **solo acepta los nombres canónicos de los enums en formato string** (ej. `"Seller"`, `"Physical"`, `"Vendor"`). El envío de enteros numéricos produce un fallo inmediato `400 Bad Request`.  
-Las constantes del frontend se tipan estrictamente como literales de cadena:
-
-```ts
-export const UserRole = {
-  Buyer: 'Buyer',
-  Seller: 'Seller',
-  Administrator: 'Administrator',
-  Supervisor: 'Supervisor',
-  LogisticsOperator: 'LogisticsOperator',
-} as const;
-
-export const OrderStatus = {
-  Cart: 'Cart',
-  PendingPayment: 'PendingPayment',
-  Paid: 'Paid',
-  Dispatched: 'Dispatched',
-  Delivered: 'Delivered',
-  Cancelled: 'Cancelled',
-} as const;
-```
-
-### 3.3 Resolución Obligatoria de `variantId` frente a `productId`
-En el modelo de datos de Zentric, un `Product` es una entidad contenedora del catálogo, mientras que las operaciones de inventario, adición al carrito de compras y despacho se ejecutan **exclusivamente a nivel de `variantId`**.  
-El flujo del adaptador garantiza la resolución obligatoria:
-
-```text
-1. POST /api/catalog/products               -> Retorna CreatedProductDto con { productId, variantIds }
-2. Para inventarios y carrito de compras     -> Utilizar siempre variantIds[0] (o la variante seleccionada)
-3. Prohibido intentar agregar productId      -> Evita fallo de clave foránea en la API
-```
-
-### 3.4 Manejo y Normalización de Errores RFC 7807 y RFC 9457
-La API emite errores de validación y de negocio bajo el estándar Problem Details. El adaptador traduce ambas variantes a un error estructurado de dominio:
-
-```ts
-export interface NormalizedHttpError {
-  status: number;
-  title: string;
-  detail: string;
-  traceId?: string;
-  validationErrors?: Record<string, string[]>;
-}
-
-export async function parseProblemDetails(response: Response): Promise<NormalizedHttpError> {
-  const contentType = response.headers.get('content-type') ?? '';
-  let payload: any = {};
-  
-  if (contentType.includes('json')) {
-    try {
-      payload = await response.json();
-    } catch {
-      payload = {};
-    }
-  }
-
-  const detail = payload.detail 
-    ?? payload.title 
-    ?? (payload.errors ? Object.values(payload.errors).flat().join('. ') : `Error HTTP ${response.status}`);
-
-  return {
-    status: response.status,
-    title: payload.title ?? `Error ${response.status}`,
-    detail,
-    traceId: payload.traceId,
-    validationErrors: payload.errors,
-  };
-}
-```
-
-### 3.5 Comandos con Respuesta `200 OK` Vacía
-Los comandos de transición de estado (`checkout`, `pay`, `pack`, `dispatch`, `deliver`, `publish`, `suspend`, `inspect`, `approve`, `reject`, `refund`, `annul`) responden `200 OK` sin cuerpo (`void`). El adaptador no sintetiza valores booleanos ficticios; la UI revalida el estado actualizado mediante la consulta correspondiente (`getOrderById`, `getProductById`, `getReturnById`).
+| Método HTTP y Ruta | Método en `ZentricApiPort` | Política / Roles Autorizados | Cuerpo / Query de Entrada | Cuerpo de Respuesta (`200 OK` / `503`) |
+|---|---|---|---|---|
+| `GET /health` | `getHealth` | `[AllowAnonymous]` | Sin parámetros | `HealthStatus` (`{ status, database, timestamp, error? }`) |
 
 ---
 
-## 4. Gestión de Sesión Volátil en Memoria (`MemorySessionAdapter.ts`)
+## 3. Reglas de Serialización y Deserialización en el Adaptador HTTP
 
-Conforme a la política de seguridad establecida en **[ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)** y ratificada por la dirección de arquitectura:
-
-> [!WARNING]
-> **Prohibición de Persistencia en Disco / Web Storage:** Queda terminantemente prohibido almacenar tokens Bearer JWT en `localStorage`, `sessionStorage` o cookies legibles por JavaScript. El token de sesión reside **exclusivamente en memoria RAM** en el singleton `MemorySessionAdapter.ts` (`apps/frontend/src/adapters/session/MemorySessionAdapter.ts`).
-
-### 4.1 Ciclo de Vida y Políticas de Sesión
-
-1. **Vigencia del Token:** 60 minutos calculados por el servidor.
-2. **Ausencia de Token de Refresco (*No Refresh Token*):** En estricta alineación con el backend (donde `POST /api/auth/refresh` no existe), no se implementan interceptores de renovación automática.
-3. **Comportamiento ante Recarga:** Al recargar el navegador (`F5`), el token en memoria se purga y el usuario debe reautenticarse.
-4. **Respuesta ante `401 Unauthorized` (Fail-Closed):** Cualquier llamada de red rechazada con `401` ejecuta inmediatamente la purga de la sesión en memoria y desvía al usuario a `/login` con un aviso de expiración de sesión.
-5. **Respuesta ante `403 Forbidden`:** Muestra una notificación de permisos insuficientes sin cerrar la sesión del usuario.
-6. **Sincronización de Identidad (`GET /api/auth/me`):** Lee las declaraciones activas del token en memoria para inicializar el perfil de usuario sin mutar la base de datos.
+1. **Desenvolvimiento de Identificadores `Guid`:** Los comandos de creación (`createUser`, `createWarehouse`, `addStock`, `createCart`, `createFulfillment`, `requestReturn`) retornan una cadena JSON con el UUID generado. El adaptador recorta comillas envolventes y devuelve un `string` limpio.
+2. **Excepción de Alta de Producto (`CreatedProductDto`):** `POST /api/catalog/products` retorna un objeto estructurado `{ productId: string, variantIds: string[] }` ([`CreateProductCommand.cs:32`](../backend/Zentric.Application/Catalog/Commands/CreateProductCommand.cs#L32)). Las operaciones subsecuentes de inventario (`addStock`) y carrito (`addCartItem`) deben consumir exclusivamente un `variantId` de `variantIds`, nunca el `productId` ([ADR-0002](../backendSDD/Adr/0002-clave-inventario-variantid.md)).
+3. **Contrato de Enumeraciones por Nombre ([ADR-0012](../backendSDD/Adr/0012-contrato-json-de-los-enum-por-nombre.md)):** [`EnumJsonContract.cs`](../backend/Zentric.Api/Contracts/EnumJsonContract.cs) rechaza valores enteros en enums con `400 Bad Request`. El adaptador transmite exclusivamente las cadenas literales canónicas (`"Buyer"`, `"Marketplace"`, `"Vendor"`, `"Physical"`, etc.).
+4. **Cuerpo Obligatorio en `approveReturn`:** A diferencia de `rejectReturn` y `refundReturn` (que sólo reciben `id` en la ruta), `POST /api/returns/{id}/approve` exige enviar `{ returnRequestId: id }` en el cuerpo JSON ([`ReturnsController.cs:95-97`](../backend/Zentric.Api/Controllers/ReturnsController.cs#L95-L97)). El adaptador construye automáticamente dicho cuerpo a partir del parámetro `id`.
+5. **Traducción Estandarizada de Problem Details (RFC 7807):** Ante cualquier respuesta con `!response.ok`, el adaptador deserializa el cuerpo `application/problem+json` en un objeto `ApiProblemDetails`, extrayendo `detail`, `title`, `status` y el diccionario `errors` de `FluentValidation`.
 
 ---
 
-## 5. Puerto y Adaptador de Alertas y Notificaciones (`AlertPort`)
+## 4. Adaptadores de Sesión (`MemorySessionAdapter.ts`), Alertas (`AlertAdapter.ts`) y Mocks
 
-El sistema desacopla la lógica de solicitud de notificaciones y diálogos de confirmación de su representación visual mediante dos piezas arquitectónicas:
-
-| Componente | Capa / Ubicación | Responsabilidad |
-|---|---|---|
-| `AlertAdapter` | `adapters/alert/AlertAdapter.ts` | Mantiene la cola de solicitudes en memoria y resuelve promesas asíncronas (`confirm`, `show`). Código TypeScript puro sin JSX ni dependencias de React. |
-| `AlertHost` | `components/alert/AlertHost.tsx` | Componente de UI montado en la raíz de la aplicación (`App.tsx` o `main.tsx`). Escucha los eventos de `AlertAdapter` y renderiza los componentes `AlertDialog` y `Toaster` del Design System. |
-
-### 5.1 Reglas para Diálogos de Confirmación
-Es obligatorio invocar `AlertPort.confirm()` antes de ejecutar las siguientes operaciones:
-- Confirmación de pago de orden (`POST /api/orders/{id}/pay`).
-- Cancelación por stock fantasma (`POST /api/logistics/fulfillment/cancel-ghost-stock`).
-- Anulación fiscal de facturas (`POST /api/billing/invoices/annul/{orderId}`).
-- Acreditación de reembolso (`POST /api/returns/{id}/refund`).
-- Bloqueo o activación de usuarios (`POST /api/users/{id}/block`, `/activate`).
-
----
-
-## 6. Historial de Decisiones Arquitectónicas del Adaptador
-
-| Referencia de Decisión | Situación Contractual Previa | Resolución Formalizada |
-|---|---|---|
-| **[ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)** | Cabecera insegura `X-Buyer-Id` y ausencia de autenticación centralizada. | Implementación de `POST /api/auth/login` con emisión de JWT HS256 (60 min) y almacenamiento exclusivo en memoria RAM. Eliminación definitiva de `X-Buyer-Id`. |
-| **[ADR-0012](../backendSDD/Adr/0012-contrato-json-de-los-enum-por-nombre.md)** | Inconsistencia de tipos numéricos vs texto en serializadores de enums. | Normalización estricta: los JSON de solicitud y respuesta solo aceptan nombres canónicos de enumeradores en formato string. |
-| **[ADR-0017](../backendSDD/Adr/0017-listados-de-recurso-propio.md)** | Endpoints de consulta no disponibles para listados de pedidos y logística, ni retorno de variantes al crear productos. | Creación de `GET /api/orders` y `GET /api/logistics/fulfillments` (en plural) con filtrado por rol, y retorno de `CreatedProductDto` (`{ productId, variantIds }`) en `POST /api/catalog/products`. |
-| **[ADR-0021](../backendSDD/Adr/0021-ajuste-de-stock-sin-cuello-de-botella.md)** | Ajuste de existencias físicas en almacén sin contención global. | `POST /api/inventories/{id}/adjust` registra el ajuste por conteo físico retornando `AdjustInventoryResult` con cantidades previas y nuevas. |
+| Adaptador | Archivo Físico | Puerto Implementado | Invariantes de Implementación |
+|---|---|---|---|
+| **`MemorySessionAdapter`** | `src/adapters/session/MemorySessionAdapter.ts` | `SessionPort` | Retiene el token JWT y `CurrentUser` en variables privadas de módulo en memoria RAM ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)). Prohibido invocar `localStorage`, `sessionStorage` o `document.cookie`. Notifica suscriptores ante `clear()` para disparo inmediato de redirección a `/login`. |
+| **`AlertAdapter`** | `src/adapters/alert/AlertAdapter.ts` | `AlertPort` | Gestiona en TypeScript puro una cola de promesas para diálogos modales de confirmación (`confirm`) y notificaciones (`show`), consumida reactivamente por `AlertHost.tsx`. |
+| **`MockZentricApiAdapter`** | `src/adapters/mocks/MockZentricApiAdapter.ts` | `ZentricApiPort` | Implementación determinista en memoria de los 45 métodos de `ZentricApiPort` utilizada por la suite de pruebas Vitest (`13-frontend-qa-guardian`) para verificar flujos completos sin depender de red externa. |

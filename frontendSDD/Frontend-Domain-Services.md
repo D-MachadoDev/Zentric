@@ -1,239 +1,162 @@
 # Servicios de Aplicación, Hooks de TanStack Query y Esquemas Zod (Frontend Domain Services)
 
-> Casos de uso y gestión de estado remoto del cliente Zentric (`apps/frontend/src/application/`).  
-> Orquestan el puerto unificado `ZentricApiPort`, administran la caché reactiva con **TanStack Query** y validan formularios con **Zod**, manteniendo el código 100% en inglés con comentarios en español ([`AGENTS.md`](../AGENTS.md) §1 y §5).
+> Especificación de la capa de aplicación del cliente web de **Zentric Marketplace** (`frontend/apps/frontend/src/application/` y `src/domain/rules/`).  
+> Define la jerarquía determinista de claves de caché (`queryKeys.ts`), los 46 hooks de consulta y mutación sobre TanStack Query que orquestan los 45 endpoints de `ZentricApiPort`, las reglas puras de presentación del dominio y los 12 esquemas de validación Zod sincronizados línea por línea con los validadores `FluentValidation` del backend C#.
 
 ---
 
-## 1. Principio Rector: Intenciones de Negocio y Estado Remoto
+## 1. Principios de Orquestación en la Capa de Aplicación
 
-Cada hook y servicio de aplicación modela una operación del contrato CQRS del backend ([`backendSDD/Application/01-use-cases-and-ports.md`](../backendSDD/Application/01-use-cases-and-ports.md)) respetando las siguientes reglas:
-
-1. **Código en Inglés, Comentarios en Español:** Todos los identificadores de código (hooks, esquemas, funciones, tipos e interfaces) se escriben en inglés siguiendo el lenguaje ubicuo (`Buyer`, `Seller`, `Order`, `FulfillmentOrder`, `ReturnRequest`, `Invoice`).
-2. **Validación Preventiva en Cliente:** Los esquemas Zod replican con exactitud las reglas de FluentValidation del backend para ofrecer retroalimentación inmediata en formularios sin emitir peticiones HTTP inválidas.
-3. **Autoridad Suprema en el Servidor:** El cliente no calcula impuestos, comisiones ni saldos financieros; despacha la petición a través de `ZentricApiPort` e invalida las claves de caché afectadas tras cada mutación exitosa.
-4. **Inmutabilidad de la Sesión del Llamante:** Operaciones administrativas (como `useCreateUserMutation`) devuelven el identificador de la entidad creada y jamás alteran el token ni el rol del administrador autenticado.
+1. **Identificadores en Inglés, Mensajes de Validación en Español:** Todos los nombres de archivos, hooks (`use*Query`, `use*Mutation`), esquemas Zod (`*Schema`) y funciones de dominio se escriben en inglés siguiendo el lenguaje ubicuo (`AGENTS.md` §0.4 y §5), mientras que los mensajes de error destinados al usuario se expresan en español claro.
+2. **Validación Defensiva Sincronizada con el Servidor:** Cada formulario aplica un esquema Zod que replica las reglas de `FluentValidation` de `Zentric.Application`. Ninguna petición con formato inválido llega a emitirse por red.
+3. **Autoridad Transaccional Exclusiva del Backend:** El frontend jamás calcula impuestos, comisiones de plataforma (`ZentricDetail`), subtotales netos de vendedor (`VendorDetail`) ni saldos de inventario; despacha la intención a través de `ZentricApiPort` e invalida las claves de caché afectadas.
+4. **Inmutabilidad de la Sesión del Llamante:** Las mutaciones ejecutadas por el Administrador (como `useCreateUserMutation`, `useBlockUserMutation` o `useActivateUserMutation`) operan sobre terceros y jamás alteran el token ni la identidad activa en `SessionPort`.
 
 ---
 
-## 2. Fábrica Centralizada de Claves de Caché (`queryKeys.ts`)
+## 2. Jerarquía Centralizada de Claves de Caché (`queryKeys.ts`)
 
-Para evitar colisiones de caché y garantizar invalidaciones deterministas en TanStack Query, todas las claves se centralizan en `src/application/services/queryKeys.ts`:
+El archivo `apps/frontend/src/application/services/queryKeys.ts` centraliza todas las claves de consulta de TanStack Query para garantizar invalidaciones deterministas tras cada mutación:
 
-```typescript
-// application/services/queryKeys.ts
-// Fábrica tipada de claves de consulta para TanStack Query
-export const queryKeys = {
-  health: ['health'] as const,
-  auth: {
-    me: ['auth', 'me'] as const,
-  },
-  users: {
-    all: ['users'] as const,
-    list: (role?: string) => ['users', 'list', { role }] as const,
-    detail: (id: string) => ['users', 'detail', id] as const,
-  },
-  warehouses: {
-    all: ['warehouses'] as const,
-    list: (vendorId?: string) => ['warehouses', 'list', { vendorId }] as const,
-    detail: (id: string) => ['warehouses', 'detail', id] as const,
-  },
-  inventories: {
-    all: ['inventories'] as const,
-    list: () => ['inventories', 'list'] as const,
-    byVariant: (variantId: string) => ['inventories', 'variant', variantId] as const,
-  },
-  products: {
-    all: ['products'] as const,
-    list: (vendorId?: string) => ['products', 'list', { vendorId }] as const,
-    paged: (page: number, size: number, vendorId?: string) =>
-      ['products', 'paged', { page, size, vendorId }] as const,
-    detail: (id: string) => ['products', 'detail', id] as const,
-  },
-  orders: {
-    all: ['orders'] as const,
-    list: (status?: string) => ['orders', 'list', { status }] as const,
-    detail: (id: string) => ['orders', 'detail', id] as const,
-  },
-  fulfillments: {
-    all: ['fulfillments'] as const,
-    list: (status?: string) => ['fulfillments', 'list', { status }] as const,
-    detail: (id: string) => ['fulfillments', 'detail', id] as const,
-  },
-  returns: {
-    all: ['returns'] as const,
-    list: (status?: string) => ['returns', 'list', { status }] as const,
-    detail: (id: string) => ['returns', 'detail', id] as const,
-  },
-  invoices: {
-    all: ['invoices'] as const,
-    list: () => ['invoices', 'list'] as const,
-    byOrder: (orderId: string) => ['invoices', 'order', orderId] as const,
-  },
-} as const;
-```
-
----
-
-## 3. Catálogo de Hooks y Servicios por Módulo Funcional (45 Endpoints)
-
-### 3.1 Identidad y Gestión de Usuarios (`identity.ts`)
-
-| Hook / Servicio | Método del Puerto | Invalidación / Efecto | Responsabilidad Técnica |
+| Dominio | Clave Raíz de Invalidación | Claves de Lista y Filtro | Claves de Detalle / Subrecurso |
 |---|---|---|---|
-| **`useLoginMutation`** | `ZentricApiPort.login` | Guarda token en `SessionPort` | Autentica con correo y contraseña (`POST /api/auth/login`), almacena el JWT exclusivamente en memoria RAM ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)). |
-| **`useCurrentUserQuery`** | `ZentricApiPort.getCurrentUser` | Lee `queryKeys.auth.me` | Resuelve la identidad del token vigente en memoria (`GET /api/auth/me`). Sin refresh token. |
-| **`useLogoutMutation`** | `SessionPort.clear` | `queryClient.clear()` | Purga la sesión de la memoria RAM y limpia toda la caché de TanStack Query. |
-| **`useUsersQuery`** | `ZentricApiPort.listUsers` | `queryKeys.users.list(role)` | Lista usuarios registrados con filtro opcional por rol (`GET /api/users`). |
-| **`useUserQuery`** | `ZentricApiPort.getUserById` | `queryKeys.users.detail(id)` | Consulta la ficha técnica de un usuario (`GET /api/users/{id}`). |
-| **`useCreateUserMutation`** | `ZentricApiPort.createUser` | Invalida `queryKeys.users.all` | Registra un nuevo usuario o comprador (`POST /api/users`) sin alterar la sesión actual. |
-| **`useBlockUserMutation`** | `ZentricApiPort.blockUser` | Invalida `queryKeys.users.all` | Bloquea el acceso de un usuario (`POST /api/users/{id}/block`). Exclusivo Administrador. |
-| **`useActivateUserMutation`**| `ZentricApiPort.activateUser` | Invalida `queryKeys.users.all` | Reactiva un usuario bloqueado (`POST /api/users/{id}/activate`). Exclusivo Administrador. |
+| **Salud** | `['health']` | — | — |
+| **Autenticación** | `['auth']` | — | `['auth', 'me']` |
+| **Usuarios** | `['users']` | `['users', 'list', { role }]` | `['users', 'detail', id]` |
+| **Bodegas** | `['warehouses']` | `['warehouses', 'list', { vendorId }]` | `['warehouses', 'detail', id]` |
+| **Inventarios** | `['inventories']` | `['inventories', 'list']` | `['inventories', 'variant', variantId]` |
+| **Catálogo** | `['products']` | `['products', 'list', { vendorId }]`<br>`['products', 'paged', { page, size, vendorId }]` | `['products', 'detail', id]` |
+| **Pedidos** | `['orders']` | `['orders', 'list', { status }]` | `['orders', 'detail', id]` |
+| **Logística** | `['fulfillments']` | `['fulfillments', 'list', { status }]` | `['fulfillments', 'detail', id]` |
+| **Devoluciones** | `['returns']` | `['returns', 'list', { status }]` | `['returns', 'detail', id]` |
+| **Facturación** | `['invoices']` | `['invoices', 'list']` | `['invoices', 'order', orderId]` |
 
 ---
 
-### 3.2 Catálogo de Productos (`catalog.ts`)
-Gestiona el ciclo de vida de productos y variantes físicas obligatorias ([ADR-0003](../backendSDD/Adr/0003-variante-obligatoria-productos-fisicos.md)):
+## 3. Catálogo Maestro de Hooks de Aplicación (45 Endpoints + Cierre de Sesión)
 
-| Hook / Servicio | Método del Puerto | Invalidación / Efecto | Responsabilidad Técnica |
-|---|---|---|---|
-| **`useProductsQuery`** | `ZentricApiPort.listProducts` | `queryKeys.products.list(vendorId)` | Lista productos publicados o, si el vendedor filtra por su propio `vendorId`, incluye los suspendidos. |
-| **`useProductsPagedQuery`** | `ZentricApiPort.listProductsPaged` | `queryKeys.products.paged(...)` | Consulta paginada (`GET /api/catalog/products/paged`) con metadatos `PagedResult<Product>`. |
-| **`useProductQuery`** | `ZentricApiPort.getProductById` | `queryKeys.products.detail(id)` | Obtiene la ficha técnica completa y variantes (`VariantId`, `Sku`) de un producto. |
-| **`useCreateProductMutation`**| `ZentricApiPort.createProduct` | Invalida `queryKeys.products.all` | Crea un producto que nace `Published` y retorna `{ productId, variantIds }` ([ADR-0017](../backendSDD/Adr/0017-listados-de-recurso-propio.md)). |
-| **`usePublishProductMutation`**| `ZentricApiPort.publishProduct` | Invalida `queryKeys.products.all` | Reactiva un producto suspendido (`Suspended` $\rightarrow$ `Published`). |
-| **`useSuspendProductMutation`**| `ZentricApiPort.suspendProduct` | Invalida `queryKeys.products.all` | Suspende un producto (`Published` $\rightarrow$ `Suspended`), impidiendo su compra. |
+### 3.1 Módulo de Identidad y Usuarios (`application/services/identity.ts`)
 
----
+| Hook | Tipo | Método de Puerto Invocado | Efecto en Caché / Sesión | Procedencia Backend (`archivo:línea`) |
+|---|---|---|---|---|
+| **`useLoginMutation`** | Mutation | `ZentricApiPort.login` | Guarda token y perfil en `SessionPort`; establece `['auth', 'me']` | [`AuthController.cs:47`](../backend/Zentric.Api/Controllers/AuthController.cs#L47) |
+| **`useCurrentUserQuery`** | Query | `ZentricApiPort.getCurrentUser` | Lee y cachea `['auth', 'me']` | [`AuthController.cs:78`](../backend/Zentric.Api/Controllers/AuthController.cs#L78) |
+| **`useLogoutMutation`** | Local | `SessionPort.clear` | Purga memoria RAM y ejecuta `queryClient.clear()` | [`ADR-0009`](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md) |
+| **`useUsersQuery`** | Query | `ZentricApiPort.listUsers` | Cachea `['users', 'list', { role }]` | [`UsersController.cs:101`](../backend/Zentric.Api/Controllers/UsersController.cs#L101) |
+| **`useUserQuery`** | Query | `ZentricApiPort.getUserById` | Cachea `['users', 'detail', id]` | [`UsersController.cs:116`](../backend/Zentric.Api/Controllers/UsersController.cs#L116) |
+| **`useCreateUserMutation`** | Mutation | `ZentricApiPort.createUser` | Invalida `['users']` (no altera la sesión del llamante) | [`UsersController.cs:69`](../backend/Zentric.Api/Controllers/UsersController.cs#L69) |
+| **`useBlockUserMutation`** | Mutation | `ZentricApiPort.blockUser` | Invalida `['users']` | [`UsersController.cs:150`](../backend/Zentric.Api/Controllers/UsersController.cs#L150) |
+| **`useActivateUserMutation`** | Mutation | `ZentricApiPort.activateUser` | Invalida `['users']` | [`UsersController.cs:176`](../backend/Zentric.Api/Controllers/UsersController.cs#L176) |
 
-### 3.3 Inventario y Bodegas Físicas (`inventory.ts`, `warehouses.ts`)
-Supervisa las bodegas y el control atómico de existencias ([ADR-0021](../backendSDD/Adr/0021-ajuste-de-stock-sin-cuello-de-botella.md) y [ADR-0025](../backendSDD/Adr/0025-stock-negativo-update-condicional-atomico.md)):
+### 3.2 Módulo de Bodegas e Inventarios (`application/services/warehouses.ts`, `inventory.ts`)
 
-| Hook / Servicio | Método del Puerto | Invalidación / Efecto | Responsabilidad Técnica |
-|---|---|---|---|
-| **`useWarehousesQuery`** | `ZentricApiPort.listWarehouses` | `queryKeys.warehouses.list(vendorId)`| Lista bodegas activas con aislamiento por rol. |
-| **`useWarehouseQuery`** | `ZentricApiPort.getWarehouseById` | `queryKeys.warehouses.detail(id)` | Consulta capacidad volumétrica ($m^3$) y ubicación de una bodega. |
-| **`useCreateWarehouseMutation`**| `ZentricApiPort.createWarehouse` | Invalida `queryKeys.warehouses.all` | Registra una nueva bodega física (`Marketplace` o `Vendor`). |
-| **`useInventoriesQuery`** | `ZentricApiPort.listInventories` | `queryKeys.inventories.list()` | Lista el inventario visible para el rol autenticado (`GET /api/inventories`). |
-| **`useInventoryByVariantQuery`**| `ZentricApiPort.listInventoryByVariant` | `queryKeys.inventories.byVariant` | Desglosa existencias por variante (`Available`, `Reserved`, `Used`, `Damaged`). |
-| **`useAddStockMutation`** | `ZentricApiPort.addStock` | Invalida `queryKeys.inventories.all`| Ingresa stock nuevo o usado (`POST /api/inventories/stock`). |
-| **`useAdjustInventoryMutation`**| `ZentricApiPort.adjustInventory` | Invalida `queryKeys.inventories.all`| Ajuste por conteo físico en bodega (`POST /api/inventories/{id}/adjust`). Exclusivo Administrador y Supervisor. |
+| Hook | Tipo | Método de Puerto Invocado | Efecto en Caché | Procedencia Backend (`archivo:línea`) |
+|---|---|---|---|---|
+| **`useWarehousesQuery`** | Query | `ZentricApiPort.listWarehouses` | Cachea `['warehouses', 'list', { vendorId }]` | [`WarehousesController.cs:67`](../backend/Zentric.Api/Controllers/WarehousesController.cs#L67) |
+| **`useWarehouseQuery`** | Query | `ZentricApiPort.getWarehouseById` | Cachea `['warehouses', 'detail', id]` | [`WarehousesController.cs:90`](../backend/Zentric.Api/Controllers/WarehousesController.cs#L90) |
+| **`useCreateWarehouseMutation`** | Mutation | `ZentricApiPort.createWarehouse` | Invalida `['warehouses']` | [`WarehousesController.cs:44`](../backend/Zentric.Api/Controllers/WarehousesController.cs#L44) |
+| **`useInventoriesQuery`** | Query | `ZentricApiPort.listInventories` | Cachea `['inventories', 'list']` | [`InventoriesController.cs:74`](../backend/Zentric.Api/Controllers/InventoriesController.cs#L74) |
+| **`useInventoryByVariantQuery`** | Query | `ZentricApiPort.listInventoryByVariant` | Cachea `['inventories', 'variant', variantId]` | [`InventoriesController.cs:104`](../backend/Zentric.Api/Controllers/InventoriesController.cs#L104) |
+| **`useAddStockMutation`** | Mutation | `ZentricApiPort.addStock` | Invalida `['inventories']` y `['products']` | [`InventoriesController.cs:46`](../backend/Zentric.Api/Controllers/InventoriesController.cs#L46) |
+| **`useAdjustInventoryMutation`** | Mutation | `ZentricApiPort.adjustInventory` | Invalida `['inventories']` | [`InventoriesController.cs:138`](../backend/Zentric.Api/Controllers/InventoriesController.cs#L138) |
 
----
+### 3.3 Módulo de Catálogo de Productos (`application/services/catalog.ts`)
 
-### 3.4 Carrito de Compras y Checkout Atómico de 15 Minutos (`orders.ts`)
-Orquesta la compra con precio congelado y reserva temporal ([ADR-0001](../backendSDD/Adr/0001-reserva-fragmentacion-contingencia.md), [ADR-0005](../backendSDD/Adr/0005-modelado-carrito-compras.md), [ADR-0020](../backendSDD/Adr/0020-precio-congelado-y-credito-parcial-por-linea.md)):
+| Hook | Tipo | Método de Puerto Invocado | Efecto en Caché | Procedencia Backend (`archivo:línea`) |
+|---|---|---|---|---|
+| **`useProductsQuery`** | Query | `ZentricApiPort.listProducts` | Cachea `['products', 'list', { vendorId }]` | [`CatalogController.cs:128`](../backend/Zentric.Api/Controllers/CatalogController.cs#L128) |
+| **`useProductsPagedQuery`** | Query | `ZentricApiPort.listProductsPaged` | Cachea `['products', 'paged', { page, size, vendorId }]` | [`CatalogController.cs:156`](../backend/Zentric.Api/Controllers/CatalogController.cs#L156) |
+| **`useProductQuery`** | Query | `ZentricApiPort.getProductById` | Cachea `['products', 'detail', id]` | [`CatalogController.cs:177`](../backend/Zentric.Api/Controllers/CatalogController.cs#L177) |
+| **`useCreateProductMutation`** | Mutation | `ZentricApiPort.createProduct` | Invalida `['products']`; retorna `{ productId, variantIds }` | [`CatalogController.cs:47`](../backend/Zentric.Api/Controllers/CatalogController.cs#L47) |
+| **`usePublishProductMutation`** | Mutation | `ZentricApiPort.publishProduct` | Invalida `['products']` | [`CatalogController.cs:76`](../backend/Zentric.Api/Controllers/CatalogController.cs#L76) |
+| **`useSuspendProductMutation`** | Mutation | `ZentricApiPort.suspendProduct` | Invalida `['products']` | [`CatalogController.cs:107`](../backend/Zentric.Api/Controllers/CatalogController.cs#L107) |
 
-| Hook / Servicio | Método del Puerto | Invalidación / Efecto | Responsabilidad Técnica |
-|---|---|---|---|
-| **`useOrdersQuery`** | `ZentricApiPort.listOrders` | `queryKeys.orders.list(status)` | Lista pedidos filtrados por rol y estado (`GET /api/orders`). |
-| **`useOrderQuery`** | `ZentricApiPort.getOrderById` | `queryKeys.orders.detail(id)` | Retorna `Order` completo (Comprador/Admin/Supervisor) o `SellerOrderView` restringido (Vendedor). |
-| **`useCreateCartMutation`** | `ZentricApiPort.createCart` | Invalida `queryKeys.orders.all` | Inicializa un carrito vinculado a la identidad del token JWT (`POST /api/orders/cart`). |
-| **`useAddCartItemMutation`** | `ZentricApiPort.addCartItem` | Invalida `queryKeys.orders.detail` | Añade variante al carrito congelando el precio unitario vigente. |
-| **`useCheckoutOrderMutation`**| `ZentricApiPort.checkoutOrder` | Invalida `orders` e `inventories` | Cierra el carrito, reserva stock en bodegas e inicia la ventana de **15 minutos** (`PendingPayment`). |
-| **`usePayOrderMutation`** | `ZentricApiPort.payOrder` | Invalida `orders` y `fulfillments` | Procesa el pago (`Paid`), consolida reservas y genera el comprobante `PaymentReceipt`. |
+### 3.4 Módulo de Carrito y Pedidos (`application/services/orders.ts`)
 
----
+| Hook | Tipo | Método de Puerto Invocado | Efecto en Caché | Procedencia Backend (`archivo:línea`) |
+|---|---|---|---|---|
+| **`useOrdersQuery`** | Query | `ZentricApiPort.listOrders` | Cachea `['orders', 'list', { status }]` | [`OrdersController.cs:57`](../backend/Zentric.Api/Controllers/OrdersController.cs#L57) |
+| **`useOrderQuery`** | Query | `ZentricApiPort.getOrderById` | Cachea `['orders', 'detail', id]` | [`OrdersController.cs:221`](../backend/Zentric.Api/Controllers/OrdersController.cs#L221) |
+| **`useCreateCartMutation`** | Mutation | `ZentricApiPort.createCart` | Invalida `['orders']` | [`OrdersController.cs:106`](../backend/Zentric.Api/Controllers/OrdersController.cs#L106) |
+| **`useAddCartItemMutation`** | Mutation | `ZentricApiPort.addCartItem` | Invalida `['orders', 'detail', orderId]` y `['orders', 'list']` | [`OrdersController.cs:132`](../backend/Zentric.Api/Controllers/OrdersController.cs#L132) |
+| **`useCheckoutOrderMutation`** | Mutation | `ZentricApiPort.checkoutOrder` | Invalida `['orders']`, `['inventories']` y `['fulfillments']` | [`OrdersController.cs:162`](../backend/Zentric.Api/Controllers/OrdersController.cs#L162) |
+| **`usePayOrderMutation`** | Mutation | `ZentricApiPort.payOrder` | Invalida `['orders']`, `['fulfillments']` y `['invoices']` | [`OrdersController.cs:189`](../backend/Zentric.Api/Controllers/OrdersController.cs#L189) |
 
-### 3.5 Logística, Despacho y Contingencia por Stock Fantasma (`logistics.ts`)
-Controla el ciclo de vida logístico particionado por bodega ([ADR-0004](../backendSDD/Adr/0004-estado-cancelacion-despacho.md), [ADR-0014](../backendSDD/Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md), [ADR-0022](../backendSDD/Adr/0022-pedido-resuelto-pasa-a-cancelled.md)):
+### 3.5 Módulo de Logística y Despacho (`application/services/logistics.ts`)
 
-| Hook / Servicio | Método del Puerto | Invalidación / Efecto | Responsabilidad Técnica |
-|---|---|---|---|
-| **`useFulfillmentsQuery`** | `ZentricApiPort.listFulfillments` | `queryKeys.fulfillments.list` | Lista órdenes de despacho (`GET /api/logistics/fulfillments`). |
-| **`useFulfillmentQuery`** | `ZentricApiPort.getFulfillmentById` | `queryKeys.fulfillments.detail` | Consulta detalle técnico de despacho y número de guía (`GET /api/logistics/fulfillment/{id}`). |
-| **`useCreateFulfillmentMutation`**| `ZentricApiPort.createFulfillment` | Invalida `queryKeys.fulfillments.all`| Crea manualmente una orden logística en estado `PendingPack`. |
-| **`usePackFulfillmentMutation`**| `ZentricApiPort.packFulfillment` | Invalida `queryKeys.fulfillments.all`| Registra el empaque físico (`PendingPack` $\rightarrow$ `Packed`). |
-| **`useDispatchFulfillmentMutation`**| `ZentricApiPort.dispatchFulfillment` | Invalida `fulfillments` e `inventories`| Asigna transportadora/guía y marca salida (`Packed` $\rightarrow$ `Dispatched`). |
-| **`useDeliverFulfillmentMutation`**| `ZentricApiPort.deliverFulfillment` | Invalida `fulfillments` y `orders` | Certifica la entrega física (`Dispatched` $\rightarrow$ `Delivered`). **Exclusivo Operador Logístico**. |
-| **`useCancelGhostStockMutation`**| `ZentricApiPort.cancelGhostStock` | Invalida `fulfillments`, `orders`, `returns`| Cancela despacho por faltante físico (*stock fantasma*), libera reservas y genera reembolso automático. |
+| Hook | Tipo | Método de Puerto Invocado | Efecto en Caché | Procedencia Backend (`archivo:línea`) |
+|---|---|---|---|---|
+| **`useFulfillmentsQuery`** | Query | `ZentricApiPort.listFulfillments` | Cachea `['fulfillments', 'list', { status }]` | [`LogisticsController.cs:188`](../backend/Zentric.Api/Controllers/LogisticsController.cs#L188) |
+| **`useFulfillmentQuery`** | Query | `ZentricApiPort.getFulfillmentById` | Cachea `['fulfillments', 'detail', id]` | [`LogisticsController.cs:238`](../backend/Zentric.Api/Controllers/LogisticsController.cs#L238) |
+| **`useCreateFulfillmentMutation`** | Mutation | `ZentricApiPort.createFulfillment` | Invalida `['fulfillments']` | [`LogisticsController.cs:44`](../backend/Zentric.Api/Controllers/LogisticsController.cs#L44) |
+| **`usePackFulfillmentMutation`** | Mutation | `ZentricApiPort.packFulfillment` | Invalida `['fulfillments']` | [`LogisticsController.cs:100`](../backend/Zentric.Api/Controllers/LogisticsController.cs#L100) |
+| **`useDispatchFulfillmentMutation`** | Mutation | `ZentricApiPort.dispatchFulfillment` | Invalida `['fulfillments']`, `['orders']` y `['inventories']` | [`LogisticsController.cs:71`](../backend/Zentric.Api/Controllers/LogisticsController.cs#L71) |
+| **`useDeliverFulfillmentMutation`** | Mutation | `ZentricApiPort.deliverFulfillment` | Invalida `['fulfillments']` y `['orders']` | [`LogisticsController.cs:129`](../backend/Zentric.Api/Controllers/LogisticsController.cs#L129) |
+| **`useCancelGhostStockMutation`** | Mutation | `ZentricApiPort.cancelGhostStock` | Invalida `['fulfillments']`, `['orders']`, `['inventories']`, `['returns']` | [`LogisticsController.cs:154`](../backend/Zentric.Api/Controllers/LogisticsController.cs#L154) |
 
----
+### 3.6 Módulo de Devoluciones y Garantías (`application/services/returns.ts`)
 
-### 3.6 Devoluciones, Garantías y Reembolsos (`returns.ts`)
-Implementa la segregación de funciones en postventa ([ADR-0006](../backendSDD/Adr/0006-resolucion-contradiccion-ley-addendum.md) y [ADR-0018](../backendSDD/Adr/0018-devoluciones-confianza-recepcion-responsabilidad.md)):
+| Hook | Tipo | Método de Puerto Invocado | Efecto en Caché | Procedencia Backend (`archivo:línea`) |
+|---|---|---|---|---|
+| **`useReturnsQuery`** | Query | `ZentricApiPort.listReturns` | Cachea `['returns', 'list', { status }]` | [`ReturnsController.cs:187`](../backend/Zentric.Api/Controllers/ReturnsController.cs#L187) |
+| **`useReturnQuery`** | Query | `ZentricApiPort.getReturnById` | Cachea `['returns', 'detail', id]` | [`ReturnsController.cs:236`](../backend/Zentric.Api/Controllers/ReturnsController.cs#L236) |
+| **`useRequestReturnMutation`** | Mutation | `ZentricApiPort.requestReturn` | Invalida `['returns']` y `['orders']` | [`ReturnsController.cs:45`](../backend/Zentric.Api/Controllers/ReturnsController.cs#L45) |
+| **`useInspectReturnMutation`** | Mutation | `ZentricApiPort.inspectReturn` | Invalida `['returns']` | [`ReturnsController.cs:72`](../backend/Zentric.Api/Controllers/ReturnsController.cs#L72) |
+| **`useApproveReturnMutation`** | Mutation | `ZentricApiPort.approveReturn` | Invalida `['returns']` y `['inventories']` | [`ReturnsController.cs:95`](../backend/Zentric.Api/Controllers/ReturnsController.cs#L95) |
+| **`useRejectReturnMutation`** | Mutation | `ZentricApiPort.rejectReturn` | Invalida `['returns']` | [`ReturnsController.cs:126`](../backend/Zentric.Api/Controllers/ReturnsController.cs#L126) |
+| **`useRefundReturnMutation`** | Mutation | `ZentricApiPort.refundReturn` | Invalida `['returns']` y `['orders']` | [`ReturnsController.cs:155`](../backend/Zentric.Api/Controllers/ReturnsController.cs#L155) |
 
-| Hook / Servicio | Método del Puerto | Invalidación / Efecto | Responsabilidad Técnica |
-|---|---|---|---|
-| **`useReturnsQuery`** | `ZentricApiPort.listReturns` | `queryKeys.returns.list(status)` | Lista solicitudes de devolución filtradas por rol (`GET /api/returns`). |
-| **`useReturnQuery`** | `ZentricApiPort.getReturnById` | `queryKeys.returns.detail(id)` | Obtiene el expediente completo de una devolución (`GET /api/returns/{id}`). |
-| **`useRequestReturnMutation`**| `ZentricApiPort.requestReturn` | Invalida `queryKeys.returns.all` | Radica solicitud de devolución sobre producto físico entregado (`POST /api/returns/request`). |
-| **`useInspectReturnMutation`**| `ZentricApiPort.inspectReturn` | Invalida `queryKeys.returns.all` | Registra el dictamen físico en bodega (`POST /api/returns/{id}/inspect`). Exclusivo Operador Logístico. |
-| **`useApproveReturnMutation`**| `ZentricApiPort.approveReturn` | Invalida `returns` e `inventories` | Aprueba comercialmente la devolución y reingresa stock como `Used`. **Exclusivo Vendedor dueño**. |
-| **`useRejectReturnMutation`** | `ZentricApiPort.rejectReturn` | Invalida `queryKeys.returns.all` | Rechaza comercialmente la devolución (`POST /api/returns/{id}/reject`). **Exclusivo Vendedor dueño**. |
-| **`useRefundReturnMutation`** | `ZentricApiPort.refundReturn` | Invalida `queryKeys.returns.all` | Ejecuta el reembolso monetario al comprador (`POST /api/returns/{id}/refund`). **Exclusivo Administrador**. |
+### 3.7 Módulo de Facturación Split y Salud (`application/services/billing.ts`, `health.ts`)
 
----
-
-### 3.7 Facturación Split y Salud (`billing.ts`, `transversal.ts`)
-Emisión y anulación de los tres documentos contables ([ADR-0023](../backendSDD/Adr/0023-split-de-pagos-documentos-no-transferencias.md)):
-
-| Hook / Servicio | Método del Puerto | Invalidación / Efecto | Responsabilidad Técnica |
-|---|---|---|---|
-| **`useInvoicesQuery`** | `ZentricApiPort.listInvoices` | `queryKeys.invoices.list()` | Lista comprobantes emitidos según el rol (`GET /api/billing/invoices`). |
-| **`useInvoicesByOrderQuery`** | `ZentricApiPort.getInvoicesByOrder` | `queryKeys.invoices.byOrder(orderId)`| Consulta las facturas vinculadas a un pedido pagado (`GET /api/billing/invoices/order/{orderId}`). |
-| **`useGenerateInvoicesMutation`**| `ZentricApiPort.generateInvoices` | Invalida `queryKeys.invoices.all` | Emite Factura Maestra, Detalle Zentric y Facturas de Vendedor (`POST /api/billing/invoices/generate/{orderId}`). Exclusivo Administrador. |
-| **`useAnnulInvoicesMutation`**| `ZentricApiPort.annulInvoices` | Invalida `queryKeys.invoices.all` | Anula formalmente la Factura Maestra con motivo obligatorio (`POST /api/billing/invoices/annul/{orderId}`). Exclusivo Administrador. |
-| **`useHealthQuery`** | `ZentricApiPort.getHealth` | `queryKeys.health` | Consulta el estado operativo del servidor y PostgreSQL (`GET /health`). |
-
----
-
-## 4. Reglas Puras de Presentación (`domain/rules/presentation.ts`)
-
-Funciones deterministas puras en TypeScript que determinan qué acciones ofrece la interfaz sin suplantar la autoridad del backend:
-
-```typescript
-// domain/rules/presentation.ts
-import { OrderStatus, ProductType } from '../enums';
-
-// ZENTRIC.md Dominio 6 y backendSDD/Domain/07-lifecycle.md:
-// Un pedido en estado Paid, Dispatched, Delivered o Cancelled es inmutable.
-export function isOrderModifiable(status: OrderStatus): boolean {
-  return status === OrderStatus.Cart || status === OrderStatus.PendingPayment;
-}
-
-// ZENTRIC.md Dominio 10 (ADDENDUM):
-// Queda estrictamente prohibido solicitar devoluciones sobre productos digitales.
-export function isReturnAllowed(productType: ProductType): boolean {
-  return productType === ProductType.Physical;
-}
-```
+| Hook | Tipo | Método de Puerto Invocado | Efecto en Caché | Procedencia Backend (`archivo:línea`) |
+|---|---|---|---|---|
+| **`useInvoicesQuery`** | Query | `ZentricApiPort.listInvoices` | Cachea `['invoices', 'list']` | [`BillingController.cs:99`](../backend/Zentric.Api/Controllers/BillingController.cs#L99) |
+| **`useInvoicesByOrderQuery`** | Query | `ZentricApiPort.getInvoicesByOrder` | Cachea `['invoices', 'order', orderId]` | [`BillingController.cs:128`](../backend/Zentric.Api/Controllers/BillingController.cs#L128) |
+| **`useGenerateInvoicesMutation`** | Mutation | `ZentricApiPort.generateInvoices` | Invalida `['invoices']` y `['orders']` | [`BillingController.cs:45`](../backend/Zentric.Api/Controllers/BillingController.cs#L45) |
+| **`useAnnulInvoicesMutation`** | Mutation | `ZentricApiPort.annulInvoices` | Invalida `['invoices']` | [`BillingController.cs:75`](../backend/Zentric.Api/Controllers/BillingController.cs#L75) |
+| **`useHealthQuery`** | Query | `ZentricApiPort.getHealth` | Cachea `['health']` | [`Program.cs:276`](../backend/Zentric.Api/Program.cs#L276) |
 
 ---
 
-## 5. Catálogo de Esquemas Zod (`application/schemas/`)
+## 4. Especificación Contractual de Esquemas Zod (`application/schemas/`)
 
-Cada formulario valida su entrada con un esquema Zod tipado en inglés que replica los validadores FluentValidation del servidor y serializa enumeraciones por nombre ([ADR-0012](../backendSDD/Adr/0012-contrato-json-de-los-enum-por-nombre.md)):
+Cada esquema Zod en `apps/frontend/src/application/schemas/` replica las restricciones exactas de los validadores `FluentValidation` del backend y las invariantes de las entidades de dominio:
 
-```typescript
-// application/schemas/index.ts
-import { z } from 'zod';
+| Esquema Zod | Validador / Comando en Backend C# (`archivo:línea`) | Campos, Tipos y Reglas de Validación Estrictas |
+|---|---|---|
+| **`LoginSchema`** | [`LoginCommandValidator.cs:9-19`](../backend/Zentric.Application/Users/Validators/LoginCommandValidator.cs#L9-L19) | • `email`: `string` recortado (`trim`), no vacío, formato de correo electrónico válido.<br>• `password`: `string`, longitud mínima `1`. |
+| **`CreateUserSchema`** | [`CreateUserCommandValidator.cs:9-30`](../backend/Zentric.Application/Users/Validators/CreateUserCommandValidator.cs#L9-L30) | • `identityDocument`: `string` recortado, no vacío.<br>• `fullName`: `string` recortado, no vacío.<br>• `email`: `string` recortado, formato de correo válido.<br>• `password`: `string`, longitud mínima `8` y máxima `128` caracteres ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)).<br>• `role`: `z.enum(['Buyer', 'Seller', 'Administrator', 'Supervisor', 'LogisticsOperator'])`. |
+| **`CreateWarehouseSchema`** | [`CreateWarehouseCommandValidator.cs:9-31`](../backend/Zentric.Application/Warehouses/Validators/CreateWarehouseCommandValidator.cs#L9-L31) | • `name`: `string` recortado, no vacío.<br>• `location`: `string` recortado, no vacío.<br>• `capacity`: `number` entero $> 0$ ($m^3$).<br>• `type`: `z.enum(['Marketplace', 'Vendor'])` ([`WarehouseType.cs:3-7`](../backend/Zentric.Domain/Warehouses/Enum/WarehouseType.cs#L3-L7)).<br>• `vendorId`: `string` UUID opcional/nulo.<br>• **Refinamiento cruzado:** Si `type === 'Marketplace'`, `vendorId` debe ser `null`/`undefined`; si `type === 'Vendor'`, `vendorId` debe ser un UUID válido no vacío. |
+| **`AddStockSchema`** | [`AddStockCommandValidator.cs:8-23`](../backend/Zentric.Application/Inventories/Validators/AddStockCommandValidator.cs#L8-L23) | • `variantId`: `string` UUID válido.<br>• `warehouseId`: `string` UUID válido.<br>• `quantity`: `number` entero $> 0$ (`ZENTRIC.md` Dominio 6: prohibidas existencias negativas). |
+| **`AdjustInventorySchema`** | [`AdjustInventoryCommand.cs:23-28`](../backend/Zentric.Application/Inventories/Commands/AdjustInventoryCommand.cs#L23-L28)<br>[`InventoriesController.cs:152`](../backend/Zentric.Api/Controllers/InventoriesController.cs#L152) | • `countedQuantity`: `number` entero $\ge 0$ y $\le$ `availableQuantity` actual ([ADR-0021](../backendSDD/Adr/0021-ajuste-de-stock-sin-cuello-de-botella.md): el conteo físico sólo puede reducir existencias disponibles).<br>• `reason`: `string` recortado, no vacío. |
+| **`CreateProductSchema`** | [`CreateProductCommandValidator.cs:9-32`](../backend/Zentric.Application/Catalog/Validators/CreateProductCommandValidator.cs#L9-L32)<br>[`CreateProductCommand.cs:16-41`](../backend/Zentric.Application/Catalog/Commands/CreateProductCommand.cs#L16-L41) | • `name`: `string` recortado, no vacío, máximo `200` caracteres.<br>• `description`: `string` recortado, no vacío, máximo `2000` caracteres.<br>• `priceAmount`: `number` $> 0$.<br>• `priceCurrency`: `string` recortado, longitud exacta de `3` caracteres ISO (`COP`, `USD`).<br>• `type`: `z.enum(['Physical', 'Digital'])`.<br>• `variants`: arreglo de objetos `{ sku: string (1..100), attributes: Array<{ name: string (1..50), value: string (1..50) }> }`.<br>• **Refinamiento cruzado:** Cuando `type === 'Physical'`, `variants.length >= 1` ([ADR-0003](../backendSDD/Adr/0003-variante-obligatoria-productos-fisicos.md)). |
+| **`AddCartItemSchema`** | [`AddOrderItemCommandValidator.cs:23-35`](../backend/Zentric.Application/Orders/Validators/AddOrderItemCommandValidator.cs)<br>[`AddOrderItemCommand.cs:703-707`](../backend/Zentric.Application/Orders/Commands/AddOrderItemCommand.cs#L703-L707) | • `orderId`: `string` UUID válido.<br>• `variantId`: `string` UUID válido.<br>• `quantity`: `number` entero $> 0$. |
+| **`CreateFulfillmentSchema`** | [`CreateFulfillmentOrderCommandValidator.cs`](../backend/Zentric.Application/Logistics/Validators/CreateFulfillmentOrderCommandValidator.cs) | • `customerOrderId`: `string` UUID válido.<br>• `vendorId`: `string` UUID válido. |
+| **`CancelGhostStockSchema`** | [`CancelFulfillmentOrderDueToNoStockCommand.cs:28-34`](../backend/Zentric.Application/Logistics/Commands/CancelFulfillmentOrderDueToNoStockCommand.cs#L28-L34) | • `fulfillmentOrderId`: `string` UUID válido.<br>• `variantId`: `string` UUID válido.<br>• `warehouseId`: `string` UUID válido.<br>• `quantityToCancel`: `number` entero $> 0$. |
+| **`RequestReturnSchema`** | [`RequestReturnCommandValidator.cs`](../backend/Zentric.Application/Returns/Validators/RequestReturnCommandValidator.cs)<br>[`RequestReturnCommand.cs:1072`](../backend/Zentric.Application/Returns/Commands/RequestReturnCommand.cs#L1072) | • `customerOrderId`: `string` UUID válido.<br>• `variantId`: `string` UUID válido.<br>• `warehouseId`: `string` UUID válido.<br>• `quantity`: `number` entero $> 0$. |
+| **`InspectReturnSchema`** | [`ReturnsController.cs:252`](../backend/Zentric.Api/Controllers/ReturnsController.cs#L252) | • `isGoodCondition`: `boolean` obligatorio. |
+| **`AnnulInvoiceSchema`** | [`BillingController.cs:144`](../backend/Zentric.Api/Controllers/BillingController.cs#L144) | • `reason`: `string` recortado, no vacío (motivo obligatorio de anulación de Factura Maestra). |
 
-export const LoginSchema = z.object({
-  email: z.string().trim().email('Debe ingresar un correo electrónico válido'),
-  password: z.string().min(1, 'La contraseña es obligatoria'),
-});
+---
 
-export const CreateProductSchema = z
-  .object({
-    name: z.string().trim().min(3, 'El nombre requiere al menos 3 caracteres').max(200),
-    description: z.string().trim().min(1, 'La descripción es obligatoria').max(2000),
-    priceAmount: z.number().positive('El precio debe ser mayor que cero'),
-    priceCurrency: z.string().trim().length(3, 'La moneda debe ser un código ISO de 3 letras'),
-    type: z.enum(['Physical', 'Digital']),
-    weightInKg: z.number().nonnegative(),
-    lengthInCm: z.number().nonnegative(),
-    widthInCm: z.number().nonnegative(),
-    heightInCm: z.number().nonnegative(),
-    variants: z.array(
-      z.object({
-        sku: z.string().trim().min(1, 'El código SKU es obligatorio'),
-        attributes: z.string().trim().min(1, 'Los atributos de la variante son obligatorios'),
-      }),
-    ),
-  })
-  .refine((data) => data.type !== 'Physical' || data.variants.length > 0, {
-    message: 'Un producto físico exige registrar al menos una variante con SKU (ADR-0003)',
-    path: ['variants'],
-  });
-```
+## 5. Reglas Puras de Presentación del Dominio (`domain/rules/presentation.ts`)
+
+Funciones deterministas puras en TypeScript sin efectos secundarios que gobiernan la habilitación de controles en la interfaz:
+
+| Función Pura | Firma Contractual | Regla de Negocio y Fuente Canónica |
+|---|---|---|
+| **`isOrderModifiable`** | `(status: OrderStatus) => boolean` | Retorna `true` únicamente si `status === 'Cart'`. Un pedido en `PendingPayment`, `Paid`, `Dispatched`, `Delivered` o `Cancelled` no admite adición de ítems (`ZENTRIC.md` Dominio 6 y [`CustomerOrder.cs`](../backend/Zentric.Domain/Orders/CustomerOrder.cs)). |
+| **`isOrderPayable`** | `(status: OrderStatus, remainingSeconds: number) => boolean` | Retorna `true` únicamente si `status === 'PendingPayment'` y `remainingSeconds > 0` (ventana atómica de 15 minutos, `ZENTRIC.md` Dominio 7). |
+| **`isReturnAllowed`** | `(orderStatus: OrderStatus, productType: ProductType) => boolean` | Retorna `true` únicamente si `orderStatus === 'Delivered'` y `productType === 'Physical'` (`ZENTRIC.md` Dominio 10: prohibidas las devoluciones sobre productos digitales). |
+| **`canDeliverFulfillment`** | `(status: FulfillmentStatus, callerRole: UserRole) => boolean` | Retorna `true` únicamente si `status === 'Dispatched'` y `callerRole === 'LogisticsOperator'` ([`AuthorizationPolicies.cs:138-151`](../backend/Zentric.Api/Security/AuthorizationPolicies.cs#L138-L151)). |
+| **`canResolveReturnCommercially`** | `(status: ReturnStatus, callerRole: UserRole) => boolean` | Retorna `true` únicamente si `status === 'Requested'` y `callerRole === 'Seller'` ([ADR-0006](../backendSDD/Adr/0006-resolucion-contradiccion-ley-addendum.md)). |
+| **`canRefundReturn`** | `(status: ReturnStatus, callerRole: UserRole) => boolean` | Retorna `true` únicamente si `status === 'Approved'` y `callerRole === 'Administrator'` ([`AuthorizationPolicies.cs:213-223`](../backend/Zentric.Api/Security/AuthorizationPolicies.cs#L213-L223)). |
+
+---
+
+## 6. Requisitos Verificables de la Capa de Aplicación (Formato EARS)
+
+- **FR-APP-01:** **Cuando** un formulario invoca una mutación con datos que incumplen el esquema Zod correspondiente, el sistema **deberá** abortar el envío local y proyectar los mensajes de validación en español en $< 16\text{ms}$ sin invocar `ZentricApiPort`.
+- **FR-APP-02:** **Cuando** `useCreateProductMutation` finaliza con éxito (`200 OK`), el sistema **deberá** exponer el `productId` y el arreglo `variantIds` retornados en `CreatedProductDto` e invalidar `queryKeys.products.all`.
+- **INV-APP-01:** La fábrica `queryKeys` y los hooks de `application/services/` **no deberán** almacenar ni sincronizar tokens de sesión en `localStorage` ni `sessionStorage`.
+- **ERR-APP-01:** **Si** cualquier consulta o mutación de TanStack Query recibe un error normalizado con `status === 401`, el sistema **deberá** cancelar reintentos adicionales (`retry: false`), invocar `SessionPort.clear()` y redirigir a `/login`.

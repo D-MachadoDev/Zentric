@@ -1,80 +1,56 @@
-# C4 - Nivel 1: Contexto del Frontend
+# Arquitectura C4 — Nivel 1: Diagrama de Contexto del Sistema (Frontend SDD)
 
-## 1. Propósito y Alcance del Sistema
-
-Zentric Frontend es la aplicación web cliente con la que los distintos actores del marketplace interactúan con el ecosistema. Su responsabilidad primordial es proporcionar una interfaz visual intuitiva, segura y reactiva que traduzca las intenciones del usuario en operaciones sobre la API de Zentric.
-
-El frontend opera bajo el principio de **cliente ligero (SPA)**:
-- **No persiste datos directamente:** No posee conexión con bases de datos ni almacena estado durable fuera de la sesión activa.
-- **No procesa transacciones críticas:** No calcula totales financieros, no decrementa inventario ni valida reglas de negocio por su cuenta; delega el 100% de la lógica de negocio y validación transaccional en el backend.
-- **Orquesta la experiencia:** Gestiona la navegación, presenta estados de carga y error, captura entradas de formularios y muestra datos adaptados a los permisos del usuario autenticado.
-
-> [!IMPORTANT]
-> **Frontera de Confianza:** El navegador del usuario es un entorno inseguro. El frontend no contiene secretos comerciales, credenciales maestras ni claves privadas. Cualquier validación en la interfaz existe únicamente para optimizar la experiencia de usuario (feedback inmediato), mientras que la autoridad real y definitiva reside siempre en el backend.
+> **Propósito:** Definir los límites del sistema **Zentric Marketplace Platform**, los 5 actores humanos diferenciados por rol (`UserRole` en `backend/Zentric.Domain/Users/UserRole.cs:3-10`) y las integraciones de frontera entre el cliente web (`Zentric Web App`) y el núcleo transaccional (`Zentric Backend API`).
 
 ---
 
-## 2. Diagrama de Contexto del Sistema
+## 1. Diagrama de Contexto del Sistema (C4 Nivel 1)
 
 ```mermaid
-flowchart LR
-  buyer["Persona: Comprador (Buyer)<br/>Explora catalogo, compra y solicita devoluciones"]
-  seller["Persona: Vendedor (Seller)<br/>Gestiona catalogo, existencias y despachos"]
-  admin["Persona: Administrador (Administrator)<br/>Usuarios, bodegas, auditoria y facturacion"]
-  logistics["Persona: Operador Logistico (LogisticsOperator)<br/>Despacha pedidos e inspecciona devoluciones"]
-  supervisor["Persona: Supervisor (Supervisor)<br/>Auditoria y reporteria en modo solo lectura"]
-  guest["Persona: Usuario Publico (Anonimo)<br/>Inicio de sesion y registro de comprador"]
+flowchart TB
+    subgraph Actors["Actores del Ecosistema Zentric (5 Roles de Negocio)"]
+        Buyer["👤 Comprador (Buyer)\nExplora catálogo, reserva stock por 15 min,\npaga pedidos y solicita devoluciones en <= 30 días"]
+        Seller["🏪 Vendedor (Seller)\nPublica productos con variantes, abastece stock nuevo,\naprueba devoluciones y consulta liquidaciones"]
+        Admin["🛡️ Administrador (Administrator)\nAprovisiona cuentas internas, gestiona bodegas,\nconfigura comisiones y audita la plataforma"]
+        Logistics["📦 Operador Logístico (LogisticsOperator)\nEmpaca, despacha, confirma entregas, inspecciona\ndevoluciones y reporta stock fantasma"]
+        Supervisor["🔍 Supervisor (Supervisor)\nAudita pedidos, logística, devoluciones y finanzas;\najusta conteo físico en bodega (sin acceso a PII)"]
+    end
 
-  system["SISTEMA CENTRAL<br/>Zentric Frontend<br/>[Aplicacion Web SPA]<br/>Consola visual para todos los roles del marketplace"]
+    subgraph ZentricBoundary["Límite del Sistema Zentric Marketplace"]
+        WebApp["🖥️ Zentric Web App\n(SPA React 19 + TypeScript + Tailwind v4)\nInterfaz multi-rol de alta densidad (hyperframes-creative)"]
+        BackendAPI["⚙️ Zentric Backend API\n(ASP.NET Core .NET 10 — Arquitectura Hexagonal + DDD)\n45 Endpoints REST + 21 Políticas RBAC + PostgreSQL 16"]
+    end
 
-  backend["SISTEMA EXTERNO<br/>Zentric Web API<br/>[Servicio Backend .NET 10]<br/>Autenticacion JWT, autorizacion y reglas del negocio"]
+    Buyer -->|"HTTPS / Navegador\n(/buyer/*)"| WebApp
+    Seller -->|"HTTPS / Navegador\n(/seller/*)"| WebApp
+    Admin -->|"HTTPS / Navegador\n(/admin/*)"| WebApp
+    Logistics -->|"HTTPS / Navegador\n(/logistics/*)"| WebApp
+    Supervisor -->|"HTTPS / Navegador\n(/supervisor/*)"| WebApp
 
-  buyer -->|"Usa en navegador"| system
-  seller -->|"Usa en navegador"| system
-  admin -->|"Usa en navegador"| system
-  logistics -->|"Usa en navegador"| system
-  supervisor -->|"Usa en navegador"| system
-  guest -->|"Accede a login y registro"| system
-
-  system -->|"Peticiones HTTPS / REST JSON<br/>(Bearer JWT)"| backend
-
-  classDef person fill:#0284c7,stroke:#0369a1,stroke-width:2px,color:#ffffff;
-  classDef system fill:#4f46e5,stroke:#3730a3,stroke-width:3px,color:#ffffff;
-  classDef external fill:#475569,stroke:#334155,stroke-width:2px,color:#ffffff;
-
-  class buyer,seller,admin,logistics,supervisor,guest person;
-  class system system;
-  class backend external;
+    WebApp -->|"REST JSON sobre HTTPS\nBearer JWT (30 min) + RFC 7807 Problem Details"| BackendAPI
 ```
 
 ---
 
-## 3. Actores y Perfiles de Acceso
+## 2. Catálogo Normativo de Actores y Alcance Operativo
 
-El sistema reconoce exactamente **cinco roles autenticados**, correspondientes al enum `UserRole` del backend, más los usuarios anónimos:
+Cada actor humano se autentica contra `POST /api/auth/login` (`AuthController.cs:34`) y recibe un token JWT con expiración estricta de **30 minutos** ([ADR-0009](../backendSDD/ADR/ADR-0009-authentication-jwt-session-expiry.md)) que determina su Shell y alcance operativo:
 
-| Rol | Clasificación | Responsabilidades Principales en la UI |
-|---|---|---|
-| **Administrator** | Autenticado | Gestión integral de usuarios, asignación de bodegas, resolución de reembolsos, auditoría operativa y generación de facturación maestra. |
-| **Seller** | Autenticado | Creación y mantenimiento de catálogo de productos, visualización de existencias de inventario, despacho de órdenes y aprobación de devoluciones. |
-| **Buyer** | Autenticado | Exploración de catálogo público, administración de carrito de compras, ejecución de checkout y solicitud de devoluciones. |
-| **LogisticsOperator** | Autenticado | Ejecución física de despachos desde bodega, inspección técnica de devoluciones recibidas y reporte de quiebres de stock. |
-| **Supervisor** | Autenticado | Perfil de auditoría con acceso de **solo lectura** (ZENTRIC.md Dominio 1). La interfaz inhabilita formularios de creación o edición. |
-| **Usuario Público** | Anónimo | Acceso exclusivo a la pantalla de inicio de sesión (`POST /api/auth/login`) y al registro público de nuevos compradores (`POST /api/users`). |
-
----
-
-## 4. Fronteras de Seguridad y Límites de Confianza
-
-1. **Gestión de Sesión Volátil ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)):** El token JWT se mantiene **únicamente en memoria RAM** (`MemorySessionAdapter.ts`) durante la vida de la pestaña del navegador. No se almacena en `localStorage` ni `sessionStorage` para prevenir vulnerabilidades de Cross-Site Scripting (XSS). No existen mecanismos de refresh token automático ni cookies de sesión; si el usuario recarga la página (`F5`) o transcurren 60 minutos, la sesión finaliza y debe reautenticarse en `/login`.
-2. **Autorización y Guardas:** Las rutas de la interfaz cuentan con guardas en el cliente (`beforeLoad`) para redirigir al usuario según su rol (`/buyer/*`, `/seller/*`, `/admin/*`, `/logistics/*`, `/supervisor/*`) y evitar navegación a vistas restringidas. Sin embargo, la seguridad efectiva es garantizada por las **21 políticas de autorización** del backend (`AuthorizationPolicies.cs`, [ADR-0011](../backendSDD/Adr/0011-matriz-autorizacion-por-rol.md) y [ADR-0014](../backendSDD/Adr/0014-enmiendas-a-la-matriz-de-autorizacion.md)). Una alteración del código en el navegador jamás permite ejecutar acciones no permitidas en el servidor.
-3. **Comunicación Perimetral:** El frontend se conecta con la API (44 endpoints de negocio + `/health`) a través de peticiones HTTP con cabecera `Authorization: Bearer <token>`. Toda respuesta de error recibida sigue el estándar RFC 7807 (`ProblemDetails`, [ADR-0015](../backendSDD/Adr/0015-contrato-de-error-http-problem-json.md)), permitiendo una traducción unificada de errores hacia el usuario.
+| Actor (`UserRole`) | Etiqueta en UI (`domainLabels.ts`) | Responsabilidades Principales en el Sistema | Restricciones de Frontera y Seguridad (`AuthorizationPolicies.cs`) |
+|---|---|---|---|
+| **`Buyer`** | `"Comprador"` | Exploración de catálogo público, gestión de libreta de direcciones (`BuyersController.cs`), adición de ítems al carrito con reserva atómica de 15 minutos, pago e inicio de devoluciones dentro de los 30 días posteriores a la entrega. | Sin acceso a existencias por bodega (`/api/inventories`), configuración de bodegas, comisiones ni cuentas de terceros. |
+| **`Seller`** | `"Vendedor"` | Alta de productos con variantes y atributos dinámicos (`CatalogController.cs`), abastecimiento de stock nuevo por bodega (`POST /api/inventories/stock`), aprobación de devoluciones inspeccionadas y consulta de sus facturas y comisiones netas. | Solo puede abastecer stock nuevo (`availableQuantity`); el stock usado (`usedQuantity`) se incrementa exclusivamente mediante eventos de devolución aprobada. |
+| **`Administrator`** | `"Administrador"` | Gobernanza integral: alta de usuarios internos (`POST /api/users`, [ADR-0022](../backendSDD/ADR/ADR-0022-public-registration-and-admin-provisioning.md)), creación/activación de bodegas (`Marketplace` y `Vendor`), configuración de comisiones (`GlobalDefault`, `CategorySpecific`, `VendorSpecific`), ajustes de inventario y supervisión global. | Único rol autorizado para consultar y administrar datos personales sensibles (PII) en `/api/users` (política `UserAdministration`, `AuthorizationPolicies.cs:115`). |
+| **`LogisticsOperator`** | `"Operador Logístico"` | Operación física de bodega: empaque (`pack`), despacho con guía (`dispatch`) y entrega (`deliver`) de paquetes particionados (`OrderFulfillment`), inspección física de devoluciones (`inspect`) y cancelación por stock fantasma (`cancel-ghost-stock`). | Sin acceso a facturación, comisiones ni datos personales de cuentas de usuario. |
+| **`Supervisor`** | `"Supervisor"` | Auditoría transversal de pedidos, logística, devoluciones y liquidaciones financieras, más facultad explícita de **ajuste de inventario por conteo físico** (`POST /api/inventories/{id}/adjust`, [ADR-0021](../backendSDD/ADR/ADR-0021-inventory-physical-count-and-ghost-stock-cancellation.md)). | Rol de solo lectura en operaciones comerciales y financieras; **bloqueado** en `/api/users` para proteger la privacidad de documentos de identidad y correos electrónicos. |
 
 ---
 
-## 5. Trazabilidad y Documentos Relacionados
+## 3. Contratos e Invariantes de Frontera (Web App ↔ Backend API)
 
-- **Nivel 2 (Contenedores):** [C4-2-Contenedores.md](C4-2-Contenedores.md) — Unidades de despliegue y servidores (Nginx, SPA, API, PostgreSQL).
-- **Nivel 3 (Componentes):** [C4-3-Componentes.md](C4-3-Componentes.md) — Arquitectura interna del cliente y módulos por rol.
-- **Arquitectura General del Frontend:** [Frontend-Architecture.md](Frontend-Architecture.md) — Capas hexagonales en el cliente.
-- **Reglas del Negocio (La Ley):** [ZENTRIC.md](../ZENTRIC.md) — Especificación canónica del negocio.
+1. **Comunicación Exclusiva vía API REST Tipada:**
+   - El frontend no mantiene conexión directa con PostgreSQL ni ejecuta lógica de dominio reservada al servidor (cálculo de comisiones jerárquicas, particionamiento de `OrderFulfillment` por bodega o expiración de reservas de inventario).
+2. **Protocolo de Sesión Volátil sin Refresh Token ([ADR-0009](../backendSDD/ADR/ADR-0009-authentication-jwt-session-expiry.md)):**
+   - Todas las llamadas protegidas incluyen la cabecera `Authorization: Bearer <accessToken>`. Ante la expiración del token a los 30 minutos (`401 Unauthorized`), el frontend limpia su estado en memoria y exige re-autenticación explícita.
+3. **Semántica de Errores RFC 7807 (`application/problem+json`):**
+   - Toda violación de regla de negocio o validación de entrada en el backend se transmite al frontend mediante un objeto `ApiProblemDetails` con mensajes en español listos para su presentación contextual en la interfaz.
