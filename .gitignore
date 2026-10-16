@@ -445,3 +445,6 @@ FodyWeavers.xsd
 # de la maquina de quien edita, no especificacion. No debe viajar al repositorio.
 .obsidian/
 
+# Archivos y capturas temporales de workflows de exploracion de navegador
+.archify/
+

@@ -1,15 +1,17 @@
-# Zentric Marketplace — Backend Core & Domain API
+# Zentric Marketplace — Fullstack Core & Domain Platform
 
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
-[![C# 13](https://img.shields.io/badge/C%23-13.0-239120?style=for-the-badge&logo=c-sharp&logoColor=white)](https://learn.microsoft.com/dotnet/csharp/)
+[![React 19](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16.15--alpine-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-457%20Passing%20(100%25)-brightgreen?style=for-the-badge&logo=xunit)](https://xunit.net/)
+[![Tests](https://img.shields.io/badge/Tests-592%20Passing%20(100%25)-brightgreen?style=for-the-badge&logo=xunit)](https://xunit.net/)
 [![Architecture](https://img.shields.io/badge/Architecture-Hexagonal%20%2B%20DDD%20%2B%20CQRS-orange?style=for-the-badge)](./backendSDD/02-software-architecture.md)
-[![Methodology](https://img.shields.io/badge/Methodology-SDD%20v7.0.1-blue?style=for-the-badge)](./.agents/skills/generic-sdd-agent/SKILL.md)
+[![Methodology](https://img.shields.io/badge/Methodology-SDD%20%2B%20ODD-blue?style=for-the-badge)](./AGENTS.md)
+[![Orchestration](https://img.shields.io/badge/Orchestrator-13%20Agents%20(DAG)-purple?style=for-the-badge)](./.agents/orchestration/master-orchestrator.prompt.md)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](./LICENSE)
 
-Núcleo de Dominio y API Central para la plataforma de comercio electrónico y marketplace **Zentric**. Diseñada bajo principios rigurosos de ingeniería de software empresarial: **Arquitectura Hexagonal (Puertos y Adaptadores)**, **Domain-Driven Design (DDD)** táctico, segregación de responsabilidades con **CQRS**, y gobernada mediante **Spec-Driven Development (SDD)**.
+Plataforma empresarial de comercio electrónico y marketplace multi-vendedor **Zentric**. Diseñada bajo principios rigurosos de ingeniería de software: **Arquitectura Hexagonal (Puertos y Adaptadores)**, **Domain-Driven Design (DDD)** táctico, segregación de responsabilidades con **CQRS**, y gobernada mediante **Spec-Driven Development (SDD)** y **Outcome-Driven Development (ODD)** a través de una flota coordinada de 13 agentes especializados.
 
 ---
 
@@ -25,7 +27,8 @@ Núcleo de Dominio y API Central para la plataforma de comercio electrónico y m
 9. [Tratamiento Estandarizado de Errores (RFC 7807)](#-tratamiento-estandarizado-de-errores-rfc-7807)
 10. [Instalación y Despliegue](#-instalación-y-despliegue)
 11. [Pruebas Automatizadas y Calidad](#-pruebas-automatizadas-y-calidad)
-12. [Matriz de Trazabilidad Técnica](#-matriz-de-trazabilidad-técnica)
+12. [Orquestación Multi-Agente y Gobernanza SDD + ODD](#-orquestación-multi-agente-y-gobernanza-sdd--odd)
+13. [Matriz de Trazabilidad Técnica](#-matriz-de-trazabilidad-técnica)
 
 ---
 
@@ -68,29 +71,35 @@ dotnet test backend/Zentric.slnx --filter "FullyQualifiedName!~E2E" --no-build
 
 ---
 
-## 📖 Estructura de Especificación (SDD)
+## 📖 Estructura de Especificación (SDD + ODD)
 
-El desarrollo del proyecto se rige por **Spec-Driven Development (SDD)**, manteniendo sincronización bidireccional estricta entre la especificación técnica en `backendSDD/` y el código fuente en C#:
+El desarrollo del proyecto se rige por **Spec-Driven Development (SDD)** y **Outcome-Driven Development (ODD)**, manteniendo sincronización bidireccional estricta entre la especificación técnica (`backendSDD/` y `frontendSDD/`) y el código fuente:
 
 ```mermaid
 flowchart TD
     B1["1. ZENTRIC.md (La Ley)<br/>Especificación funcional pura del cliente.<br/>Invariantes de negocio y dominios 1 a 11."]
-    B2["2. Decisiones y ADRs (backendSDD/Adr/)<br/>21 Architecture Decision Records aprobados.<br/>Definiciones tácticas y consensos."]
-    SSOT["3. Especificaciones SDD (backendSDD/)<br/>Domain, Application, Infrastructure, Presentation.<br/>Modelos, puertos, eventos y contratos."]
-    CODE["4. Código Fuente (.NET 10)<br/>C# Puro en Dominio, CQRS Handlers, FluentValidation,<br/>EF Core aislado con 14 DbSets y 457 pruebas unitarias."]
+    B2["2. Decisiones y ADRs (backendSDD/Adr/)<br/>25 Architecture Decision Records aprobados.<br/>Definiciones tácticas y consensos inmutables."]
+    SSOT_B["3A. Especificación Backend (backendSDD/)<br/>Domain, Application, Infrastructure, Presentation.<br/>Modelos, puertos, eventos y 44 endpoints."]
+    SSOT_F["3B. Especificación Frontend (frontendSDD/)<br/>Modelo C4 Niveles 1 a 4, Design System,<br/>Adapters, Role Modules y Domain Services."]
+    CODE_B["4A. Código Backend (.NET 10)<br/>C# Puro en Dominio, CQRS Handlers, FluentValidation,<br/>EF Core con 14 DbSets y 592 pruebas continuas."]
+    CODE_F["4B. Código Frontend (React 19 + Vite)<br/>Monorepo Turborepo + pnpm, TanStack Router/Query,<br/>Tailwind v4 (@theme) y shadcn/ui."]
 
-    B1 --> SSOT
-    B2 --> SSOT
-    SSOT --> CODE
+    B1 --> SSOT_B
+    B1 --> SSOT_F
+    B2 --> SSOT_B
+    SSOT_B --> CODE_B
+    SSOT_F --> CODE_F
+    SSOT_B -.->|Contratos OpenAPI & Mocks| SSOT_F
 ```
 
 | Nivel de Verdad | Documento | Propósito Arquitectónico |
 | :--- | :--- | :--- |
 | **Nivel 1: La Ley** | [`ZENTRIC.md`](./ZENTRIC.md) | Documento funcional original. Intocable en su redacción. Excluye explícitamente elecciones de base de datos, UI y tecnologías de persistencia. |
 | **Nivel 2: Addenda del Owner** | Addenda en `ZENTRIC.md` | Resoluciones formales dictadas por el Owner para resolver ambigüedades operativas de la Ley. |
-| **Nivel 3: Decisiones de Arquitectura** | [`ADR-0001` a `ADR-0021`](./backendSDD/Adr/) | Registros inmutables de diseño (reserva atómica, VariantId, carritos, JWT, propiedad del recurso, etc.). |
-| **Nivel 4: Fuente Única de Verdad (SSoT)** | [`backendSDD/SDD.md`](./backendSDD/SDD.md) y [`backendSDD/`](./backendSDD/) | Catálogo maestro que indexa modelos, invariantes, casos de uso, contratos de persistencia y endpoints. |
-| **Nivel 5: Implementación Técnica** | Código Fuente C# | Implementación concreta estructurada en 5 proyectos dentro de la solución `backend/Zentric.slnx`. |
+| **Nivel 3: Decisiones de Arquitectura** | [`ADR-0001` a `ADR-0025`](./backendSDD/Adr/) | Registros inmutables de diseño (reserva atómica, VariantId, carritos, JWT, propiedad del recurso, split de pagos, stock no negativo, etc.). |
+| **Nivel 4A: SSoT Backend** | [`backendSDD/SDD.md`](./backendSDD/SDD.md) y [`backendSDD/`](./backendSDD/) | Catálogo maestro de backend: modelos, 18 invariantes, 22 comandos, 14 consultas, 14 DbSets y 44 endpoints REST. |
+| **Nivel 4B: SSoT Frontend** | [`frontendSDD/Frontend-SDD.md`](./frontendSDD/Frontend-SDD.md) y [`frontendSDD/`](./frontendSDD/) | Catálogo maestro de frontend: arquitectura C4 (Contexto, Contenedores, Componentes, Código), Design System, adaptadores HTTP y vistas por rol. |
+| **Nivel 5: Implementación Técnica** | `backend/` y `frontend/` | Código fuente concreto estructurado bajo Arquitectura Hexagonal y verificado mediante suites automatizadas con cobertura >= 90%. |
 
 ---
 
@@ -354,20 +363,65 @@ dotnet run --project backend/Zentric.Api/Zentric.Api.csproj
 
 ## 🧪 Pruebas Automatizadas y Calidad
 
-El proyecto cuenta con **457 pruebas unitarias y de integración arquitectónica** en verde continuo ejecutadas con xUnit:
+El proyecto cuenta con **592 pruebas automatizadas** en verde continuo (100% de éxito, 0 fallos, 0 omitidas) ejecutadas con xUnit, cubriendo todas las capas arquitectónicas del backend:
 
 ```bash
+# Pruebas unitarias y de arquitectura (sin Testcontainers)
 dotnet test backend/Zentric.slnx --filter "FullyQualifiedName!~E2E" --no-build
+
+# Suite completa (incluyendo E2E con PostgreSQL efímero y 8 pruebas de matriz de autorización)
+dotnet test backend/Zentric.slnx
 ```
 
 ```text
-Passed!  - Failed: 0, Passed: 457, Skipped: 0, Total: 457, Duration: 5 s - Zentric.Tests.dll (net10.0)
+Passed!  - Failed: 0, Passed: 592, Skipped: 0, Total: 592, Duration: 1 s - Zentric.Tests.dll (net10.0)
 ```
 
 ### Alcance de las Pruebas:
-- **Dominio:** 18 invariantes de negocio, cálculo aritmético de moneda, control atómico de stock, máquinas de estados y guardas de inmutabilidad.
-- **Aplicación:** Command Handlers y Query Handlers, validaciones automáticas con FluentValidation y canalización con `ValidationBehavior`.
-- **Seguridad:** Matriz de autorización verificada por reflexión (`EndpointAuthorizationMatrixTests`), contrato de enumeraciones en JSON y aislamiento por propiedad de recurso.
+- **Dominio (18 Invariantes):** Reglas estrictas de negocio, aritmética decimal de precisión con `Money`, control atómico de stock (disponible, reservado, usado, dañado), máquinas de estados finitos y eventos de dominio inmutables.
+- **Aplicación (CQRS):** 22 Command Handlers y 14 Query Handlers, validaciones automáticas en pipeline con FluentValidation y canalización con `ValidationBehavior`.
+- **Infraestructura & Persistencia:** Mapeadores bidireccionales `*DbModel` ↔ Entidad, 14 DbSets de EF Core y transacciones con Unit of Work.
+- **Seguridad y Autorización:** Matriz completa de 21 políticas de acceso verificadas automáticamente por reflexión (`EndpointAuthorizationMatrixTests`), serialización estricta de `enum` como cadenas de texto en JSON y aislamiento de datos por propiedad de recurso ([ADR-0013](./backendSDD/Adr/0013-propiedad-del-recurso-por-rol.md)).
+- **Integración E2E (123 Tests):** Flujos completos HTTP con base de datos real PostgreSQL efímera instanciada en Docker mediante Testcontainers ([ADR-0016](./backendSDD/Adr/0016-pruebas-e2e-http-con-postgres-efimero.md)).
+
+---
+
+## 🤖 Orquestación Multi-Agente y Gobernanza SDD + ODD
+
+Zentric cuenta con una infraestructura de orquestación determinista diseñada para ser ejecutada por cualquier modelo de IA (Claude, Gemini, GPT, DeepSeek) o CLI sin pérdida de contexto ni fatiga de tokens:
+
+- **Prompt Orquestador Maestro:** [`.agents/orchestration/master-orchestrator.prompt.md`](./.agents/orchestration/master-orchestrator.prompt.md)
+- **Máquina de Estados Unificada:** [`orchestrator-state.json`](./orchestrator-state.json)
+
+### Flota de 13 Agentes Especializados con Contextos Acotados:
+Cada agente opera exclusivamente sobre una lista blanca de archivos definida en [`.agents/orchestration/agents/`](./.agents/orchestration/agents/):
+
+| # | Agente | Rol | Alcance de Trabajo |
+|---|---|---|---|
+| **00** | `coordinator` | Orquestación General | Despacho de oleadas, commits atómicos y control de `orchestrator-state.json`. |
+| **12** | `sdd-alignment-auditor` | Gobernanza SDD/ODD | Auditoría spec ↔ código, activación de `/grill-me` y persistencia en Engram. |
+| **01** | `domain-architect` | Dominio Backend C# | Entidades, value objects, invariantes y domain events sin dependencias. |
+| **02** | `application-builder` | Casos de Uso CQRS | Comandos, consultas, validadores FluentValidation y puertos de negocio. |
+| **03** | `infrastructure-adapter` | Persistencia EF Core | DbSets, DbModels, mapeadores, repositorios y migraciones PostgreSQL. |
+| **04** | `api-presenter` | API REST & Seguridad | Endpoints REST, RFC 7807 (Problem Details), CORS y 21 políticas de autorización. |
+| **05** | `backend-qa-guardian` | QA Backend & Cobertura | Suites xUnit, Testcontainers, BDD y compuerta de cobertura >= 90%. |
+| **07** | `frontend-tokens-primitives` | Design System Base | Tokens semánticos, neutros tintados, tipografía Geist y primitivas UI atómicas. |
+| **08** | `frontend-composite-ui` | Componentes Ricos | DataTables, ResponsiveDrawers, Modales, StatCards con WAI-ARIA. |
+| **09** | `frontend-application-architect` | Servicios & Adaptadores | Cliente HTTP tipado, esquemas Zod, TanStack Query y SessionPort en memoria. |
+| **10** | `frontend-routing-shell` | Enrutamiento & Shells | TanStack Router, guardas `beforeLoad` por rol y Shell responsivo. |
+| **11** | `frontend-role-modules` | Módulos por Rol | Vistas especializadas: Buyer, Seller, Admin, Logistics, Supervisor. |
+| **13** | `frontend-qa-guardian` | QA Frontend & Cobertura | Suites Vitest + React Testing Library y compuerta de cobertura >= 90%. |
+
+### Grafo Dirigido Acíclico (DAG) por Oleadas:
+```text
+Oleada 0 (Secuencial): Auditoría y congelamiento de baseline documental (12-sdd-alignment-auditor).
+Oleada 1 (Paralelo):   01-domain-architect (Backend) || 07-frontend-tokens-primitives (Frontend).
+Oleada 2 (Paralelo):   02-application-builder + 03-infrastructure-adapter (Backend) ||
+                       09-frontend-application-architect + 08-frontend-composite-ui (Frontend).
+Oleada 3 (Paralelo):   04-api-presenter (Backend) || 10-frontend-routing-shell (Frontend).
+Oleada 4 (Especial):   11-frontend-role-modules (Pantallas de negocio por rol).
+Oleada 5 (Cierre):     05-backend-qa-guardian (xUnit >= 90%) || 13-frontend-qa-guardian (Vitest >= 90%).
+```
 
 ---
 
@@ -375,13 +429,17 @@ Passed!  - Failed: 0, Passed: 457, Skipped: 0, Total: 457, Duration: 5 s - Zentr
 
 | Componente Arquitectónico | Especificación y Requisitos | Ubicación en Código Fuente |
 | :--- | :--- | :--- |
-| **Metodología SDD** | Jerarquía de verdad formal; memoria viva del sistema. | [`ZENTRIC.md`](./ZENTRIC.md)<br/>[`backendSDD/`](./backendSDD/) |
-| **Arquitectura Hexagonal** | Dependencia estricta hacia el centro; dominio sin dependencias. | [`Zentric.Domain/`](./backend/Zentric.Domain/)<br/>[`backendSDD/02-software-architecture.md`](./backendSDD/02-software-architecture.md) |
-| **Modelado DDD** | 10 Agregados Raíz + 1 Auditoría con métodos de negocio semánticos. | [`Zentric.Domain/`](./backend/Zentric.Domain/)<br/>[`backendSDD/Domain/`](./backendSDD/Domain/) |
+| **Metodología SDD + ODD** | Jerarquía de verdad formal, ADRs y outcomes medibles. | [`ZENTRIC.md`](./ZENTRIC.md)<br/>[`backendSDD/`](./backendSDD/)<br/>[`frontendSDD/`](./frontendSDD/) |
+| **Orquestación Multi-Agente** | Flota de 13 agentes especializados y máquina de estados. | [`.agents/orchestration/`](./.agents/orchestration/)<br/>[`orchestrator-state.json`](./orchestrator-state.json) |
+| **Arquitectura Hexagonal (Backend)** | Dependencia estricta hacia el centro; dominio C# puro. | [`Zentric.Domain/`](./backend/Zentric.Domain/)<br/>[`backendSDD/02-software-architecture.md`](./backendSDD/02-software-architecture.md) |
+| **Modelado DDD** | 10 Agregados Raíz + 1 Auditoría con métodos semánticos. | [`Zentric.Domain/`](./backend/Zentric.Domain/)<br/>[`backendSDD/Domain/`](./backendSDD/Domain/) |
 | **Aislamiento de Persistencia** | 14 DbSets, modelos `*DbModel` y `*Mapper` dedicados; Unit of Work. | [`Zentric.Infrastructure/Persistence/`](./backend/Zentric.Infrastructure/Persistence/) |
-| **Segregación CQRS** | 22 Comandos y 14 Consultas con pipeline de validación sin MediatR. | [`Zentric.Application/`](./backend/Zentric.Application/) |
+| **Segregación CQRS** | 22 Comandos y 14 Consultas con pipeline de validación nativo. | [`Zentric.Application/`](./backend/Zentric.Application/) |
 | **Manejo de Errores** | Mapeo estructurado a RFC 7807 (Problem Details). | [`ApiControllerBase.cs`](./backend/Zentric.Api/Controllers/ApiControllerBase.cs)<br/>[`backendSDD/Presentation/03-error-handling.md`](./backendSDD/Presentation/03-error-handling.md) |
-| **Cobertura de Pruebas** | Suite de 457 pruebas automatizadas cubriendo todas las capas. | [`Zentric.Tests/`](./backend/Zentric.Tests/) |
+| **Seguridad y Autorización** | 21 Políticas fail-closed verificadas por reflexión. | [`DependencyInjection.cs`](./backend/Zentric.Api/DependencyInjection.cs) |
+| **Pruebas Automatizadas (Backend)** | Suite de 592 pruebas continuas (123 E2E con Testcontainers). | [`Zentric.Tests/`](./backend/Zentric.Tests/) |
+| **Arquitectura Frontend (C4)** | Monorepo Turborepo + pnpm con TanStack Router/Query. | [`frontend/`](./frontend/)<br/>[`frontendSDD/`](./frontendSDD/) |
+| **Design System & Tokens** | Tokens semánticos CSS `@theme`, Geist y anti-IA genérica. | [`frontend/packages/ui/`](./frontend/packages/ui/)<br/>[`frontendSDD/Frontend-Design-System.md`](./frontendSDD/Frontend-Design-System.md) |
 | **Contenerización** | Despliegue multi-servicio en Docker Compose. | [`docker-compose.yml`](./docker-compose.yml)<br/>[`backend/Dockerfile`](./backend/Dockerfile) |
 | **Documentación de API** | OpenAPI v1 con Swagger UI y esquema Bearer JWT. | [`backendSDD/Presentation/01-endpoints.md`](./backendSDD/Presentation/01-endpoints.md) |
 | **Decisiones Técnicas** | Registro de 25 ADRs documentados bajo formato MADR. | [`backendSDD/Adr/`](./backendSDD/Adr/) |
