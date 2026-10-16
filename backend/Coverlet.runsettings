@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <!--
+            Se excluye solo codigo generado por el compilador (artefacto en obj/),
+            no codigo fuente: OpenApiXmlCommentSupport.generated.cs son 617 lineas
+            del source-generator de OpenAPI que ningun test puede ejercitar de
+            forma significativa. Excluirlo corrige la medicion, no relaja
+            invariantes (las reglas de negocio siguen exigiendose al 100%).
+          -->
+          <ExcludeByFile>**/*.generated.cs</ExcludeByFile>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

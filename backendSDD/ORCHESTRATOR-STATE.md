@@ -22,7 +22,7 @@
 | PASO-C1 | Infrastructure: DbSets + Mappers + Repos + migraciones | done | build 0/0; 580/580 tests verde (2026-10-15) | a21eca8 (previo) | anti-amnesia formal |
 | PASO-C2 | Api: 45 endpoints + auth 21 politicas + CORS + RFC7807 | done | build 0/0; 580/580 tests verde (2026-10-15) | a21eca8 (previo) | matriz auth por endpoint |
 | PASO-D1 | QA E2E completo + matriz de autorizacion | done | build 0/0; E2E 123/123; EndpointAuthorizationMatrix 8/8; full 580/580 (2026-10-16) | 783a82e | cerrado 2026-10-16 |
-| PASO-D2 | Cobertura >=90% linea y rama por proyecto (coverlet) | failed_qa | coverlet 2026-10-16: global linea 88.6% rama 56.8% (ver tabla) | — | Coverage-Closer: tests sin relajar invariantes hasta >=90% linea+rama |
+| PASO-D2 | Cobertura >=90% linea y rama por proyecto (coverlet) | in_progress | coverlet 2026-10-16: global linea 88.6% rama 56.8% (ver tabla) | — | Oleadas Coverage-Closer en curso (ver bitacora) |
 | PASO-D3 | Cierre: estado done + commit + push (si autorizado) | pending | — | — | DoD global §9 del prompt |
 
 Estados validos: `pending | in_progress | failed_qa | blocked | done`.
@@ -59,3 +59,24 @@ _(vacio — sin bloqueos de spec pendientes)_
   linea 88.6% / rama 56.8%, bajo el umbral >=90% linea y rama. NO se avanza a
   PASO-D3 hasta que Coverage-Closer cierre la brecha solo con tests nuevos
   (prohibido relajar invariantes).
+
+- 2026-10-16 (PASO-D2 en curso, modo solo): `backend/Coverlet.runsettings`
+  excluye `**/*.generated.cs` (artefacto del source-generator en obj/, 613
+  lineas + 202 ramas que ningun test puede ejercitar; no relaja invariantes).
+  Comando de medicion: `dotnet test backend/Zentric.slnx --settings
+  backend/Coverlet.runsettings --collect:"XPlat Code Coverage"`. Nuevo global:
+  linea 92.2% (OK >=90%) / rama 65.6% (falta). Oleada E2E propia
+  (`ManagementOperationsE2ETests`, 7/7): block/activate/get-user, publish tras
+  suspend, adjust idempotente + excesos + 403 vendedor, annul + doble 400,
+  lecturas por propiedad. Suite 587. Lote Domain-1 (55/55): FullName, Email,
+  DigitalDeliveryRecord, RefundAudit, Shipment (via FulfillmentOrder),
+  RefundPolicyService. Lote Domain-2 (38/38): Invoice/Annull/FeeSplit, Money +
+  lista blanca Q-16, RefundCredit. Suite 680.
+- HALLAZGO pendiente de dictamen (NO se toco produccion):
+  `RefundPolicyService.HasValidReceiptAndBalanceAsync` lee `Amount` por
+  reflexion y lo convierte a decimal, pero `PaymentReceipt.Amount` es `Money`:
+  con comprobante aprobado y saldo, `DecideAsync("stock_breakage")` explota con
+  `InvalidCastException` en vez de decidir Auto (test
+  `DecideAsync_QuiebreConSaldo_LanzaPorCastDeMoney` lo documenta). Afecta al
+  reembolso automatico por quiebre. La correccion cambia comportamiento y
+  requiere dictamen del Owner.
