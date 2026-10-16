@@ -88,3 +88,15 @@ _(vacio — sin bloqueos de spec pendientes)_
   mecanismo, asi que no hubo spec que sincronizar. Test actualizado:
   `DecideAsync_QuiebreConSaldo_RetornaAutomatico` + nuevo
   `DecideAsync_QuiebreConSaldoAgotado_RetornaExcepcion`. Suite 681/681 verde.
+- 2026-10-16 (PASO-D2, lote Domain-3, 41/41): `CustomerOrderBranchesTests`
+  (fusion de lineas, guias vacias, retiro, entrega digital CAT-02, matriz
+  ResolveFully ADR-0022) + `UserBranchesTests` (no-ops, borrados, roles, tasa
+  fantasma INV-05 con tope). Suite 722/722 verde.
+- HALLAZGO-2 pendiente de dictamen (NO se toco produccion): `ResolveFully`
+  promete idempotencia en su comentario, pero `EnsureNotDelivered()` corre
+  antes de la guarda idempotente y rechaza todo pedido Cancelled: la segunda
+  llamada explota y el `return` es inalcanzable (test
+  `ResolveFully_SegundaVez_LanzaPorGuardaGlobal` lo documenta). Reordenar la
+  guarda cambia comportamiento. `OrderItem.UpdateQuantity` (internal, sin
+  llamadores) es inalcanzable por tests: queda fuera de cobertura salvo
+  decision de exponerlo o eliminarlo.
