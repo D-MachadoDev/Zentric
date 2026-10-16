@@ -9,6 +9,7 @@
  * re-export genérico, para que el bundle sólo pague lo que se usa.
  */
 export * from './tokens';
+export * from './primitives';
 export * from './lib';
 export * from './hooks';
 export { Logo, LogoMark, LogoWordmark } from './logo';

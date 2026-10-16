@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./styles/theme.css": "./src/styles/theme.css",
     "./tokens": "./src/tokens/index.ts",
+    "./primitives": "./src/primitives/index.ts",
     "./lib": "./src/lib/index.ts",
     "./lib/cn": "./src/lib/cn.ts",
     "./hooks": "./src/hooks/index.ts",
