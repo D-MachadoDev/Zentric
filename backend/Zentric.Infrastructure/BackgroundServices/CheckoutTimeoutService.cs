@@ -22,12 +22,13 @@ namespace Zentric.Infrastructure.BackgroundServices
         private readonly IClock _clock;
         private readonly IDomainEventDispatcher? _domainEventDispatcher;
 
+        [ActivatorUtilitiesConstructor]
         public CheckoutTimeoutService(IServiceProvider serviceProvider, ILogger<CheckoutTimeoutService> logger, IClock clock)
             : this(serviceProvider, logger, clock, null)
         {
         }
 
-        public CheckoutTimeoutService(
+        internal CheckoutTimeoutService(
             IServiceProvider serviceProvider,
             ILogger<CheckoutTimeoutService> logger,
             IClock clock,
