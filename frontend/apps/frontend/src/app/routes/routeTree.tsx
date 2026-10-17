@@ -22,6 +22,17 @@ import {
   BuyerOrderPaymentPage,
   RequestReturnPage,
 } from '../../modules/buyer';
+import {
+  SellerDashboardPage,
+  SellerProductsPage,
+  CreateProductPage,
+  SellerProductDetailPage,
+  SellerInventoryPage,
+  SellerOrdersPage,
+  SellerFulfillmentsPage,
+  SellerReturnsPage,
+} from '../../modules/seller';
+
 
 /**
  * Raíz del árbol de rutas con contexto tipado de dependencias (SessionPort, ApiPort, QueryClient).
@@ -264,90 +275,51 @@ export const sellerLayoutRoute = createRoute({
 export const sellerIndexRoute = createRoute({
   getParentRoute: () => sellerLayoutRoute,
   path: '/',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Panel del Vendedor</h1>
-      <p className="text-sm text-foreground-muted">Resumen de ventas y operaciones activas</p>
-    </div>
-  ),
+  component: () => <SellerDashboardPage />,
 });
 
 export const sellerProductsRoute = createRoute({
   getParentRoute: () => sellerLayoutRoute,
   path: '/products',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Mis Productos</h1>
-      <p className="text-sm text-foreground-muted">Catálogo propio, publicación y variantes</p>
-    </div>
-  ),
+  component: () => <SellerProductsPage />,
 });
 
 export const sellerProductCreateRoute = createRoute({
   getParentRoute: () => sellerLayoutRoute,
   path: '/products/new',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Nuevo Producto</h1>
-      <p className="text-sm text-foreground-muted">Alta de producto físico o digital con variantes</p>
-    </div>
-  ),
+  component: () => <CreateProductPage />,
 });
 
 export const sellerProductDetailRoute = createRoute({
   getParentRoute: () => sellerLayoutRoute,
   path: '/products/$productId',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Detalle del Producto</h1>
-      <p className="text-sm text-foreground-muted">Ficha técnica y estado comercial</p>
-    </div>
-  ),
+  component: () => <SellerProductDetailPage />,
 });
 
 export const sellerInventoryRoute = createRoute({
   getParentRoute: () => sellerLayoutRoute,
   path: '/inventory',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Mi Inventario</h1>
-      <p className="text-sm text-foreground-muted">Posiciones de stock disponible y reservado</p>
-    </div>
-  ),
+  component: () => <SellerInventoryPage />,
 });
 
 export const sellerOrdersRoute = createRoute({
   getParentRoute: () => sellerLayoutRoute,
   path: '/orders',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Pedidos Recibidos</h1>
-      <p className="text-sm text-foreground-muted">Líneas vendidas y subtotales por pedido</p>
-    </div>
-  ),
+  component: () => <SellerOrdersPage />,
 });
 
 export const sellerFulfillmentsRoute = createRoute({
   getParentRoute: () => sellerLayoutRoute,
   path: '/fulfillments',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Cola de Despachos</h1>
-      <p className="text-sm text-foreground-muted">Empaque y despacho de paquetes propios</p>
-    </div>
-  ),
+  component: () => <SellerFulfillmentsPage />,
 });
 
 export const sellerReturnsRoute = createRoute({
   getParentRoute: () => sellerLayoutRoute,
   path: '/returns',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Resolución de Devoluciones</h1>
-      <p className="text-sm text-foreground-muted">Aprobación o rechazo tras inspección técnica</p>
-    </div>
-  ),
+  component: () => <SellerReturnsPage />,
 });
+
 
 // ============================================================================
 // SUBÁRBOL COMPRADOR (/buyer)
