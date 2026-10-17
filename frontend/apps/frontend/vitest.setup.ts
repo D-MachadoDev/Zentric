@@ -1,9 +1,18 @@
 import '@testing-library/jest-dom/vitest';
 import { configure } from '@testing-library/react';
+import { beforeEach } from 'vitest';
 
 // Bajo ejecución paralela intensa (19 workers concurrentes en Windows),
 // 1000ms por defecto puede causar fallos esporádicos en waitFor / findBy*.
 configure({ asyncUtilTimeout: 4000 });
+
+beforeEach(() => {
+  try {
+    window.localStorage?.clear();
+  } catch {
+    // Entornos sin storage
+  }
+});
 
 /**
  * Stubs para las APIs del navegador que jsdom no implementa.

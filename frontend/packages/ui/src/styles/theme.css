@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+/* Escaneo obligatorio del paquete @zentric/ui en Tailwind v4 para que todas las
+   clases utilitarias de primitives/ y composite/ se incluyan en el bundle de apps/frontend. */
+@source "../";
 /* Utilidades y variantes que los componentes shadcn (Q5/Q14) usan. Es el
    fichero vendored de shadcn/ui (MIT); ver su cabecera por el por que no se
    depende del paquete npm `shadcn` (arrastraria 237 deps de la CLI por un

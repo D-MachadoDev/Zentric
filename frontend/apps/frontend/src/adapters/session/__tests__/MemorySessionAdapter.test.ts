@@ -3,16 +3,17 @@ import { MemorySessionAdapter } from '../MemorySessionAdapter';
 import { UserRole } from '../../../domain';
 import type { CurrentUser } from '../../../domain';
 
-describe('MemorySessionAdapter (ADR-0009)', () => {
-  it('retiene el access token exclusivamente en memoria RAM', () => {
+describe('MemorySessionAdapter ([ADDENDUM OWNER] ADR-0009)', () => {
+  it('persiste el access token en localStorage y lo hidrata síncronamente al recargar', () => {
     const session = new MemorySessionAdapter();
     expect(session.getAccessToken()).toBeNull();
 
     session.setAccessToken('jwt-token-valido');
     expect(session.getAccessToken()).toBe('jwt-token-valido');
+    expect(window.localStorage.getItem('zentric.auth.token')).toBe('jwt-token-valido');
 
-    // Invariante de seguridad: Prohibido tocar localStorage, sessionStorage o cookies
-    expect(typeof window !== 'undefined' ? window.localStorage?.getItem('token') : null).toBeFalsy();
+    const hydrated = new MemorySessionAdapter();
+    expect(hydrated.getAccessToken()).toBe('jwt-token-valido');
   });
 
   it('administra el usuario activo y mantiene sincronizado rol y userId', () => {

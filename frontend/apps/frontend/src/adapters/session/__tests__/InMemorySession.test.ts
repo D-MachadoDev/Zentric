@@ -7,15 +7,17 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-describe('InMemorySession (Q15-B / ADR-0009)', () => {
-  it('el access token nunca llega a localStorage: vive sólo en memoria', () => {
+describe('InMemorySession ([ADDENDUM OWNER] ADR-0009)', () => {
+  it('persiste el access token en localStorage y lo hidrata en una nueva instancia', () => {
     const session = new InMemorySession();
 
     session.setAccessToken('tok-secreto');
 
     expect(session.getAccessToken()).toBe('tok-secreto');
-    expect(localStorage.length).toBe(0);
-    expect(sessionStorage.length).toBe(0);
+    expect(localStorage.getItem('zentric.auth.token')).toBe('tok-secreto');
+
+    const reloadedSession = new InMemorySession();
+    expect(reloadedSession.getAccessToken()).toBe('tok-secreto');
   });
 
   it('clear() devuelve la sesión al estado inicial', () => {

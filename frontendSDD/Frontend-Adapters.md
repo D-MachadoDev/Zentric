@@ -135,6 +135,7 @@ Cada fila vincula el método de `ZentricApiPort` con la ruta HTTP real, la polí
 
 | Adaptador | Archivo Físico | Puerto Implementado | Invariantes de Implementación |
 |---|---|---|---|
-| **`MemorySessionAdapter`** | `src/adapters/session/MemorySessionAdapter.ts` | `SessionPort` | Retiene el token JWT y `CurrentUser` en variables privadas de módulo en memoria RAM ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)). Prohibido invocar `localStorage`, `sessionStorage` o `document.cookie`. Notifica suscriptores ante `clear()` para disparo inmediato de redirección a `/login`. |
+| **`MemorySessionAdapter`** | `src/adapters/session/MemorySessionAdapter.ts` | `SessionPort` | **[ADDENDUM - DICTADO POR OWNER (2026-10-17)]:** Retiene el token JWT y `CurrentUser` en variables privadas de instancia sincronizadas con `window.localStorage` (`zentric.auth.token` y `zentric.auth.user`) para conservar la sesión ante recargas de página (`F5`), revalidando contra `GET /api/auth/me` ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)). Purga `localStorage` y memoria RAM y notifica suscriptores ante `clear()` o `401`. |
 | **`AlertAdapter`** | `src/adapters/alert/AlertAdapter.ts` | `AlertPort` | Gestiona en TypeScript puro una cola de promesas para diálogos modales de confirmación (`confirm`) y notificaciones (`show`), consumida reactivamente por `AlertHost.tsx`. |
 | **`MockZentricApiAdapter`** | `src/adapters/mocks/MockZentricApiAdapter.ts` | `ZentricApiPort` | Implementación determinista en memoria de los 45 métodos de `ZentricApiPort` utilizada por la suite de pruebas Vitest (`13-frontend-qa-guardian`) para verificar flujos completos sin depender de red externa. |
+

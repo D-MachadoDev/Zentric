@@ -113,80 +113,97 @@ export function LoginPage() {
     return null;
   };
 
+  const applyDemoCredentials = (demoEmail: string, demoPassword: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    setFieldErrors({});
+    setSubmitError(null);
+  };
+
   return (
-    <div className="w-full max-w-5xl rounded-2xl border border-[#1F293D] bg-[#0B0F19] overflow-hidden flex flex-col lg:flex-row shadow-2xl my-4 text-foreground">
+    <div className="surface-hairline my-4 flex w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-[#1F293D] bg-[#0B0F19] text-foreground shadow-2xl lg:flex-row">
       {/* ── Zona Izquierda: Split-Frame Asimétrico Editorial (55%) ─────────── */}
-      <div className="relative flex flex-col justify-between p-8 sm:p-10 lg:w-[55%] lg:p-12 border-b lg:border-b-0 lg:border-r border-[#1F293D] overflow-hidden bg-[#0D1322]/80">
-        {/* Glow sutil de fondo */}
+      <div className="relative flex flex-col justify-between overflow-hidden border-b border-[#1F293D] bg-[#0D1322]/90 p-8 sm:p-10 lg:w-[55%] lg:border-r lg:border-b-0 lg:p-12">
+        {/* Glow focal y retícula sutil */}
         <div
-          className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-[#00D4AA]/10 blur-3xl"
+          className="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full bg-[#00D4AA]/10 blur-3xl"
           aria-hidden="true"
         />
 
         <div className="relative z-10 space-y-8">
-          <div className="flex items-center gap-3">
-            <Logo />
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
-              v1.1.0
-            </Badge>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1F293D]/80 pb-5">
+            <div className="flex items-center gap-3">
+              <Logo />
+              <Badge variant="outline" className="border-[#1F293D] font-mono text-xs text-[#00D4AA]">
+                v1.1.0
+              </Badge>
+            </div>
+            <span className="kicker-spike">ARQUITECTURA HEXAGONAL · DDD</span>
           </div>
 
-          <div className="space-y-4 max-w-xl">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white font-sans">
+          <div className="max-w-xl space-y-4">
+            <div className="font-mono text-xs font-semibold tracking-[0.14em] text-[#00D4AA] uppercase">
+              01 // PLATAFORMA MULTI-VENDEDOR
+            </div>
+            <h1 className="font-sans text-3xl leading-[1.08] font-bold tracking-tight text-white sm:text-4xl lg:text-[2.65rem]">
               Control centralizado y transaccionalidad sin fricción.
             </h1>
-            <p className="text-base sm:text-lg text-[#94A3B8] leading-relaxed">
-              Marketplace multi-vendedor con inventarios distribuidos, checkout atómico con reserva
-              de 15 minutos y trazabilidad estricta bajo arquitectura hexagonal.
+            <p className="text-base leading-relaxed text-[#94A3B8]">
+              Marketplace multi-vendedor con inventarios distribuidos por bodega física, checkout
+              atómico con reserva de 15 minutos, liquidación fiscal split y auditoría 360°.
             </p>
           </div>
 
-          {/* Pilares normativos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl pt-4">
-            <div className="rounded-xl border border-[#1F293D] bg-[#111827]/70 p-4 space-y-2">
-              <div className="flex items-center gap-2 text-[#00D4AA]">
-                <Clock className="h-4 w-4" />
-                <span className="text-xs font-semibold uppercase tracking-wider font-mono">
+          {/* Pilares normativos en retícula ortogonal suiza */}
+          <div className="grid max-w-xl grid-cols-1 gap-3.5 pt-2 sm:grid-cols-2">
+            <div className="surface-hairline space-y-2 rounded-xl p-4">
+              <div className="flex items-center justify-between text-[#00D4AA]">
+                <span className="flex items-center gap-2 font-mono text-xs font-semibold tracking-wider uppercase">
+                  <Clock className="h-3.5 w-3.5 text-[#FFB800]" />
                   Checkout Atómico
                 </span>
+                <span className="font-mono text-[11px] font-bold text-[#FFB800] tabular-nums">15:00m</span>
               </div>
-              <p className="text-xs text-[#94A3B8]">
+              <p className="text-xs leading-relaxed text-[#94A3B8]">
                 Reserva exclusiva de existencias por 15 minutos que previene el sobregiro de stock.
               </p>
             </div>
 
-            <div className="rounded-xl border border-[#1F293D] bg-[#111827]/70 p-4 space-y-2">
-              <div className="flex items-center gap-2 text-[#00D4AA]">
-                <ShieldCheck className="h-4 w-4" />
-                <span className="text-xs font-semibold uppercase tracking-wider font-mono">
+            <div className="surface-hairline space-y-2 rounded-xl p-4">
+              <div className="flex items-center justify-between text-[#00D4AA]">
+                <span className="flex items-center gap-2 font-mono text-xs font-semibold tracking-wider uppercase">
+                  <ShieldCheck className="h-3.5 w-3.5" />
                   Seguridad RG-01/02
                 </span>
+                <span className="font-mono text-[11px] font-bold text-[#00D4AA] tabular-nums">21 RBAC</span>
               </div>
-              <p className="text-xs text-[#94A3B8]">
-                Sesión en memoria RAM, rol único y 21 políticas estrictas de autorización.
+              <p className="text-xs leading-relaxed text-[#94A3B8]">
+                Sesión persistente en localStorage validada por JWT, rol único y 21 políticas de autorización.
               </p>
             </div>
 
-            <div className="rounded-xl border border-[#1F293D] bg-[#111827]/70 p-4 space-y-2">
-              <div className="flex items-center gap-2 text-[#00D4AA]">
-                <Layers className="h-4 w-4" />
-                <span className="text-xs font-semibold uppercase tracking-wider font-mono">
+            <div className="surface-hairline space-y-2 rounded-xl p-4">
+              <div className="flex items-center justify-between text-[#00D4AA]">
+                <span className="flex items-center gap-2 font-mono text-xs font-semibold tracking-wider uppercase">
+                  <Layers className="h-3.5 w-3.5" />
                   Facturación Split
                 </span>
+                <span className="font-mono text-[11px] font-bold text-white tabular-nums">95% / 5%</span>
               </div>
-              <p className="text-xs text-[#94A3B8]">
+              <p className="text-xs leading-relaxed text-[#94A3B8]">
                 Factura Maestra para el comprador y liquidación individual confidencial por vendedor.
               </p>
             </div>
 
-            <div className="rounded-xl border border-[#1F293D] bg-[#111827]/70 p-4 space-y-2">
-              <div className="flex items-center gap-2 text-[#00D4AA]">
-                <Activity className="h-4 w-4" />
-                <span className="text-xs font-semibold uppercase tracking-wider font-mono">
+            <div className="surface-hairline space-y-2 rounded-xl p-4">
+              <div className="flex items-center justify-between text-[#00D4AA]">
+                <span className="flex items-center gap-2 font-mono text-xs font-semibold tracking-wider uppercase">
+                  <Activity className="h-3.5 w-3.5" />
                   Logística Real
                 </span>
+                <span className="font-mono text-[11px] font-bold text-white tabular-nums">14 DbSets</span>
               </div>
-              <p className="text-xs text-[#94A3B8]">
+              <p className="text-xs leading-relaxed text-[#94A3B8]">
                 Inspección técnica en bodega y certificación de entrega con cadena de custodia.
               </p>
             </div>
@@ -194,42 +211,46 @@ export function LoginPage() {
         </div>
 
         {/* Telemetría en vivo */}
-        <div className="relative z-10 pt-10">
-          <div className="inline-flex items-center gap-2.5 rounded-full border border-[#1F293D] bg-[#111827]/90 px-4 py-2 text-xs font-mono text-[#94A3B8]">
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#1F293D]/80 pt-6">
+          <div className="inline-flex items-center gap-2.5 rounded-full border border-[#1F293D] bg-[#111827] px-3.5 py-1.5 font-mono text-xs text-[#94A3B8]">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00D4AA] opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[#00D4AA]" />
             </span>
-            <span className="tabular-nums">RED CENTRAL EN LÍNEA · POSTGRESQL CONECTADO</span>
+            <span className="tabular-nums">RED CENTRAL EN LÍNEA · POSTGRESQL 16</span>
           </div>
+          <span className="font-mono text-[11px] text-[#728399] tabular-nums">
+            PORT 5076 · JWT HS256
+          </span>
         </div>
       </div>
 
       {/* ── Zona Derecha: Formulario de Autenticación (45%) ─────────────────── */}
-      <div className="flex flex-1 items-center justify-center p-6 sm:p-12 lg:p-16 bg-[#0B0F19]">
-        <div className="w-full max-w-md space-y-8">
-          <div className="space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+      <div className="flex flex-1 items-center justify-center bg-[#0B0F19] p-6 sm:p-10 lg:p-12">
+        <div className="w-full max-w-md space-y-6">
+          <div className="space-y-1.5">
+            <span className="kicker-spike">ACCESO IDENTIFICADO · RG-01</span>
+            <h2 className="font-sans text-2xl font-bold tracking-tight text-white sm:text-3xl">
               Entrar a la consola
             </h2>
             <p className="text-sm text-[#94A3B8]">
-              Ingrese sus credenciales corporativas o de cliente para acceder a su rol.
+              Ingrese sus credenciales o seleccione un perfil operativo de prueba abajo.
             </p>
           </div>
 
           {renderAviso()}
 
           {submitError && (
-            <Alert variant="destructive" className="mb-6" role="alert">
+            <Alert variant="destructive" className="mb-4" role="alert">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Acceso Denegado</AlertTitle>
               <AlertDescription>{submitError}</AlertDescription>
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs font-medium uppercase tracking-wider text-[#94A3B8]">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="font-mono text-xs font-medium tracking-wider text-[#94A3B8] uppercase">
                 Correo Electrónico
               </Label>
               <div className="relative">
@@ -237,7 +258,7 @@ export function LoginPage() {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="usuario@zentric.me"
+                  placeholder="usuario@zentric.local"
                   autoComplete="email"
                   value={email}
                   onChange={(e) => {
@@ -249,7 +270,7 @@ export function LoginPage() {
                   disabled={loginMutation.isPending}
                   aria-invalid={Boolean(fieldErrors.email)}
                   aria-describedby={fieldErrors.email ? 'email-error' : undefined}
-                  className="bg-[#111827] border-[#1F293D] focus:border-[#00D4AA] text-white"
+                  className="border-[#1F293D] bg-[#111827] font-mono text-sm text-white focus:border-[#00D4AA]"
                 />
               </div>
               {fieldErrors.email && (
@@ -259,9 +280,9 @@ export function LoginPage() {
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-xs font-medium uppercase tracking-wider text-[#94A3B8]">
+                <Label htmlFor="password" className="font-mono text-xs font-medium tracking-wider text-[#94A3B8] uppercase">
                   Contraseña
                 </Label>
               </div>
@@ -282,7 +303,7 @@ export function LoginPage() {
                   disabled={loginMutation.isPending}
                   aria-invalid={Boolean(fieldErrors.password)}
                   aria-describedby={fieldErrors.password ? 'password-error' : undefined}
-                  className="bg-[#111827] border-[#1F293D] focus:border-[#00D4AA] text-white"
+                  className="border-[#1F293D] bg-[#111827] font-mono text-sm text-white focus:border-[#00D4AA]"
                 />
               </div>
               {fieldErrors.password && (
@@ -295,7 +316,7 @@ export function LoginPage() {
             <Button
               type="submit"
               disabled={loginMutation.isPending}
-              className="w-full bg-[#00D4AA] hover:bg-[#00D4AA]/90 text-[#0B0F19] font-semibold py-2.5 transition-colors shadow-lg shadow-[#00D4AA]/20"
+              className="w-full bg-[#00D4AA] py-2.5 font-semibold text-[#0B0F19] shadow-lg shadow-[#00D4AA]/20 transition-colors hover:bg-[#00D4AA]/90"
             >
               {loginMutation.isPending ? (
                 <span className="flex items-center justify-center gap-2">
@@ -311,19 +332,71 @@ export function LoginPage() {
             </Button>
           </form>
 
-          <div className="pt-4 border-t border-[#1F293D]/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#94A3B8]">
+          {/* Selector rápido de perfiles para pruebas locales de los 5 roles */}
+          <div className="rounded-xl border border-[#1F293D] bg-[#111827]/90 p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[11px] font-semibold tracking-wider text-[#94A3B8] uppercase">
+                ✱ Autocompletar Rol Demo
+              </span>
+              <span className="font-mono text-[10px] text-[#728399]">1-clic</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => applyDemoCredentials('admin@zentric.local', 'AdminLocal12345')}
+                className="rounded-lg border border-[#1F293D] bg-[#161F30]/80 px-2.5 py-1.5 text-left font-mono text-[11px] text-white transition-colors hover:border-[#00D4AA]/60 hover:text-[#00D4AA]"
+              >
+                <div className="font-semibold">Admin</div>
+                <div className="truncate text-[10px] text-[#94A3B8]">admin@zentric.local</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => applyDemoCredentials('seller@zentric.local', 'SellerLocal12345')}
+                className="rounded-lg border border-[#1F293D] bg-[#161F30]/80 px-2.5 py-1.5 text-left font-mono text-[11px] text-white transition-colors hover:border-[#00D4AA]/60 hover:text-[#00D4AA]"
+              >
+                <div className="font-semibold">Seller</div>
+                <div className="truncate text-[10px] text-[#94A3B8]">seller@zentric.local</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => applyDemoCredentials('buyer@zentric.local', 'BuyerLocal12345')}
+                className="rounded-lg border border-[#1F293D] bg-[#161F30]/80 px-2.5 py-1.5 text-left font-mono text-[11px] text-white transition-colors hover:border-[#00D4AA]/60 hover:text-[#00D4AA]"
+              >
+                <div className="font-semibold">Buyer</div>
+                <div className="truncate text-[10px] text-[#94A3B8]">buyer@zentric.local</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => applyDemoCredentials('logistics@zentric.local', 'LogisticsLocal12345')}
+                className="rounded-lg border border-[#1F293D] bg-[#161F30]/80 px-2.5 py-1.5 text-left font-mono text-[11px] text-white transition-colors hover:border-[#00D4AA]/60 hover:text-[#00D4AA]"
+              >
+                <div className="font-semibold">Logistics</div>
+                <div className="truncate text-[10px] text-[#94A3B8]">logistics@zentric.local</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => applyDemoCredentials('supervisor@zentric.local', 'SupervisorLocal12345')}
+                className="col-span-2 rounded-lg border border-[#1F293D] bg-[#161F30]/80 px-2.5 py-1.5 text-left font-mono text-[11px] text-white transition-colors hover:border-[#00D4AA]/60 hover:text-[#00D4AA] sm:col-span-1"
+              >
+                <div className="font-semibold">Supervisor</div>
+                <div className="truncate text-[10px] text-[#94A3B8]">supervisor@zentric.local</div>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center justify-between gap-3 border-t border-[#1F293D]/80 pt-4 text-xs text-[#94A3B8] sm:flex-row">
             <div>
               ¿Eres nuevo comprador?{' '}
               <Link
                 to="/register"
-                className="font-medium text-[#00D4AA] hover:underline transition-colors"
+                className="font-medium text-[#00D4AA] transition-colors hover:underline"
               >
                 Crea tu cuenta aquí
               </Link>
             </div>
             <Link
               to="/health"
-              className="font-mono text-xs text-[#64748B] hover:text-[#94A3B8] transition-colors"
+              className="font-mono text-xs text-[#64748B] transition-colors hover:text-[#94A3B8]"
             >
               Telemetría y Estado →
             </Link>

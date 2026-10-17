@@ -64,8 +64,9 @@ export function BuyerCatalogPage() {
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado y Barra de Filtros ───────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
+        <div className="space-y-1.5">
+          <span className="kicker-spike">PORTAL DE COMPRAS · STOCK VERIFICADO EN BODEGA</span>
+          <div className="flex items-center gap-2.5">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
               Catálogo de Productos
             </h1>

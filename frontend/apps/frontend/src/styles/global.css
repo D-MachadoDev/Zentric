@@ -1,7 +1,7 @@
 @import '@zentric/ui/styles/theme.css';
+@source "../";
 
-/* Estilos globales de la app. El tema vive en packages/ui (Q18-A): aqui sólo
-   se anaden reglas propias del shell, nunca tokens de marca. */
+/* Estilos globales de la app regidos por design.md (Zentric Swiss Pulse Editorial). */
 
 html,
 body,
@@ -9,9 +9,66 @@ body,
   height: 100%;
 }
 
-/* El shell ocupa la ventana completa: la consola no tiene scroll de documento,
-   lo desplazan los paneles internos. */
+/* El shell ocupa la ventana completa: la consola desplaza los paneles internos
+   conservando una atmósfera arquitectónica suiza persistente. */
 #root {
   display: flex;
   flex-direction: column;
 }
+
+/* Retícula arquitectónica suiza de fondo (design.md §2: swiss-coordinate-grid) */
+.bg-swiss-grid {
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(0, 212, 170, 0.08), transparent 65%),
+    linear-gradient(to right, rgba(31, 41, 61, 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(31, 41, 61, 0.35) 1px, transparent 1px);
+  background-size: 100% 100%, 32px 32px, 32px 32px;
+  background-position: center top;
+}
+
+/* Elevación por hairline de 1px + micro-bisel superior (Code-Editorial / design.md) */
+.surface-hairline {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* Eyebrow indexical en Geist Mono con marca ✱ en esmeralda */
+.kicker-spike {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-foreground-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.kicker-spike::before {
+  content: '✱';
+  color: var(--color-brand);
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+/* Scrollbars sutiles acordes al carbón tintado */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0A0E1A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1F293D;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2D3B55;
+}
+

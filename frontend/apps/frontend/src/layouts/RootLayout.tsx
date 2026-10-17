@@ -9,6 +9,6 @@ import type { ReactNode } from 'react';
  */
 export function RootLayout({ children }: { children?: ReactNode }) {
   return (
-    <div className="flex min-h-full flex-col bg-background text-foreground">{children}</div>
+    <div className="flex min-h-full flex-col bg-background bg-swiss-grid text-foreground">{children}</div>
   );
 }

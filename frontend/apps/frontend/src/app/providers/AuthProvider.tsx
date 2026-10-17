@@ -17,7 +17,7 @@ import type { AuthValue } from './authContext';
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { session, api } = appServices;
-  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [user, setUser] = useState<CurrentUser | null>(() => session.getUser());
   const [expiredNotice, setExpiredNotice] = useState<string | null>(null);
 
   // C4-4 §4: al montar, valida `GET /api/auth/me` sólo si queda token en

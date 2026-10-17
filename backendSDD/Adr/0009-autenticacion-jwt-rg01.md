@@ -130,3 +130,9 @@ abierta (Q-21) en lugar de inventar la matriz.
 - Comprobación manual contra PostgreSQL real: login correcto → `200` con token; contraseña
   incorrecta → `401`; usuario bloqueado → `403`; petición sin token → `401`; la cabecera
   `X-Buyer-Id` sola → `401`.
+
+## [ADDENDUM - DICTADO POR OWNER (2026-10-17)] — Persistencia Estándar en `localStorage` (Frontend)
+
+- **Decisión del Owner:** En el cliente web (`@zentric/frontend`), la sesión (`accessToken` e identidad `CurrentUser`) se persiste de forma estándar en `window.localStorage` bajo las claves canónicas `zentric.auth.token` y `zentric.auth.user`.
+- **Comportamiento en Recarga (`F5`):** Al inicializar `MemorySessionAdapter`, el adaptador hidrata síncronamente el token y el usuario desde `localStorage` (evitando cierres de sesión al recargar la página o navegar entre pestañas) y `AuthProvider` revalida la vigencia del token contra `GET /api/auth/me`.
+- **Purga:** `clear()` (`logout` o respuesta `401 Unauthorized` del servidor) elimina de inmediato `zentric.auth.token` y `zentric.auth.user` tanto de memoria RAM como de `localStorage`.

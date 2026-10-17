@@ -23,14 +23,8 @@ describe('ADVERSARIAL CHALLENGE SUITE (W2-S01)', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 1. MemorySessionAdapter Storage Isolation & Volatility
   // ═══════════════════════════════════════════════════════════════════════════
-  describe('1. MemorySessionAdapter Security & Isolation (ADR-0009)', () => {
-    it('STRICT ASSERTION: localStorage and sessionStorage are NEVER touched', async () => {
-      // Setup spies on storage primitives
-      const localGet = vi.spyOn(Storage.prototype, 'getItem');
-      const localSet = vi.spyOn(Storage.prototype, 'setItem');
-      const localRemove = vi.spyOn(Storage.prototype, 'removeItem');
-      const localClear = vi.spyOn(Storage.prototype, 'clear');
-
+  describe('1. MemorySessionAdapter Persistence & Purge ([ADDENDUM OWNER] ADR-0009)', () => {
+    it('STRICT ASSERTION: localStorage persists session across reloads and purges on clear()', async () => {
       const session = new MemorySessionAdapter();
       const testUser: CurrentUser = {
         userId: 'sec-user-1',
@@ -42,6 +36,7 @@ describe('ADVERSARIAL CHALLENGE SUITE (W2-S01)', () => {
       // Perform all mutations and state accesses
       session.setAccessToken('super-secret-jwt-token');
       expect(session.getAccessToken()).toBe('super-secret-jwt-token');
+      expect(window.localStorage.getItem('zentric.auth.token')).toBe('super-secret-jwt-token');
 
       session.setUser(testUser);
       expect(session.getUser()).toEqual(testUser);
@@ -54,6 +49,12 @@ describe('ADVERSARIAL CHALLENGE SUITE (W2-S01)', () => {
       session.setUserId('sec-user-2');
       expect(session.getUserId()).toBe('sec-user-2');
 
+      // Hydrate a second instance (simulating F5 page reload)
+      const reloaded = new MemorySessionAdapter();
+      expect(reloaded.getAccessToken()).toBe('super-secret-jwt-token');
+      expect(reloaded.getRole()).toBe(UserRole.Buyer);
+      expect(reloaded.getUserId()).toBe('sec-user-2');
+
       const subscriber = vi.fn();
       const unsub = session.subscribe(subscriber);
       session.setAccessToken('token-2');
@@ -63,17 +64,8 @@ describe('ADVERSARIAL CHALLENGE SUITE (W2-S01)', () => {
       session.clear();
       expect(session.getAccessToken()).toBeNull();
       expect(session.getUser()).toBeNull();
-
-      // Assert storage was never touched
-      expect(localGet).not.toHaveBeenCalled();
-      expect(localSet).not.toHaveBeenCalled();
-      expect(localRemove).not.toHaveBeenCalled();
-      expect(localClear).not.toHaveBeenCalled();
-
-      localGet.mockRestore();
-      localSet.mockRestore();
-      localRemove.mockRestore();
-      localClear.mockRestore();
+      expect(window.localStorage.getItem('zentric.auth.token')).toBeNull();
+      expect(window.localStorage.getItem('zentric.auth.user')).toBeNull();
     });
 
     it('asserts private fields are not enumerable or leachable via Object reflection', () => {
