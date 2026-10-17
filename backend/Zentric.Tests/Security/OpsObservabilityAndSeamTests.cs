@@ -1,8 +1,6 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using FluentAssertions;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Xunit;
@@ -23,10 +21,10 @@ public sealed class OpsObservabilityAndSeamTests
     {
         var options = new PaymentGatewayOptions();
 
-        options.Provider.Should().Be("simulated");
-        options.ApiKey.Should().BeEmpty();
-        options.WebhookSecret.Should().BeEmpty();
-        PaymentGatewayOptions.SectionName.Should().Be("Payments");
+        Assert.Equal("simulated", options.Provider);
+        Assert.Equal(string.Empty, options.ApiKey);
+        Assert.Equal(string.Empty, options.WebhookSecret);
+        Assert.Equal("Payments", PaymentGatewayOptions.SectionName);
     }
 
     [Fact]
@@ -43,10 +41,10 @@ public sealed class OpsObservabilityAndSeamTests
 
         var options = config.GetSection(PaymentGatewayOptions.SectionName).Get<PaymentGatewayOptions>();
 
-        options.Should().NotBeNull();
-        options!.Provider.Should().Be("wompi");
-        options.ApiKey.Should().Be("pub_prod_123");
-        options.WebhookSecret.Should().Be("whsec_456");
+        Assert.NotNull(options);
+        Assert.Equal("wompi", options!.Provider);
+        Assert.Equal("pub_prod_123", options.ApiKey);
+        Assert.Equal("whsec_456", options.WebhookSecret);
     }
 
     [Fact]
@@ -63,9 +61,9 @@ public sealed class OpsObservabilityAndSeamTests
 
         await middleware(context, () => Task.CompletedTask);
 
-        context.Response.Headers["X-Content-Type-Options"].ToString().Should().Be("nosniff");
-        context.Response.Headers["X-Frame-Options"].ToString().Should().Be("DENY");
-        context.Response.Headers["Referrer-Policy"].ToString().Should().Be("no-referrer");
+        Assert.Equal("nosniff", context.Response.Headers["X-Content-Type-Options"].ToString());
+        Assert.Equal("DENY", context.Response.Headers["X-Frame-Options"].ToString());
+        Assert.Equal("no-referrer", context.Response.Headers["Referrer-Policy"].ToString());
     }
 
     [Fact]
@@ -78,7 +76,7 @@ public sealed class OpsObservabilityAndSeamTests
             dir = dir.Parent;
         }
 
-        dir.Should().NotBeNull("debe existir la raíz del repositorio con orchestrator-state.json");
+        Assert.NotNull(dir);
         var root = dir!.FullName;
 
         var prodCompose = Path.Combine(root, "docker-compose.prod.yml");
@@ -86,15 +84,16 @@ public sealed class OpsObservabilityAndSeamTests
         var backupScript = Path.Combine(root, "scripts", "ops", "backup-postgres.sh");
         var restoreScript = Path.Combine(root, "scripts", "ops", "restore-postgres.sh");
 
-        File.Exists(prodCompose).Should().BeTrue();
-        File.Exists(prodAppSettings).Should().BeTrue();
-        File.Exists(backupScript).Should().BeTrue();
-        File.Exists(restoreScript).Should().BeTrue();
+        Assert.True(File.Exists(prodCompose));
+        Assert.True(File.Exists(prodAppSettings));
+        Assert.True(File.Exists(backupScript));
+        Assert.True(File.Exists(restoreScript));
 
-        File.ReadAllText(prodCompose).Should().Contain("postgres:16.15-alpine")
-            .And.Contain("ASPNETCORE_ENVIRONMENT: Production");
-        File.ReadAllText(prodAppSettings).Should().Contain("\"FormatterName\": \"json\"");
-        File.ReadAllText(backupScript).Should().Contain("pg_dump");
-        File.ReadAllText(restoreScript).Should().Contain("pg_restore");
+        var prodComposeContent = File.ReadAllText(prodCompose);
+        Assert.Contains("postgres:16.15-alpine", prodComposeContent);
+        Assert.Contains("ASPNETCORE_ENVIRONMENT: Production", prodComposeContent);
+        Assert.Contains("\"FormatterName\": \"json\"", File.ReadAllText(prodAppSettings));
+        Assert.Contains("pg_dump", File.ReadAllText(backupScript));
+        Assert.Contains("pg_restore", File.ReadAllText(restoreScript));
     }
 }
