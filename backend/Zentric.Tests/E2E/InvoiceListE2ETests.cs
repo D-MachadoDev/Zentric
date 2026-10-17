@@ -59,6 +59,7 @@ namespace Zentric.Tests.E2E
 
             Assert.Contains("VendorDetail", types);
             Assert.DoesNotContain("Master", types);
+            Assert.DoesNotContain("ZentricDetail", types);
         }
 
         /// <summary>
