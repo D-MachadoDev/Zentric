@@ -13,6 +13,7 @@
     "./lib/cn": "./src/lib/cn.ts",
     "./hooks": "./src/hooks/index.ts",
     "./logo": "./src/logo/index.ts",
+    "./composite": "./src/composite/index.ts",
     "./components/ui/*": "./src/components/ui/*.tsx"
   },
   "//": "Sin build: la app importa el TS fuente via Vite y el empaquetado lo resuelve el bundler. Emitir declaraciones solo añadiria un paso que nadie consume.",

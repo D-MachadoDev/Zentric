@@ -14,4 +14,5 @@ export * from './lib';
 export * from './hooks';
 export { Logo, LogoMark, LogoWordmark } from './logo';
 export type { LogoProps, LogoMarkProps, LogoWordmarkProps } from './logo';
+export * from './composite';
 
