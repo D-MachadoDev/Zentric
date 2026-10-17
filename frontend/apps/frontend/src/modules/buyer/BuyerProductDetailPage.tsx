@@ -427,7 +427,7 @@ export function BuyerProductDetailPage() {
                 type="button"
                 onClick={handleAddToCart}
                 disabled={isSoldOut || isExceedingStock || addCartItemMutation.isPending || createCartMutation.isPending}
-                className="w-full h-12 bg-brand hover:bg-brand-strong text-white font-bold text-base shadow-lg shadow-brand/20 disabled:opacity-50 disabled:pointer-events-none transition-all rounded-xl"
+                className="w-full h-12 bg-brand hover:bg-brand-strong text-primary-foreground font-bold text-base shadow-lg shadow-brand/20 disabled:opacity-50 disabled:pointer-events-none transition-all rounded-xl"
               >
                 {addCartItemMutation.isPending || createCartMutation.isPending ? (
                   <span className="flex items-center gap-2">

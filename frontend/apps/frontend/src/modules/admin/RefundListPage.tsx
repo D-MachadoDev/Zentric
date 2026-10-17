@@ -76,10 +76,10 @@ export function RefundListPage() {
   if (isLoading) {
     return (
       <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
-        <Skeleton className="h-10 w-64 bg-[#111827]" />
+        <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-[#111827]" />
-          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-[#111827]" />
+          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-surface" />
         </div>
       </div>
     );
@@ -98,7 +98,7 @@ export function RefundListPage() {
         <Button
           onClick={() => refetch()}
           variant="outline"
-          className="border-[#1F293D] text-white hover:bg-[#1F293D]"
+          className="border-border text-foreground hover:bg-border"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
         </Button>
@@ -109,17 +109,17 @@ export function RefundListPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Reembolsos y Liquidación de Devoluciones
             </h1>
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
               {returns.length} Casos
             </Badge>
           </div>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             Acreditación financiera de fondos al comprador tras la aprobación comercial del vendedor titular.
           </p>
         </div>
@@ -129,7 +129,7 @@ export function RefundListPage() {
           size="sm"
           onClick={() => refetch()}
           disabled={isFetching}
-          className="border-[#1F293D] text-[#94A3B8] hover:text-white"
+          className="border-border text-foreground-muted hover:text-foreground"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
           Refrescar
@@ -138,8 +138,8 @@ export function RefundListPage() {
 
       {/* ── Feedback ────────────────────────────────────────────────────── */}
       {actionSuccess && (
-        <Alert className="border-[#00D4AA]/40 bg-[#00D4AA]/10 text-[#00D4AA]">
-          <CheckCircle className="h-4 w-4 text-[#00D4AA]" />
+        <Alert className="border-brand/40 bg-brand/10 text-brand">
+          <CheckCircle className="h-4 w-4 text-brand" />
           <AlertTitle>Reembolso Liquidado</AlertTitle>
           <AlertDescription className="text-xs">{actionSuccess}</AlertDescription>
         </Alert>
@@ -160,13 +160,13 @@ export function RefundListPage() {
           {/* Controles de Búsqueda y Pestañas de Estado */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#64748B]" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
               <Input
                 type="text"
                 placeholder="Buscar por ID de devolución, pedido o variante..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-[#111827] border-[#1F293D] text-white placeholder:text-[#64748B] focus:border-[#00D4AA]"
+                className="pl-10 bg-surface border-border text-foreground placeholder:text-foreground-muted focus:border-brand"
               />
             </div>
 
@@ -174,7 +174,7 @@ export function RefundListPage() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               aria-label="Filtrar por estado de devolución"
-              className="bg-[#111827] border border-[#1F293D] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00D4AA]"
+              className="bg-surface border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
             >
               <option value={ReturnStatus.Approved}>Pendientes de Reembolso (Aprobadas)</option>
               <option value={ReturnStatus.Refunded}>Reembolsadas</option>
@@ -185,19 +185,19 @@ export function RefundListPage() {
           </div>
 
           {filteredReturns.length === 0 ? (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-12 text-center">
-              <RotateCcw className="h-10 w-10 text-[#64748B] mx-auto mb-3" />
-              <h3 className="text-sm font-semibold text-white">No hay devoluciones en este estado</h3>
-              <p className="text-xs text-[#94A3B8] mt-1">
+            <div className="rounded-2xl border border-border bg-surface p-12 text-center">
+              <RotateCcw className="h-10 w-10 text-foreground-muted mx-auto mb-3" />
+              <h3 className="text-sm font-semibold text-foreground">No hay devoluciones en este estado</h3>
+              <p className="text-xs text-foreground-muted mt-1">
                 Todas las solicitudes aprobadas han sido reembolsadas o no coinciden con los filtros.
               </p>
             </div>
           ) : (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] overflow-hidden">
+            <div className="rounded-2xl border border-border bg-surface overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-[#1F293D] text-[#94A3B8] uppercase tracking-wider font-sans bg-[#161F30]/40">
+                    <tr className="border-b border-border text-foreground-muted uppercase tracking-wider font-sans bg-surface-muted/40">
                       <th className="py-3 px-4">Devolución</th>
                       <th className="py-3 px-4">Pedido Original</th>
                       <th className="py-3 px-4 text-right">Cantidad</th>
@@ -205,7 +205,7 @@ export function RefundListPage() {
                       <th className="py-3 px-4">Estado</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#1F293D]/60">
+                  <tbody className="divide-y divide-border/60">
                     {filteredReturns.map((ret: ReturnRequest) => {
                       const isSelected = selectedReturn?.id === ret.id;
                       return (
@@ -214,22 +214,22 @@ export function RefundListPage() {
                           onClick={() => setSelectedReturnId(ret.id)}
                           className={`cursor-pointer transition-colors ${
                             isSelected
-                              ? 'bg-[#161F30] border-l-2 border-l-[#00D4AA]'
-                              : 'hover:bg-[#161F30]/40'
+                              ? 'bg-surface-muted border-l-2 border-l-brand'
+                              : 'hover:bg-surface-muted/40'
                           }`}
                         >
-                          <td className="py-4 px-4 font-mono text-white">
+                          <td className="py-4 px-4 font-mono text-foreground">
                             #{ret.id.substring(0, 8)}
                           </td>
-                          <td className="py-4 px-4 font-mono text-[#E2E8F0]">
+                          <td className="py-4 px-4 font-mono text-border">
                             #{ret.customerOrderId.substring(0, 8)}
                           </td>
-                          <td className="py-4 px-4 text-right font-mono font-semibold text-white tabular-nums">
+                          <td className="py-4 px-4 text-right font-mono font-semibold text-foreground tabular-nums">
                             {ret.quantity}
                           </td>
                           <td className="py-4 px-4">
                             {ret.isGoodCondition === true ? (
-                              <Badge variant="outline" className="border-[#00D4AA]/40 text-[#00D4AA] text-[10px]">
+                              <Badge variant="outline" className="border-brand/40 text-brand text-[10px]">
                                 Intacto (OK)
                               </Badge>
                             ) : ret.isGoodCondition === false ? (
@@ -237,13 +237,13 @@ export function RefundListPage() {
                                 Dañado
                               </Badge>
                             ) : (
-                              <span className="text-[11px] text-[#64748B]">Pendiente</span>
+                              <span className="text-[11px] text-foreground-muted">Pendiente</span>
                             )}
                           </td>
                           <td className="py-4 px-4">
                             <Badge
                               variant="outline"
-                              className="border-[#1F293D] text-[#94A3B8] text-[11px]"
+                              className="border-border text-foreground-muted text-[11px]"
                             >
                               {ret.status}
                             </Badge>
@@ -261,97 +261,97 @@ export function RefundListPage() {
         {/* Lado Derecho (35%): Panel de Liquidación y Desembolso ────────── */}
         <section className="lg:col-span-4 space-y-6">
           {selectedReturn ? (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-6">
-              <div className="border-b border-[#1F293D] pb-4">
-                <span className="text-[11px] font-mono text-[#64748B] block">
+            <div className="rounded-2xl border border-border bg-surface p-6 space-y-6">
+              <div className="border-b border-border pb-4">
+                <span className="text-[11px] font-mono text-foreground-muted block">
                   EXPEDIENTE DE REEMBOLSO
                 </span>
-                <h3 className="text-lg font-bold text-white mt-1">
+                <h3 className="text-lg font-bold text-foreground mt-1">
                   Devolución #{selectedReturn.id.substring(0, 8)}
                 </h3>
-                <span className="text-xs font-mono text-[#00D4AA]">
+                <span className="text-xs font-mono text-brand">
                   Estado: {selectedReturn.status}
                 </span>
               </div>
 
               <div className="space-y-3 text-xs font-mono">
                 <div>
-                  <span className="text-[#94A3B8] block text-[11px] font-sans">
+                  <span className="text-foreground-muted block text-[11px] font-sans">
                     Pedido Asociado
                   </span>
-                  <span className="text-white">#{selectedReturn.customerOrderId}</span>
+                  <span className="text-foreground">#{selectedReturn.customerOrderId}</span>
                 </div>
 
                 <div>
-                  <span className="text-[#94A3B8] block text-[11px] font-sans">
+                  <span className="text-foreground-muted block text-[11px] font-sans">
                     Variante / SKU
                   </span>
-                  <span className="text-[#00D4AA]">#{selectedReturn.variantId}</span>
+                  <span className="text-brand">#{selectedReturn.variantId}</span>
                 </div>
 
                 <div>
-                  <span className="text-[#94A3B8] block text-[11px] font-sans">
+                  <span className="text-foreground-muted block text-[11px] font-sans">
                     Cantidad a Reembolsar
                   </span>
-                  <span className="text-white font-bold tabular-nums">
+                  <span className="text-foreground font-bold tabular-nums">
                     {selectedReturn.quantity} unidades
                   </span>
                 </div>
 
                 <div>
-                  <span className="text-[#94A3B8] block text-[11px] font-sans">
+                  <span className="text-foreground-muted block text-[11px] font-sans">
                     Veredicto Físico de Recepción
                   </span>
-                  <span className="text-white font-sans">
+                  <span className="text-foreground font-sans">
                     {selectedReturn.isGoodCondition ? 'Aceptado en buen estado' : 'Dañado / No conforme'}
                   </span>
                 </div>
 
                 <div>
-                  <span className="text-[#94A3B8] block text-[11px] font-sans">
+                  <span className="text-foreground-muted block text-[11px] font-sans">
                     Aprobación Comercial del Vendedor
                   </span>
-                  <span className="text-white font-sans">
+                  <span className="text-foreground font-sans">
                     {selectedReturn.vendorApproved ? 'Aprobado por el dueño' : 'Pendiente / Rechazado'}
                   </span>
                 </div>
               </div>
 
               {/* Botón Destructivo de Reembolso */}
-              <div className="pt-2 border-t border-[#1F293D]">
+              <div className="pt-2 border-t border-border">
                 {selectedReturn.status === ReturnStatus.Approved ? (
                   <Button
                     onClick={() => handleRefund(selectedReturn.id)}
                     disabled={refundMutation.isPending}
-                    className="w-full bg-[#00D4AA] text-[#0B0F19] hover:bg-[#00D4AA]/90 font-bold text-xs"
+                    className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-bold text-xs"
                   >
                     <DollarSign className="h-4 w-4 mr-1.5" />
                     {refundMutation.isPending ? 'Liquidando Reembolso...' : 'Acreditar Reembolso'}
                   </Button>
                 ) : selectedReturn.status === ReturnStatus.Refunded ? (
-                  <div className="p-3 rounded-xl bg-[#00D4AA]/10 border border-[#00D4AA]/30 text-center text-xs text-[#00D4AA] font-semibold flex items-center justify-center gap-2">
+                  <div className="p-3 rounded-xl bg-brand/10 border border-brand/30 text-center text-xs text-brand font-semibold flex items-center justify-center gap-2">
                     <CheckCircle className="h-4 w-4" />
                     Reembolso Acreditado al Comprador
                   </div>
                 ) : (
-                  <div className="p-3 rounded-xl bg-[#161F30] border border-[#1F293D] text-center text-xs text-[#94A3B8]">
+                  <div className="p-3 rounded-xl bg-surface-muted border border-border text-center text-xs text-foreground-muted">
                     No elegible para desembolso directo. Requiere aprobación comercial previa.
                   </div>
                 )}
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-8 text-center text-xs text-[#94A3B8]">
+            <div className="rounded-2xl border border-border bg-surface p-8 text-center text-xs text-foreground-muted">
               Seleccione una devolución de la lista para gestionar su reembolso.
             </div>
           )}
 
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-5 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#00D4AA]">
+          <div className="rounded-2xl border border-border bg-surface p-5 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-semibold text-brand">
               <ShieldCheck className="h-4 w-4" />
               <span>Gobernanza Financiera (ADR-0006)</span>
             </div>
-            <p className="text-[11px] text-[#94A3B8] leading-relaxed">
+            <p className="text-[11px] text-foreground-muted leading-relaxed">
               El desembolso financiero sólo puede ser ejecutado por el Administrador una vez que el vendedor titular emitió su aprobación formal, protegiendo los balances de liquidación comercial.
             </p>
           </div>

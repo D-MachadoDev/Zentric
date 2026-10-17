@@ -105,10 +105,10 @@ export function SupervisorInventoryAuditPage() {
   if (isLoading) {
     return (
       <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
-        <Skeleton className="h-10 w-64 bg-[#111827]" />
+        <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-7 h-96 rounded-2xl bg-[#111827]" />
-          <Skeleton className="lg:col-span-5 h-96 rounded-2xl bg-[#111827]" />
+          <Skeleton className="lg:col-span-7 h-96 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-5 h-96 rounded-2xl bg-surface" />
         </div>
       </div>
     );
@@ -127,7 +127,7 @@ export function SupervisorInventoryAuditPage() {
         <Button
           onClick={() => refetch()}
           variant="outline"
-          className="border-[#1F293D] text-white hover:bg-[#1F293D]"
+          className="border-border text-foreground hover:bg-border"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
         </Button>
@@ -138,20 +138,20 @@ export function SupervisorInventoryAuditPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Estación de Auditoría de Stock por Conteo Físico
             </h1>
-            <Badge variant="outline" className="border-[#1F293D] text-[#FFB800] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-warning font-mono text-xs">
               ADR-0021
             </Badge>
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
               Política InventoryAdjust
             </Badge>
           </div>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             Única mutación autorizada al Supervisor: registro de discrepancias verificadas por conteo físico con motivo obligatorio e idempotencia de 5 minutos.
           </p>
         </div>
@@ -161,7 +161,7 @@ export function SupervisorInventoryAuditPage() {
           size="sm"
           onClick={() => refetch()}
           disabled={isFetching}
-          className="border-[#1F293D] text-[#94A3B8] hover:text-white"
+          className="border-border text-foreground-muted hover:text-foreground"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
           Refrescar
@@ -172,9 +172,9 @@ export function SupervisorInventoryAuditPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Lado Izquierdo (65%): Formulario de Ajuste y Resultado ───────── */}
         <section className="lg:col-span-7 space-y-6">
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 sm:p-8 space-y-6">
-            <h2 className="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <Sliders className="h-4 w-4 text-[#FFB800]" />
+          <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 space-y-6">
+            <h2 className="text-base font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+              <Sliders className="h-4 w-4 text-warning" />
               Acta de Conteo Físico en Bodega
             </h2>
 
@@ -189,7 +189,7 @@ export function SupervisorInventoryAuditPage() {
             <form onSubmit={handleAdjustSubmit} className="space-y-5">
               {/* Posición de Inventario */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#E2E8F0]">
+                <label className="text-xs font-semibold text-border">
                   Posición de Inventario Auditada (ID de Registro)
                 </label>
                 <Input
@@ -197,32 +197,32 @@ export function SupervisorInventoryAuditPage() {
                   placeholder="UUID del inventario o seleccione de la lista derecha"
                   value={targetInventoryId}
                   onChange={(e) => setTargetInventoryId(e.target.value)}
-                  className="bg-[#161F30] border-[#1F293D] text-white font-mono text-xs focus:border-[#FFB800]"
+                  className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-warning"
                 />
               </div>
 
               {selectedInventory && (
-                <div className="p-3.5 rounded-xl bg-[#161F30]/60 border border-[#1F293D] grid grid-cols-4 gap-2 text-center text-xs">
+                <div className="p-3.5 rounded-xl bg-surface-muted/60 border border-border grid grid-cols-4 gap-2 text-center text-xs">
                   <div>
-                    <span className="text-[#94A3B8] block text-[10px] uppercase">Disponible</span>
-                    <span className="font-mono font-bold text-white tabular-nums">
+                    <span className="text-foreground-muted block text-[10px] uppercase">Disponible</span>
+                    <span className="font-mono font-bold text-foreground tabular-nums">
                       {selectedInventory.availableQuantity}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[#94A3B8] block text-[10px] uppercase">Reservado</span>
-                    <span className="font-mono font-bold text-[#FFB800] tabular-nums">
+                    <span className="text-foreground-muted block text-[10px] uppercase">Reservado</span>
+                    <span className="font-mono font-bold text-warning tabular-nums">
                       {selectedInventory.reservedQuantity}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[#94A3B8] block text-[10px] uppercase">Usado</span>
-                    <span className="font-mono font-bold text-[#94A3B8] tabular-nums">
+                    <span className="text-foreground-muted block text-[10px] uppercase">Usado</span>
+                    <span className="font-mono font-bold text-foreground-muted tabular-nums">
                       {selectedInventory.usedQuantity}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[#94A3B8] block text-[10px] uppercase">Dañado</span>
+                    <span className="text-foreground-muted block text-[10px] uppercase">Dañado</span>
                     <span className="font-mono font-bold text-red-400 tabular-nums">
                       {selectedInventory.damagedQuantity}
                     </span>
@@ -232,7 +232,7 @@ export function SupervisorInventoryAuditPage() {
 
               {/* Cantidad Física Contada */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#E2E8F0]">
+                <label className="text-xs font-semibold text-border">
                   Cantidad Física Verificada en Bodega (Mayor o igual a 0)
                 </label>
                 <Input
@@ -240,7 +240,7 @@ export function SupervisorInventoryAuditPage() {
                   min={0}
                   value={countedQuantity}
                   onChange={(e) => setCountedQuantity(parseInt(e.target.value, 10) || 0)}
-                  className="bg-[#161F30] border-[#1F293D] text-white font-mono text-sm focus:border-[#FFB800]"
+                  className="bg-surface-muted border-border text-foreground font-mono text-sm focus:border-warning"
                 />
                 {formErrors.countedQuantity && (
                   <p data-testid="counted-quantity-error" className="text-[11px] text-red-400">
@@ -251,7 +251,7 @@ export function SupervisorInventoryAuditPage() {
 
               {/* Motivo Obligatorio */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#E2E8F0]">
+                <label className="text-xs font-semibold text-border">
                   Motivo Obligatorio del Conteo Físico
                 </label>
                 <Input
@@ -259,7 +259,7 @@ export function SupervisorInventoryAuditPage() {
                   placeholder="Ej. Disminución verificada en arqueo físico de pasillo B"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  className="bg-[#161F30] border-[#1F293D] text-white text-xs placeholder:text-[#64748B] focus:border-[#FFB800]"
+                  className="bg-surface-muted border-border text-foreground text-xs placeholder:text-foreground-muted focus:border-warning"
                 />
                 {formErrors.reason && (
                   <p data-testid="reason-error" className="text-[11px] text-red-400">
@@ -271,7 +271,7 @@ export function SupervisorInventoryAuditPage() {
               <Button
                 type="submit"
                 disabled={adjustMutation.isPending}
-                className="w-full bg-[#FFB800] text-[#0B0F19] hover:bg-[#FFB800]/90 font-semibold text-xs"
+                className="w-full bg-warning text-primary-foreground hover:bg-warning/90 font-semibold text-xs"
               >
                 {adjustMutation.isPending ? (
                   <>
@@ -288,44 +288,44 @@ export function SupervisorInventoryAuditPage() {
 
           {/* Resultado Idempotente del Ajuste */}
           {adjustmentResult && (
-            <div className="rounded-2xl border border-[#00D4AA]/40 bg-[#111827] p-6 space-y-4">
-              <div className="flex items-center gap-2 text-[#00D4AA]">
+            <div className="rounded-2xl border border-brand/40 bg-surface p-6 space-y-4">
+              <div className="flex items-center gap-2 text-brand">
                 <CheckCircle className="h-5 w-5" />
-                <h3 className="text-sm font-bold text-white font-sans">
+                <h3 className="text-sm font-bold text-foreground font-sans">
                   Resultado del Ajuste de Auditoría (ADR-0021)
                 </h3>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#161F30] border border-[#1F293D] space-y-2 text-xs font-mono">
+              <div className="p-4 rounded-xl bg-surface-muted border border-border space-y-2 text-xs font-mono">
                 <div className="flex justify-between">
-                  <span className="text-[#94A3B8]">ID de Ajuste:</span>
-                  <span className="text-white">{adjustmentResult.adjustmentId}</span>
+                  <span className="text-foreground-muted">ID de Ajuste:</span>
+                  <span className="text-foreground">{adjustmentResult.adjustmentId}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#94A3B8]">Stock Anterior:</span>
-                  <span className="text-white tabular-nums">
+                  <span className="text-foreground-muted">Stock Anterior:</span>
+                  <span className="text-foreground tabular-nums">
                     {adjustmentResult.previousAvailableQuantity} unidades
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#94A3B8]">Nuevo Stock Disponible:</span>
-                  <span className="text-[#00D4AA] font-bold tabular-nums">
+                  <span className="text-foreground-muted">Nuevo Stock Disponible:</span>
+                  <span className="text-brand font-bold tabular-nums">
                     {adjustmentResult.newAvailableQuantity} unidades
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#94A3B8]">Variación Neta:</span>
-                  <span className="text-[#FFB800] tabular-nums">
+                  <span className="text-foreground-muted">Variación Neta:</span>
+                  <span className="text-warning tabular-nums">
                     {adjustmentResult.adjustedQuantity}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#94A3B8]">Motivo:</span>
-                  <span className="text-white">{adjustmentResult.reason}</span>
+                  <span className="text-foreground-muted">Motivo:</span>
+                  <span className="text-foreground">{adjustmentResult.reason}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#94A3B8]">Fecha Conteo:</span>
-                  <span className="text-white">{adjustmentResult.countedAt}</span>
+                  <span className="text-foreground-muted">Fecha Conteo:</span>
+                  <span className="text-foreground">{adjustmentResult.countedAt}</span>
                 </div>
               </div>
             </div>
@@ -334,18 +334,18 @@ export function SupervisorInventoryAuditPage() {
 
         {/* Lado Derecho (35%): Selector de Posiciones de Inventario ─────── */}
         <section className="lg:col-span-5 space-y-6">
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#1F293D] pb-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-white font-sans">
+          <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-foreground font-sans">
                 Posiciones de Inventario Auditables
               </h3>
-              <span className="text-xs font-mono text-[#94A3B8]">
+              <span className="text-xs font-mono text-foreground-muted">
                 {inventories.length} registros
               </span>
             </div>
 
             {inventories.length === 0 ? (
-              <p className="text-xs text-[#94A3B8] py-6 text-center">
+              <p className="text-xs text-foreground-muted py-6 text-center">
                 No hay posiciones de inventario cargadas en la red.
               </p>
             ) : (
@@ -358,19 +358,19 @@ export function SupervisorInventoryAuditPage() {
                       onClick={() => handleSelectInventory(inv)}
                       className={`p-3 rounded-xl border text-xs cursor-pointer transition-colors ${
                         isSelected
-                          ? 'border-[#FFB800] bg-[#161F30]'
-                          : 'border-[#1F293D] bg-[#161F30]/40 hover:bg-[#161F30]'
+                          ? 'border-warning bg-surface-muted'
+                          : 'border-border bg-surface-muted/40 hover:bg-surface-muted'
                       }`}
                     >
                       <div className="flex justify-between items-center mb-1">
-                        <span className="font-mono text-[#00D4AA]">
+                        <span className="font-mono text-brand">
                           Var: {inv.variantId.substring(0, 8)}...
                         </span>
-                        <span className="font-mono text-white tabular-nums font-semibold">
+                        <span className="font-mono text-foreground tabular-nums font-semibold">
                           {inv.availableQuantity} Disp.
                         </span>
                       </div>
-                      <div className="text-[11px] font-mono text-[#64748B] flex justify-between">
+                      <div className="text-[11px] font-mono text-foreground-muted flex justify-between">
                         <span>Bod: #{inv.warehouseId.substring(0, 8)}</span>
                         <span>ID: #{inv.id.substring(0, 8)}</span>
                       </div>
@@ -381,12 +381,12 @@ export function SupervisorInventoryAuditPage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-5 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#FFB800]">
+          <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-warning">
               <Clock className="h-4 w-4" />
               <span>Ventana de Idempotencia de 5 Minutos (ADR-0021)</span>
             </div>
-            <p className="text-xs text-[#94A3B8] leading-relaxed">
+            <p className="text-xs text-foreground-muted leading-relaxed">
               Los ajustes por conteo físico registrados por el Supervisor se procesan de manera idempotente en bloques de 5 minutos para prevenir duplicidades por reintentos de red durante el arqueo en almacén.
             </p>
           </div>

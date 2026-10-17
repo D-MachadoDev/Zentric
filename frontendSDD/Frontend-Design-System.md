@@ -161,6 +161,9 @@ Antes de aprobar las salidas de los agentes `07-frontend-tokens-primitives`, `08
 
 ## 8. [ADDENDUM - DICTADO POR OWNER EN /GRILL-ME]: Modern High-End Commerce & Dual Theme
 
+> [!WARNING]
+> **SUPERSEDO PARCIAL:** Las decisiones A1 (índigo eléctrico `#4F46E5`/`#6366F1`) y A2 (arquitectura dual con overrides dispersos entre `theme.css` y `global.css`) quedan **sustituidas** por el [ADDENDUM §9](#9-addendum---dictado-por-owner-en-grill-me-diseño-v2-porcelana-y-grafito) tras el dictado del Owner: *"el multi-tema actual está mal diseñado; requiere rediseño completo del sistema de temas"*. Las decisiones A3 (portal comercial del comprador) y A4 (tarjeta comercial enriquecida) **permanecen vigentes** y se absorben en §9.6.
+
 > **Fecha:** 2026-10-17  
 > **Origen:** Sesión `/grill-me` con el Owner del Producto.  
 > **Objetivo:** Erradicar la apariencia de plantilla genérica de IA (monolito oscuro con acentos cian neón) y transformar Zentric en un marketplace SaaS de grado empresarial (referencias: Stripe, Linear Commerce, Shopify, Mercado Libre).
@@ -183,3 +186,102 @@ Antes de aprobar las salidas de los agentes `07-frontend-tokens-primitives`, `08
    - Píldoras flotantes de stock en tiempo real (`✓ X disp.` en esmeralda o `Agotado` en rojo).
    - Identificación de SKU en `Geist Mono` y precio destacado en moneda local.
    - Botón de acción comercial con micro-interacción de flecha (`Ver Detalle` / `Agregar al Carrito`).
+
+---
+
+## 9. [ADDENDUM - DICTADO POR OWNER EN /GRILL-ME]: Diseño v2 "Porcelana y Grafito" — Dual Theme Robusto e Identidad por Rol
+
+> **Fecha:** 2026-10-17  
+> **Origen:** Sesión `/grill-me` con el Owner. Decisiones: *"El multi-tema actual está mal diseñado → rediseño completo del sistema de temas"* · *"Diferenciación por rol: acento de color distinto + layout diferenciado"* · *"Premium minimalista, no genérico de IA"* · *"Mismos principios de diseño entre paneles, identidad visual distinta por rol"*.  
+> **Alcance de supersesión:** §1 (lienzo/acento), §3 (tabla de tokens), §7.1 (fidelidad de paleta), §8-A1/A2. **Vigencia plena de:** §2 (composición asimétrica y split-frame), §4 (tipografía de tres voces), §8-A3/A4 (portal y tarjeta comercial), doctrina anti-IA genérica (§2.2 y `AGENTS.md` §4.14, en su principio de neutros tintados).
+
+### 9.1 Paleta Dual Normativa
+
+Dos modos, **una sola fuente de verdad** (`packages/ui/src/styles/theme.css`), contraste AA verificado programáticamente en ambos modos (§9.4):
+
+| Token runtime (`:root` / `.dark`) | Modo Claro "Estudio Porcelana" | Modo Oscuro "Bóveda Grafito" | Rol semántico |
+|---|---|---|---|
+| `--background` | `#F5F6F8` porcelana de tinte frío | `#0C0F16` grafito-tinta | Lienzo base |
+| `--surface` | `#FFFFFF` papel nítido *(exención §9.3)* | `#131824` | Tarjetas, tablas, modales |
+| `--surface-muted` | `#EEF0F4` | `#1A2030` | Cabeceras, hover, zonas editoriales |
+| `--border` | `#E1E5EB` | `#252D40` | Borde estructural `1px solid` |
+| `--border-subtle` | `#EBEEF2` | `#1D2334` | Hairline divisorio interno |
+| `--foreground` | `#0E1420` tinta azulada (17.04:1) | `#EDF1F7` hueso frío (16.91:1) | Texto primario |
+| `--foreground-muted` | `#454F63` (7.61:1) | `#98A2B8` (7.48:1) | Texto secundario |
+| `--foreground-subtle` | `#5F6B82` (4.96:1) | `#7D88A3` (5.41:1) | Metadatos, placeholders |
+| `--success` | `#15803D` | `#4ADE80` | Confirmado / activo |
+| `--warning` | `#B45309` | `#FBBF24` | Pendiente / reloj de 15 minutos |
+| `--danger` | `#B91C1C` | `#F87171` | Error / destructivo |
+| `--info` | `#1D4ED8` | `#60A5FA` | Informativo / tránsito |
+
+**Prohibiciones vigentes:** negro puro `#000000`; grises desaturados (`R=G=B`); el cian neón `#00D4AA` sobre carbón saturado `#0A0E1A` (look v1 rechazado); el "índigo eléctrico" `#4F46E5`/`#6366F1` como acento de marca (§8-A1, rechazado). En claro, los estados de dominio usan pasos **700** (AA como texto); en oscuro, pasos **400** luminosos.
+
+### 9.2 Matriz de Identidad por Rol (Acento + Layout)
+
+Cada layout de rol ancla su raíz con `data-role="…"`; el scope CSS remapea **solo el eje de acento** (`--brand`, `--brand-strong`). `--primary`, `--ring` y todos los chips/botones/foco derivan de `--brand` por `var()`, así que la identidad cromática cambia **sin tocar componentes**. Sin scope (páginas públicas) rige el jade Comprador, identidad de marca por defecto.
+
+| Rol | Acento claro | Hover claro | Acento oscuro | Hover oscuro | Contraste texto/lienzo (claro) |
+|---|---|---|---|---|---|
+| **Buyer** (jade de marca) | `#0F766E` | `#0B5D56` | `#2DD4BF` | `#5EEAD4` | 5.06:1 |
+| **Seller** (violeta estudio) | `#6D28D9` | `#5B21B6` | `#A78BFA` | `#C4B5FD` | 6.57:1 |
+| **Admin** (índigo de mando) | `#4338CA` | `#3730A3` | `#818CF8` | `#A5B4FC` | 7.31:1 |
+| **Logistics** (cian operativo) | `#0E7490` | `#0A5C74` | `#22D3EE` | `#67E8F9` | 4.95:1 |
+| **Supervisor** (fucsia forense) | `#A21CAF` | `#86198F` | `#E879F9` | `#F0ABFC` | 5.85:1 |
+
+- Texto sobre relleno de acento: `#FFFFFF` en claro (≥5.36:1 en los cinco acentos) / `#0C0F16` en oscuro (≥6.43:1). Gobierna `--primary-foreground`.
+- Los cinco acentos están espaciados al máximo en el círculo cromático y **ninguno coincide** con un color de estado (`success/warning/danger/info`); la separación contextual (botón/foco vs punto+rótulo de `StatusBadge`) elimina la ambigüedad restante.
+
+### 9.3 Doctrina Anti-IA v2 (Elevación y Exenciones)
+
+1. **Exención documentada del blanco:** `--surface: #FFFFFF` en claro es **papel nítido, no un gris desaturado**; la regla de tinte frío (`B > R`) se aplica al resto de neutros y a la tinta en ambos modos, y el test de tokens exige exactamente `#FFFFFF` allí.
+2. **Elevación:** en claro, hairline + sombra susurrada (`0 1px 2px` al 4-5% de la tinta); en oscuro, hairline + brillo superior interior (`inset 0 1px 0 rgba(255,255,255,0.04)`). Prohibidas las sombras difusas pesadas y los resplandores neón.
+3. **El resplandor focal es derivado, no literal:** `bg-swiss-grid` y los glows usan `color-mix(in srgb, var(--brand) N%, transparent)`, de modo que la atmósfera sigue al acento de rol y al modo sin rgba fijos.
+4. Los patrones prohibidos de §2.2 siguen vigentes: sin texto degradado multicolor, sin barras `border-l-4` chillonas, sin tarjetas clonadas de jerarquía idéntica.
+
+### 9.4 Compuerta WCAG 2.1 AA (Resultados Verificados)
+
+La suite `packages/ui/src/tokens/tokens.test.ts` exige programáticamente, para **ambos modos**:
+
+| Categoría | Umbral normativo | Resultado |
+|---|---|---|
+| Tinta primaria sobre lienzo/superficie | > 14:1 / > 13:1 | 17.04 / 18.43 (claro) · 16.91 / 15.65 (oscuro) |
+| Tinta secundaria (muted) | ≥ 6.2:1 | 7.61 (claro) · 7.48 (oscuro) |
+| Tinta terciaria (subtle) | ≥ 4.5:1 | 4.96 (claro) · 5.41 (oscuro) |
+| Acento de rol como texto | ≥ 4.5:1 sobre lienzo y superficie | Mínimo 4.95:1 (logistics claro) |
+| Acento de rol como relleno (`--primary-foreground`) | ≥ 4.5:1 | Mínimo 5.36:1 (claro) / 6.43:1 (oscuro) |
+| Estados de dominio como texto | ≥ 4.5:1 sobre lienzo y superficie | Mínimo 4.64:1 |
+
+### 9.5 Arquitectura Técnica del Tema (Fuente Única)
+
+1. **Tokens runtime con nombre final** (`:root` claro, `.dark` oscuro): los componentes y el CSS plano referencian `var(--background)`, `var(--brand)`… directamente en cualquier modo. La clase `.dark` la gobierna `ThemeProvider` (persistencia en `localStorage['zentric.theme']`, esquema nativo `color-scheme` sincronizado, claro por defecto).
+2. **Puente `@theme inline`:** cada token runtime se mapea a su utilidad Tailwind v4 (`bg-brand` → `var(--brand)`); al ser *inline*, las utilidades resuelven el valor **en uso**, por lo que `.dark` y `[data-role]` conmutan sin recompilar ni duplicar valores.
+3. **Tokens estáticos en `@theme` normal:** radios (6/8/12/16/9999), fuentes (`Geist Variable` + `Geist Mono Variable`, empaquetado local `@fontsource-variable`) y curvas de movimiento (`expo.out`, `quint.out`) se emiten a `:root` para el CSS plano.
+4. **`global.css` declarativo:** cero overrides de color; solo utilidades de composición (`bg-swiss-grid`, `surface-hairline`, `kicker-spike`, `nav-group-label`) construidas sobre tokens runtime.
+5. **Migración hex → token completada:** 2.271 literales de color del v1/§8 en `apps/frontend/src/modules/**` migrados a tokens (verificado `rg "\[#[0-9A-Fa-f]{6}\]"` = 0). Reglas aplicadas: `text-[#0B0F19]` → `text-primary-foreground` (siempre sobre relleno de acento, verificado caso a caso); `text-white` contextual → `text-primary-foreground` sobre rellenos de acento sólidos y `text-foreground` sobre superficies heredadas (cero gradientes de acento con `text-white` en el corpus).
+
+### 9.6 Shells por Rol (Estructuras Diferenciadas, Misma Base de Diseño)
+
+Base común: `LayoutHeader` (chip de rol tintado con el acento, identidad Geist Sans + Mono, toggle de tema, logout), hairlines de `1px`, radios 6/8/12/16 y tipografía de tres voces. Cada rol recibe una **estructura propia**:
+
+| Rol | Arquetipo | Estructura del shell | Firma visual |
+|---|---|---|---|
+| **Buyer** | Portal Comercial | Cabecera horizontal de marketplace + lienzo ancho `max-w-7xl` aireado (`py-10`) + pie comercial + pestañas inferiores en móvil. Sin sidebar. | Acento jade; nav activa en píldora tintada |
+| **Seller** | Estudio del Vendedor | Sidebar persistente `w-64` con ancla de panel + grupos mono-caps (`Catálogo`, `Ventas`); lienzo completo para rejillas de catálogo. | Acento violeta; secciones mono-caps |
+| **Admin** | Centro de Mando | **Sin sidebar en escritorio:** pestañas horizontales de gobernanza con subrayado de acento; drawer móvil que se desmonta cerrado (sin duplicar navegación). | Acento índigo; subrayado `border-b-2` |
+| **Logistics** | Tablero de Colas | Cabecera compacta `h-14` + franja de colas en `Geist Mono` mayúsculas con tracking ancho; densidad `p-4` para máximo de filas visibles. Sin sidebar. | Acento cian; ADN de terminal |
+| **Supervisor** | Sala de Libros | Índice forense estrecho `w-56` con grupos mono-caps (`Fiscalización`, `Libro Mayor`, `Inventario`) + contenido enmarcado como hoja continua de libro mayor (`max-w-[1440px]`, hairline único), para lectura de expedientes. | Acento fucsia; documento en vez de tarjetas |
+
+**Invariante de accesibilidad del drawer:** en los shells con navegación de escritorio propia (Admin, Logistics), el drawer móvil **se desmonta al cerrarse** (`variant="drawer"`), garantizando una única copia de cada etiqueta de navegación en el árbol de accesibilidad (`aria-current="page"` en la sección activa).
+
+### 9.7 Registro de Trazabilidad de la Implementación
+
+- [x] `packages/ui/src/styles/theme.css` — reescrito: runtime `:root`/`.dark` + scopes `[data-role]` + puente `@theme inline` (§9.5).
+- [x] `apps/frontend/src/styles/global.css` — sin overrides de color; utilidades var-based (§9.5-4).
+- [x] `packages/ui/src/tokens/colors.ts` — espejo claro + `darkColors` + `roleAccents` (§9.1/§9.2).
+- [x] `packages/ui/src/tokens/tokens.test.ts` — compuerta v2: paridad dual, hexes canónicos, WCAG AA en ambos modos, anti-regresión v1/§8-A1, tinte frío con exención del blanco (§9.3/§9.4).
+- [x] `apps/frontend/src/app/layouts/LayoutSidebar.tsx` — variantes `persistent`/`drawer`, ancho `narrow`, grupos mono-caps (§9.6).
+- [x] `apps/frontend/src/app/layouts/LayoutHeader.tsx` — variante `dense`, chip de rol tintado con acento (§9.6).
+- [x] Los cinco shells de rol + `PublicLayout` — estructuras §9.6; raíces con `data-role`.
+- [x] `apps/frontend/src/modules/**` — 2.271 literales migrados a tokens (§9.5-5).
+- [x] Compuertas: `@zentric/ui` 143/143 en verde · `@zentric/frontend` 394/394 en verde · `typecheck` limpio en ambos paquetes.
+

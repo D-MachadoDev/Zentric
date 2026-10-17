@@ -96,10 +96,10 @@ export function UserListPage() {
   if (isLoading) {
     return (
       <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
-        <Skeleton className="h-10 w-64 bg-[#111827]" />
+        <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-[#111827]" />
-          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-[#111827]" />
+          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-surface" />
         </div>
       </div>
     );
@@ -118,7 +118,7 @@ export function UserListPage() {
         <Button
           onClick={() => refetch()}
           variant="outline"
-          className="border-[#1F293D] text-white hover:bg-[#1F293D]"
+          className="border-border text-foreground hover:bg-border"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
         </Button>
@@ -129,17 +129,17 @@ export function UserListPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Directorio de Usuarios y Acceso RBAC
             </h1>
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
               {users.length} Registros
             </Badge>
           </div>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             Administración centralizada de cuentas de Compradores, Vendedores, Operadores Logísticos y Supervisores.
           </p>
         </div>
@@ -150,13 +150,13 @@ export function UserListPage() {
             size="sm"
             onClick={() => refetch()}
             disabled={isFetching}
-            className="border-[#1F293D] text-[#94A3B8] hover:text-white"
+            className="border-border text-foreground-muted hover:text-foreground"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
             Refrescar
           </Button>
           <Link to="/admin/users/new">
-            <Button size="sm" className="bg-[#00D4AA] text-[#0B0F19] hover:bg-[#00D4AA]/90 font-semibold">
+            <Button size="sm" className="bg-brand text-primary-foreground hover:bg-brand/90 font-semibold">
               <UserPlus className="h-4 w-4 mr-2" />
               Alta de Usuario
             </Button>
@@ -166,8 +166,8 @@ export function UserListPage() {
 
       {/* ── Feedback de Acciones ────────────────────────────────────────── */}
       {actionSuccess && (
-        <Alert className="border-[#00D4AA]/40 bg-[#00D4AA]/10 text-[#00D4AA]">
-          <CheckCircle className="h-4 w-4 text-[#00D4AA]" />
+        <Alert className="border-brand/40 bg-brand/10 text-brand">
+          <CheckCircle className="h-4 w-4 text-brand" />
           <AlertTitle>Operación Exitosa</AlertTitle>
           <AlertDescription>{actionSuccess}</AlertDescription>
         </Alert>
@@ -188,13 +188,13 @@ export function UserListPage() {
           {/* Barra de Filtros */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#64748B]" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
               <Input
                 type="text"
                 placeholder="Buscar por nombre, correo o documento..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-[#111827] border-[#1F293D] text-white placeholder:text-[#64748B] focus:border-[#00D4AA]"
+                className="pl-10 bg-surface border-border text-foreground placeholder:text-foreground-muted focus:border-brand"
               />
             </div>
 
@@ -202,7 +202,7 @@ export function UserListPage() {
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
               aria-label="Filtrar por rol de usuario"
-              className="bg-[#111827] border border-[#1F293D] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00D4AA]"
+              className="bg-surface border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
             >
               <option value="All">Todos los Roles</option>
               <option value={UserRole.Buyer}>Comprador (Buyer)</option>
@@ -216,7 +216,7 @@ export function UserListPage() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               aria-label="Filtrar por estado de usuario"
-              className="bg-[#111827] border border-[#1F293D] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00D4AA]"
+              className="bg-surface border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
             >
               <option value="All">Todos los Estados</option>
               <option value="Active">Activos</option>
@@ -226,26 +226,26 @@ export function UserListPage() {
 
           {/* Tabla de Usuarios */}
           {filteredUsers.length === 0 ? (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-12 text-center">
-              <Users className="h-10 w-10 text-[#64748B] mx-auto mb-3" />
-              <h3 className="text-sm font-semibold text-white">No se encontraron usuarios</h3>
-              <p className="text-xs text-[#94A3B8] mt-1">
+            <div className="rounded-2xl border border-border bg-surface p-12 text-center">
+              <Users className="h-10 w-10 text-foreground-muted mx-auto mb-3" />
+              <h3 className="text-sm font-semibold text-foreground">No se encontraron usuarios</h3>
+              <p className="text-xs text-foreground-muted mt-1">
                 No hay cuentas que coincidan con los filtros aplicados.
               </p>
             </div>
           ) : (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] overflow-hidden">
+            <div className="rounded-2xl border border-border bg-surface overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-[#1F293D] text-[#94A3B8] uppercase tracking-wider font-sans bg-[#161F30]/40">
+                    <tr className="border-b border-border text-foreground-muted uppercase tracking-wider font-sans bg-surface-muted/40">
                       <th className="py-3 px-4">Usuario</th>
                       <th className="py-3 px-4">Documento</th>
                       <th className="py-3 px-4">Rol</th>
                       <th className="py-3 px-4">Estado</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#1F293D]/60">
+                  <tbody className="divide-y divide-border/60">
                     {filteredUsers.map((u: User) => {
                       const isSelected = selectedUser?.id === u.id;
                       return (
@@ -254,29 +254,29 @@ export function UserListPage() {
                           onClick={() => setSelectedUserId(u.id)}
                           className={`cursor-pointer transition-colors ${
                             isSelected
-                              ? 'bg-[#161F30] border-l-2 border-l-[#00D4AA]'
-                              : 'hover:bg-[#161F30]/40'
+                              ? 'bg-surface-muted border-l-2 border-l-brand'
+                              : 'hover:bg-surface-muted/40'
                           }`}
                         >
                           <td className="py-4 px-4">
-                            <div className="font-medium text-white">{u.name}</div>
-                            <div className="text-[11px] text-[#94A3B8] font-mono">{u.email}</div>
+                            <div className="font-medium text-foreground">{u.name}</div>
+                            <div className="text-[11px] text-foreground-muted font-mono">{u.email}</div>
                           </td>
-                          <td className="py-4 px-4 font-mono text-[#E2E8F0]">
+                          <td className="py-4 px-4 font-mono text-border">
                             {u.identityDocument}
                           </td>
                           <td className="py-4 px-4">
                             <Badge
                               variant="outline"
-                              className="text-[11px] border-[#1F293D] text-[#00D4AA] font-mono"
+                              className="text-[11px] border-border text-brand font-mono"
                             >
                               {u.role}
                             </Badge>
                           </td>
                           <td className="py-4 px-4">
                             {u.isActive ? (
-                              <span className="inline-flex items-center gap-1.5 text-xs text-[#00D4AA]">
-                                <span className="h-1.5 w-1.5 rounded-full bg-[#00D4AA]" />
+                              <span className="inline-flex items-center gap-1.5 text-xs text-brand">
+                                <span className="h-1.5 w-1.5 rounded-full bg-brand" />
                                 Activo
                               </span>
                             ) : (
@@ -299,42 +299,42 @@ export function UserListPage() {
         {/* Lado Derecho (30%): Ficha Lateral y Acciones ───────────────────── */}
         <section className="lg:col-span-4 space-y-6">
           {selectedUser ? (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-6">
-              <div className="border-b border-[#1F293D] pb-4">
-                <span className="text-[11px] font-mono text-[#64748B] block">
+            <div className="rounded-2xl border border-border bg-surface p-6 space-y-6">
+              <div className="border-b border-border pb-4">
+                <span className="text-[11px] font-mono text-foreground-muted block">
                   EXPEDIENTE DE IDENTIDAD
                 </span>
-                <h3 className="text-lg font-bold text-white mt-1">
+                <h3 className="text-lg font-bold text-foreground mt-1">
                   {selectedUser.name}
                 </h3>
-                <span className="text-xs font-mono text-[#00D4AA]">
+                <span className="text-xs font-mono text-brand">
                   {selectedUser.role}
                 </span>
               </div>
 
               <div className="space-y-3 text-xs">
                 <div>
-                  <label className="text-[#94A3B8] block text-[11px]">Correo Electrónico</label>
-                  <p className="font-mono text-white mt-0.5">{selectedUser.email}</p>
+                  <label className="text-foreground-muted block text-[11px]">Correo Electrónico</label>
+                  <p className="font-mono text-foreground mt-0.5">{selectedUser.email}</p>
                 </div>
 
                 <div>
-                  <label className="text-[#94A3B8] block text-[11px]">Documento de Identidad</label>
-                  <p className="font-mono text-white mt-0.5">{selectedUser.identityDocument}</p>
+                  <label className="text-foreground-muted block text-[11px]">Documento de Identidad</label>
+                  <p className="font-mono text-foreground mt-0.5">{selectedUser.identityDocument}</p>
                 </div>
 
                 <div>
-                  <label className="text-[#94A3B8] block text-[11px]">Identificador Único (UUID)</label>
-                  <p className="font-mono text-[11px] text-[#64748B] break-all mt-0.5">
+                  <label className="text-foreground-muted block text-[11px]">Identificador Único (UUID)</label>
+                  <p className="font-mono text-[11px] text-foreground-muted break-all mt-0.5">
                     {selectedUser.id}
                   </p>
                 </div>
 
                 <div>
-                  <label className="text-[#94A3B8] block text-[11px]">Estado de la Cuenta</label>
+                  <label className="text-foreground-muted block text-[11px]">Estado de la Cuenta</label>
                   <p className="mt-0.5 font-semibold">
                     {selectedUser.isActive ? (
-                      <span className="text-[#00D4AA]">Habilitado para operar</span>
+                      <span className="text-brand">Habilitado para operar</span>
                     ) : (
                       <span className="text-red-400">Acceso bloqueado en plataforma</span>
                     )}
@@ -343,7 +343,7 @@ export function UserListPage() {
               </div>
 
               {/* Botón de Acción Bloquear / Reactivar */}
-              <div className="pt-2 border-t border-[#1F293D]">
+              <div className="pt-2 border-t border-border">
                 {selectedUser.isActive ? (
                   <Button
                     variant="outline"
@@ -359,7 +359,7 @@ export function UserListPage() {
                     variant="outline"
                     onClick={() => handleActivate(selectedUser.id)}
                     disabled={activateMutation.isPending}
-                    className="w-full border-[#00D4AA]/60 text-[#00D4AA] hover:bg-[#00D4AA]/10 text-xs"
+                    className="w-full border-brand/60 text-brand hover:bg-brand/10 text-xs"
                   >
                     <ShieldCheck className="h-4 w-4 mr-2" />
                     {activateMutation.isPending ? 'Reactivando...' : 'Reactivar Acceso'}
@@ -368,7 +368,7 @@ export function UserListPage() {
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-8 text-center text-xs text-[#94A3B8]">
+            <div className="rounded-2xl border border-border bg-surface p-8 text-center text-xs text-foreground-muted">
               Seleccione un usuario de la lista para ver su expediente y gestionar permisos.
             </div>
           )}

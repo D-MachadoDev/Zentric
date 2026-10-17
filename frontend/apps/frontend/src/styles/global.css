@@ -2,105 +2,14 @@
 @source "../";
 
 /* ============================================================================
-   Zentric Marketplace — Estilos Globales, Dual Theme & Modern High-End Commerce
-   Decisiones dictadas por Owner en /grill-me (A1: Modern Commerce, A2: Dual Theme)
+   Zentric Marketplace — Utilidades de composición global
+   ----------------------------------------------------------------------------
+   Design System v2 "Porcelana y Grafito" (ADDENDUM §9):
+   TODOS los tokens de color viven exclusivamente en @zentric/ui theme.css.
+   Este fichero NO declara ni pisa un solo color: solo utilidades de layout
+   construidas sobre los tokens runtime (var(--border), var(--brand)...), de
+   modo que heredan modo claro/oscuro e identidad de rol automáticamente.
    ============================================================================ */
-
-:root {
-  /* --- Modo Claro Profesional (Shopify / Stripe / Mercado Libre) --- */
-  --color-background: #F8FAFC;
-  --color-surface: #FFFFFF;
-  --color-surface-muted: #F1F5F9;
-  --color-border: #E2E8F0;
-  --color-border-subtle: #F1F5F9;
-
-  --color-foreground: #0F172A;
-  --color-foreground-muted: #64748B;
-  --color-foreground-subtle: #94A3B8;
-
-  --color-brand: #4F46E5;
-  --color-brand-strong: #4338CA;
-  --color-warning: #D97706;
-  --color-success: #059669;
-  --color-danger: #DC2626;
-  --color-info: #2563EB;
-
-  --color-primary: #4F46E5;
-  --color-primary-foreground: #FFFFFF;
-  --color-card: #FFFFFF;
-  --color-card-foreground: #0F172A;
-  --color-popover: #FFFFFF;
-  --color-popover-foreground: #0F172A;
-  --color-secondary: #F1F5F9;
-  --color-secondary-foreground: #0F172A;
-  --color-muted: #F1F5F9;
-  --color-muted-foreground: #64748B;
-  --color-accent: #F1F5F9;
-  --color-accent-foreground: #0F172A;
-  --ring: #4F46E5;
-  --color-ring: #4F46E5;
-
-  --background: var(--color-background);
-  --foreground: var(--color-foreground);
-  --card: var(--color-card);
-  --card-foreground: var(--color-card-foreground);
-  --border: var(--color-border);
-  --border-subtle: var(--color-border-subtle);
-  --primary: var(--color-primary);
-  --primary-foreground: var(--color-primary-foreground);
-  --secondary: var(--color-secondary);
-  --secondary-foreground: var(--color-secondary-foreground);
-  --muted: var(--color-muted);
-  --muted-foreground: var(--color-muted-foreground);
-}
-
-.dark {
-  /* --- Modo Oscuro Operativo (Swiss Console / Linear Commerce) --- */
-  --color-background: #0A0F1D;
-  --color-surface: #11192C;
-  --color-surface-muted: #162038;
-  --color-border: #1E2C4A;
-  --color-border-subtle: #162238;
-
-  --color-foreground: #F8FAFC;
-  --color-foreground-muted: #94A3B8;
-  --color-foreground-subtle: #64748B;
-
-  --color-brand: #6366F1;
-  --color-brand-strong: #4F46E5;
-  --color-warning: #FFB800;
-  --color-success: #10B981;
-  --color-danger: #EF4444;
-  --color-info: #3B82F6;
-
-  --color-primary: #6366F1;
-  --color-primary-foreground: #FFFFFF;
-  --color-card: #11192C;
-  --color-card-foreground: #F8FAFC;
-  --color-popover: #11192C;
-  --color-popover-foreground: #F8FAFC;
-  --color-secondary: #162038;
-  --color-secondary-foreground: #F8FAFC;
-  --color-muted: #162038;
-  --color-muted-foreground: #94A3B8;
-  --color-accent: #162038;
-  --color-accent-foreground: #F8FAFC;
-  --ring: #6366F1;
-  --color-ring: #6366F1;
-
-  --background: var(--color-background);
-  --foreground: var(--color-foreground);
-  --card: var(--color-card);
-  --card-foreground: var(--color-card-foreground);
-  --border: var(--color-border);
-  --border-subtle: var(--color-border-subtle);
-  --primary: var(--color-primary);
-  --primary-foreground: var(--color-primary-foreground);
-  --secondary: var(--color-secondary);
-  --secondary-foreground: var(--color-secondary-foreground);
-  --muted: var(--color-muted);
-  --muted-foreground: var(--color-muted-foreground);
-}
 
 html,
 body,
@@ -113,43 +22,42 @@ body,
   flex-direction: column;
 }
 
-/* Retícula arquitectónica suave adaptable a tema */
-.bg-swiss-grid {
-  background-color: var(--color-background);
-  background-image:
-    radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.05), transparent 70%),
-    linear-gradient(to right, rgba(226, 232, 240, 0.6) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(226, 232, 240, 0.6) 1px, transparent 1px);
-  background-size: 100% 100%, 32px 32px, 32px 32px;
-  background-position: center top;
-}
+/* Retícula arquitectónica suave adaptable a tema y acento de rol.
+   Las líneas toman el color del borde y el resplandor focal el acento --brand
+   del scope [data-role], por eso usa color-mix en vez de rgba fijos. */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  margin: 0;
+  }
 
 .dark .bg-swiss-grid {
   background-image:
-    radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08), transparent 70%),
-    linear-gradient(to right, rgba(30, 44, 74, 0.4) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(30, 44, 74, 0.4) 1px, transparent 1px);
+    none;
 }
 
-/* Elevación de tarjeta comercial */
+/* Elevación de tarjeta comercial: hairline + sombra susurrada en claro,
+   hairline + brillo superior interior en oscuro (§9.3 elevación). */
 .surface-hairline {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px 0 color-mix(in srgb, var(--foreground) 5%, transparent),
+    0 1px 2px -1px color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 
 .dark .surface-hairline {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-/* Eyebrow indexical en Geist Mono con marca ✱ en acento de marca */
+/* Eyebrow indexical en Geist Mono con marca ✱ en acento de rol (§9.5) */
 .kicker-spike {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--color-foreground-muted);
+  color: var(--foreground-muted);
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
@@ -157,9 +65,26 @@ body,
 
 .kicker-spike::before {
   content: '✱';
-  color: var(--color-brand);
+  color: var(--brand);
   font-size: 0.8rem;
   line-height: 1;
+}
+
+/* Encabezado de sección lateral: rótulo mono-caps que agrupa la navegación
+   de los shells operativos (Estudio/Sala de Libros, §9.6). */
+.nav-group-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--foreground-subtle);
+  padding-inline: 0.75rem;
+  display: block;
+}
+
+.nav-group-label:first-child {
+  padding-top: 0.25rem;
 }
 
 /* Scrollbars accesibles según tema */
@@ -169,14 +94,14 @@ body,
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-background);
+  background: var(--background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
+  background: var(--border);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-foreground-subtle);
+  background: var(--foreground-subtle);
 }

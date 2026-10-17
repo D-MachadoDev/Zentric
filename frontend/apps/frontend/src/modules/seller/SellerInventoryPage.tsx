@@ -126,10 +126,10 @@ export function SellerInventoryPage() {
   if (isLoadingInventories || isLoadingWarehouses) {
     return (
       <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
-        <Skeleton className="h-8 w-48 bg-[#111827]" />
+        <Skeleton className="h-8 w-48 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-[#111827]" />
-          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-[#111827]" />
+          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-surface" />
         </div>
       </div>
     );
@@ -150,7 +150,7 @@ export function SellerInventoryPage() {
         <Button
           onClick={() => refetchInventories()}
           variant="outline"
-          className="border-[#1F293D] text-white hover:bg-[#1F293D]"
+          className="border-border text-foreground hover:bg-border"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
         </Button>
@@ -161,17 +161,17 @@ export function SellerInventoryPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado de Inventario ─────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Existencias y Abastecimiento
             </h1>
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
               {allInventories.length} Posiciones
             </Badge>
           </div>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             Auditoría de existencias por bodega y carga atómica de stock nuevo para variantes propias.
           </p>
         </div>
@@ -181,7 +181,7 @@ export function SellerInventoryPage() {
           size="sm"
           onClick={() => refetchInventories()}
           disabled={isFetchingInventories}
-          className="border-[#1F293D] text-[#94A3B8] hover:text-white"
+          className="border-border text-foreground-muted hover:text-foreground"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isFetchingInventories ? 'animate-spin' : ''}`} />
           Refrescar
@@ -195,20 +195,20 @@ export function SellerInventoryPage() {
           {/* Controles de Búsqueda y Filtrado */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#64748B]" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
               <Input
                 type="text"
                 placeholder="Buscar por SKU, variante o ubicación..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-[#111827] border-[#1F293D] text-white placeholder:text-[#64748B] focus:border-[#00D4AA]"
+                className="pl-10 bg-surface border-border text-foreground placeholder:text-foreground-muted focus:border-brand"
               />
             </div>
             <select
               value={selectedWarehouseId}
               onChange={(e) => setSelectedWarehouseId(e.target.value)}
               aria-label="Filtrar por bodega"
-              className="bg-[#111827] border border-[#1F293D] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00D4AA]"
+              className="bg-surface border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
             >
               <option value="All">Todas las bodegas</option>
               {allWarehouses.map((w: Warehouse) => (
@@ -232,10 +232,10 @@ export function SellerInventoryPage() {
             />
           ) : (
 
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] overflow-hidden">
+            <div className="rounded-2xl border border-border bg-surface overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-[#E2E8F0] font-sans">
-                  <thead className="bg-[#161F30] text-xs font-semibold text-[#94A3B8] uppercase tracking-wider border-b border-[#1F293D]">
+                <table className="w-full text-left text-sm text-border font-sans">
+                  <thead className="bg-surface-muted text-xs font-semibold text-foreground-muted uppercase tracking-wider border-b border-border">
                     <tr>
                       <th className="py-3 px-4">Variante / SKU</th>
                       <th className="py-3 px-4">Bodega</th>
@@ -245,7 +245,7 @@ export function SellerInventoryPage() {
                       <th className="py-3 px-4 text-right">Dañado</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#1F293D]/60">
+                  <tbody className="divide-y divide-border/60">
                     {filteredInventories.map((inv: Inventory) => {
                       const variantInfo = variantInfoMap.get(inv.variantId);
                       const warehouse = warehouseMap.get(inv.warehouseId);
@@ -253,35 +253,35 @@ export function SellerInventoryPage() {
                       return (
                         <tr
                           key={inv.id}
-                          className="hover:bg-[#161F30]/40 transition-colors"
+                          className="hover:bg-surface-muted/40 transition-colors"
                         >
                           <td className="py-4 px-4">
-                            <div className="font-medium text-white">
+                            <div className="font-medium text-foreground">
                               {variantInfo?.productName ?? 'Variante Registrada'}
                             </div>
-                            <div className="text-xs font-mono text-[#00D4AA]">
+                            <div className="text-xs font-mono text-brand">
                               SKU: {variantInfo?.sku ?? inv.variantId.substring(0, 8)}
                             </div>
-                            <div className="text-[11px] font-mono text-[#64748B]">
+                            <div className="text-[11px] font-mono text-foreground-muted">
                               ID: {inv.variantId}
                             </div>
                           </td>
                           <td className="py-4 px-4">
-                            <div className="font-medium text-[#E2E8F0] flex items-center gap-1.5">
-                              <WarehouseIcon className="h-3.5 w-3.5 text-[#94A3B8]" />
+                            <div className="font-medium text-border flex items-center gap-1.5">
+                              <WarehouseIcon className="h-3.5 w-3.5 text-foreground-muted" />
                               {warehouse?.location ?? 'Bodega Física'}
                             </div>
-                            <div className="text-xs text-[#64748B]">
+                            <div className="text-xs text-foreground-muted">
                               Tipo: {warehouse?.type ?? 'Marketplace'}
                             </div>
                           </td>
-                          <td className="py-4 px-4 text-right font-mono font-semibold text-white tabular-nums">
+                          <td className="py-4 px-4 text-right font-mono font-semibold text-foreground tabular-nums">
                             {inv.availableQuantity}
                           </td>
-                          <td className="py-4 px-4 text-right font-mono text-[#FFB800] tabular-nums">
+                          <td className="py-4 px-4 text-right font-mono text-warning tabular-nums">
                             {inv.reservedQuantity}
                           </td>
-                          <td className="py-4 px-4 text-right font-mono text-[#94A3B8] tabular-nums">
+                          <td className="py-4 px-4 text-right font-mono text-foreground-muted tabular-nums">
                             {inv.usedQuantity}
                           </td>
                           <td className="py-4 px-4 text-right font-mono text-red-400 tabular-nums">
@@ -299,15 +299,15 @@ export function SellerInventoryPage() {
 
         {/* Lado Derecho (35%): Panel de Carga de Stock ────────────────── */}
         <aside className="lg:col-span-4 space-y-6">
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-6">
+          <div className="rounded-2xl border border-border bg-surface p-6 space-y-6">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <PlusCircle className="h-5 w-5 text-[#00D4AA]" />
-                <h2 className="text-lg font-bold text-white font-sans">
+                <PlusCircle className="h-5 w-5 text-brand" />
+                <h2 className="text-lg font-bold text-foreground font-sans">
                   Ingreso de Stock
                 </h2>
               </div>
-              <p className="text-xs text-[#94A3B8]">
+              <p className="text-xs text-foreground-muted">
                 Abastece unidades de una variante en una bodega física de la red.
               </p>
             </div>
@@ -320,22 +320,22 @@ export function SellerInventoryPage() {
             )}
 
             {formSuccess && (
-              <Alert className="border-[#00D4AA]/40 bg-[#00D4AA]/10 text-[#00D4AA]">
-                <CheckCircle2 className="h-4 w-4 text-[#00D4AA]" />
+              <Alert className="border-brand/40 bg-brand/10 text-brand">
+                <CheckCircle2 className="h-4 w-4 text-brand" />
                 <AlertDescription className="text-xs">{formSuccess}</AlertDescription>
               </Alert>
             )}
 
             <form onSubmit={handleAddStock} noValidate className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-[#E2E8F0]">
+                <label className="text-xs font-semibold text-border">
                   Variante a Abastecer
                 </label>
                 <select
                   value={targetVariantId}
                   onChange={(e) => setTargetVariantId(e.target.value)}
                   aria-label="Seleccionar variante de producto"
-                  className="w-full bg-[#161F30] border border-[#1F293D] text-white text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:border-[#00D4AA]"
+                  className="w-full bg-surface-muted border border-border text-foreground text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:border-brand"
                 >
                   <option value="">-- Seleccionar Variante --</option>
                   {allProducts.flatMap((p: Product) =>
@@ -346,7 +346,7 @@ export function SellerInventoryPage() {
                     ))
                   )}
                 </select>
-                <p className="text-[11px] text-[#64748B]">
+                <p className="text-[11px] text-foreground-muted">
                   O ingresa el ID si no aparece en el listado:
                 </p>
                 <Input
@@ -354,19 +354,19 @@ export function SellerInventoryPage() {
                   placeholder="ID de Variante (UUID)"
                   value={targetVariantId}
                   onChange={(e) => setTargetVariantId(e.target.value)}
-                  className="bg-[#161F30] border-[#1F293D] text-white font-mono text-xs placeholder:text-[#64748B] focus:border-[#00D4AA]"
+                  className="bg-surface-muted border-border text-foreground font-mono text-xs placeholder:text-foreground-muted focus:border-brand"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-[#E2E8F0]">
+                <label className="text-xs font-semibold text-border">
                   Bodega de Recepción
                 </label>
                 <select
                   value={targetWarehouseId}
                   onChange={(e) => setTargetWarehouseId(e.target.value)}
                   aria-label="Seleccionar bodega"
-                  className="w-full bg-[#161F30] border border-[#1F293D] text-white text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:border-[#00D4AA]"
+                  className="w-full bg-surface-muted border border-border text-foreground text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:border-brand"
                 >
                   <option value="">-- Seleccionar Bodega --</option>
                   {allWarehouses.map((w: Warehouse) => (
@@ -378,7 +378,7 @@ export function SellerInventoryPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-[#E2E8F0]">
+                <label className="text-xs font-semibold text-border">
                   Cantidad de Unidades
                 </label>
                 <Input
@@ -386,9 +386,9 @@ export function SellerInventoryPage() {
                   min={1}
                   value={stockQuantity}
                   onChange={(e) => setStockQuantity(parseInt(e.target.value, 10) || 0)}
-                  className="bg-[#161F30] border-[#1F293D] text-white font-mono text-sm focus:border-[#00D4AA]"
+                  className="bg-surface-muted border-border text-foreground font-mono text-sm focus:border-brand"
                 />
-                <p className="text-[11px] text-[#64748B]">
+                <p className="text-[11px] text-foreground-muted">
                   Debe ser un entero mayor a cero (INV-01).
                 </p>
               </div>
@@ -396,7 +396,7 @@ export function SellerInventoryPage() {
               <Button
                 type="submit"
                 disabled={addStockMutation.isPending}
-                className="w-full bg-[#00D4AA] text-[#0B0F19] hover:bg-[#00D4AA]/90 font-semibold"
+                className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold"
               >
                 {addStockMutation.isPending ? (
                   <>
@@ -411,11 +411,11 @@ export function SellerInventoryPage() {
             </form>
           </div>
 
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-5 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#94A3B8] font-sans">
+          <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground-muted font-sans">
               Regla de Stock Cero-Negativos
             </h3>
-            <p className="text-xs text-[#94A3B8] leading-relaxed">
+            <p className="text-xs text-foreground-muted leading-relaxed">
               Zentric garantiza existencias consistentes bajo concurrencia extrema. Las existencias
               disponibles ingresadas son reservadas atómicamente por compradores durante el checkout
               de 15 minutos (ADR-0020).

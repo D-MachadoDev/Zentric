@@ -82,10 +82,10 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
   if (isLoading) {
     return (
       <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
-        <Skeleton className="h-10 w-72 bg-[#111827]" />
+        <Skeleton className="h-10 w-72 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-[#111827]" />
-          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-[#111827]" />
+          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-surface" />
         </div>
       </div>
     );
@@ -106,7 +106,7 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
         <Button
           onClick={handleRetry}
           variant="outline"
-          className="border-[#1F293D] text-white hover:bg-[#1F293D]"
+          className="border-border text-foreground hover:bg-border"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
         </Button>
@@ -117,15 +117,15 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
   if (!orderDetail) {
     return (
       <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-12 text-center space-y-3">
-          <ShoppingBag className="h-10 w-10 text-[#64748B] mx-auto" />
-          <h2 className="text-base font-semibold text-white">Expediente de pedido no encontrado</h2>
-          <p className="text-xs text-[#94A3B8]">
+        <div className="rounded-2xl border border-border bg-surface p-12 text-center space-y-3">
+          <ShoppingBag className="h-10 w-10 text-foreground-muted mx-auto" />
+          <h2 className="text-base font-semibold text-foreground">Expediente de pedido no encontrado</h2>
+          <p className="text-xs text-foreground-muted">
             No se encontró información para el identificador solicitado ({resolvedOrderId || 'Sin ID'}).
           </p>
           <Link
             to="/supervisor/orders"
-            className="inline-flex items-center gap-2 text-xs font-mono text-[#00D4AA] hover:underline pt-2"
+            className="inline-flex items-center gap-2 text-xs font-mono text-brand hover:underline pt-2"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Volver al listado de pedidos
@@ -162,27 +162,27 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               to="/supervisor/orders"
-              className="text-xs font-mono text-[#94A3B8] hover:text-white flex items-center gap-1 mr-2"
+              className="text-xs font-mono text-foreground-muted hover:text-foreground flex items-center gap-1 mr-2"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Pedidos
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Expediente 360° de Pedido
             </h1>
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
               #{orderDetail.id.substring(0, 8)}
             </Badge>
-            <Badge variant="outline" className="border-[#1F293D] text-[#FFB800] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-warning font-mono text-xs">
               {orderDetail.status}
             </Badge>
           </div>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             Auditoría cruzada de líneas de compra, despachos particionados por bodega y facturación split.
           </p>
         </div>
@@ -191,7 +191,7 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
           variant="outline"
           size="sm"
           onClick={handleRetry}
-          className="border-[#1F293D] text-[#94A3B8] hover:text-white"
+          className="border-border text-foreground-muted hover:text-foreground"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Sincronizar Expediente
         </Button>
@@ -202,26 +202,26 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
         {/* Lado Izquierdo (65%): Líneas del Pedido y Despachos Logísticos ─ */}
         <section className="lg:col-span-8 space-y-6">
           {/* Bloque 1: Líneas del Pedido */}
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#1F293D] pb-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-white font-sans flex items-center gap-2">
-                <ShoppingBag className="h-4 w-4 text-[#00D4AA]" />
+          <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-foreground font-sans flex items-center gap-2">
+                <ShoppingBag className="h-4 w-4 text-brand" />
                 Líneas de Variantes del Pedido
               </h2>
-              <span className="text-xs font-mono text-[#94A3B8]">
+              <span className="text-xs font-mono text-foreground-muted">
                 {orderDetail.items.length} ítems
               </span>
             </div>
 
             {orderDetail.items.length === 0 ? (
-              <p className="text-xs text-[#94A3B8] py-4 text-center">
+              <p className="text-xs text-foreground-muted py-4 text-center">
                 El pedido no contiene líneas registradas.
               </p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-[#1F293D] text-[#94A3B8] uppercase">
+                    <tr className="border-b border-border text-foreground-muted uppercase">
                       <th className="py-2.5 px-3">Línea ID</th>
                       <th className="py-2.5 px-3">Variante (SKU ID)</th>
                       <th className="py-2.5 px-3 text-right">Cantidad</th>
@@ -229,22 +229,22 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
                       <th className="py-2.5 px-3 text-right">Subtotal</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#1F293D]/40">
+                  <tbody className="divide-y divide-border/40">
                     {orderDetail.items.map((item: OrderItem) => (
-                      <tr key={item.id} className="hover:bg-[#161F30]/40">
-                        <td className="py-3 px-3 font-mono text-[#94A3B8]">
+                      <tr key={item.id} className="hover:bg-surface-muted/40">
+                        <td className="py-3 px-3 font-mono text-foreground-muted">
                           #{item.id.substring(0, 8)}
                         </td>
-                        <td className="py-3 px-3 font-mono text-[#00D4AA]">
+                        <td className="py-3 px-3 font-mono text-brand">
                           {item.variantId}
                         </td>
-                        <td className="py-3 px-3 text-right font-mono text-white tabular-nums">
+                        <td className="py-3 px-3 text-right font-mono text-foreground tabular-nums">
                           {item.quantity}
                         </td>
-                        <td className="py-3 px-3 text-right font-mono text-[#E2E8F0] tabular-nums">
+                        <td className="py-3 px-3 text-right font-mono text-border tabular-nums">
                           ${item.unitPrice.toLocaleString('es-CO')}
                         </td>
-                        <td className="py-3 px-3 text-right font-mono font-bold text-white tabular-nums">
+                        <td className="py-3 px-3 text-right font-mono font-bold text-foreground tabular-nums">
                           ${item.totalPrice.toLocaleString('es-CO')}
                         </td>
                       </tr>
@@ -256,19 +256,19 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
           </div>
 
           {/* Bloque 2: Despachos Particionados por Bodega */}
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#1F293D] pb-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-white font-sans flex items-center gap-2">
-                <PackageCheck className="h-4 w-4 text-[#FFB800]" />
+          <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-foreground font-sans flex items-center gap-2">
+                <PackageCheck className="h-4 w-4 text-warning" />
                 Órdenes de Empaque y Despacho Asociadas
               </h2>
-              <span className="text-xs font-mono text-[#94A3B8]">
+              <span className="text-xs font-mono text-foreground-muted">
                 {orderFulfillments.length} despachos
               </span>
             </div>
 
             {orderFulfillments.length === 0 ? (
-              <p className="text-xs text-[#94A3B8] py-4 text-center">
+              <p className="text-xs text-foreground-muted py-4 text-center">
                 No se han emitido órdenes de despacho para este pedido.
               </p>
             ) : (
@@ -276,20 +276,20 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
                 {orderFulfillments.map((ful: FulfillmentOrder) => (
                   <div
                     key={ful.id}
-                    className="p-4 rounded-xl bg-[#161F30]/60 border border-[#1F293D] space-y-2 text-xs"
+                    className="p-4 rounded-xl bg-surface-muted/60 border border-border space-y-2 text-xs"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-white">
+                      <span className="font-mono font-bold text-foreground">
                         Despacho #{ful.id.substring(0, 8)}
                       </span>
                       <Badge
                         variant="outline"
-                        className="border-[#1F293D] text-[#00D4AA] font-mono text-[11px]"
+                        className="border-border text-brand font-mono text-[11px]"
                       >
                         {ful.status}
                       </Badge>
                     </div>
-                    <div className="flex justify-between font-mono text-[11px] text-[#94A3B8]">
+                    <div className="flex justify-between font-mono text-[11px] text-foreground-muted">
                       <span>Vendedor: #{ful.vendorId.substring(0, 8)}</span>
                       <span>Paquetes: {ful.shipments.length}</span>
                     </div>
@@ -299,14 +299,14 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
                       </div>
                     )}
                     {ful.shipments.length > 0 && (
-                      <div className="pt-2 border-t border-[#1F293D]/60 space-y-1">
+                      <div className="pt-2 border-t border-border/60 space-y-1">
                         {ful.shipments.map((ship) => (
                           <div
                             key={ship.id}
-                            className="flex justify-between font-mono text-[11px] text-[#E2E8F0]"
+                            className="flex justify-between font-mono text-[11px] text-border"
                           >
                             <span>Bodega: #{ship.warehouseId.substring(0, 8)}</span>
-                            <span className="text-[#00D4AA]">Guía: {ship.trackingNumber}</span>
+                            <span className="text-brand">Guía: {ship.trackingNumber}</span>
                           </div>
                         ))}
                       </div>
@@ -320,32 +320,32 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
 
         {/* Lado Derecho (35%): Auditoría del Split Tributario ───────────── */}
         <section className="lg:col-span-4 space-y-6">
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-5">
-            <div className="border-b border-[#1F293D] pb-4">
-              <span className="text-[11px] font-mono text-[#64748B] block uppercase">
+          <div className="rounded-2xl border border-border bg-surface p-6 space-y-5">
+            <div className="border-b border-border pb-4">
+              <span className="text-[11px] font-mono text-foreground-muted block uppercase">
                 Conciliación Financiera
               </span>
-              <h3 className="text-base font-bold text-white mt-1 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-[#00D4AA]" />
+              <h3 className="text-base font-bold text-foreground mt-1 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-brand" />
                 Split Tributario (3 Comprobantes)
               </h3>
             </div>
 
             <div className="space-y-2 text-xs font-mono">
               <div className="flex justify-between">
-                <span className="text-[#94A3B8] font-sans">Ref. Comprador:</span>
-                <span className="text-white">{buyerId ?? 'Protegido'}</span>
+                <span className="text-foreground-muted font-sans">Ref. Comprador:</span>
+                <span className="text-foreground">{buyerId ?? 'Protegido'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#94A3B8] font-sans">Total Pedido:</span>
-                <span className="text-white font-bold tabular-nums">
+                <span className="text-foreground-muted font-sans">Total Pedido:</span>
+                <span className="text-foreground font-bold tabular-nums">
                   ${totalAmount.toLocaleString('es-CO')} {orderDetail.currency}
                 </span>
               </div>
             </div>
 
             {orderInvoices.length === 0 ? (
-              <div className="p-4 rounded-xl bg-[#161F30] border border-[#1F293D] text-xs text-[#94A3B8] text-center">
+              <div className="p-4 rounded-xl bg-surface-muted border border-border text-xs text-foreground-muted text-center">
                 Aún no se han emitido comprobantes tributarios para este pedido.
               </div>
             ) : (
@@ -353,15 +353,15 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
                 {orderInvoices.map((inv: Invoice) => (
                   <div
                     key={inv.id}
-                    className="p-3.5 rounded-xl bg-[#161F30] border border-[#1F293D] space-y-1.5 text-xs font-mono"
+                    className="p-3.5 rounded-xl bg-surface-muted border border-border space-y-1.5 text-xs font-mono"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-white font-semibold">
+                      <span className="text-foreground font-semibold">
                         #{inv.id.substring(0, 8)}
                       </span>
                       <Badge
                         variant="outline"
-                        className="border-[#1F293D] text-[#00D4AA] text-[10px]"
+                        className="border-border text-brand text-[10px]"
                       >
                         {inv.type === InvoiceType.Master
                           ? 'Factura Maestra'
@@ -370,24 +370,24 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
                             : 'Liquidación Vendedor (95%)'}
                       </Badge>
                     </div>
-                    <div className="flex justify-between text-[11px] text-[#94A3B8]">
+                    <div className="flex justify-between text-[11px] text-foreground-muted">
                       <span>{inv.vendorId ? `Vend: #${inv.vendorId.substring(0, 8)}` : 'Plataforma'}</span>
-                      <span className="text-white font-bold tabular-nums">
+                      <span className="text-foreground font-bold tabular-nums">
                         ${inv.totalAmount.toLocaleString('es-CO')} {inv.currency}
                       </span>
                     </div>
                   </div>
                 ))}
 
-                <div className="p-3 rounded-xl bg-[#00D4AA]/10 border border-[#00D4AA]/30 text-[11px] font-mono space-y-1">
-                  <div className="flex items-center justify-between text-[#00D4AA] font-bold">
+                <div className="p-3 rounded-xl bg-brand/10 border border-brand/30 text-[11px] font-mono space-y-1">
+                  <div className="flex items-center justify-between text-brand font-bold">
                     <span className="flex items-center gap-1">
                       <Layers className="h-3.5 w-3.5" />
                       Invariante Contable:
                     </span>
                     <span>{isSplitBalanced ? 'Verificada (100%)' : 'En Revisión'}</span>
                   </div>
-                  <div className="text-[#94A3B8] tabular-nums">
+                  <div className="text-foreground-muted tabular-nums">
                     Maestra (${masterTotal.toLocaleString('es-CO')}) = Comisión ($
                     {commissionTotal.toLocaleString('es-CO')}) + Vendedores ($
                     {vendorNetTotal.toLocaleString('es-CO')})
@@ -397,12 +397,12 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
             )}
           </div>
 
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-5 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#00D4AA]">
+          <div className="rounded-2xl border border-border bg-surface p-5 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-semibold text-brand">
               <ShieldCheck className="h-4 w-4" />
               <span>Expediente 360° en Modo Sólo Lectura</span>
             </div>
-            <p className="text-[11px] text-[#94A3B8] leading-relaxed">
+            <p className="text-[11px] text-foreground-muted leading-relaxed">
               Esta vista consolida la trazabilidad de extremo a extremo del pedido sin habilitar botones de facturación, anulación ni alteración logística.
             </p>
           </div>

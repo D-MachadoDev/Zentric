@@ -14,18 +14,21 @@ const buyerNavItems = [
 ];
 
 /**
- * Shell para el módulo del Comprador (C4-4-Codigo-React.md §2: BuyerShell).
- * Exige rol Buyer o Administrator en beforeLoad.
- * Aplica navegación horizontal superior tipo portal de compras de alta fidelidad.
+ * Shell del Comprador — "Portal Comercial" (Frontend-Design-System §9.6).
+ * Exige rol Buyer o Administrator en beforeLoad (C4-4 §2: BuyerShell).
+ *
+ * Estructura diferenciada: navegación horizontal superior tipo marketplace
+ * (sin barra lateral), lienzo comercial ancho y aireado (max-w-7xl), barra de
+ * pestañas inferior en móvil y pie comercial. Acento jade de marca.
  */
 export function BuyerLayout({ children }: BuyerLayoutProps) {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div data-role="buyer" className="flex min-h-screen flex-col bg-background text-foreground">
       <LayoutHeader title="Portal de Compras">
-        <nav aria-label="Navegación del comprador" className="hidden items-center gap-1 sm:flex ml-6">
+        <nav aria-label="Navegación del comprador" className="ml-6 hidden items-center gap-1 sm:flex">
           {buyerNavItems.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -35,9 +38,10 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
               <Link
                 key={item.href}
                 to={item.href as never}
+                aria-current={isActive ? 'page' : undefined}
                 className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-brand/10 text-brand font-semibold'
+                    ? 'bg-brand/10 font-semibold text-brand'
                     : 'text-foreground-muted hover:bg-surface-muted hover:text-foreground'
                 }`}
               >
@@ -63,8 +67,9 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
             <Link
               key={item.href}
               to={item.href as never}
+              aria-current={isActive ? 'page' : undefined}
               className={`flex flex-col items-center gap-1 py-1 text-xs font-medium ${
-                isActive ? 'text-brand font-semibold' : 'text-foreground-muted'
+                isActive ? 'font-semibold text-brand' : 'text-foreground-muted'
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -74,15 +79,16 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
         })}
       </nav>
 
-      <main className="flex-1 bg-swiss-grid p-4 sm:p-6 lg:p-8">
+      {/* Lienzo comercial aireado: el comprador necesita respiro, no densidad. */}
+      <main className="flex-1 bg-swiss-grid p-4 sm:p-6 lg:p-10">
         <div className="mx-auto max-w-7xl">{children}</div>
       </main>
 
       {/* ── Footer Comercial Zentric Marketplace ── */}
-      <footer className="border-t border-border bg-surface/90 py-8 px-4 sm:px-6 lg:px-8 text-xs text-foreground-muted">
-        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-border bg-surface/90 px-4 py-8 text-xs text-foreground-muted sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-foreground tracking-tight font-sans text-sm">Zentric Marketplace</span>
+            <span className="text-sm font-bold tracking-tight text-foreground font-sans">Zentric Marketplace</span>
             <span>·</span>
             <span>Comercio Transaccional con Reserva Atómica</span>
           </div>
@@ -99,4 +105,3 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
     </div>
   );
 }
-

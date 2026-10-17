@@ -13,11 +13,12 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 const THEME_STORAGE_KEY = 'zentric.theme';
 
 /**
- * Proveedor de tema dual para Zentric Marketplace (Decisión A2 en /grill-me).
+ * Proveedor de tema dual para Zentric Marketplace (ADDENDUM §9 "Porcelana y
+ * Grafito": tokens runtime en ui/theme.css; este provider solo conmuta .dark).
  *
  * Soporta:
- * - Modo Claro profesional (Stripe / Shopify / Mercado Libre) por defecto.
- * - Modo Oscuro operativo (Swiss Console / Linear).
+ * - Modo Claro "Estudio Porcelana" (comercio grado Stripe/Shopify) por defecto.
+ * - Modo Oscuro "Bóveda Grafito" (consola operativa, sesiones largas).
  * - Persistencia de preferencia visual en localStorage.
  * - Sincronización inmediata con la clase `.dark` en document.documentElement.
  */

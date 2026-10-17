@@ -117,19 +117,19 @@ export function CreateProductPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado y Retorno ────────────────────────────────────────── */}
-      <div className="flex items-center justify-between pb-6 border-b border-[#1F293D]">
+      <div className="flex items-center justify-between pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Link to="/seller/products">
-              <Button variant="outline" size="sm" className="border-[#1F293D] text-[#94A3B8] hover:text-white mr-2">
+              <Button variant="outline" size="sm" className="border-border text-foreground-muted hover:text-foreground mr-2">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Dar de Alta Nuevo Producto
             </h1>
           </div>
-          <p className="text-sm font-mono text-[#94A3B8]">
+          <p className="text-sm font-mono text-foreground-muted">
             Definición de catálogo comercial e inicialización de variantes SKU para inventario.
           </p>
         </div>
@@ -147,10 +147,10 @@ export function CreateProductPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Lado Izquierdo: Formulario de Creación (60% -> col-span-7) */}
         <div className="lg:col-span-7">
-          <form onSubmit={handleSubmit} className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 sm:p-8 space-y-6 shadow-xl">
+          <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-surface p-6 sm:p-8 space-y-6 shadow-xl">
             {/* Tipo de Producto */}
             <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-[#94A3B8] block">
+              <label className="text-xs font-mono uppercase text-foreground-muted block">
                 Tipo de Catálogo
               </label>
               <div className="grid grid-cols-2 gap-4">
@@ -158,14 +158,14 @@ export function CreateProductPage() {
                   onClick={() => setType(ProductType.Physical)}
                   className={`cursor-pointer rounded-xl border p-4 flex items-center gap-3 transition-all ${
                     type === ProductType.Physical
-                      ? 'border-[#00D4AA] bg-[#00D4AA]/10 text-white'
-                      : 'border-[#1F293D] bg-[#161F30]/50 text-[#94A3B8]'
+                      ? 'border-brand bg-brand/10 text-foreground'
+                      : 'border-border bg-surface-muted/50 text-foreground-muted'
                   }`}
                 >
-                  <Package className="h-5 w-5 text-[#00D4AA]" />
+                  <Package className="h-5 w-5 text-brand" />
                   <div>
                     <span className="text-sm font-mono font-bold block">Físico</span>
-                    <span className="text-[11px] text-[#64748B]">Requiere SKU y bodega</span>
+                    <span className="text-[11px] text-foreground-muted">Requiere SKU y bodega</span>
                   </div>
                 </div>
 
@@ -173,14 +173,14 @@ export function CreateProductPage() {
                   onClick={() => setType(ProductType.Digital)}
                   className={`cursor-pointer rounded-xl border p-4 flex items-center gap-3 transition-all ${
                     type === ProductType.Digital
-                      ? 'border-blue-500 bg-blue-500/10 text-white'
-                      : 'border-[#1F293D] bg-[#161F30]/50 text-[#94A3B8]'
+                      ? 'border-blue-500 bg-blue-500/10 text-foreground'
+                      : 'border-border bg-surface-muted/50 text-foreground-muted'
                   }`}
                 >
                   <FileCode className="h-5 w-5 text-blue-400" />
                   <div>
                     <span className="text-sm font-mono font-bold block">Digital</span>
-                    <span className="text-[11px] text-[#64748B]">Entrega electrónica</span>
+                    <span className="text-[11px] text-foreground-muted">Entrega electrónica</span>
                   </div>
                 </div>
               </div>
@@ -188,19 +188,19 @@ export function CreateProductPage() {
 
             {/* Datos Maestros */}
             <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-[#94A3B8] block">
+              <label className="text-xs font-mono uppercase text-foreground-muted block">
                 Nombre del Producto
               </label>
               <Input
                 placeholder="Ej. Monitor Curvo UltraWide 34''"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="bg-[#161F30] border-[#1F293D] text-white"
+                className="bg-surface-muted border-border text-foreground"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-[#94A3B8] block">
+              <label className="text-xs font-mono uppercase text-foreground-muted block">
                 Descripción
               </label>
               <textarea
@@ -208,12 +208,12 @@ export function CreateProductPage() {
                 placeholder="Especificaciones técnicas y detalles del fabricante..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-lg border border-[#1F293D] bg-[#161F30] p-3 text-sm text-white placeholder-[#64748B] focus:border-[#00D4AA] focus:outline-none"
+                className="w-full rounded-lg border border-border bg-surface-muted p-3 text-sm text-foreground placeholder-foreground-muted focus:border-brand focus:outline-none"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-[#94A3B8] block">
+              <label className="text-xs font-mono uppercase text-foreground-muted block">
                 URL de Imagen Fotográfica del Producto (Opcional)
               </label>
               <Input
@@ -221,25 +221,25 @@ export function CreateProductPage() {
                 placeholder="https://images.unsplash.com/photo-..."
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
-                className="bg-[#161F30] border-[#1F293D] font-mono text-white text-xs"
+                className="bg-surface-muted border-border font-mono text-foreground text-xs"
               />
               {imageUrl.trim() && (
-                <div className="mt-2 flex items-center gap-3 rounded-lg border border-[#1F293D] bg-[#111827] p-2">
+                <div className="mt-2 flex items-center gap-3 rounded-lg border border-border bg-surface p-2">
                   <img
                     src={imageUrl.trim()}
                     alt="Vista previa"
-                    className="h-12 w-12 rounded object-cover border border-[#1F293D]"
+                    className="h-12 w-12 rounded object-cover border border-border"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).style.display = 'none';
                     }}
                   />
-                  <span className="text-xs font-mono text-[#00D4AA]">Vista previa de fotografía cargada</span>
+                  <span className="text-xs font-mono text-brand">Vista previa de fotografía cargada</span>
                 </div>
               )}
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-[#94A3B8] block">
+              <label className="text-xs font-mono uppercase text-foreground-muted block">
                 Precio Base (COP)
               </label>
               <Input
@@ -248,18 +248,18 @@ export function CreateProductPage() {
                 placeholder="0.00"
                 value={priceAmount || ''}
                 onChange={(e) => setPriceAmount(Number(e.target.value))}
-                className="bg-[#161F30] border-[#1F293D] font-mono text-white"
+                className="bg-surface-muted border-border font-mono text-foreground"
               />
             </div>
 
             {/* Constructor de Variantes */}
-            <div className="space-y-4 pt-4 border-t border-[#1F293D]">
+            <div className="space-y-4 pt-4 border-t border-border">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xs uppercase font-mono tracking-wider text-[#94A3B8]">
+                  <h3 className="text-xs uppercase font-mono tracking-wider text-foreground-muted">
                     Variantes del Producto (SKU)
                   </h3>
-                  <p className="text-[11px] text-[#64748B]">
+                  <p className="text-[11px] text-foreground-muted">
                     {type === ProductType.Physical
                       ? 'Obligatorio definir al menos un SKU para abastecer existencias.'
                       : 'Opcional para productos digitales sin partición física.'}
@@ -271,7 +271,7 @@ export function CreateProductPage() {
                   size="sm"
                   variant="outline"
                   onClick={handleAddVariant}
-                  className="border-[#1F293D] text-[#00D4AA] hover:bg-[#161F30] text-xs font-mono"
+                  className="border-border text-brand hover:bg-surface-muted text-xs font-mono"
                 >
                   <Plus className="h-3.5 w-3.5 mr-1" /> Añadir Variante
                 </Button>
@@ -279,9 +279,9 @@ export function CreateProductPage() {
 
               <div className="space-y-3">
                 {variants.map((variant, index) => (
-                  <div key={index} className="p-4 rounded-xl border border-[#1F293D] bg-[#161F30]/50 space-y-3">
+                  <div key={index} className="p-4 rounded-xl border border-border bg-surface-muted/50 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono font-bold text-white">
+                      <span className="text-xs font-mono font-bold text-foreground">
                         Variante #{index + 1}
                       </span>
                       {variants.length > 1 && (
@@ -299,36 +299,36 @@ export function CreateProductPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
-                        <label className="text-[10px] font-mono uppercase text-[#64748B] block mb-1">
+                        <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
                           Código SKU
                         </label>
                         <Input
                           placeholder="SKU-REF-01"
                           value={variant.sku}
                           onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
-                          className="bg-[#111827] border-[#1F293D] font-mono text-xs text-white"
+                          className="bg-surface border-border font-mono text-xs text-foreground"
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] font-mono uppercase text-[#64748B] block mb-1">
+                        <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
                           Atributo (ej. Color)
                         </label>
                         <Input
                           placeholder="Nombre"
                           value={variant.attrName}
                           onChange={(e) => handleVariantChange(index, 'attrName', e.target.value)}
-                          className="bg-[#111827] border-[#1F293D] text-xs text-white"
+                          className="bg-surface border-border text-xs text-foreground"
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] font-mono uppercase text-[#64748B] block mb-1">
+                        <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
                           Valor (ej. Azul)
                         </label>
                         <Input
                           placeholder="Valor"
                           value={variant.attrValue}
                           onChange={(e) => handleVariantChange(index, 'attrValue', e.target.value)}
-                          className="bg-[#111827] border-[#1F293D] text-xs text-white"
+                          className="bg-surface border-border text-xs text-foreground"
                         />
                       </div>
                     </div>
@@ -340,7 +340,7 @@ export function CreateProductPage() {
             <Button
               type="submit"
               disabled={createProductMutation.isPending}
-              className="w-full h-12 bg-[#00D4AA] hover:bg-[#00D4AA]/90 text-[#0B0F19] font-bold text-sm shadow-lg shadow-[#00D4AA]/20 disabled:opacity-50"
+              className="w-full h-12 bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-sm shadow-lg shadow-brand/20 disabled:opacity-50"
             >
               {createProductMutation.isPending ? (
                 <span className="flex items-center gap-2">
@@ -360,31 +360,31 @@ export function CreateProductPage() {
         {/* Lado Derecho: Estado de Éxito o Vista Previa (40% -> col-span-5) */}
         <div className="lg:col-span-5 space-y-6">
           {createdResult ? (
-            <div className="rounded-2xl border border-[#00D4AA]/40 bg-[#111827] p-6 sm:p-8 space-y-6 shadow-2xl animate-fade-in">
+            <div className="rounded-2xl border border-brand/40 bg-surface p-6 sm:p-8 space-y-6 shadow-2xl animate-fade-in">
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="h-8 w-8 text-[#00D4AA]" />
+                <CheckCircle2 className="h-8 w-8 text-brand" />
                 <div>
-                  <h2 className="text-lg font-bold text-white font-sans">
+                  <h2 className="text-lg font-bold text-foreground font-sans">
                     ¡Producto Registrado con Éxito!
                   </h2>
-                  <p className="text-xs font-mono text-[#00D4AA]">
+                  <p className="text-xs font-mono text-brand">
                     Publicado en catálogo comercial
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-3 font-mono text-xs border-t border-[#1F293D] pt-4">
+              <div className="space-y-3 font-mono text-xs border-t border-border pt-4">
                 <div>
-                  <span className="text-[#64748B] block">ID de Producto:</span>
-                  <span className="text-white font-bold">{createdResult.productId}</span>
+                  <span className="text-foreground-muted block">ID de Producto:</span>
+                  <span className="text-foreground font-bold">{createdResult.productId}</span>
                 </div>
                 <div>
-                  <span className="text-[#64748B] block">
+                  <span className="text-foreground-muted block">
                     Variantes creadas ({createdResult.variantIds.length}):
                   </span>
                   <div className="space-y-1 mt-1">
                     {createdResult.variantIds.map((varId, idx) => (
-                      <div key={varId} className="bg-[#161F30] p-2 rounded border border-[#1F293D] text-[#00D4AA]">
+                      <div key={varId} className="bg-surface-muted p-2 rounded border border-border text-brand">
                         Variante #{idx + 1}: {varId}
                       </div>
                     ))}
@@ -392,13 +392,13 @@ export function CreateProductPage() {
                 </div>
               </div>
 
-              <div className="border-t border-[#1F293D] pt-4 space-y-3">
-                <p className="text-xs text-[#94A3B8]">
+              <div className="border-t border-border pt-4 space-y-3">
+                <p className="text-xs text-foreground-muted">
                   Las variantes físicas se crean inicialmente sin existencias (`canBeSold = false`). Continúe al módulo de inventario para cargar el stock inicial en bodega.
                 </p>
 
                 <Link to="/seller/inventory">
-                  <Button className="w-full bg-[#00D4AA] text-[#0B0F19] font-bold">
+                  <Button className="w-full bg-brand text-primary-foreground font-bold">
                     <Boxes className="h-4 w-4 mr-2" />
                     Cargar Stock Inicial en Bodega
                   </Button>
@@ -406,18 +406,18 @@ export function CreateProductPage() {
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-4 shadow-xl">
-              <h2 className="text-sm uppercase font-mono tracking-wider text-[#94A3B8]">
+            <div className="rounded-2xl border border-border bg-surface p-6 space-y-4 shadow-xl">
+              <h2 className="text-sm uppercase font-mono tracking-wider text-foreground-muted">
                 Vista Previa del Catálogo
               </h2>
-              <div className="rounded-xl border border-[#1F293D] bg-[#161F30]/40 p-5 space-y-3">
-                <span className="text-xs font-mono text-[#00D4AA] font-bold">
+              <div className="rounded-xl border border-border bg-surface-muted/40 p-5 space-y-3">
+                <span className="text-xs font-mono text-brand font-bold">
                   {name || 'Nombre del Producto'}
                 </span>
-                <p className="text-xs text-[#94A3B8]">
+                <p className="text-xs text-foreground-muted">
                   {description || 'Aquí aparecerá la descripción técnica...'}
                 </p>
-                <div className="text-lg font-bold font-mono text-white tabular-nums pt-2 border-t border-[#1F293D]">
+                <div className="text-lg font-bold font-mono text-foreground tabular-nums pt-2 border-t border-border">
                   ${priceAmount.toLocaleString('es-CO', { minimumFractionDigits: 2 })} COP
                 </div>
               </div>

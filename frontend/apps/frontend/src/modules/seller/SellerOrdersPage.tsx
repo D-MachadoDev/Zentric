@@ -93,10 +93,10 @@ export function SellerOrdersPage() {
   if (isLoadingOrders) {
     return (
       <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
-        <Skeleton className="h-8 w-48 bg-[#111827]" />
+        <Skeleton className="h-8 w-48 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-[#111827]" />
-          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-[#111827]" />
+          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-surface" />
         </div>
       </div>
     );
@@ -117,7 +117,7 @@ export function SellerOrdersPage() {
         <Button
           onClick={() => refetchOrders()}
           variant="outline"
-          className="border-[#1F293D] text-white hover:bg-[#1F293D]"
+          className="border-border text-foreground hover:bg-border"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
         </Button>
@@ -136,17 +136,17 @@ export function SellerOrdersPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado de Pedidos ───────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Pedidos Recibidos
             </h1>
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
               {allOrders.length} Totales
             </Badge>
           </div>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             Líneas vendidas, liquidación subtotal y estado de orden de compra (ADR-0013).
           </p>
         </div>
@@ -156,7 +156,7 @@ export function SellerOrdersPage() {
           size="sm"
           onClick={() => refetchOrders()}
           disabled={isFetchingOrders}
-          className="border-[#1F293D] text-[#94A3B8] hover:text-white"
+          className="border-border text-foreground-muted hover:text-foreground"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isFetchingOrders ? 'animate-spin' : ''}`} />
           Refrescar
@@ -170,20 +170,20 @@ export function SellerOrdersPage() {
           {/* Filtros */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#64748B]" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
               <Input
                 type="text"
                 placeholder="Buscar por ID de pedido..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-[#111827] border-[#1F293D] text-white placeholder:text-[#64748B] focus:border-[#00D4AA]"
+                className="pl-10 bg-surface border-border text-foreground placeholder:text-foreground-muted focus:border-brand"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'All' | OrderStatus)}
               aria-label="Filtrar por estado del pedido"
-              className="bg-[#111827] border border-[#1F293D] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00D4AA]"
+              className="bg-surface border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
             >
               <option value="All">Todos los estados</option>
               {Object.values(OrderStatus).map((status) => (
@@ -216,21 +216,21 @@ export function SellerOrdersPage() {
                     onClick={() => setSelectedOrderId(order.id)}
                     className={`rounded-2xl border p-5 cursor-pointer transition-all ${
                       isSelected
-                        ? 'border-[#00D4AA] bg-[#161F30] shadow-lg shadow-[#00D4AA]/5'
-                        : 'border-[#1F293D] bg-[#111827] hover:border-[#1F293D]/80 hover:bg-[#161F30]/40'
+                        ? 'border-brand bg-surface-muted shadow-lg shadow-brand/5'
+                        : 'border-border bg-surface hover:border-border/80 hover:bg-surface-muted/40'
                     }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm font-bold text-white">
+                          <span className="font-mono text-sm font-bold text-foreground">
                             #{order.id.substring(0, 8)}
                           </span>
                           <StatusBadge tone={TONOS_DE_ESTADO_DE_PEDIDO[order.status]}>
                             {NOMBRES_DE_ESTADO_DE_PEDIDO[order.status]}
                           </StatusBadge>
                         </div>
-                        <div className="text-xs text-[#94A3B8] flex items-center gap-2">
+                        <div className="text-xs text-foreground-muted flex items-center gap-2">
                           <span>{new Date(order.createdAt).toLocaleString()}</span>
                           <span>•</span>
                           <span>{order.itemCount ?? (order.items ?? []).length} ítems</span>
@@ -239,12 +239,12 @@ export function SellerOrdersPage() {
 
                       <div className="flex items-center justify-between sm:justify-end gap-4">
                         <div className="text-right">
-                          <div className="text-xs text-[#64748B]">Monto Total</div>
-                          <div className="text-sm font-mono font-semibold text-[#00D4AA]">
+                          <div className="text-xs text-foreground-muted">Monto Total</div>
+                          <div className="text-sm font-mono font-semibold text-brand">
                             <MoneyAmount amount={order.totalAmount} currency={order.currency} />
                           </div>
                         </div>
-                        <ChevronRight className={`h-5 w-5 ${isSelected ? 'text-[#00D4AA]' : 'text-[#64748B]'}`} />
+                        <ChevronRight className={`h-5 w-5 ${isSelected ? 'text-brand' : 'text-foreground-muted'}`} />
                       </div>
                     </div>
                   </div>
@@ -257,38 +257,38 @@ export function SellerOrdersPage() {
         {/* Lado Derecho (35%): Ficha SellerOrderView (ADR-0013) ──────── */}
         <aside className="lg:col-span-4 space-y-6">
           {isLoadingDetail ? (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-4">
-              <Skeleton className="h-6 w-32 bg-[#161F30]" />
-              <Skeleton className="h-24 rounded-lg bg-[#161F30]" />
-              <Skeleton className="h-40 rounded-lg bg-[#161F30]" />
+            <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
+              <Skeleton className="h-6 w-32 bg-surface-muted" />
+              <Skeleton className="h-24 rounded-lg bg-surface-muted" />
+              <Skeleton className="h-40 rounded-lg bg-surface-muted" />
             </div>
           ) : activeOrder ? (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-6">
-              <div className="space-y-1 pb-4 border-b border-[#1F293D]">
+            <div className="rounded-2xl border border-border bg-surface p-6 space-y-6">
+              <div className="space-y-1 pb-4 border-b border-border">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-base font-bold text-white font-sans">
+                  <h2 className="text-base font-bold text-foreground font-sans">
                     Detalle de Liquidación
                   </h2>
                   <StatusBadge tone={TONOS_DE_ESTADO_DE_PEDIDO[activeOrder.status]}>
                     {NOMBRES_DE_ESTADO_DE_PEDIDO[activeOrder.status]}
                   </StatusBadge>
                 </div>
-                <p className="font-mono text-xs text-[#00D4AA] truncate">
+                <p className="font-mono text-xs text-brand truncate">
                   ID: {activeOrder.id}
                 </p>
-                <p className="text-[11px] text-[#64748B]">
+                <p className="text-[11px] text-foreground-muted">
                   Creado: {new Date(activeOrder.createdAt).toLocaleString()}
                 </p>
               </div>
 
               {/* Líneas Propias Vendidas */}
               <div className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
                   Líneas de tu Catálogo
                 </h3>
 
                 {(!activeOrder.items || activeOrder.items.length === 0) ? (
-                  <p className="text-xs text-[#64748B] italic">
+                  <p className="text-xs text-foreground-muted italic">
                     Sin líneas de variantes especificadas.
                   </p>
                 ) : (
@@ -299,17 +299,17 @@ export function SellerOrdersPage() {
                       return (
                         <div
                           key={item.id ?? item.variantId}
-                          className="rounded-xl border border-[#1F293D] bg-[#161F30]/60 p-3 space-y-1"
+                          className="rounded-xl border border-border bg-surface-muted/60 p-3 space-y-1"
                         >
                           <div className="flex justify-between items-start gap-2">
-                            <span className="text-xs font-medium text-white">
+                            <span className="text-xs font-medium text-foreground">
                               {info?.name ?? 'Variante en Pedido'}
                             </span>
-                            <span className="text-xs font-mono font-semibold text-[#00D4AA]">
+                            <span className="text-xs font-mono font-semibold text-brand">
                               <MoneyAmount amount={item.totalPrice} currency={activeOrder.currency} />
                             </span>
                           </div>
-                          <div className="flex justify-between text-[11px] text-[#94A3B8] font-mono">
+                          <div className="flex justify-between text-[11px] text-foreground-muted font-mono">
                             <span>SKU: {info?.sku ?? item.variantId.substring(0, 8)}</span>
                             <span>
                               {item.quantity} × <MoneyAmount amount={item.unitPrice} currency={activeOrder.currency} />
@@ -323,31 +323,31 @@ export function SellerOrdersPage() {
               </div>
 
               {/* Subtotal Liquidable del Vendedor */}
-              <div className="rounded-xl border border-[#1F293D] bg-[#161F30] p-4 space-y-2">
+              <div className="rounded-xl border border-border bg-surface-muted p-4 space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-medium text-[#94A3B8]">
+                  <span className="text-xs font-medium text-foreground-muted">
                     Subtotal Vendedor
                   </span>
-                  <span className="text-base font-mono font-bold text-white">
+                  <span className="text-base font-mono font-bold text-foreground">
                     <MoneyAmount amount={vendorSubtotal} currency={activeOrder.currency} />
                   </span>
                 </div>
-                <p className="text-[11px] text-[#64748B]">
+                <p className="text-[11px] text-foreground-muted">
                   Monto bruto atribuido a tus productos antes de comisiones de plataforma.
                 </p>
               </div>
 
               {/* Cumplimiento ADR-0013 */}
-              <div className="flex items-start gap-2.5 rounded-xl border border-[#1F293D] bg-[#161F30]/30 p-3.5">
-                <ShieldCheck className="h-4 w-4 text-[#00D4AA] shrink-0 mt-0.5" />
-                <p className="text-[11px] text-[#94A3B8] leading-relaxed">
+              <div className="flex items-start gap-2.5 rounded-xl border border-border bg-surface-muted/30 p-3.5">
+                <ShieldCheck className="h-4 w-4 text-brand shrink-0 mt-0.5" />
+                <p className="text-[11px] text-foreground-muted leading-relaxed">
                   <strong>ADR-0013 (Aislamiento de Recursos):</strong> Los datos del comprador (PII)
                   y los importes de otros comercios participantes están protegidos por el servidor.
                 </p>
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-8 text-center text-sm text-[#64748B]">
+            <div className="rounded-2xl border border-border bg-surface p-8 text-center text-sm text-foreground-muted">
               Selecciona un pedido para inspeccionar su liquidación.
             </div>
           )}

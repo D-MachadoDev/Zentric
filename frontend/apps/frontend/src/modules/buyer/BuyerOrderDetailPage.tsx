@@ -58,10 +58,10 @@ export function BuyerOrderDetailPage() {
   if (isLoadingOrder) {
     return (
       <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
-        <Skeleton className="h-8 w-48 bg-[#111827]" />
+        <Skeleton className="h-8 w-48 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-[#111827]" />
-          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-[#111827]" />
+          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-surface" />
         </div>
       </div>
     );
@@ -71,7 +71,7 @@ export function BuyerOrderDetailPage() {
     return (
       <div className="p-6 sm:p-10 max-w-4xl mx-auto w-full space-y-4">
         <Link to="/buyer/orders">
-          <Button variant="outline" size="sm" className="border-[#1F293D] text-[#94A3B8]">
+          <Button variant="outline" size="sm" className="border-border text-foreground-muted">
             <ArrowLeft className="h-4 w-4 mr-1.5" /> Volver a Mis Pedidos
           </Button>
         </Link>
@@ -94,29 +94,29 @@ export function BuyerOrderDetailPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Navegación y Encabezado ────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Link to="/buyer/orders">
-              <Button variant="outline" size="sm" className="border-[#1F293D] text-[#94A3B8] hover:text-white mr-2">
+              <Button variant="outline" size="sm" className="border-border text-foreground-muted hover:text-foreground mr-2">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Pedido #{order.id.slice(0, 8)}
             </h1>
             <StatusBadge tone={TONOS_DE_ESTADO_DE_PEDIDO[order.status]}>
               {NOMBRES_DE_ESTADO_DE_PEDIDO[order.status]}
             </StatusBadge>
           </div>
-          <p className="text-sm font-mono text-[#94A3B8]">
+          <p className="text-sm font-mono text-foreground-muted">
             Creado el {new Date(order.createdAt).toLocaleString('es-CO')} • ID Completo: {order.id}
           </p>
         </div>
 
         {isPendingPayment && (
           <Link to="/buyer/orders/$orderId/pay" params={{ orderId: order.id }}>
-            <Button className="bg-[#FFB800] hover:bg-[#FFB800]/90 text-[#0B0F19] font-bold text-sm shadow-md shadow-[#FFB800]/20">
+            <Button className="bg-warning hover:bg-warning/90 text-primary-foreground font-bold text-sm shadow-md shadow-warning/20">
               <CreditCard className="h-4 w-4 mr-2" />
               Pagar Pedido (15 min)
             </Button>
@@ -129,47 +129,47 @@ export function BuyerOrderDetailPage() {
         {/* Lado Izquierdo: Ítems, Despachos y Factura Maestra (65% -> col-span-8) */}
         <div className="lg:col-span-8 space-y-6">
           {/* Desglose de Líneas de Pedido */}
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] overflow-hidden">
-            <div className="p-4 sm:p-5 border-b border-[#1F293D] bg-[#161F30]/40 flex items-center justify-between">
-              <span className="text-xs uppercase font-mono tracking-wider text-[#94A3B8]">
+          <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-border bg-surface-muted/40 flex items-center justify-between">
+              <span className="text-xs uppercase font-mono tracking-wider text-foreground-muted">
                 Líneas Compradas ({order.items.length})
               </span>
-              <span className="text-xs font-mono text-white font-bold">
+              <span className="text-xs font-mono text-foreground font-bold">
                 Total: <MoneyAmount amount={order.totalAmount} currency={order.currency} />
               </span>
             </div>
 
-            <div className="divide-y divide-[#1F293D]">
+            <div className="divide-y divide-border">
               {order.items.map((item: OrderItem) => (
                 <div key={item.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-[#00D4AA]" />
-                      <span className="text-xs font-mono font-bold text-white">
+                      <Package className="h-4 w-4 text-brand" />
+                      <span className="text-xs font-mono font-bold text-foreground">
                         SKU Variante: {item.variantId.slice(0, 8)}
                       </span>
                     </div>
-                    <p className="text-xs font-mono text-[#64748B]">
+                    <p className="text-xs font-mono text-foreground-muted">
                       ID de Variante: {item.variantId}
                     </p>
                   </div>
 
                   <div className="flex items-center gap-6 text-right">
                     <div>
-                      <span className="text-[10px] uppercase font-mono text-[#64748B] block">Cantidad</span>
-                      <span className="text-xs font-mono font-bold text-white tabular-nums">
+                      <span className="text-[10px] uppercase font-mono text-foreground-muted block">Cantidad</span>
+                      <span className="text-xs font-mono font-bold text-foreground tabular-nums">
                         {item.quantity} ud(s)
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase font-mono text-[#64748B] block">Precio Unitario</span>
-                      <div className="text-xs font-mono text-[#94A3B8] tabular-nums">
+                      <span className="text-[10px] uppercase font-mono text-foreground-muted block">Precio Unitario</span>
+                      <div className="text-xs font-mono text-foreground-muted tabular-nums">
                         <MoneyAmount amount={item.unitPrice} currency={order.currency} />
                       </div>
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase font-mono text-[#64748B] block">Importe</span>
-                      <div className="text-sm font-mono font-bold text-white tabular-nums">
+                      <span className="text-[10px] uppercase font-mono text-foreground-muted block">Importe</span>
+                      <div className="text-sm font-mono font-bold text-foreground tabular-nums">
                         <MoneyAmount amount={item.totalPrice} currency={order.currency} />
                       </div>
                     </div>
@@ -180,21 +180,21 @@ export function BuyerOrderDetailPage() {
           </div>
 
           {/* Guías de Despacho Logístico (Fulfillments) */}
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#1F293D] pb-3">
+          <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
-                <Truck className="h-4 w-4 text-[#00D4AA]" />
-                <h2 className="text-sm uppercase font-mono tracking-wider text-white">
+                <Truck className="h-4 w-4 text-brand" />
+                <h2 className="text-sm uppercase font-mono tracking-wider text-foreground">
                   Despachos Logísticos
                 </h2>
               </div>
-              <Badge variant="outline" className="text-xs font-mono border-[#1F293D] text-[#94A3B8]">
+              <Badge variant="outline" className="text-xs font-mono border-border text-foreground-muted">
                 {orderFulfillments.length} paquetes
               </Badge>
             </div>
 
             {orderFulfillments.length === 0 ? (
-              <p className="text-xs font-mono text-[#64748B] py-2">
+              <p className="text-xs font-mono text-foreground-muted py-2">
                 {isPendingPayment
                   ? 'Las guías y paquetes de despacho se generan automáticamente tras acreditar el pago.'
                   : 'Sin información de despacho disponible actualmente.'}
@@ -202,9 +202,9 @@ export function BuyerOrderDetailPage() {
             ) : (
               <div className="space-y-3">
                 {orderFulfillments.map((ful: FulfillmentOrder) => (
-                  <div key={ful.id} className="p-4 rounded-xl border border-[#1F293D] bg-[#161F30]/40 space-y-2">
+                  <div key={ful.id} className="p-4 rounded-xl border border-border bg-surface-muted/40 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono font-bold text-white">
+                      <span className="text-xs font-mono font-bold text-foreground">
                         Despacho #{ful.id.slice(0, 8)}
                       </span>
                       <StatusBadge tone={TONOS_DE_ESTADO_DE_DESPACHO[ful.status]}>
@@ -214,9 +214,9 @@ export function BuyerOrderDetailPage() {
                     {ful.shipments && ful.shipments.length > 0 && (
                       <div className="space-y-1 pt-1">
                         {ful.shipments.map((s) => (
-                          <div key={s.id} className="text-xs font-mono text-[#94A3B8] flex items-center justify-between">
+                          <div key={s.id} className="text-xs font-mono text-foreground-muted flex items-center justify-between">
                             <span>Bodega Origen: {s.warehouseId.slice(0, 8)}</span>
-                            <span className="text-[#00D4AA] font-bold">Guía: {s.trackingNumber}</span>
+                            <span className="text-brand font-bold">Guía: {s.trackingNumber}</span>
                           </div>
                         ))}
                       </div>
@@ -228,40 +228,40 @@ export function BuyerOrderDetailPage() {
           </div>
 
           {/* Factura Maestra del Comprador */}
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#1F293D] pb-3">
+          <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-[#00D4AA]" />
-                <h2 className="text-sm uppercase font-mono tracking-wider text-white">
+                <FileText className="h-4 w-4 text-brand" />
+                <h2 className="text-sm uppercase font-mono tracking-wider text-foreground">
                   Facturación Tributaria
                 </h2>
               </div>
-              <Badge variant="outline" className="text-xs font-mono border-[#1F293D] text-[#00D4AA]">
+              <Badge variant="outline" className="text-xs font-mono border-border text-brand">
                 Factura Maestra
               </Badge>
             </div>
 
             {isLoadingInvoices ? (
-              <Skeleton className="h-16 w-full bg-[#161F30]" />
+              <Skeleton className="h-16 w-full bg-surface-muted" />
             ) : masterInvoice ? (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-[#1F293D] bg-[#161F30]/40">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border bg-surface-muted/40">
                 <div className="space-y-1">
-                  <span className="text-xs font-mono font-bold text-white">
+                  <span className="text-xs font-mono font-bold text-foreground">
                     Factura #{masterInvoice.id.slice(0, 8)}
                   </span>
-                  <p className="text-xs font-mono text-[#64748B]">
+                  <p className="text-xs font-mono text-foreground-muted">
                     Emitida el: {new Date(masterInvoice.issuedAt).toLocaleDateString('es-CO')}
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] uppercase font-mono text-[#64748B] block">Importe Total</span>
-                  <div className="text-base font-mono font-bold text-[#00D4AA] tabular-nums">
+                  <span className="text-[10px] uppercase font-mono text-foreground-muted block">Importe Total</span>
+                  <div className="text-base font-mono font-bold text-brand tabular-nums">
                     <MoneyAmount amount={masterInvoice.totalAmount} currency={masterInvoice.currency} />
                   </div>
                 </div>
               </div>
             ) : (
-              <p className="text-xs font-mono text-[#64748B] py-2">
+              <p className="text-xs font-mono text-foreground-muted py-2">
                 {isPendingPayment
                   ? 'La Factura Maestra se emitirá automáticamente una vez se complete el pago.'
                   : 'Factura en proceso de generación.'}
@@ -273,8 +273,8 @@ export function BuyerOrderDetailPage() {
         {/* Lado Derecho: Línea de Tiempo y Acciones (35% -> col-span-4) */}
         <div className="lg:col-span-4 space-y-6">
           {/* Tarjeta de Línea de Tiempo */}
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-6 shadow-xl sticky top-6">
-            <h2 className="text-sm uppercase font-mono tracking-wider text-[#94A3B8]">
+          <div className="rounded-2xl border border-border bg-surface p-6 space-y-6 shadow-xl sticky top-6">
+            <h2 className="text-sm uppercase font-mono tracking-wider text-foreground-muted">
               Ciclo de Vida del Pedido
             </h2>
 
@@ -283,13 +283,13 @@ export function BuyerOrderDetailPage() {
 
             {/* Solicitud de Devolución (Solo si Delivered) */}
             {isDelivered && (
-              <div className="border-t border-[#1F293D] pt-5 space-y-3">
+              <div className="border-t border-border pt-5 space-y-3">
                 <div className="space-y-1">
-                  <span className="text-xs font-mono font-semibold text-white flex items-center gap-1.5">
-                    <RotateCcw className="h-3.5 w-3.5 text-[#00D4AA]" />
+                  <span className="text-xs font-mono font-semibold text-foreground flex items-center gap-1.5">
+                    <RotateCcw className="h-3.5 w-3.5 text-brand" />
                     Devolución de Producto
                   </span>
-                  <p className="text-xs text-[#94A3B8]">
+                  <p className="text-xs text-foreground-muted">
                     ¿Hubo algún problema con su producto físico recibido? Puede iniciar una solicitud dentro de los 30 días de entrega.
                   </p>
                 </div>
@@ -298,7 +298,7 @@ export function BuyerOrderDetailPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full border-[#1F293D] text-[#00D4AA] hover:bg-[#161F30]"
+                    className="w-full border-border text-brand hover:bg-surface-muted"
                   >
                     Solicitar Devolución
                   </Button>
@@ -307,12 +307,12 @@ export function BuyerOrderDetailPage() {
             )}
 
             {/* Garantía de Seguridad */}
-            <div className="rounded-xl border border-[#1F293D] bg-[#161F30]/50 p-4 space-y-2 text-xs">
-              <div className="flex items-center gap-2 text-[#00D4AA] font-mono font-semibold">
+            <div className="rounded-xl border border-border bg-surface-muted/50 p-4 space-y-2 text-xs">
+              <div className="flex items-center gap-2 text-brand font-mono font-semibold">
                 <ShieldCheck className="h-4 w-4" />
                 Garantía Zentric
               </div>
-              <p className="text-[#94A3B8] leading-relaxed">
+              <p className="text-foreground-muted leading-relaxed">
                 Toda compra realizada en la plataforma cuenta con trazabilidad logística de punta a punta e inspección física garantizada en devoluciones.
               </p>
             </div>

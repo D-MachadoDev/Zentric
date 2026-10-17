@@ -62,13 +62,13 @@ export function BuyerOrdersPage() {
   if (isLoading) {
     return (
       <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
-        <Skeleton className="h-8 w-48 bg-[#111827]" />
+        <Skeleton className="h-8 w-48 bg-surface" />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <Skeleton className="h-28 rounded-2xl bg-[#111827]" />
-          <Skeleton className="h-28 rounded-2xl bg-[#111827]" />
-          <Skeleton className="h-28 rounded-2xl bg-[#111827]" />
+          <Skeleton className="h-28 rounded-2xl bg-surface" />
+          <Skeleton className="h-28 rounded-2xl bg-surface" />
+          <Skeleton className="h-28 rounded-2xl bg-surface" />
         </div>
-        <Skeleton className="h-80 rounded-2xl bg-[#111827]" />
+        <Skeleton className="h-80 rounded-2xl bg-surface" />
       </div>
     );
   }
@@ -86,7 +86,7 @@ export function BuyerOrdersPage() {
           variant="outline"
           size="sm"
           onClick={() => refetch()}
-          className="border-[#1F293D] text-[#94A3B8]"
+          className="border-border text-foreground-muted"
         >
           <RefreshCw className="h-4 w-4 mr-1.5" /> Reintentar
         </Button>
@@ -97,17 +97,17 @@ export function BuyerOrdersPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Mis Pedidos
             </h1>
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
               {nonCartOrders.length} totales
             </Badge>
           </div>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             Historial de transacciones, estado de despachos y facturas tributarias de la plataforma.
           </p>
         </div>
@@ -118,14 +118,14 @@ export function BuyerOrdersPage() {
             size="sm"
             onClick={() => refetch()}
             disabled={isFetching}
-            className="border-[#1F293D] text-[#94A3B8] hover:text-white"
+            className="border-border text-foreground-muted hover:text-foreground"
           >
             <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
             Refrescar
           </Button>
 
           <Link to="/buyer/cart">
-            <Button variant="secondary" size="sm" className="bg-[#111827] border border-[#1F293D] text-[#00D4AA]">
+            <Button variant="secondary" size="sm" className="bg-surface border border-border text-brand">
               <ShoppingBag className="h-4 w-4 mr-1.5" /> Ver Carrito
             </Button>
           </Link>
@@ -176,8 +176,8 @@ export function BuyerOrdersPage() {
             onClick={() => setSelectedStatus(f.id)}
             className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors whitespace-nowrap ${
               selectedStatus === f.id
-                ? 'bg-[#00D4AA] text-[#0B0F19] font-bold'
-                : 'bg-[#111827] text-[#94A3B8] hover:text-white border border-[#1F293D]'
+                ? 'bg-brand text-primary-foreground font-bold'
+                : 'bg-surface text-foreground-muted hover:text-primary-foreground border border-border'
             }`}
           >
             {f.label}
@@ -215,43 +215,43 @@ export function BuyerOrdersPage() {
             return (
               <div
                 key={order.id}
-                className={`rounded-2xl border p-5 sm:p-6 transition-all bg-[#111827] flex flex-col md:flex-row md:items-center justify-between gap-6 ${
+                className={`rounded-2xl border p-5 sm:p-6 transition-all bg-surface flex flex-col md:flex-row md:items-center justify-between gap-6 ${
                   isPendingPayment
-                    ? 'border-[#FFB800]/50 shadow-lg shadow-[#FFB800]/5'
-                    : 'border-[#1F293D] hover:border-[#00D4AA]/40'
+                    ? 'border-warning/50 shadow-lg shadow-warning/5'
+                    : 'border-border hover:border-brand/40'
                 }`}
               >
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-sm font-mono font-bold text-white">
+                    <span className="text-sm font-mono font-bold text-foreground">
                       Pedido #{order.id.slice(0, 8)}
                     </span>
                     <StatusBadge tone={TONOS_DE_ESTADO_DE_PEDIDO[order.status]}>
                       {NOMBRES_DE_ESTADO_DE_PEDIDO[order.status]}
                     </StatusBadge>
                     {isPendingPayment && (
-                      <Badge className="bg-[#FFB800]/20 text-[#FFB800] border-[#FFB800]/30 text-xs font-mono animate-pulse">
+                      <Badge className="bg-warning/20 text-warning border-warning/30 text-xs font-mono animate-pulse">
                         <Clock className="h-3 w-3 mr-1 inline" />
                         Reserva activa (15 min)
                       </Badge>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-[#94A3B8]">
+                  <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-foreground-muted">
                     <span>Fecha: {new Date(order.createdAt).toLocaleDateString('es-CO')}</span>
                     <span>•</span>
                     <span>
                       {order.itemCount} {order.itemCount === 1 ? 'artículo' : 'artículos'}
                     </span>
                     <span>•</span>
-                    <span className="text-[#64748B]">ID: {order.id}</span>
+                    <span className="text-foreground-muted">ID: {order.id}</span>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4 md:gap-6 border-t md:border-t-0 pt-4 md:pt-0 border-[#1F293D]">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 md:gap-6 border-t md:border-t-0 pt-4 md:pt-0 border-border">
                   <div className="text-left sm:text-right">
-                    <span className="text-[10px] uppercase font-mono text-[#64748B] block">Importe Total</span>
-                    <div className="text-xl font-bold font-mono text-white tabular-nums">
+                    <span className="text-[10px] uppercase font-mono text-foreground-muted block">Importe Total</span>
+                    <div className="text-xl font-bold font-mono text-foreground tabular-nums">
                       <MoneyAmount amount={order.totalAmount} currency={order.currency} />
                     </div>
                   </div>
@@ -259,7 +259,7 @@ export function BuyerOrdersPage() {
                   <div className="flex items-center gap-2">
                     {isPendingPayment && (
                       <Link to="/buyer/orders/$orderId/pay" params={{ orderId: order.id }}>
-                        <Button size="sm" className="bg-[#FFB800] hover:bg-[#FFB800]/90 text-[#0B0F19] font-bold text-xs shadow-md shadow-[#FFB800]/20">
+                        <Button size="sm" className="bg-warning hover:bg-warning/90 text-primary-foreground font-bold text-xs shadow-md shadow-warning/20">
                           <CreditCard className="h-3.5 w-3.5 mr-1.5" />
                           Pagar Pedido
                         </Button>
@@ -270,7 +270,7 @@ export function BuyerOrdersPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-[#1F293D] text-[#94A3B8] hover:text-white hover:bg-[#161F30]"
+                        className="border-border text-foreground-muted hover:text-foreground hover:bg-surface-muted"
                       >
                         <Eye className="h-3.5 w-3.5 mr-1.5" />
                         Ver Detalle

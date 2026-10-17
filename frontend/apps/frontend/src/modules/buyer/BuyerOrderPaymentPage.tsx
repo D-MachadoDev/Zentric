@@ -89,8 +89,8 @@ export function BuyerOrderPaymentPage() {
   if (isLoading) {
     return (
       <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <Skeleton className="h-8 w-48 bg-[#111827]" />
-        <Skeleton className="h-96 rounded-2xl bg-[#111827]" />
+        <Skeleton className="h-8 w-48 bg-surface" />
+        <Skeleton className="h-96 rounded-2xl bg-surface" />
       </div>
     );
   }
@@ -99,7 +99,7 @@ export function BuyerOrderPaymentPage() {
     return (
       <div className="p-6 sm:p-10 max-w-4xl mx-auto w-full space-y-4">
         <Link to="/buyer/orders">
-          <Button variant="outline" size="sm" className="border-[#1F293D] text-[#94A3B8]">
+          <Button variant="outline" size="sm" className="border-border text-foreground-muted">
             <ArrowLeft className="h-4 w-4 mr-1.5" /> Volver a Mis Pedidos
           </Button>
         </Link>
@@ -120,17 +120,17 @@ export function BuyerOrderPaymentPage() {
   if (order.status !== OrderStatus.PendingPayment && order.status !== OrderStatus.Cart) {
     return (
       <div className="p-6 sm:p-10 max-w-2xl mx-auto w-full space-y-6 text-center">
-        <div className="rounded-2xl border border-[#00D4AA]/30 bg-[#111827] p-8 space-y-4 shadow-xl">
-          <CheckCircle2 className="h-16 w-16 text-[#00D4AA] mx-auto" />
-          <h1 className="text-2xl font-bold text-white font-sans">
+        <div className="rounded-2xl border border-brand/30 bg-surface p-8 space-y-4 shadow-xl">
+          <CheckCircle2 className="h-16 w-16 text-brand mx-auto" />
+          <h1 className="text-2xl font-bold text-foreground font-sans">
             Este pedido ya fue procesado
           </h1>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             El pedido #{order.id.slice(0, 8)} se encuentra en estado{' '}
-            <strong className="text-white font-mono">{order.status}</strong> y no requiere pago adicional.
+            <strong className="text-foreground font-mono">{order.status}</strong> y no requiere pago adicional.
           </p>
           <Link to="/buyer/orders/$orderId" params={{ orderId: order.id }}>
-            <Button className="bg-[#00D4AA] text-[#0B0F19] font-bold">
+            <Button className="bg-brand text-primary-foreground font-bold">
               Ver Expediente de Pedido
             </Button>
           </Link>
@@ -142,25 +142,25 @@ export function BuyerOrderPaymentPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-4xl mx-auto w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Link to="/buyer/orders">
-              <Button variant="outline" size="sm" className="border-[#1F293D] text-[#94A3B8] hover:text-white mr-2">
+              <Button variant="outline" size="sm" className="border-border text-foreground-muted hover:text-foreground mr-2">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Pasarela de Pago
             </h1>
           </div>
-          <p className="text-sm font-mono text-[#94A3B8]">
+          <p className="text-sm font-mono text-foreground-muted">
             Pedido #{order.id.slice(0, 8)} • Total a debitar:{' '}
             <MoneyAmount amount={order.totalAmount} currency={order.currency} />
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-[#00D4AA]">
+        <div className="flex items-center gap-2 text-xs font-mono text-brand">
           <Lock className="h-4 w-4" /> Conexión Cifrada SSL
         </div>
       </div>
@@ -179,8 +179,8 @@ export function BuyerOrderPaymentPage() {
           isExpired
             ? 'border-red-800 bg-red-950/30'
             : isUrgent
-            ? 'border-[#FFB800] bg-[#FFB800]/10 shadow-lg shadow-[#FFB800]/10 animate-pulse'
-            : 'border-[#1F293D] bg-[#111827]'
+            ? 'border-warning bg-warning/10 shadow-lg shadow-warning/10 animate-pulse'
+            : 'border-border bg-surface'
         }`}
       >
         <div className="flex items-center gap-4">
@@ -189,17 +189,17 @@ export function BuyerOrderPaymentPage() {
               isExpired
                 ? 'border-red-700 bg-red-900/30 text-red-400'
                 : isUrgent
-                ? 'border-[#FFB800] bg-[#FFB800]/20 text-[#FFB800]'
-                : 'border-[#1F293D] bg-[#161F30] text-[#00D4AA]'
+                ? 'border-warning bg-warning/20 text-warning'
+                : 'border-border bg-surface-muted text-brand'
             }`}
           >
             <Clock className="h-7 w-7" />
           </div>
           <div className="space-y-1">
-            <h2 className="text-xs uppercase font-mono tracking-wider text-[#94A3B8]">
+            <h2 className="text-xs uppercase font-mono tracking-wider text-foreground-muted">
               {isExpired ? 'Reserva Expirada' : 'Tiempo Restante de Reserva Atómica'}
             </h2>
-            <p className="text-xs text-[#94A3B8]">
+            <p className="text-xs text-foreground-muted">
               {isExpired
                 ? 'La reserva de inventario ha expirado y las existencias han sido liberadas.'
                 : isUrgent
@@ -212,85 +212,85 @@ export function BuyerOrderPaymentPage() {
         <div className="text-right sm:text-right">
           <div
             className={`text-3xl sm:text-4xl font-extrabold font-mono tabular-nums tracking-tight ${
-              isExpired ? 'text-red-400' : isUrgent ? 'text-[#FFB800]' : 'text-white'
+              isExpired ? 'text-red-400' : isUrgent ? 'text-warning' : 'text-foreground'
             }`}
           >
             {formattedTime}
           </div>
-          <span className="text-[10px] uppercase font-mono text-[#64748B] block mt-0.5">
+          <span className="text-[10px] uppercase font-mono text-foreground-muted block mt-0.5">
             Minutos : Segundos
           </span>
         </div>
       </div>
 
       {/* ── Tarjeta de Pago Simulado ────────────────────────────────────── */}
-      <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 sm:p-8 space-y-6 shadow-xl">
-        <div className="flex items-center justify-between border-b border-[#1F293D] pb-4">
+      <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 space-y-6 shadow-xl">
+        <div className="flex items-center justify-between border-b border-border pb-4">
           <div className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-[#00D4AA]" />
-            <h2 className="text-sm uppercase font-mono tracking-wider text-white">
+            <CreditCard className="h-5 w-5 text-brand" />
+            <h2 className="text-sm uppercase font-mono tracking-wider text-foreground">
               Método de Pago (Simulación Sandbox)
             </h2>
           </div>
-          <Badge variant="outline" className="text-xs font-mono border-[#1F293D] text-[#00D4AA]">
+          <Badge variant="outline" className="text-xs font-mono border-border text-brand">
             Tarjeta Débito / Crédito
           </Badge>
         </div>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-xs font-mono uppercase text-[#94A3B8] block">
+            <label className="text-xs font-mono uppercase text-foreground-muted block">
               Número de Tarjeta
             </label>
             <Input
               value={cardNumber}
               onChange={(e) => setCardNumber(e.target.value)}
               disabled={isExpired}
-              className="bg-[#161F30] border-[#1F293D] font-mono text-white"
+              className="bg-surface-muted border-border font-mono text-foreground"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="space-y-2 sm:col-span-2">
-              <label className="text-xs font-mono uppercase text-[#94A3B8] block">
+              <label className="text-xs font-mono uppercase text-foreground-muted block">
                 Titular de la Tarjeta
               </label>
               <Input
                 value={cardHolder}
                 onChange={(e) => setCardHolder(e.target.value)}
                 disabled={isExpired}
-                className="bg-[#161F30] border-[#1F293D] font-mono text-white"
+                className="bg-surface-muted border-border font-mono text-foreground"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-[#94A3B8] block">
+              <label className="text-xs font-mono uppercase text-foreground-muted block">
                 Vencimiento
               </label>
               <Input
                 value={expiry}
                 onChange={(e) => setExpiry(e.target.value)}
                 disabled={isExpired}
-                className="bg-[#161F30] border-[#1F293D] font-mono text-white text-center"
+                className="bg-surface-muted border-border font-mono text-foreground text-center"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-[#94A3B8] block">
+              <label className="text-xs font-mono uppercase text-foreground-muted block">
                 CVV
               </label>
               <Input
                 value={cvv}
                 onChange={(e) => setCvv(e.target.value)}
                 disabled={isExpired}
-                className="bg-[#161F30] border-[#1F293D] font-mono text-white text-center"
+                className="bg-surface-muted border-border font-mono text-foreground text-center"
               />
             </div>
           </div>
         </div>
 
         {/* Resumen Final de Débito */}
-        <div className="p-4 rounded-xl border border-[#1F293D] bg-[#161F30]/40 flex items-center justify-between font-mono">
-          <span className="text-sm text-[#94A3B8]">Total a debitar:</span>
-          <div className="text-xl font-bold text-[#00D4AA] tabular-nums">
+        <div className="p-4 rounded-xl border border-border bg-surface-muted/40 flex items-center justify-between font-mono">
+          <span className="text-sm text-foreground-muted">Total a debitar:</span>
+          <div className="text-xl font-bold text-brand tabular-nums">
             <MoneyAmount amount={order.totalAmount} currency={order.currency} />
           </div>
         </div>
@@ -299,7 +299,7 @@ export function BuyerOrderPaymentPage() {
         <Button
           onClick={handlePay}
           disabled={isExpired || payOrderMutation.isPending}
-          className="w-full h-14 bg-[#00D4AA] hover:bg-[#00D4AA]/90 text-[#0B0F19] font-bold text-base shadow-xl shadow-[#00D4AA]/20 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full h-14 bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-base shadow-xl shadow-brand/20 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {payOrderMutation.isPending ? (
             <span className="flex items-center gap-2">
@@ -316,8 +316,8 @@ export function BuyerOrderPaymentPage() {
           )}
         </Button>
 
-        <div className="flex items-center justify-center gap-2 text-xs font-mono text-[#64748B] pt-2">
-          <ShieldCheck className="h-4 w-4 text-[#00D4AA]" />
+        <div className="flex items-center justify-center gap-2 text-xs font-mono text-foreground-muted pt-2">
+          <ShieldCheck className="h-4 w-4 text-brand" />
           <span>Al pagar, se emiten las facturas split y las órdenes de despacho por bodega.</span>
         </div>
       </div>

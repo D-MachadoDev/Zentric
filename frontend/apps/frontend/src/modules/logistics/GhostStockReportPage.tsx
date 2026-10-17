@@ -88,49 +88,49 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-4xl mx-auto w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Link
               to={id ? '/logistics/fulfillments/$id' : '/logistics/fulfillments'}
               params={id ? { id } : undefined}
-              className="text-[#94A3B8] hover:text-white transition-colors mr-1"
+              className="text-foreground-muted hover:text-foreground transition-colors mr-1"
             >
               <ArrowLeft className="h-5 w-5" />
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Reporte de Stock Fantasma
             </h1>
             <Badge variant="outline" className="border-red-900/60 text-red-400 font-mono text-xs">
               ADR-0014 / ADR-0022
             </Badge>
           </div>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             Notificación de discrepancia física en bodega: cancela el despacho y revierte fondos al comprador.
           </p>
         </div>
       </div>
 
       {success ? (
-        <div className="rounded-2xl border border-[#00D4AA]/40 bg-[#111827] p-8 space-y-6 text-center">
-          <CheckCircle className="h-10 w-10 text-[#00D4AA] mx-auto" />
+        <div className="rounded-2xl border border-brand/40 bg-surface p-8 space-y-6 text-center">
+          <CheckCircle className="h-10 w-10 text-brand mx-auto" />
           <div className="space-y-2">
-            <h3 className="text-lg font-bold text-white font-sans">
+            <h3 className="text-lg font-bold text-foreground font-sans">
               Quiebre por Stock Fantasma Notificado
             </h3>
-            <p className="text-xs text-[#94A3B8] max-w-md mx-auto leading-relaxed">
+            <p className="text-xs text-foreground-muted max-w-md mx-auto leading-relaxed">
               La orden de despacho #{id.substring(0, 8)} ha sido cancelada. Las unidades no existentes han sido ajustadas en la bodega física y el pedido pasará a liquidación de saldo para el comprador.
             </p>
           </div>
 
           <Link to="/logistics/fulfillments">
-            <Button className="bg-[#00D4AA] text-[#0B0F19] hover:bg-[#00D4AA]/90 font-semibold text-xs">
+            <Button className="bg-brand text-primary-foreground hover:bg-brand/90 font-semibold text-xs">
               Volver a la Cola de Despachos
             </Button>
           </Link>
         </div>
       ) : (
-        <div className="rounded-2xl border border-red-900/50 bg-[#111827] p-6 sm:p-8 space-y-6">
+        <div className="rounded-2xl border border-red-900/50 bg-surface p-6 sm:p-8 space-y-6">
           <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
             <AlertTriangle className="h-4 w-4 text-red-400" />
             <AlertTitle>Acción Crítica e Irreversible</AlertTitle>
@@ -150,7 +150,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* ID de Despacho */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#E2E8F0]">
+              <label className="text-xs font-semibold text-border">
                 ID de la Orden de Despacho (UUID)
               </label>
               <Input
@@ -158,7 +158,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
                 placeholder="UUID del despacho"
                 value={formData.fulfillmentOrderId}
                 onChange={(e) => handleFieldChange('fulfillmentOrderId', e.target.value)}
-                className="bg-[#161F30] border-[#1F293D] text-white font-mono text-xs focus:border-red-500"
+                className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-red-500"
               />
               {formErrors.fulfillmentOrderId && (
                 <p className="text-[11px] text-red-400">{formErrors.fulfillmentOrderId}</p>
@@ -167,7 +167,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
 
             {/* Variante */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#E2E8F0]">
+              <label className="text-xs font-semibold text-border">
                 ID de la Variante con Quiebre Físico (UUID)
               </label>
               <Input
@@ -175,7 +175,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
                 placeholder="UUID de la variante que no se encuentra en bodega"
                 value={formData.variantId}
                 onChange={(e) => handleFieldChange('variantId', e.target.value)}
-                className="bg-[#161F30] border-[#1F293D] text-white font-mono text-xs focus:border-red-500"
+                className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-red-500"
               />
               {formErrors.variantId && (
                 <p className="text-[11px] text-red-400">{formErrors.variantId}</p>
@@ -184,7 +184,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
 
             {/* Bodega */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#E2E8F0]">
+              <label className="text-xs font-semibold text-border">
                 ID de la Bodega Física del Quiebre (UUID)
               </label>
               <Input
@@ -192,7 +192,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
                 placeholder="UUID de la bodega donde ocurrió el faltante"
                 value={formData.warehouseId}
                 onChange={(e) => handleFieldChange('warehouseId', e.target.value)}
-                className="bg-[#161F30] border-[#1F293D] text-white font-mono text-xs focus:border-red-500"
+                className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-red-500"
               />
               {formErrors.warehouseId && (
                 <p className="text-[11px] text-red-400">{formErrors.warehouseId}</p>
@@ -201,7 +201,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
 
             {/* Cantidad */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#E2E8F0]">
+              <label className="text-xs font-semibold text-border">
                 Cantidad Faltante a Cancelar
               </label>
               <Input
@@ -211,7 +211,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
                 onChange={(e) =>
                   handleFieldChange('quantityToCancel', parseInt(e.target.value, 10) || 0)
                 }
-                className="bg-[#161F30] border-[#1F293D] text-white font-mono text-sm focus:border-red-500"
+                className="bg-surface-muted border-border text-foreground font-mono text-sm focus:border-red-500"
               />
               {formErrors.quantityToCancel && (
                 <p className="text-[11px] text-red-400">{formErrors.quantityToCancel}</p>
@@ -221,7 +221,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
             <Button
               type="submit"
               disabled={cancelGhostMutation.isPending}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold text-xs mt-2"
+              className="w-full bg-red-600 hover:bg-red-700 text-foreground font-semibold text-xs mt-2"
             >
               {cancelGhostMutation.isPending ? (
                 <>

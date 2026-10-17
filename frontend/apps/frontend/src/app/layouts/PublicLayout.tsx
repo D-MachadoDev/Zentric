@@ -9,15 +9,16 @@ interface PublicLayoutProps {
 /**
  * Shell para pantallas públicas y de autenticación (C4-4-Codigo-React.md §2: AuthShell).
  *
- * Aplica:
- * - Lienzo carbón azulado profundo (`#0A0E1A`).
- * - Iluminación focal superior controlada (`radial-gradient(circle at 50% 0%, rgba(0, 212, 170, 0.12), transparent 65%)`).
+ * Aplica (Frontend-Design-System §9):
+ * - Lienzo porcelana en claro / grafito-tinta en oscuro con la retícula
+ *   arquitectónica `bg-swiss-grid`, cuyo resplandor focal usa el jade de
+ *   marca vía color-mix (ya no un rgba fijo del v1).
  * - Logotipo central y pie de página con enlace a telemetría de salud.
  */
 export function PublicLayout({ children }: PublicLayoutProps) {
   return (
     <div className="relative flex min-h-screen flex-col bg-background bg-swiss-grid text-foreground">
-      {/* Cabecera suiza con hairline e indicador indexical */}
+      {/* Cabecera institucional con hairline e indicador indexical */}
       <header className="relative z-10 flex h-16 items-center justify-between border-b border-border bg-background/85 px-6 backdrop-blur-md">
         <div className="flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2.5">
@@ -25,7 +26,9 @@ export function PublicLayout({ children }: PublicLayoutProps) {
             <span className="text-sm font-bold tracking-tight text-foreground">Zentric Core</span>
           </Link>
           <span className="hidden h-4 w-px bg-border sm:inline-block" aria-hidden="true" />
-          <span className="kicker-spike hidden sm:inline-flex">SWISS PULSE · CONSOLA OPERATIVA SUIZA HEXAGONAL</span>
+          <span className="kicker-spike hidden sm:inline-flex">
+            Sistema Operativo para Comercio · Reserva Atómica de 15 Minutos
+          </span>
         </div>
         <Link
           to="/health"
@@ -44,7 +47,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       {/* Pie de página institucional */}
       <footer className="relative z-10 flex h-14 items-center justify-between border-t border-border bg-background/85 px-6 font-mono text-xs text-foreground-subtle backdrop-blur-md">
         <span>© {new Date().getFullYear()} Zentric Marketplace Inc.</span>
-        <span>Consola Operativa Suiza · SWISS PULSE EDITORIAL · v1.1.0</span>
+        <span>Consola Operativa Suiza · Doble Tema Porcelana/Grafito · v2.0.0</span>
       </footer>
     </div>
   );

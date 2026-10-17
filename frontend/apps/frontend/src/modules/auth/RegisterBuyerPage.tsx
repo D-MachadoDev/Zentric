@@ -103,27 +103,27 @@ export function RegisterBuyerPage() {
   };
 
   return (
-    <div className="w-full max-w-5xl rounded-2xl border border-[#1F293D] bg-[#0B0F19] overflow-hidden flex flex-col lg:flex-row shadow-2xl my-4 text-foreground">
+    <div className="w-full max-w-5xl rounded-2xl border border-border bg-surface overflow-hidden flex flex-col lg:flex-row shadow-2xl my-4 text-foreground">
       {/* ── Zona Izquierda: Split-Frame Editorial (55%) ─────────────────────── */}
-      <div className="relative flex flex-col justify-between p-8 sm:p-10 lg:w-[55%] lg:p-12 border-b lg:border-b-0 lg:border-r border-[#1F293D] overflow-hidden bg-[#0D1322]/80">
+      <div className="relative flex flex-col justify-between p-8 sm:p-10 lg:w-[55%] lg:p-12 border-b lg:border-b-0 lg:border-r border-border overflow-hidden bg-surface-muted/80">
         <div
-          className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-[#00D4AA]/10 blur-3xl"
+          className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-brand/10 blur-3xl"
           aria-hidden="true"
         />
 
         <div className="relative z-10 space-y-8">
           <div className="flex items-center gap-3">
             <Logo />
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
               PORTAL COMPRADOR
             </Badge>
           </div>
 
           <div className="space-y-4 max-w-xl">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground font-sans">
               Compre con garantía de inventario y trazabilidad física.
             </h1>
-            <p className="text-base sm:text-lg text-[#94A3B8] leading-relaxed">
+            <p className="text-base sm:text-lg text-foreground-muted leading-relaxed">
               Únase como Comprador para acceder al catálogo unificado de productos físicos y
               digitales, checkout con reserva atómica y seguimiento en tiempo real.
             </p>
@@ -132,36 +132,36 @@ export function RegisterBuyerPage() {
           {/* Beneficios del Comprador */}
           <div className="space-y-4 max-w-lg pt-4">
             <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1F293D] bg-[#111827] text-[#00D4AA]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-brand">
                 <ShoppingBag className="h-4 w-4" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-sm font-semibold text-white">Catálogo Heterogéneo Verificado</h3>
-                <p className="text-xs text-[#94A3B8]">
+                <h3 className="text-sm font-semibold text-foreground">Catálogo Heterogéneo Verificado</h3>
+                <p className="text-xs text-foreground-muted">
                   Productos con especificaciones técnicas reales y variantes con inventario existente en bodegas.
                 </p>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1F293D] bg-[#111827] text-[#00D4AA]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-brand">
                 <ShieldCheck className="h-4 w-4" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-sm font-semibold text-white">Checkout Atómico sin Sobreventa</h3>
-                <p className="text-xs text-[#94A3B8]">
+                <h3 className="text-sm font-semibold text-foreground">Checkout Atómico sin Sobreventa</h3>
+                <p className="text-xs text-foreground-muted">
                   Al iniciar el pago sus existencias quedan reservadas por 15 minutos exclusivamente para usted.
                 </p>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1F293D] bg-[#111827] text-[#00D4AA]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-brand">
                 <Sparkles className="h-4 w-4" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-sm font-semibold text-white">Facturación Maestra Clara</h3>
-                <p className="text-xs text-[#94A3B8]">
+                <h3 className="text-sm font-semibold text-foreground">Facturación Maestra Clara</h3>
+                <p className="text-xs text-foreground-muted">
                   Un único comprobante fiscal consolidado para sus pedidos, incluso si provienen de múltiples vendedores.
                 </p>
               </div>
@@ -170,9 +170,9 @@ export function RegisterBuyerPage() {
         </div>
 
         <div className="relative z-10 pt-10">
-          <p className="text-xs text-[#64748B]">
+          <p className="text-xs text-foreground-muted">
             ¿Dudas o requerimientos especiales? Consulte el{' '}
-            <Link to="/health" className="text-[#00D4AA] hover:underline">
+            <Link to="/health" className="text-brand hover:underline">
               monitor de disponibilidad pública
             </Link>
             .
@@ -181,13 +181,13 @@ export function RegisterBuyerPage() {
       </div>
 
       {/* ── Zona Derecha: Formulario de Alta Pública (45%) ─────────────────── */}
-      <div className="flex flex-1 items-center justify-center p-6 sm:p-12 lg:p-16 bg-[#0B0F19]">
+      <div className="flex flex-1 items-center justify-center p-6 sm:p-12 lg:p-16 bg-surface">
         <div className="w-full max-w-md space-y-8">
           <div className="space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Registro de Comprador
             </h2>
-            <p className="text-sm text-[#94A3B8]">
+            <p className="text-sm text-foreground-muted">
               Complete sus datos para crear su cuenta de cliente en segundos.
             </p>
           </div>
@@ -202,7 +202,7 @@ export function RegisterBuyerPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div className="space-y-1.5">
-              <Label htmlFor="identityDocument" className="text-xs font-medium uppercase tracking-wider text-[#94A3B8]">
+              <Label htmlFor="identityDocument" className="text-xs font-medium uppercase tracking-wider text-foreground-muted">
                 Documento de Identidad (DNI / Cédula)
               </Label>
               <Input
@@ -214,7 +214,7 @@ export function RegisterBuyerPage() {
                 onChange={(e) => handleChange('identityDocument', e.target.value)}
                 disabled={createUserMutation.isPending}
                 aria-invalid={Boolean(fieldErrors.identityDocument)}
-                className="bg-[#111827] border-[#1F293D] focus:border-[#00D4AA] text-white"
+                className="bg-surface border-border focus:border-brand text-foreground"
               />
               {fieldErrors.identityDocument && (
                 <p className="text-xs text-red-400">{fieldErrors.identityDocument}</p>
@@ -222,7 +222,7 @@ export function RegisterBuyerPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="fullName" className="text-xs font-medium uppercase tracking-wider text-[#94A3B8]">
+              <Label htmlFor="fullName" className="text-xs font-medium uppercase tracking-wider text-foreground-muted">
                 Nombre y Apellidos
               </Label>
               <Input
@@ -235,7 +235,7 @@ export function RegisterBuyerPage() {
                 onChange={(e) => handleChange('fullName', e.target.value)}
                 disabled={createUserMutation.isPending}
                 aria-invalid={Boolean(fieldErrors.fullName)}
-                className="bg-[#111827] border-[#1F293D] focus:border-[#00D4AA] text-white"
+                className="bg-surface border-border focus:border-brand text-foreground"
               />
               {fieldErrors.fullName && (
                 <p className="text-xs text-red-400">{fieldErrors.fullName}</p>
@@ -243,7 +243,7 @@ export function RegisterBuyerPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs font-medium uppercase tracking-wider text-[#94A3B8]">
+              <Label htmlFor="email" className="text-xs font-medium uppercase tracking-wider text-foreground-muted">
                 Correo Electrónico
               </Label>
               <Input
@@ -256,7 +256,7 @@ export function RegisterBuyerPage() {
                 onChange={(e) => handleChange('email', e.target.value)}
                 disabled={createUserMutation.isPending}
                 aria-invalid={Boolean(fieldErrors.email)}
-                className="bg-[#111827] border-[#1F293D] focus:border-[#00D4AA] text-white"
+                className="bg-surface border-border focus:border-brand text-foreground"
               />
               {fieldErrors.email && (
                 <p className="text-xs text-red-400">{fieldErrors.email}</p>
@@ -265,7 +265,7 @@ export function RegisterBuyerPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-xs font-medium uppercase tracking-wider text-[#94A3B8]">
+                <Label htmlFor="password" className="text-xs font-medium uppercase tracking-wider text-foreground-muted">
                   Contraseña
                 </Label>
                 <Input
@@ -278,7 +278,7 @@ export function RegisterBuyerPage() {
                   onChange={(e) => handleChange('password', e.target.value)}
                   disabled={createUserMutation.isPending}
                   aria-invalid={Boolean(fieldErrors.password)}
-                  className="bg-[#111827] border-[#1F293D] focus:border-[#00D4AA] text-white"
+                  className="bg-surface border-border focus:border-brand text-foreground"
                 />
                 {fieldErrors.password && (
                   <p className="text-xs text-red-400">{fieldErrors.password}</p>
@@ -286,7 +286,7 @@ export function RegisterBuyerPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="confirmPassword" className="text-xs font-medium uppercase tracking-wider text-[#94A3B8]">
+                <Label htmlFor="confirmPassword" className="text-xs font-medium uppercase tracking-wider text-foreground-muted">
                   Confirmar
                 </Label>
                 <Input
@@ -299,7 +299,7 @@ export function RegisterBuyerPage() {
                   onChange={(e) => handleChange('confirmPassword', e.target.value)}
                   disabled={createUserMutation.isPending}
                   aria-invalid={Boolean(fieldErrors.confirmPassword)}
-                  className="bg-[#111827] border-[#1F293D] focus:border-[#00D4AA] text-white"
+                  className="bg-surface border-border focus:border-brand text-foreground"
                 />
                 {fieldErrors.confirmPassword && (
                   <p className="text-xs text-red-400">{fieldErrors.confirmPassword}</p>
@@ -310,11 +310,11 @@ export function RegisterBuyerPage() {
             <Button
               type="submit"
               disabled={createUserMutation.isPending}
-              className="w-full bg-[#00D4AA] hover:bg-[#00D4AA]/90 text-[#0B0F19] font-semibold py-2.5 transition-colors shadow-lg shadow-[#00D4AA]/20 mt-2"
+              className="w-full bg-brand hover:bg-brand/90 text-primary-foreground font-semibold py-2.5 transition-colors shadow-lg shadow-brand/20 mt-2"
             >
               {createUserMutation.isPending ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#0B0F19] border-t-transparent" />
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
                   Creando cuenta...
                 </span>
               ) : (
@@ -326,9 +326,9 @@ export function RegisterBuyerPage() {
             </Button>
           </form>
 
-          <div className="pt-4 border-t border-[#1F293D]/80 text-center text-xs text-[#94A3B8]">
+          <div className="pt-4 border-t border-border/80 text-center text-xs text-foreground-muted">
             ¿Ya tiene una cuenta registrada?{' '}
-            <Link to="/login" className="font-medium text-[#00D4AA] hover:underline transition-colors">
+            <Link to="/login" className="font-medium text-brand hover:underline transition-colors">
               Iniciar Sesión
             </Link>
           </div>

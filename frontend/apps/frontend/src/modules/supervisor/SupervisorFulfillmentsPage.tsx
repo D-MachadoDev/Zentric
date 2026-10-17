@@ -70,10 +70,10 @@ export function SupervisorFulfillmentsPage() {
   if (isLoading) {
     return (
       <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
-        <Skeleton className="h-10 w-64 bg-[#111827]" />
+        <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-[#111827]" />
-          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-[#111827]" />
+          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-surface" />
         </div>
       </div>
     );
@@ -92,7 +92,7 @@ export function SupervisorFulfillmentsPage() {
         <Button
           onClick={() => refetch()}
           variant="outline"
-          className="border-[#1F293D] text-white hover:bg-[#1F293D]"
+          className="border-border text-foreground hover:bg-border"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
         </Button>
@@ -103,20 +103,20 @@ export function SupervisorFulfillmentsPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Monitoreo de Despachos y Quiebres de Stock
             </h1>
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
               {fulfillments.length} Despachos
             </Badge>
-            <Badge variant="outline" className="border-[#1F293D] text-[#FFB800] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-warning font-mono text-xs">
               Sólo Lectura
             </Badge>
           </div>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             Trazabilidad de órdenes de empaque, guías transportadoras e incidentes de cancelación por stock fantasma.
           </p>
         </div>
@@ -126,7 +126,7 @@ export function SupervisorFulfillmentsPage() {
           size="sm"
           onClick={() => refetch()}
           disabled={isFetching}
-          className="border-[#1F293D] text-[#94A3B8] hover:text-white"
+          className="border-border text-foreground-muted hover:text-foreground"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
           Refrescar
@@ -139,13 +139,13 @@ export function SupervisorFulfillmentsPage() {
         <section className="lg:col-span-8 space-y-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#64748B]" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
               <Input
                 type="text"
                 placeholder="Buscar por ID despacho, pedido, vendedor, guía o motivo..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-[#111827] border-[#1F293D] text-white placeholder:text-[#64748B] focus:border-[#00D4AA]"
+                className="pl-10 bg-surface border-border text-foreground placeholder:text-foreground-muted focus:border-brand"
               />
             </div>
 
@@ -153,7 +153,7 @@ export function SupervisorFulfillmentsPage() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               aria-label="Filtrar por estado de despacho"
-              className="bg-[#111827] border border-[#1F293D] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00D4AA]"
+              className="bg-surface border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
             >
               <option value="All">Todos los Estados</option>
               <option value={FulfillmentStatus.PendingPack}>Pendiente de Empaque (PendingPack)</option>
@@ -165,19 +165,19 @@ export function SupervisorFulfillmentsPage() {
           </div>
 
           {filteredFulfillments.length === 0 ? (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-12 text-center">
-              <PackageCheck className="h-10 w-10 text-[#64748B] mx-auto mb-3" />
-              <h3 className="text-sm font-semibold text-white">No se encontraron despachos</h3>
-              <p className="text-xs text-[#94A3B8] mt-1">
+            <div className="rounded-2xl border border-border bg-surface p-12 text-center">
+              <PackageCheck className="h-10 w-10 text-foreground-muted mx-auto mb-3" />
+              <h3 className="text-sm font-semibold text-foreground">No se encontraron despachos</h3>
+              <p className="text-xs text-foreground-muted mt-1">
                 Ninguna orden de despacho coincide con los criterios de auditoría seleccionados.
               </p>
             </div>
           ) : (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] overflow-hidden">
+            <div className="rounded-2xl border border-border bg-surface overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-[#1F293D] text-[#94A3B8] uppercase tracking-wider font-sans bg-[#161F30]/40">
+                    <tr className="border-b border-border text-foreground-muted uppercase tracking-wider font-sans bg-surface-muted/40">
                       <th className="py-3 px-4">Despacho</th>
                       <th className="py-3 px-4">Pedido</th>
                       <th className="py-3 px-4">Vendedor</th>
@@ -185,7 +185,7 @@ export function SupervisorFulfillmentsPage() {
                       <th className="py-3 px-4 text-right">Guías</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#1F293D]/60">
+                  <tbody className="divide-y divide-border/60">
                     {filteredFulfillments.map((ful: FulfillmentOrder) => {
                       const isSelected = selectedFulfillment?.id === ful.id;
                       const isCancelled = ful.status === FulfillmentStatus.Cancelled;
@@ -194,16 +194,16 @@ export function SupervisorFulfillmentsPage() {
                           key={ful.id}
                           onClick={() => setSelectedFulfillmentId(ful.id)}
                           className={`cursor-pointer transition-colors ${
-                            isSelected ? 'bg-[#161F30]' : 'hover:bg-[#161F30]/40'
+                            isSelected ? 'bg-surface-muted' : 'hover:bg-surface-muted/40'
                           }`}
                         >
-                          <td className="py-4 px-4 font-mono font-semibold text-white">
+                          <td className="py-4 px-4 font-mono font-semibold text-foreground">
                             #{ful.id.substring(0, 8)}
                           </td>
-                          <td className="py-4 px-4 font-mono text-[#E2E8F0]">
+                          <td className="py-4 px-4 font-mono text-border">
                             #{ful.customerOrderId.substring(0, 8)}
                           </td>
-                          <td className="py-4 px-4 font-mono text-[#94A3B8]">
+                          <td className="py-4 px-4 font-mono text-foreground-muted">
                             #{ful.vendorId.substring(0, 8)}
                           </td>
                           <td className="py-4 px-4">
@@ -212,13 +212,13 @@ export function SupervisorFulfillmentsPage() {
                               className={
                                 isCancelled
                                   ? 'border-red-900/60 text-red-400 text-[11px] font-mono'
-                                  : 'border-[#1F293D] text-[#00D4AA] text-[11px] font-mono'
+                                  : 'border-border text-brand text-[11px] font-mono'
                               }
                             >
                               {ful.status}
                             </Badge>
                           </td>
-                          <td className="py-4 px-4 text-right font-mono text-white tabular-nums">
+                          <td className="py-4 px-4 text-right font-mono text-foreground tabular-nums">
                             {ful.shipments.length}
                           </td>
                         </tr>
@@ -234,17 +234,17 @@ export function SupervisorFulfillmentsPage() {
         {/* Lado Derecho (35%): Expediente de Despacho Seleccionado ──────── */}
         <section className="lg:col-span-4 space-y-6">
           {selectedFulfillment ? (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-5">
-              <div className="border-b border-[#1F293D] pb-4">
-                <span className="text-[11px] font-mono text-[#64748B] block uppercase">
+            <div className="rounded-2xl border border-border bg-surface p-6 space-y-5">
+              <div className="border-b border-border pb-4">
+                <span className="text-[11px] font-mono text-foreground-muted block uppercase">
                   Expediente Logístico
                 </span>
-                <h3 className="text-lg font-bold text-white font-mono mt-1">
+                <h3 className="text-lg font-bold text-foreground font-mono mt-1">
                   #{selectedFulfillment.id.substring(0, 8)}
                 </h3>
                 <Badge
                   variant="outline"
-                  className="mt-2 border-[#1F293D] text-[#00D4AA] font-mono text-xs"
+                  className="mt-2 border-border text-brand font-mono text-xs"
                 >
                   Estado: {selectedFulfillment.status}
                 </Badge>
@@ -252,16 +252,16 @@ export function SupervisorFulfillmentsPage() {
 
               <div className="space-y-2.5 text-xs font-mono">
                 <div className="flex justify-between">
-                  <span className="text-[#94A3B8] font-sans">Pedido Asociado:</span>
-                  <span className="text-white">#{selectedFulfillment.customerOrderId}</span>
+                  <span className="text-foreground-muted font-sans">Pedido Asociado:</span>
+                  <span className="text-foreground">#{selectedFulfillment.customerOrderId}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#94A3B8] font-sans">Vendedor Titular:</span>
-                  <span className="text-white">#{selectedFulfillment.vendorId}</span>
+                  <span className="text-foreground-muted font-sans">Vendedor Titular:</span>
+                  <span className="text-foreground">#{selectedFulfillment.vendorId}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#94A3B8] font-sans">Paquetes / Guías:</span>
-                  <span className="text-white tabular-nums">
+                  <span className="text-foreground-muted font-sans">Paquetes / Guías:</span>
+                  <span className="text-foreground tabular-nums">
                     {selectedFulfillment.shipments.length}
                   </span>
                 </div>
@@ -279,13 +279,13 @@ export function SupervisorFulfillmentsPage() {
                 </div>
               )}
 
-              <div className="space-y-2 pt-2 border-t border-[#1F293D]">
-                <h4 className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider flex items-center gap-1.5">
-                  <Truck className="h-3.5 w-3.5 text-[#00D4AA]" />
+              <div className="space-y-2 pt-2 border-t border-border">
+                <h4 className="text-xs font-semibold text-foreground-muted uppercase tracking-wider flex items-center gap-1.5">
+                  <Truck className="h-3.5 w-3.5 text-brand" />
                   Guías de Transporte Registradas
                 </h4>
                 {selectedFulfillment.shipments.length === 0 ? (
-                  <p className="text-xs text-[#64748B]">
+                  <p className="text-xs text-foreground-muted">
                     Sin guías de transporte emitidas todavía.
                   </p>
                 ) : (
@@ -293,15 +293,15 @@ export function SupervisorFulfillmentsPage() {
                     {selectedFulfillment.shipments.map((ship) => (
                       <div
                         key={ship.id}
-                        className="p-3 rounded-xl bg-[#161F30] border border-[#1F293D] text-xs font-mono space-y-1"
+                        className="p-3 rounded-xl bg-surface-muted border border-border text-xs font-mono space-y-1"
                       >
                         <div className="flex justify-between">
-                          <span className="text-[#94A3B8]">Guía:</span>
-                          <span className="text-[#00D4AA] font-bold">{ship.trackingNumber}</span>
+                          <span className="text-foreground-muted">Guía:</span>
+                          <span className="text-brand font-bold">{ship.trackingNumber}</span>
                         </div>
                         <div className="flex justify-between text-[11px]">
-                          <span className="text-[#64748B]">Bodega Origen:</span>
-                          <span className="text-white">#{ship.warehouseId.substring(0, 8)}</span>
+                          <span className="text-foreground-muted">Bodega Origen:</span>
+                          <span className="text-foreground">#{ship.warehouseId.substring(0, 8)}</span>
                         </div>
                       </div>
                     ))}
@@ -310,17 +310,17 @@ export function SupervisorFulfillmentsPage() {
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-8 text-center text-xs text-[#94A3B8]">
+            <div className="rounded-2xl border border-border bg-surface p-8 text-center text-xs text-foreground-muted">
               Seleccione una orden de despacho para auditar sus paquetes y guías.
             </div>
           )}
 
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-5 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#00D4AA]">
+          <div className="rounded-2xl border border-border bg-surface p-5 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-semibold text-brand">
               <ShieldCheck className="h-4 w-4" />
               <span>Política FulfillmentRead (Sólo Lectura)</span>
             </div>
-            <p className="text-[11px] text-[#94A3B8] leading-relaxed">
+            <p className="text-[11px] text-foreground-muted leading-relaxed">
               Las transiciones operativas de empaque, despacho, entrega y cancelación por quiebre están reservadas al Operador Logístico y al Vendedor.
             </p>
           </div>

@@ -39,14 +39,14 @@ export function HealthStatusPage() {
     switch (status) {
       case 'healthy':
         return (
-          <Badge className="bg-[#00D4AA]/20 text-[#00D4AA] border-[#00D4AA]/40 font-mono flex items-center gap-1.5 px-3 py-1">
+          <Badge className="bg-brand/20 text-brand border-brand/40 font-mono flex items-center gap-1.5 px-3 py-1">
             <CheckCircle2 className="h-3.5 w-3.5" />
             OPERACIONAL (HEALTHY)
           </Badge>
         );
       case 'degraded':
         return (
-          <Badge className="bg-[#FFB800]/20 text-[#FFB800] border-[#FFB800]/40 font-mono flex items-center gap-1.5 px-3 py-1">
+          <Badge className="bg-warning/20 text-warning border-warning/40 font-mono flex items-center gap-1.5 px-3 py-1">
             <AlertTriangle className="h-3.5 w-3.5" />
             DEGRADADO (DEGRADED)
           </Badge>
@@ -68,7 +68,7 @@ export function HealthStatusPage() {
         variant="outline"
         className={`font-mono text-xs px-2.5 py-0.5 ${
           isUp
-            ? 'border-[#00D4AA]/40 text-[#00D4AA] bg-[#00D4AA]/10'
+            ? 'border-brand/40 text-brand bg-brand/10'
             : 'border-red-500/40 text-red-400 bg-red-500/10'
         }`}
       >
@@ -81,14 +81,14 @@ export function HealthStatusPage() {
     <div className="w-full max-w-4xl space-y-6 text-foreground my-4">
       {/* Encabezado */}
       <div className="w-full space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
           <div className="flex items-center gap-3">
             <Logo />
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white font-sans">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-sans">
                 Telemetría y Estado de Infraestructura
               </h1>
-              <p className="text-xs text-[#94A3B8] font-mono">
+              <p className="text-xs text-foreground-muted font-mono">
                 Sonda de diagnóstico central · Zentric Marketplace API
               </p>
             </div>
@@ -96,7 +96,7 @@ export function HealthStatusPage() {
 
           <div className="flex items-center gap-3">
             <Link to="/login">
-              <Button variant="outline" size="sm" className="border-[#1F293D] text-[#94A3B8] hover:text-white">
+              <Button variant="outline" size="sm" className="border-border text-foreground-muted hover:text-foreground">
                 <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
                 Volver al Acceso
               </Button>
@@ -107,7 +107,7 @@ export function HealthStatusPage() {
               size="sm"
               onClick={handleRefresh}
               disabled={isFetching}
-              className="bg-[#111827] border border-[#1F293D] text-[#00D4AA] hover:bg-[#161F30]"
+              className="bg-surface border border-border text-brand hover:bg-surface-muted"
             >
               <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
               Actualizar
@@ -118,11 +118,11 @@ export function HealthStatusPage() {
         {/* Panel principal de estado */}
         {isLoading ? (
           <div className="space-y-4">
-            <Skeleton className="h-28 w-full rounded-2xl bg-[#111827]" />
+            <Skeleton className="h-28 w-full rounded-2xl bg-surface" />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Skeleton className="h-24 rounded-xl bg-[#111827]" />
-              <Skeleton className="h-24 rounded-xl bg-[#111827]" />
-              <Skeleton className="h-24 rounded-xl bg-[#111827]" />
+              <Skeleton className="h-24 rounded-xl bg-surface" />
+              <Skeleton className="h-24 rounded-xl bg-surface" />
+              <Skeleton className="h-24 rounded-xl bg-surface" />
             </div>
           </div>
         ) : isError ? (
@@ -138,25 +138,25 @@ export function HealthStatusPage() {
         ) : (
           <div className="space-y-6">
             {/* Tarjeta Dominante (Hero KPI Strip) */}
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-2xl">
+            <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-2xl">
               <div className="space-y-2">
-                <span className="text-xs uppercase font-semibold tracking-wider text-[#94A3B8] font-mono">
+                <span className="text-xs uppercase font-semibold tracking-wider text-foreground-muted font-mono">
                   Estado Global del Sistema
                 </span>
                 <div className="flex items-center gap-3">
-                  <h2 className="text-3xl sm:text-4xl font-bold text-white font-sans tracking-tight">
+                  <h2 className="text-3xl sm:text-4xl font-bold text-foreground font-sans tracking-tight">
                     API Core v1.1.0
                   </h2>
                   {getStatusBadge(health?.status)}
                 </div>
-                <p className="text-xs text-[#94A3B8]">
+                <p className="text-xs text-foreground-muted">
                   Orquestación Hexagonal, Dispatcher de eventos y canal seguro de autorización activo.
                 </p>
               </div>
 
-              <div className="flex flex-col sm:items-end gap-1 font-mono text-xs text-[#64748B] tabular-nums">
+              <div className="flex flex-col sm:items-end gap-1 font-mono text-xs text-foreground-muted tabular-nums">
                 <div className="flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5 text-[#94A3B8]" />
+                  <Clock className="h-3.5 w-3.5 text-foreground-muted" />
                   <span>Último sondeo: {lastRefreshed.toLocaleTimeString()}</span>
                 </div>
                 <div>Timestamp API: {health?.timestamp ? new Date(health.timestamp).toLocaleTimeString() : 'N/A'}</div>
@@ -166,53 +166,53 @@ export function HealthStatusPage() {
             {/* Cuadrícula de Componentes de Infraestructura */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Tarjeta Base de Datos */}
-              <div className="rounded-xl border border-[#1F293D] bg-[#111827]/80 p-5 space-y-3">
+              <div className="rounded-xl border border-border bg-surface/80 p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[#94A3B8]">
-                    <Database className="h-4 w-4 text-[#00D4AA]" />
+                  <div className="flex items-center gap-2 text-foreground-muted">
+                    <Database className="h-4 w-4 text-brand" />
                     <span className="text-xs font-semibold uppercase tracking-wider font-mono">
                       PostgreSQL 16
                     </span>
                   </div>
                   {getDbBadge(health?.database)}
                 </div>
-                <p className="text-xs text-[#94A3B8]">
+                <p className="text-xs text-foreground-muted">
                   14 DbSets con modelos mapeados, migraciones al día y Unit of Work transaccional.
                 </p>
               </div>
 
               {/* Tarjeta Pipeline y Handlers */}
-              <div className="rounded-xl border border-[#1F293D] bg-[#111827]/80 p-5 space-y-3">
+              <div className="rounded-xl border border-border bg-surface/80 p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[#94A3B8]">
-                    <Server className="h-4 w-4 text-[#00D4AA]" />
+                  <div className="flex items-center gap-2 text-foreground-muted">
+                    <Server className="h-4 w-4 text-brand" />
                     <span className="text-xs font-semibold uppercase tracking-wider font-mono">
                       Dispatcher CQRS
                     </span>
                   </div>
-                  <Badge variant="outline" className="font-mono text-xs border-[#00D4AA]/40 text-[#00D4AA] bg-[#00D4AA]/10">
+                  <Badge variant="outline" className="font-mono text-xs border-brand/40 text-brand bg-brand/10">
                     ACTIVO
                   </Badge>
                 </div>
-                <p className="text-xs text-[#94A3B8]">
+                <p className="text-xs text-foreground-muted">
                   Validaciones FluentValidation en pipeline antes de alcanzar los handlers de dominio.
                 </p>
               </div>
 
               {/* Tarjeta Fondo Background Service */}
-              <div className="rounded-xl border border-[#1F293D] bg-[#111827]/80 p-5 space-y-3">
+              <div className="rounded-xl border border-border bg-surface/80 p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[#94A3B8]">
-                    <Activity className="h-4 w-4 text-[#00D4AA]" />
+                  <div className="flex items-center gap-2 text-foreground-muted">
+                    <Activity className="h-4 w-4 text-brand" />
                     <span className="text-xs font-semibold uppercase tracking-wider font-mono">
                       Timeout Service
                     </span>
                   </div>
-                  <Badge variant="outline" className="font-mono text-xs border-[#00D4AA]/40 text-[#00D4AA] bg-[#00D4AA]/10">
+                  <Badge variant="outline" className="font-mono text-xs border-brand/40 text-brand bg-brand/10">
                     15 MIN RECOVERY
                   </Badge>
                 </div>
-                <p className="text-xs text-[#94A3B8]">
+                <p className="text-xs text-foreground-muted">
                   Barrido de carritos y recuperación de stock vencido con protección contra fallos.
                 </p>
               </div>

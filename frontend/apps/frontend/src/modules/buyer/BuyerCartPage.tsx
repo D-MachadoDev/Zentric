@@ -59,10 +59,10 @@ export function BuyerCartPage() {
   if (isLoading) {
     return (
       <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
-        <Skeleton className="h-8 w-48 bg-[#111827]" />
+        <Skeleton className="h-8 w-48 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-8 h-80 rounded-2xl bg-[#111827]" />
-          <Skeleton className="lg:col-span-4 h-80 rounded-2xl bg-[#111827]" />
+          <Skeleton className="lg:col-span-8 h-80 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-4 h-80 rounded-2xl bg-surface" />
         </div>
       </div>
     );
@@ -82,7 +82,7 @@ export function BuyerCartPage() {
           variant="outline"
           size="sm"
           onClick={() => refetch()}
-          className="border-[#1F293D] text-[#94A3B8]"
+          className="border-border text-foreground-muted"
         >
           <RefreshCw className="h-4 w-4 mr-1.5" /> Reintentar
         </Button>
@@ -93,23 +93,23 @@ export function BuyerCartPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Carrito de Compras
             </h1>
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
               {items.length} {items.length === 1 ? 'línea' : 'líneas'}
             </Badge>
           </div>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             Verifique sus artículos antes de confirmar el checkout y bloquear su reserva de existencias.
           </p>
         </div>
 
         <Link to="/buyer/catalog">
-          <Button variant="outline" size="sm" className="border-[#1F293D] text-[#94A3B8] hover:text-white">
+          <Button variant="outline" size="sm" className="border-border text-foreground-muted hover:text-foreground">
             <ShoppingBag className="h-4 w-4 mr-1.5" /> Continuar comprando
           </Button>
         </Link>
@@ -138,52 +138,52 @@ export function BuyerCartPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Lado Izquierdo: Tabla de Artículos (65% -> col-span-8) */}
           <div className="lg:col-span-8 space-y-4">
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] overflow-hidden">
-              <div className="p-4 sm:p-5 border-b border-[#1F293D] bg-[#161F30]/40 flex items-center justify-between">
-                <span className="text-xs uppercase font-mono tracking-wider text-[#94A3B8]">
+            <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+              <div className="p-4 sm:p-5 border-b border-border bg-surface-muted/40 flex items-center justify-between">
+                <span className="text-xs uppercase font-mono tracking-wider text-foreground-muted">
                   Artículos en el Pedido
                 </span>
-                <span className="text-xs font-mono text-[#64748B]">
+                <span className="text-xs font-mono text-foreground-muted">
                   ID Pedido: {activeCart?.id.slice(0, 8)}...
                 </span>
               </div>
 
-              <div className="divide-y divide-[#1F293D]">
+              <div className="divide-y divide-border">
                 {items.map((item: OrderItem) => (
                   <div
                     key={item.id}
-                    className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#161F30]/30 transition-colors"
+                    className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-surface-muted/30 transition-colors"
                   >
                     <div className="space-y-1.5 flex-1">
                       <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4 text-[#00D4AA]" />
-                        <span className="text-xs font-mono text-[#00D4AA] font-bold">
+                        <Package className="h-4 w-4 text-brand" />
+                        <span className="text-xs font-mono text-brand font-bold">
                           Variante SKU: {item.variantId.slice(0, 8)}
                         </span>
                       </div>
-                      <p className="text-xs font-mono text-[#64748B]">
+                      <p className="text-xs font-mono text-foreground-muted">
                         Identificador de variante: {item.variantId}
                       </p>
                     </div>
 
                     <div className="flex items-center justify-between sm:justify-end gap-6 text-right">
                       <div>
-                        <span className="text-[10px] uppercase font-mono text-[#64748B] block">Cantidad</span>
-                        <span className="text-sm font-mono font-bold text-white tabular-nums">
+                        <span className="text-[10px] uppercase font-mono text-foreground-muted block">Cantidad</span>
+                        <span className="text-sm font-mono font-bold text-foreground tabular-nums">
                           {item.quantity} ud(s)
                         </span>
                       </div>
 
                       <div>
-                        <span className="text-[10px] uppercase font-mono text-[#64748B] block">Precio Unitario</span>
-                        <div className="text-sm font-mono text-[#94A3B8] tabular-nums">
+                        <span className="text-[10px] uppercase font-mono text-foreground-muted block">Precio Unitario</span>
+                        <div className="text-sm font-mono text-foreground-muted tabular-nums">
                           <MoneyAmount amount={item.unitPrice} currency={activeCart?.currency ?? 'COP'} />
                         </div>
                       </div>
 
                       <div>
-                        <span className="text-[10px] uppercase font-mono text-[#64748B] block">Subtotal</span>
-                        <div className="text-base font-mono font-bold text-white tabular-nums">
+                        <span className="text-[10px] uppercase font-mono text-foreground-muted block">Subtotal</span>
+                        <div className="text-base font-mono font-bold text-foreground tabular-nums">
                           <MoneyAmount amount={item.totalPrice} currency={activeCart?.currency ?? 'COP'} />
                         </div>
                       </div>
@@ -196,23 +196,23 @@ export function BuyerCartPage() {
 
           {/* Lado Derecho: Resumen Financiero y Checkout (35% -> col-span-4) */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-6 shadow-xl sticky top-6">
-              <h2 className="text-sm uppercase font-mono tracking-wider text-[#94A3B8]">
+            <div className="rounded-2xl border border-border bg-surface p-6 space-y-6 shadow-xl sticky top-6">
+              <h2 className="text-sm uppercase font-mono tracking-wider text-foreground-muted">
                 Resumen de Compra
               </h2>
 
-              <div className="space-y-3 text-sm font-mono border-t border-[#1F293D] pt-4">
-                <div className="flex justify-between text-[#94A3B8]">
+              <div className="space-y-3 text-sm font-mono border-t border-border pt-4">
+                <div className="flex justify-between text-foreground-muted">
                   <span>Subtotal</span>
                   <MoneyAmount amount={activeCart?.totalAmount ?? 0} currency={activeCart?.currency ?? 'COP'} />
                 </div>
-                <div className="flex justify-between text-[#94A3B8]">
+                <div className="flex justify-between text-foreground-muted">
                   <span>Impuestos incluidos</span>
                   <span>$0.00</span>
                 </div>
-                <div className="flex justify-between text-base font-bold text-white border-t border-[#1F293D] pt-3">
+                <div className="flex justify-between text-base font-bold text-foreground border-t border-border pt-3">
                   <span>Total</span>
-                  <div className="text-[#00D4AA] text-lg">
+                  <div className="text-brand text-lg">
                     <MoneyAmount amount={activeCart?.totalAmount ?? 0} currency={activeCart?.currency ?? 'COP'} />
                   </div>
                 </div>
@@ -222,7 +222,7 @@ export function BuyerCartPage() {
               <Button
                 onClick={handleCheckout}
                 disabled={checkoutMutation.isPending}
-                className="w-full h-12 bg-[#00D4AA] hover:bg-[#00D4AA]/90 text-[#0B0F19] font-bold text-sm shadow-lg shadow-[#00D4AA]/20 disabled:opacity-50"
+                className="w-full h-12 bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-sm shadow-lg shadow-brand/20 disabled:opacity-50"
               >
                 {checkoutMutation.isPending ? (
                   <span className="flex items-center gap-2">
@@ -238,15 +238,15 @@ export function BuyerCartPage() {
               </Button>
 
               {/* Aviso de Reserva */}
-              <div className="rounded-xl border border-[#1F293D] bg-[#161F30]/50 p-4 space-y-2 text-xs">
-                <div className="flex items-center gap-2 text-[#00D4AA] font-mono font-semibold">
+              <div className="rounded-xl border border-border bg-surface-muted/50 p-4 space-y-2 text-xs">
+                <div className="flex items-center gap-2 text-brand font-mono font-semibold">
                   <Clock className="h-4 w-4" />
                   Garantía de Checkout
                 </div>
-                <p className="text-[#94A3B8] leading-relaxed">
+                <p className="text-foreground-muted leading-relaxed">
                   Al pulsar el botón de checkout, el sistema reserva las unidades en bodega y activa un reloj de 15 minutos en el que nadie más podrá comprar este stock.
                 </p>
-                <div className="flex items-center gap-2 text-[#64748B] pt-1">
+                <div className="flex items-center gap-2 text-foreground-muted pt-1">
                   <ShieldCheck className="h-3.5 w-3.5" />
                   <span>Cero existencias negativas garantizadas.</span>
                 </div>

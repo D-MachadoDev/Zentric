@@ -93,7 +93,7 @@ export function BuyerCatalogPage() {
 
           <div className="pt-2 flex flex-wrap items-center gap-3">
             <Link to="/buyer/cart">
-              <Button size="lg" className="bg-brand hover:bg-brand-strong text-white font-semibold shadow-md shadow-brand/20">
+              <Button size="lg" className="bg-brand hover:bg-brand-strong text-primary-foreground font-semibold shadow-md shadow-brand/20">
                 <ShoppingBag className="h-5 w-5 mr-2" />
                 Ver Carrito
               </Button>
@@ -158,7 +158,7 @@ export function BuyerCatalogPage() {
             }}
             className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
               categoryFilter === cat
-                ? 'bg-brand text-white shadow-sm font-semibold'
+                ? 'bg-brand text-primary-foreground shadow-sm font-semibold'
                 : 'bg-surface border border-border text-foreground-muted hover:text-foreground hover:bg-surface-muted'
             }`}
           >
@@ -198,7 +198,7 @@ export function BuyerCatalogPage() {
               }}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
                 typeFilter === 'All'
-                  ? 'bg-brand text-white font-semibold shadow-sm'
+                  ? 'bg-brand text-primary-foreground font-semibold shadow-sm'
                   : 'text-foreground-muted hover:text-foreground'
               }`}
             >
@@ -212,7 +212,7 @@ export function BuyerCatalogPage() {
               }}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
                 typeFilter === ProductType.Physical
-                  ? 'bg-brand text-white font-semibold shadow-sm'
+                  ? 'bg-brand text-primary-foreground font-semibold shadow-sm'
                   : 'text-foreground-muted hover:text-foreground'
               }`}
             >
@@ -226,7 +226,7 @@ export function BuyerCatalogPage() {
               }}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
                 typeFilter === ProductType.Digital
-                  ? 'bg-brand text-white font-semibold shadow-sm'
+                  ? 'bg-brand text-primary-foreground font-semibold shadow-sm'
                   : 'text-foreground-muted hover:text-foreground'
               }`}
             >
@@ -405,7 +405,7 @@ export function BuyerCatalogPage() {
                       <Link to="/buyer/catalog/$productId" params={{ productId: product.id }}>
                         <Button
                           size="sm"
-                          className="bg-surface-muted hover:bg-brand text-brand hover:text-white font-medium border border-border hover:border-transparent transition-all shadow-xs"
+                          className="bg-surface-muted hover:bg-brand text-brand hover:text-primary-foreground font-medium border border-border hover:border-transparent transition-all shadow-xs"
                         >
                           Ver
                           <ArrowRight className="h-3.5 w-3.5 ml-1" />

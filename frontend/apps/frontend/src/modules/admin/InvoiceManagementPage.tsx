@@ -119,10 +119,10 @@ export function InvoiceManagementPage() {
   if (isLoading) {
     return (
       <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
-        <Skeleton className="h-10 w-64 bg-[#111827]" />
+        <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-[#111827]" />
-          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-[#111827]" />
+          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-surface" />
         </div>
       </div>
     );
@@ -141,7 +141,7 @@ export function InvoiceManagementPage() {
         <Button
           onClick={() => refetch()}
           variant="outline"
-          className="border-[#1F293D] text-white hover:bg-[#1F293D]"
+          className="border-border text-foreground hover:bg-border"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
         </Button>
@@ -152,17 +152,17 @@ export function InvoiceManagementPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Facturación Split y Libro Tributario
             </h1>
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
               {invoices.length} Comprobantes
             </Badge>
           </div>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             Emisión atómica split (Factura Maestra, Detalle Zentric y Detalle Vendedor) y anulación legal de comprobantes.
           </p>
         </div>
@@ -172,7 +172,7 @@ export function InvoiceManagementPage() {
           size="sm"
           onClick={() => refetch()}
           disabled={isFetching}
-          className="border-[#1F293D] text-[#94A3B8] hover:text-white"
+          className="border-border text-foreground-muted hover:text-foreground"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
           Refrescar
@@ -186,13 +186,13 @@ export function InvoiceManagementPage() {
           {/* Controles de Búsqueda y Filtro de Tipo */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#64748B]" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
               <Input
                 type="text"
                 placeholder="Buscar por ID factura, pedido o vendedor..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-[#111827] border-[#1F293D] text-white placeholder:text-[#64748B] focus:border-[#00D4AA]"
+                className="pl-10 bg-surface border-border text-foreground placeholder:text-foreground-muted focus:border-brand"
               />
             </div>
 
@@ -200,7 +200,7 @@ export function InvoiceManagementPage() {
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
               aria-label="Filtrar por tipo de factura"
-              className="bg-[#111827] border border-[#1F293D] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00D4AA]"
+              className="bg-surface border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
             >
               <option value="All">Todos los Comprobantes</option>
               <option value={InvoiceType.Master}>Factura Maestra (Comprador)</option>
@@ -210,19 +210,19 @@ export function InvoiceManagementPage() {
           </div>
 
           {filteredInvoices.length === 0 ? (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-12 text-center">
-              <Receipt className="h-10 w-10 text-[#64748B] mx-auto mb-3" />
-              <h3 className="text-sm font-semibold text-white">No se encontraron facturas</h3>
-              <p className="text-xs text-[#94A3B8] mt-1">
+            <div className="rounded-2xl border border-border bg-surface p-12 text-center">
+              <Receipt className="h-10 w-10 text-foreground-muted mx-auto mb-3" />
+              <h3 className="text-sm font-semibold text-foreground">No se encontraron facturas</h3>
+              <p className="text-xs text-foreground-muted mt-1">
                 Genere la facturación split para pedidos pagados o ajuste los filtros.
               </p>
             </div>
           ) : (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] overflow-hidden">
+            <div className="rounded-2xl border border-border bg-surface overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-[#1F293D] text-[#94A3B8] uppercase tracking-wider font-sans bg-[#161F30]/40">
+                    <tr className="border-b border-border text-foreground-muted uppercase tracking-wider font-sans bg-surface-muted/40">
                       <th className="py-3 px-4">Comprobante</th>
                       <th className="py-3 px-4">Pedido Original</th>
                       <th className="py-3 px-4">Tipo</th>
@@ -230,27 +230,27 @@ export function InvoiceManagementPage() {
                       <th className="py-3 px-4">Emisión</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#1F293D]/60">
+                  <tbody className="divide-y divide-border/60">
                     {filteredInvoices.map((inv: Invoice) => (
-                      <tr key={inv.id} className="hover:bg-[#161F30]/40 transition-colors">
-                        <td className="py-4 px-4 font-mono font-semibold text-white">
+                      <tr key={inv.id} className="hover:bg-surface-muted/40 transition-colors">
+                        <td className="py-4 px-4 font-mono font-semibold text-foreground">
                           #{inv.id.substring(0, 8)}
                         </td>
-                        <td className="py-4 px-4 font-mono text-[#E2E8F0]">
+                        <td className="py-4 px-4 font-mono text-border">
                           #{inv.customerOrderId.substring(0, 8)}
                         </td>
                         <td className="py-4 px-4">
                           {inv.type === InvoiceType.Master ? (
                             <Badge
                               variant="outline"
-                              className="border-[#00D4AA]/40 text-[#00D4AA] text-[10px] font-mono"
+                              className="border-brand/40 text-brand text-[10px] font-mono"
                             >
                               Maestra
                             </Badge>
                           ) : inv.type === InvoiceType.ZentricDetail ? (
                             <Badge
                               variant="outline"
-                              className="border-[#FFB800]/40 text-[#FFB800] text-[10px] font-mono"
+                              className="border-warning/40 text-warning text-[10px] font-mono"
                             >
                               Comisión 5%
                             </Badge>
@@ -258,23 +258,23 @@ export function InvoiceManagementPage() {
                             <div className="space-y-0.5">
                               <Badge
                                 variant="outline"
-                                className="border-[#94A3B8]/40 text-[#94A3B8] text-[10px] font-mono"
+                                className="border-foreground-muted/40 text-foreground-muted text-[10px] font-mono"
                               >
                                 Vendedor 95%
                               </Badge>
                               {inv.vendorId && (
-                                <div className="text-[10px] font-mono text-[#64748B]">
+                                <div className="text-[10px] font-mono text-foreground-muted">
                                   Vend: #{inv.vendorId.substring(0, 6)}
                                 </div>
                               )}
                             </div>
                           )}
                         </td>
-                        <td className="py-4 px-4 text-right font-mono font-bold text-white tabular-nums">
+                        <td className="py-4 px-4 text-right font-mono font-bold text-foreground tabular-nums">
                           ${inv.totalAmount.toLocaleString('es-CO')}{' '}
-                          <span className="text-[10px] text-[#94A3B8]">{inv.currency}</span>
+                          <span className="text-[10px] text-foreground-muted">{inv.currency}</span>
                         </td>
-                        <td className="py-4 px-4 font-mono text-[11px] text-[#94A3B8]">
+                        <td className="py-4 px-4 font-mono text-[11px] text-foreground-muted">
                           {inv.issuedAt ? inv.issuedAt.substring(0, 10) : '—'}
                         </td>
                       </tr>
@@ -289,15 +289,15 @@ export function InvoiceManagementPage() {
         {/* Lado Derecho (35%): Estaciones de Emisión y Anulación ────────── */}
         <section className="lg:col-span-4 space-y-6">
           {/* Estación 1: Emitir Facturación Split */}
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-white font-sans flex items-center gap-2">
-              <FileCheck className="h-4 w-4 text-[#00D4AA]" />
+          <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground font-sans flex items-center gap-2">
+              <FileCheck className="h-4 w-4 text-brand" />
               Emitir Facturación Split
             </h3>
 
             {generateSuccess && (
-              <Alert className="border-[#00D4AA]/40 bg-[#00D4AA]/10 text-[#00D4AA]">
-                <CheckCircle className="h-4 w-4 text-[#00D4AA]" />
+              <Alert className="border-brand/40 bg-brand/10 text-brand">
+                <CheckCircle className="h-4 w-4 text-brand" />
                 <AlertDescription className="text-xs">{generateSuccess}</AlertDescription>
               </Alert>
             )}
@@ -311,20 +311,20 @@ export function InvoiceManagementPage() {
 
             <form onSubmit={handleGenerate} className="space-y-3 text-xs">
               <div>
-                <label className="text-[#E2E8F0] block mb-1">ID del Pedido Pagado (UUID)</label>
+                <label className="text-border block mb-1">ID del Pedido Pagado (UUID)</label>
                 <Input
                   type="text"
                   placeholder="UUID del pedido a facturar"
                   value={generateOrderId}
                   onChange={(e) => setGenerateOrderId(e.target.value)}
-                  className="bg-[#161F30] border-[#1F293D] text-white font-mono text-xs focus:border-[#00D4AA]"
+                  className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-brand"
                 />
               </div>
 
               <Button
                 type="submit"
                 disabled={generateMutation.isPending}
-                className="w-full bg-[#00D4AA] text-[#0B0F19] hover:bg-[#00D4AA]/90 font-semibold text-xs"
+                className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold text-xs"
               >
                 {generateMutation.isPending ? 'Generando...' : 'Emitir Facturación Split'}
               </Button>
@@ -332,15 +332,15 @@ export function InvoiceManagementPage() {
           </div>
 
           {/* Estación 2: Anulación Legal */}
-          <div className="rounded-2xl border border-red-900/40 bg-[#111827] p-6 space-y-4">
+          <div className="rounded-2xl border border-red-900/40 bg-surface p-6 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-red-400 font-sans flex items-center gap-2">
               <Ban className="h-4 w-4" />
               Anulación Legal de Facturas
             </h3>
 
             {annulSuccess && (
-              <Alert className="border-[#00D4AA]/40 bg-[#00D4AA]/10 text-[#00D4AA]">
-                <CheckCircle className="h-4 w-4 text-[#00D4AA]" />
+              <Alert className="border-brand/40 bg-brand/10 text-brand">
+                <CheckCircle className="h-4 w-4 text-brand" />
                 <AlertDescription className="text-xs">{annulSuccess}</AlertDescription>
               </Alert>
             )}
@@ -354,24 +354,24 @@ export function InvoiceManagementPage() {
 
             <form onSubmit={handleAnnul} className="space-y-3 text-xs">
               <div>
-                <label className="text-[#E2E8F0] block mb-1">ID del Pedido a Anular (UUID)</label>
+                <label className="text-border block mb-1">ID del Pedido a Anular (UUID)</label>
                 <Input
                   type="text"
                   placeholder="UUID del pedido facturado"
                   value={annulOrderId}
                   onChange={(e) => setAnnulOrderId(e.target.value)}
-                  className="bg-[#161F30] border-[#1F293D] text-white font-mono text-xs focus:border-red-500"
+                  className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-red-500"
                 />
               </div>
 
               <div>
-                <label className="text-[#E2E8F0] block mb-1">Motivo Legal de Anulación</label>
+                <label className="text-border block mb-1">Motivo Legal de Anulación</label>
                 <Input
                   type="text"
                   placeholder="Ej. Devolución total del pedido"
                   value={annulReason}
                   onChange={(e) => setAnnulReason(e.target.value)}
-                  className="bg-[#161F30] border-[#1F293D] text-white text-xs focus:border-red-500"
+                  className="bg-surface-muted border-border text-foreground text-xs focus:border-red-500"
                 />
               </div>
 
@@ -386,12 +386,12 @@ export function InvoiceManagementPage() {
             </form>
           </div>
 
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-5 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#00D4AA]">
+          <div className="rounded-2xl border border-border bg-surface p-5 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-semibold text-brand">
               <Layers className="h-4 w-4" />
               <span>Invariante de Split de Facturación</span>
             </div>
-            <p className="text-[11px] text-[#94A3B8] leading-relaxed">
+            <p className="text-[11px] text-foreground-muted leading-relaxed">
               Zentric desglosa automáticamente cada pedido en una Factura Maestra hacia el comprador, una Factura de Comisión del 5% para la plataforma, y las Facturas de Detalle hacia los respectivos vendedores participantes (95%).
             </p>
           </div>

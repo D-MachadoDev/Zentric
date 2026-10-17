@@ -161,10 +161,10 @@ export function SellerFulfillmentsPage() {
   if (isLoading) {
     return (
       <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
-        <Skeleton className="h-8 w-48 bg-[#111827]" />
+        <Skeleton className="h-8 w-48 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-[#111827]" />
-          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-[#111827]" />
+          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-surface" />
         </div>
       </div>
     );
@@ -185,7 +185,7 @@ export function SellerFulfillmentsPage() {
         <Button
           onClick={() => refetch()}
           variant="outline"
-          className="border-[#1F293D] text-white hover:bg-[#1F293D]"
+          className="border-border text-foreground hover:bg-border"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
         </Button>
@@ -196,17 +196,17 @@ export function SellerFulfillmentsPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado de Despachos ─────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Cola de Despachos Propios
             </h1>
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
               {allFulfillments.length} Envíos
             </Badge>
           </div>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             Gestión de empaque y entrega a transporte logístico. Entrega final reservada al operador.
           </p>
         </div>
@@ -216,7 +216,7 @@ export function SellerFulfillmentsPage() {
           size="sm"
           onClick={() => refetch()}
           disabled={isFetching}
-          className="border-[#1F293D] text-[#94A3B8] hover:text-white"
+          className="border-border text-foreground-muted hover:text-foreground"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
           Refrescar
@@ -224,8 +224,8 @@ export function SellerFulfillmentsPage() {
       </div>
 
       {ghostSuccess && (
-        <Alert className="border-[#00D4AA]/40 bg-[#00D4AA]/10 text-[#00D4AA]">
-          <CheckCircle2 className="h-4 w-4 text-[#00D4AA]" />
+        <Alert className="border-brand/40 bg-brand/10 text-brand">
+          <CheckCircle2 className="h-4 w-4 text-brand" />
           <AlertDescription className="text-xs">{ghostSuccess}</AlertDescription>
         </Alert>
       )}
@@ -237,20 +237,20 @@ export function SellerFulfillmentsPage() {
           {/* Filtros */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#64748B]" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
               <Input
                 type="text"
                 placeholder="Buscar por ID de despacho o pedido..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-[#111827] border-[#1F293D] text-white placeholder:text-[#64748B] focus:border-[#00D4AA]"
+                className="pl-10 bg-surface border-border text-foreground placeholder:text-foreground-muted focus:border-brand"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'All' | FulfillmentStatus)}
               aria-label="Filtrar por estado de despacho"
-              className="bg-[#111827] border border-[#1F293D] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00D4AA]"
+              className="bg-surface border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
             >
               <option value="All">Todos los estados</option>
               {Object.values(FulfillmentStatus).map((status) => (
@@ -283,32 +283,32 @@ export function SellerFulfillmentsPage() {
                     onClick={() => setSelectedFulfillmentId(f.id)}
                     className={`rounded-2xl border p-5 cursor-pointer transition-all ${
                       isSelected
-                        ? 'border-[#00D4AA] bg-[#161F30] shadow-lg shadow-[#00D4AA]/5'
-                        : 'border-[#1F293D] bg-[#111827] hover:border-[#1F293D]/80 hover:bg-[#161F30]/40'
+                        ? 'border-brand bg-surface-muted shadow-lg shadow-brand/5'
+                        : 'border-border bg-surface hover:border-border/80 hover:bg-surface-muted/40'
                     }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm font-bold text-white">
+                          <span className="font-mono text-sm font-bold text-foreground">
                             Despacho #{f.id.substring(0, 8)}
                           </span>
                           <StatusBadge tone={TONOS_DE_ESTADO_DE_DESPACHO[f.status]}>
                             {NOMBRES_DE_ESTADO_DE_DESPACHO[f.status]}
                           </StatusBadge>
                         </div>
-                        <div className="text-xs text-[#94A3B8] font-mono">
+                        <div className="text-xs text-foreground-muted font-mono">
                           Pedido: #{f.customerOrderId.substring(0, 8)} • Creado:{' '}
                           {new Date(f.createdAt).toLocaleDateString()}
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between sm:justify-end gap-3">
-                        <div className="text-right text-xs text-[#94A3B8]">
+                        <div className="text-right text-xs text-foreground-muted">
                           {f.shipments?.length ?? 0} paquetes
                         </div>
                         <ChevronRight
-                          className={`h-5 w-5 ${isSelected ? 'text-[#00D4AA]' : 'text-[#64748B]'}`}
+                          className={`h-5 w-5 ${isSelected ? 'text-brand' : 'text-foreground-muted'}`}
                         />
                       </div>
                     </div>
@@ -322,31 +322,31 @@ export function SellerFulfillmentsPage() {
         {/* Lado Derecho (35%): Estación de Operación Logística ───────── */}
         <aside className="lg:col-span-4 space-y-6">
           {selectedFulfillment ? (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-6">
-              <div className="space-y-1 pb-4 border-b border-[#1F293D]">
+            <div className="rounded-2xl border border-border bg-surface p-6 space-y-6">
+              <div className="space-y-1 pb-4 border-b border-border">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-base font-bold text-white font-sans">
+                  <h2 className="text-base font-bold text-foreground font-sans">
                     Operación de Despacho
                   </h2>
                   <StatusBadge tone={TONOS_DE_ESTADO_DE_DESPACHO[selectedFulfillment.status]}>
                     {NOMBRES_DE_ESTADO_DE_DESPACHO[selectedFulfillment.status]}
                   </StatusBadge>
                 </div>
-                <p className="font-mono text-xs text-[#00D4AA] truncate">
+                <p className="font-mono text-xs text-brand truncate">
                   ID: {selectedFulfillment.id}
                 </p>
-                <p className="text-[11px] text-[#64748B]">
+                <p className="text-[11px] text-foreground-muted">
                   Pedido Asociado: {selectedFulfillment.customerOrderId}
                 </p>
               </div>
 
               {/* Guías y Paquetes de Envío */}
               <div className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
                   Guías de Transporte
                 </h3>
                 {(!selectedFulfillment.shipments || selectedFulfillment.shipments.length === 0) ? (
-                  <p className="text-xs text-[#64748B] italic">
+                  <p className="text-xs text-foreground-muted italic">
                     Sin guías de transporte asociadas aún.
                   </p>
                 ) : (
@@ -357,12 +357,12 @@ export function SellerFulfillmentsPage() {
                       return (
                         <div
                           key={s.id}
-                          className="rounded-xl border border-[#1F293D] bg-[#161F30]/60 p-3 space-y-1 text-xs"
+                          className="rounded-xl border border-border bg-surface-muted/60 p-3 space-y-1 text-xs"
                         >
-                          <div className="font-mono font-semibold text-white">
+                          <div className="font-mono font-semibold text-foreground">
                             Guía: {s.trackingNumber}
                           </div>
-                          <div className="text-[11px] text-[#94A3B8] flex items-center gap-1">
+                          <div className="text-[11px] text-foreground-muted flex items-center gap-1">
                             <WarehouseIcon className="h-3 w-3" />
                             {warehouse?.location ?? s.warehouseId}
                           </div>
@@ -375,7 +375,7 @@ export function SellerFulfillmentsPage() {
 
               {/* Acciones Operativas según Estado */}
               <div className="space-y-3 pt-2">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
                   Transición de Estado
                 </h3>
 
@@ -383,7 +383,7 @@ export function SellerFulfillmentsPage() {
                   <Button
                     onClick={() => handlePack(selectedFulfillment.id)}
                     disabled={packMutation.isPending}
-                    className="w-full bg-[#00D4AA] text-[#0B0F19] hover:bg-[#00D4AA]/90 font-semibold"
+                    className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold"
                   >
                     {packMutation.isPending ? (
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -398,7 +398,7 @@ export function SellerFulfillmentsPage() {
                   <Button
                     onClick={() => handleDispatch(selectedFulfillment.id)}
                     disabled={dispatchMutation.isPending}
-                    className="w-full bg-[#00D4AA] text-[#0B0F19] hover:bg-[#00D4AA]/90 font-semibold"
+                    className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold"
                   >
                     {dispatchMutation.isPending ? (
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -410,12 +410,12 @@ export function SellerFulfillmentsPage() {
                 )}
 
                 {selectedFulfillment.status === FulfillmentStatus.Dispatched && (
-                  <div className="rounded-xl border border-[#1F293D] bg-[#161F30]/40 p-4 text-center space-y-2">
-                    <Truck className="h-6 w-6 text-[#00D4AA] mx-auto animate-pulse" />
-                    <p className="text-xs font-medium text-white">
+                  <div className="rounded-xl border border-border bg-surface-muted/40 p-4 text-center space-y-2">
+                    <Truck className="h-6 w-6 text-brand mx-auto animate-pulse" />
+                    <p className="text-xs font-medium text-foreground">
                       En Tránsito hacia el Comprador
                     </p>
-                    <p className="text-[11px] text-[#94A3B8]">
+                    <p className="text-[11px] text-foreground-muted">
                       La certificación de entrega final (Delivered) corresponde exclusivamente al
                       Operador Logístico (AuthorizationPolicies).
                     </p>
@@ -423,12 +423,12 @@ export function SellerFulfillmentsPage() {
                 )}
 
                 {selectedFulfillment.status === FulfillmentStatus.Delivered && (
-                  <div className="rounded-xl border border-[#00D4AA]/30 bg-[#00D4AA]/10 p-4 text-center space-y-1">
-                    <CheckCircle2 className="h-6 w-6 text-[#00D4AA] mx-auto" />
-                    <p className="text-xs font-semibold text-[#00D4AA]">
+                  <div className="rounded-xl border border-brand/30 bg-brand/10 p-4 text-center space-y-1">
+                    <CheckCircle2 className="h-6 w-6 text-brand mx-auto" />
+                    <p className="text-xs font-semibold text-brand">
                       Entrega Certificada
                     </p>
-                    <p className="text-[11px] text-[#94A3B8]">
+                    <p className="text-[11px] text-foreground-muted">
                       El comprador ha recibido satisfactoriamente este envío.
                     </p>
                   </div>
@@ -440,7 +440,7 @@ export function SellerFulfillmentsPage() {
                       <Ban className="h-4 w-4" /> Despacho Cancelado
                     </div>
                     {selectedFulfillment.cancellationReason && (
-                      <p className="text-[11px] text-[#94A3B8]">
+                      <p className="text-[11px] text-foreground-muted">
                         Motivo: {selectedFulfillment.cancellationReason}
                       </p>
                     )}
@@ -470,12 +470,12 @@ export function SellerFulfillmentsPage() {
                     </span>
                     <button
                       onClick={() => setShowGhostModal(false)}
-                      className="text-xs text-[#94A3B8] hover:text-white"
+                      className="text-xs text-foreground-muted hover:text-foreground"
                     >
                       ✕
                     </button>
                   </div>
-                  <p className="text-[11px] text-[#94A3B8] leading-relaxed">
+                  <p className="text-[11px] text-foreground-muted leading-relaxed">
                     Advierte que no existen unidades físicas disponibles en la bodega. Esto cancelará
                     el despacho y devolverá el saldo al comprador (ADR-0014/ADR-0022).
                   </p>
@@ -486,7 +486,7 @@ export function SellerFulfillmentsPage() {
 
                   <form onSubmit={handleCancelGhostStock} noValidate className="space-y-3">
                     <div>
-                      <label className="text-[11px] text-[#E2E8F0] block mb-1">
+                      <label className="text-[11px] text-border block mb-1">
                         ID de Variante
                       </label>
                       <Input
@@ -494,19 +494,19 @@ export function SellerFulfillmentsPage() {
                         placeholder="UUID de la variante"
                         value={ghostVariantId}
                         onChange={(e) => setGhostVariantId(e.target.value)}
-                        className="bg-[#111827] border-red-900/60 text-white font-mono text-xs focus:border-red-500"
+                        className="bg-surface border-red-900/60 text-foreground font-mono text-xs focus:border-red-500"
                       />
                     </div>
 
                     <div>
-                      <label className="text-[11px] text-[#E2E8F0] block mb-1">
+                      <label className="text-[11px] text-border block mb-1">
                         Bodega del Quiebre
                       </label>
                       <select
                         value={ghostWarehouseId}
                         onChange={(e) => setGhostWarehouseId(e.target.value)}
                         aria-label="Seleccionar bodega física del quiebre"
-                        className="w-full bg-[#111827] border border-red-900/60 text-white text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:border-red-500"
+                        className="w-full bg-surface border border-red-900/60 text-foreground text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:border-red-500"
                       >
                         <option value="">-- Seleccionar Bodega --</option>
                         {allWarehouses.map((w: Warehouse) => (
@@ -518,7 +518,7 @@ export function SellerFulfillmentsPage() {
                     </div>
 
                     <div>
-                      <label className="text-[11px] text-[#E2E8F0] block mb-1">
+                      <label className="text-[11px] text-border block mb-1">
                         Cantidad Faltante
                       </label>
                       <Input
@@ -528,7 +528,7 @@ export function SellerFulfillmentsPage() {
                         onChange={(e) =>
                           setGhostQuantity(parseInt(e.target.value, 10) || 0)
                         }
-                        className="bg-[#111827] border-red-900/60 text-white font-mono text-xs focus:border-red-500"
+                        className="bg-surface border-red-900/60 text-foreground font-mono text-xs focus:border-red-500"
                       />
                     </div>
 
@@ -538,7 +538,7 @@ export function SellerFulfillmentsPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => setShowGhostModal(false)}
-                        className="flex-1 border-[#1F293D] text-[#94A3B8] text-xs"
+                        className="flex-1 border-border text-foreground-muted text-xs"
                       >
                         Cancelar
                       </Button>
@@ -546,7 +546,7 @@ export function SellerFulfillmentsPage() {
                         type="submit"
                         disabled={cancelGhostStockMutation.isPending}
                         size="sm"
-                        className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold"
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-foreground text-xs font-semibold"
                       >
                         {cancelGhostStockMutation.isPending ? 'Confirmando...' : 'Confirmar Quiebre'}
                       </Button>
@@ -556,7 +556,7 @@ export function SellerFulfillmentsPage() {
               )}
             </div>
           ) : (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-8 text-center text-sm text-[#64748B]">
+            <div className="rounded-2xl border border-border bg-surface p-8 text-center text-sm text-foreground-muted">
               Selecciona un despacho para operar o verificar su estado.
             </div>
           )}

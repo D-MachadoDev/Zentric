@@ -63,16 +63,16 @@ export function SellerDashboardPage() {
   if (isLoadingProducts || isLoadingOrders) {
     return (
       <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
-        <Skeleton className="h-8 w-48 bg-[#111827]" />
+        <Skeleton className="h-8 w-48 bg-surface" />
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-          <Skeleton className="h-28 rounded-2xl bg-[#111827]" />
-          <Skeleton className="h-28 rounded-2xl bg-[#111827]" />
-          <Skeleton className="h-28 rounded-2xl bg-[#111827]" />
-          <Skeleton className="h-28 rounded-2xl bg-[#111827]" />
+          <Skeleton className="h-28 rounded-2xl bg-surface" />
+          <Skeleton className="h-28 rounded-2xl bg-surface" />
+          <Skeleton className="h-28 rounded-2xl bg-surface" />
+          <Skeleton className="h-28 rounded-2xl bg-surface" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-8 h-80 rounded-2xl bg-[#111827]" />
-          <Skeleton className="lg:col-span-4 h-80 rounded-2xl bg-[#111827]" />
+          <Skeleton className="lg:col-span-8 h-80 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-4 h-80 rounded-2xl bg-surface" />
         </div>
       </div>
     );
@@ -81,30 +81,30 @@ export function SellerDashboardPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado de la Consola del Vendedor ─────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Consola del Vendedor
             </h1>
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
               Portal Comercial
             </Badge>
           </div>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             Supervisión de catálogo propio, abastecimiento en bodegas físicas y empaque de despachos.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <Link to="/seller/products/new">
-            <Button className="bg-[#00D4AA] hover:bg-[#00D4AA]/90 text-[#0B0F19] font-bold text-xs shadow-md shadow-[#00D4AA]/20">
+            <Button className="bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-xs shadow-md shadow-brand/20">
               <PlusCircle className="h-4 w-4 mr-1.5" />
               Nuevo Producto
             </Button>
           </Link>
           <Link to="/seller/inventory">
-            <Button variant="outline" size="sm" className="border-[#1F293D] text-[#94A3B8] hover:text-white">
+            <Button variant="outline" size="sm" className="border-border text-foreground-muted hover:text-foreground">
               <Boxes className="h-4 w-4 mr-1.5" /> Cargar Stock
             </Button>
           </Link>
@@ -160,44 +160,44 @@ export function SellerDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Lado Izquierdo: Pedidos Recientes (65% -> col-span-8) */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] overflow-hidden">
-            <div className="p-4 sm:p-5 border-b border-[#1F293D] bg-[#161F30]/40 flex items-center justify-between">
-              <span className="text-xs uppercase font-mono tracking-wider text-[#94A3B8]">
+          <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-border bg-surface-muted/40 flex items-center justify-between">
+              <span className="text-xs uppercase font-mono tracking-wider text-foreground-muted">
                 Pedidos Recientes de mis Productos
               </span>
               <Link to="/seller/orders">
-                <Button variant="ghost" size="sm" className="text-[#00D4AA] hover:text-[#00D4AA]/80 text-xs">
+                <Button variant="ghost" size="sm" className="text-brand hover:text-brand/80 text-xs">
                   Ver Todos ({orders?.length ?? 0}) <ArrowRight className="h-3.5 w-3.5 ml-1" />
                 </Button>
               </Link>
             </div>
 
             {recentOrders.length === 0 ? (
-              <div className="p-8 text-center text-xs font-mono text-[#64748B]">
+              <div className="p-8 text-center text-xs font-mono text-foreground-muted">
                 Sin ventas registradas recientemente en su cuenta de vendedor.
               </div>
             ) : (
-              <div className="divide-y divide-[#1F293D]">
+              <div className="divide-y divide-border">
                 {recentOrders.map((order: OrderListItem) => (
-                  <div key={order.id} className="p-5 flex items-center justify-between hover:bg-[#161F30]/30 transition-colors">
+                  <div key={order.id} className="p-5 flex items-center justify-between hover:bg-surface-muted/30 transition-colors">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-white">
+                        <span className="text-xs font-mono font-bold text-foreground">
                           Pedido #{order.id.slice(0, 8)}
                         </span>
                         <StatusBadge tone="neutral">{order.status}</StatusBadge>
                       </div>
-                      <p className="text-xs font-mono text-[#64748B]">
+                      <p className="text-xs font-mono text-foreground-muted">
                         Fecha: {new Date(order.createdAt).toLocaleDateString('es-CO')} • {order.itemCount} línea(s)
                       </p>
                     </div>
 
                     <div className="text-right">
-                      <div className="text-sm font-mono font-bold text-white tabular-nums">
+                      <div className="text-sm font-mono font-bold text-foreground tabular-nums">
                         <MoneyAmount amount={order.totalAmount} currency={order.currency} />
                       </div>
                       <Link to="/seller/orders">
-                        <span className="text-xs font-mono text-[#00D4AA] hover:underline cursor-pointer">
+                        <span className="text-xs font-mono text-brand hover:underline cursor-pointer">
                           Ver Desglose
                         </span>
                       </Link>
@@ -211,33 +211,33 @@ export function SellerDashboardPage() {
 
         {/* Lado Derecho: Cola Operativa (35% -> col-span-4) */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-4 shadow-xl">
-            <h2 className="text-sm uppercase font-mono tracking-wider text-[#94A3B8]">
+          <div className="rounded-2xl border border-border bg-surface p-6 space-y-4 shadow-xl">
+            <h2 className="text-sm uppercase font-mono tracking-wider text-foreground-muted">
               Acciones Rápidas
             </h2>
 
             <div className="space-y-2">
               <Link to="/seller/products">
-                <Button variant="outline" className="w-full justify-start border-[#1F293D] text-[#94A3B8] hover:text-white hover:bg-[#161F30]">
-                  <Package className="h-4 w-4 mr-2 text-[#00D4AA]" />
+                <Button variant="outline" className="w-full justify-start border-border text-foreground-muted hover:text-foreground hover:bg-surface-muted">
+                  <Package className="h-4 w-4 mr-2 text-brand" />
                   Gestionar Catálogo de Productos
                 </Button>
               </Link>
               <Link to="/seller/inventory">
-                <Button variant="outline" className="w-full justify-start border-[#1F293D] text-[#94A3B8] hover:text-white hover:bg-[#161F30]">
-                  <Boxes className="h-4 w-4 mr-2 text-[#00D4AA]" />
+                <Button variant="outline" className="w-full justify-start border-border text-foreground-muted hover:text-foreground hover:bg-surface-muted">
+                  <Boxes className="h-4 w-4 mr-2 text-brand" />
                   Abastecimiento de Bodegas
                 </Button>
               </Link>
               <Link to="/seller/fulfillments">
-                <Button variant="outline" className="w-full justify-start border-[#1F293D] text-[#94A3B8] hover:text-white hover:bg-[#161F30]">
-                  <Truck className="h-4 w-4 mr-2 text-[#FFB800]" />
+                <Button variant="outline" className="w-full justify-start border-border text-foreground-muted hover:text-foreground hover:bg-surface-muted">
+                  <Truck className="h-4 w-4 mr-2 text-warning" />
                   Cola de Empaque y Despachos
                 </Button>
               </Link>
               <Link to="/seller/returns">
-                <Button variant="outline" className="w-full justify-start border-[#1F293D] text-[#94A3B8] hover:text-white hover:bg-[#161F30]">
-                  <RotateCcw className="h-4 w-4 mr-2 text-[#00D4AA]" />
+                <Button variant="outline" className="w-full justify-start border-border text-foreground-muted hover:text-foreground hover:bg-surface-muted">
+                  <RotateCcw className="h-4 w-4 mr-2 text-brand" />
                   Aprobación de Devoluciones
                 </Button>
               </Link>

@@ -19,68 +19,207 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================================================
-   Tema Zentric — fuente de verdad del diseno.
-   Q18-A: Tailwind v4 configura el tema en CSS con @theme; no existe
-   tailwind.config.ts. Si tokens/*.ts divergen de aqui, MANDA ESTE FICHERO.
-   Decisiones: Q3-A (dark builder), Q7-C (carbon/cian/ambar), Q8-B (Geist).
-   Contraste AA verificado (Frontend-Design-System.md seccion 5).
-
-   Q14 manda "instalar shadcn/ui y ADAPTARLO". Aqui se respeta ese orden: los
-   componentes shadcn consumen LOS TOKENS DE ZENTRIC (Q7), no al reves. El CLI
-   anade por defecto un bloque `@theme inline` que reasigna --color-background
-   y --font-sans a los neutros de Inter; eso anularia Q7 y Q8, asi que se
-   sustituye por el mapeo de abajo.
+   ZENTRIC DESIGN SYSTEM v2 — "Porcelana y Grafito" (ADDENDUM §9)
+   ----------------------------------------------------------------------------
+   Arquitectura de tema (decision dictada por Owner en /grill-me):
+   1. UNA sola fuente de verdad de color: ESTE fichero. global.css ya no pisa
+      tokens (el dual theme v1 fallaba por dos fuentes en conflicto).
+   2. Tokens RUNTIME con nombres finales (:root = claro, .dark = oscuro): los
+      componentes y el CSS plano referencian var(--background), var(--brand)...
+      directamente, en cualquier modo.
+   3. `@theme inline` puentea cada token runtime a su utilidad Tailwind v4
+      (bg-brand -> var(--brand)); al ser inline, las utilidades resuelven el
+      valor EN USO, asi .dark y [data-role] funcionan sin recompilar.
+   4. Identidad por rol: cada layout de rol ancla su raiz con data-role="..."
+      y el scope remapea SOLO el eje de acento (--brand/--brand-strong).
+      --primary y --ring derivan de --brand por var(), asi que foco, botones
+      primarios, links y chips de rol cambian de identidad sin tocar componentes.
+   5. Contraste WCAG 2.1 AA verificado programaticamente para AMBOS modos y
+      los 5 acentos (Frontend-Design-System.md §9.4).
    ========================================================================== */
 
+:root {
+  /* --- Modo Claro "Estudio Porcelana" (default: comercio de grado Stripe/Shopify) --- */
+  --background: #F5F6F8; /* Lienzo porcelana con tinte frio (B > R, nunca gris muerto) */
+  --surface: #FFFFFF; /* Papel nítido de tarjeta. Exención documentada §9.3: blanco puro, no gris desaturado. */
+  --surface-muted: #EEF0F4; /* Zona editorial secundaria (cabeceras, hover, bloques) */
+  --border: #E1E5EB; /* Borde estructural 1px */
+  --border-subtle: #EBEEF2; /* Hairline divisorio interno */
+
+  /* Tinta con matiz azul (B > R): jerarquia 17.04 / 7.61 / 4.96:1 sobre lienzo. */
+  --foreground: #0E1420;
+  --foreground-muted: #454F63;
+  --foreground-subtle: #5F6B82;
+
+  /* --- Estados de dominio (comunes a todos los roles; solo badges/dots de estado) --- */
+  --success: #15803D; /* Confirmado / activo (4.64:1 lienzo, 5.02:1 superficie) */
+  --warning: #B45309; /* Pendiente / checkout 15 minutos (4.64:1) */
+  --danger: #B91C1C; /* Error / destructivo (5.98:1) */
+  --info: #1D4ED8; /* Informativo / transito (6.20:1) */
+
+  /* --- Acento por defecto = identidad Comprador (jade de marca, §9.2) ---
+     Los scopes [data-role] de abajo solo re-declaran este par. */
+  --brand: #0F766E;
+  --brand-strong: #0B5D56; /* Hover/active (paso mas profundo en claro) */
+
+  /* --- Texto sobre relleno de acento (boton primario) --- */
+  --primary-foreground: #FFFFFF;
+
+  /* --- Contrato semantico shadcn (Q5/Q14): shadcn se adapta a Zentric --- */
+  --primary: var(--brand);
+  --secondary: var(--surface-muted);
+  --secondary-foreground: var(--foreground);
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--foreground-muted);
+  --accent: var(--surface-muted);
+  --accent-foreground: var(--foreground);
+  --destructive: var(--danger);
+  --destructive-foreground: #FFFFFF;
+  --input: var(--border);
+  /* Anillo de foco = acento del rol. Un unico anillo visible (spec §5). */
+  --ring: var(--brand);
+
+  color-scheme: light;
+}
+
+.dark {
+  /* --- Modo Oscuro "Bóveda Grafito" (consola operativa, sesiones largas) --- */
+  --background: #0C0F16; /* Grafito-tinta (B > R); sustituye al carbón saturado del v1 */
+  --surface: #131824;
+  --surface-muted: #1A2030;
+  --border: #252D40;
+  --border-subtle: #1D2334;
+
+  --foreground: #EDF1F7; /* Hueso frio: 16.91:1 sobre lienzo */
+  --foreground-muted: #98A2B8; /* 7.48:1 */
+  --foreground-subtle: #7D88A3; /* 5.41:1 (AA verificado) */
+
+  --success: #4ADE80;
+  --warning: #FBBF24;
+  --danger: #F87171;
+  --info: #60A5FA;
+
+  /* Jade luminoso sobre grafito; el boton primario usa tinta oscura encima. */
+  --brand: #2DD4BF;
+  --brand-strong: #5EEAD4; /* Hover/active (paso mas luminoso en oscuro) */
+  --primary-foreground: #0C0F16;
+
+  color-scheme: dark;
+}
+
+/* ============================================================================
+   Identidad de Rol (§9.2): solo el eje de acento. --primary, --ring y todos
+   los tokens derivados siguen a --brand por var(). El scope vive en la raiz
+   del layout de cada rol; sin data-role (paginas publicas) heredan el jade
+   Comprador, que es la identidad de marca por defecto.
+   ========================================================================== */
+[data-role='seller'] {
+  /* Vendedor — Estudio Violeta: gestion de catalogo (5.36-7.10:1 texto en claro) */
+  --brand: #6D28D9;
+  --brand-strong: #5B21B6;
+}
+.dark [data-role='seller'] {
+  --brand: #A78BFA;
+  --brand-strong: #C4B5FD;
+}
+
+[data-role='admin'] {
+  /* Administrador — Índigo de Mando: gobernanza central (7.31:1 texto en claro).
+     NO es el "índigo eléctrico" #4F46E5/#6366F1 rechazado en §8: es un paso
+     más profundo (700), contenido y sin brillo neón. */
+  --brand: #4338CA;
+  --brand-strong: #3730A3;
+}
+.dark [data-role='admin'] {
+  --brand: #818CF8;
+  --brand-strong: #A5B4FC;
+}
+
+[data-role='logistics'] {
+  /* Operador Logístico — Cian Operativo: colas y transito (4.95:1 texto en claro) */
+  --brand: #0E7490;
+  --brand-strong: #0A5C74;
+}
+.dark [data-role='logistics'] {
+  --brand: #22D3EE;
+  --brand-strong: #67E8F9;
+}
+
+[data-role='supervisor'] {
+  /* Supervisor de Auditoría — Fucsia Forense: libro mayor (5.85:1 texto en claro) */
+  --brand: #A21CAF;
+  --brand-strong: #86198F;
+}
+.dark [data-role='supervisor'] {
+  --brand: #E879F9;
+  --brand-strong: #F0ABFC;
+}
+
+/* ============================================================================
+   Puente @theme inline (Tailwind v4): cada utilidad de color resuelve el token
+   runtime EN USO. Asi bg-brand/text-brand/border-brand funcionan con .dark y
+   con [data-role] sin duplicar valores. Fontos/radios/movimiento son estaticos
+   y van en @theme normal (se emiten a :root tal cual).
+   ========================================================================== */
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
+
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+/* ============================================================================
+   Tokens estáticos (se emiten a :root tal cual): radios, fuentes y curvas de
+   movimiento NO conmutan con el tema, asi que viven en @theme normal para que
+   var(--font-sans), var(--radius-*) y var(--ease-out-expo) existan en runtime
+   para el CSS plano y los componentes.
+   ========================================================================== */
 @theme {
-  /* --- Marca y superficies (Dark Developer / Swiss Operational Console) --- */
-  --color-background: #0A0E1A; /* Lienzo base (carbón azulado profundo) */
-  --color-surface: #111827; /* Superficie primaria (tarjetas, tablas, modales) */
-  --color-surface-muted: #161F30; /* Superficie secundaria (cabeceras, hover) */
-  --color-border: #1F293D; /* Borde estructural estándar (1px solid) */
-  --color-border-subtle: #192231; /* Borde sutil / línea divisoria interna (hairlines) */
-
-  /* --- Jerarquía de texto y contraste (Foreground) --- */
-  --color-foreground: #F1F5F9; /* Texto primario (hueso tintado, contraste > 14:1) */
-  --color-foreground-muted: #94A3B8; /* Texto secundario (pizarra claro, contraste >= 6.2:1) */
-  --color-foreground-subtle: #728399; /* Texto terciario / metadato (contraste > 4.5:1 WCAG AA verificado: 4.97:1 sobre #0A0E1A, 4.58:1 sobre #111827) */
-
-  /* --- Acentos semánticos y estados de dominio --- */
-  --color-brand: #00D4AA; /* Acento primario de acción (esmeralda/cian suave) */
-  --color-brand-strong: #00B896; /* Hover/active del acento primario */
-  --color-warning: #FFB800; /* Alerta / checkout 15 minutos (ámbar canónico) */
-  --color-success: #10B981; /* Confirmado / activo (verde esmeralda) */
-  --color-danger: #EF4444; /* Error / acción destructiva (rojo intenso) */
-  --color-info: #3B82F6; /* Informativo / tránsito (azul operativo) */
-
-  /* --- Tokens semánticos que los componentes shadcn (Q5/Q14) esperan ---
-     Cada uno apunta a un token de Zentric de arriba: shadcn se adapta al
-     design system, nunca al revés. */
-  --color-card: var(--color-surface);
-  --color-card-foreground: var(--color-foreground);
-  --color-popover: var(--color-surface);
-  --color-popover-foreground: var(--color-foreground);
-
-  --color-primary: var(--color-brand);
-  --color-primary-foreground: #0A0E1A; /* Texto sólido sobre cian (contraste AAA > 11:1) */
-
-  --color-secondary: var(--color-surface-muted);
-  --color-secondary-foreground: var(--color-foreground);
-
-  --color-muted: var(--color-surface-muted);
-  --color-muted-foreground: var(--color-foreground-muted);
-
-  --color-accent: var(--color-surface-muted);
-  --color-accent-foreground: var(--color-foreground);
-
-  --color-destructive: var(--color-danger);
-  --color-destructive-foreground: #ffffff;
-
-  --color-input: var(--color-border);
-  /* Anillo de foco = color de marca. La regla de accesibilidad de la sección 5
-     exige un único anillo visible en todo elemento interactivo. */
-  --ring: var(--color-brand);
-  --color-ring: var(--color-brand);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  /* 9999 y no 999: el Owner confirmó §2.3 como fuente de verdad de los radios.
+     9999 asegura círculo real independientemente del tamaño del elemento. */
+  --radius-full: 9999px;
+  /* Derivados: la spec fija 6/8/12/16/9999. Estos tres escalan la misma rampa
+     para que rounded-2xl/3xl/4xl de shadcn no queden sin token. */
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-4xl: 28px;
 
   /* --- Tipografía (Q8-B) ---
      El nombre lo dicta el paquete: 'Geist Variable' (verificado contra
@@ -89,77 +228,31 @@
   --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
   --font-heading: var(--font-sans);
 
-  /* --- Radios (Frontend-Design-System.md sección 1) --- */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  /* 9999 y no 999: el Owner confirmó §2.3 como fuente de verdad de los radios
-     (§1 decía 6/10/14/999 y quedó corregida). 9999 asegura círculo real
-     independientemente del tamaño del elemento. */
-  --radius-full: 9999px;
-  /* Derivados: la spec fija 6/8/12/16/9999. Estos tres escalan la misma rampa
-     para que rounded-2xl/3xl/4xl de shadcn no queden sin token. */
-  --radius-2xl: 20px;
-  --radius-3xl: 24px;
-  --radius-4xl: 28px;
-
   /* --- Movimiento (sección 7): nunca bloquea la lectura --- */
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* Alias en bruto. Algunos componentes shadcn referencian var(--foreground) y
-   var(--secondary) DIRECTAMENTE (no vía la clase bg-secondary). Sin estos
-   alias esas referencias quedan sin resolver y el texto/fondo sale por
-   defecto del navegador. Mapean a los tokens --color-* de arriba; son el mismo
-   valor, solo cambia el nombre que el componente espera. */
-:root {
-  --background: var(--color-background);
-  --foreground: var(--color-foreground);
-  --card: var(--color-card);
-  --card-foreground: var(--color-card-foreground);
-  --popover: var(--color-popover);
-  --popover-foreground: var(--color-popover-foreground);
-  --primary: var(--color-primary);
-  --primary-foreground: var(--color-primary-foreground);
-  --secondary: var(--color-secondary);
-  --secondary-foreground: var(--color-secondary-foreground);
-  --muted: var(--color-muted);
-  --muted-foreground: var(--color-muted-foreground);
-  --accent: var(--color-accent);
-  --accent-foreground: var(--color-accent-foreground);
-  --destructive: var(--color-destructive);
-  --destructive-foreground: var(--color-destructive-foreground);
-  --border: var(--color-border);
-  --border-subtle: var(--color-border-subtle);
-  --input: var(--color-input);
-  --ring: var(--color-ring);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @layer base {
   * {
-    border-color: var(--color-border);
+    border-color: var(--border);
     @apply border-border outline-ring/50;
   }
 
   html {
-    color-scheme: dark;
     @apply font-sans;
   }
 
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+    background-color: var(--background);
+    color: var(--foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     @apply bg-background text-foreground;
   }
 
-  /* Los titulos grandes apretan el tracking; el mono conserva su ancho. */
+  /* Los titulos grandes aprietan el tracking; el mono conserva su ancho. */
   h1,
   h2,
   h3 {

@@ -124,10 +124,10 @@ export function SellerReturnsPage() {
   if (isLoading) {
     return (
       <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
-        <Skeleton className="h-8 w-48 bg-[#111827]" />
+        <Skeleton className="h-8 w-48 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-[#111827]" />
-          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-[#111827]" />
+          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-surface" />
         </div>
       </div>
     );
@@ -148,7 +148,7 @@ export function SellerReturnsPage() {
         <Button
           onClick={() => refetch()}
           variant="outline"
-          className="border-[#1F293D] text-white hover:bg-[#1F293D]"
+          className="border-border text-foreground hover:bg-border"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
         </Button>
@@ -159,17 +159,17 @@ export function SellerReturnsPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado de Devoluciones ───────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Resolución de Devoluciones
             </h1>
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
               {allReturns.length} Solicitudes
             </Badge>
           </div>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             Aprobación o rechazo comercial de solicitudes tras la inspección física en bodega (ADR-0006).
           </p>
         </div>
@@ -179,7 +179,7 @@ export function SellerReturnsPage() {
           size="sm"
           onClick={() => refetch()}
           disabled={isFetching}
-          className="border-[#1F293D] text-[#94A3B8] hover:text-white"
+          className="border-border text-foreground-muted hover:text-foreground"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
           Refrescar
@@ -187,8 +187,8 @@ export function SellerReturnsPage() {
       </div>
 
       {actionSuccess && (
-        <Alert className="border-[#00D4AA]/40 bg-[#00D4AA]/10 text-[#00D4AA]">
-          <CheckCircle2 className="h-4 w-4 text-[#00D4AA]" />
+        <Alert className="border-brand/40 bg-brand/10 text-brand">
+          <CheckCircle2 className="h-4 w-4 text-brand" />
           <AlertDescription className="text-xs">{actionSuccess}</AlertDescription>
         </Alert>
       )}
@@ -200,20 +200,20 @@ export function SellerReturnsPage() {
           {/* Filtros */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#64748B]" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
               <Input
                 type="text"
                 placeholder="Buscar por ID, pedido o variante..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-[#111827] border-[#1F293D] text-white placeholder:text-[#64748B] focus:border-[#00D4AA]"
+                className="pl-10 bg-surface border-border text-foreground placeholder:text-foreground-muted focus:border-brand"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'All' | ReturnStatus)}
               aria-label="Filtrar por estado de devolución"
-              className="bg-[#111827] border border-[#1F293D] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00D4AA]"
+              className="bg-surface border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
             >
               <option value="All">Todos los estados</option>
               {Object.values(ReturnStatus).map((status) => (
@@ -248,24 +248,24 @@ export function SellerReturnsPage() {
                     onClick={() => setSelectedReturnId(r.id)}
                     className={`rounded-2xl border p-5 cursor-pointer transition-all ${
                       isSelected
-                        ? 'border-[#00D4AA] bg-[#161F30] shadow-lg shadow-[#00D4AA]/5'
-                        : 'border-[#1F293D] bg-[#111827] hover:border-[#1F293D]/80 hover:bg-[#161F30]/40'
+                        ? 'border-brand bg-surface-muted shadow-lg shadow-brand/5'
+                        : 'border-border bg-surface hover:border-border/80 hover:bg-surface-muted/40'
                     }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm font-bold text-white">
+                          <span className="font-mono text-sm font-bold text-foreground">
                             Devolución #{r.id.substring(0, 8)}
                           </span>
                           <StatusBadge tone={TONOS_DE_ESTADO_DE_DEVOLUCION[r.status]}>
                             {NOMBRES_DE_ESTADO_DE_DEVOLUCION[r.status]}
                           </StatusBadge>
                         </div>
-                        <div className="text-xs text-[#94A3B8]">
+                        <div className="text-xs text-foreground-muted">
                           {variantInfo?.name ?? 'Producto devuelto'} • {r.quantity} unidades
                         </div>
-                        <div className="text-[11px] font-mono text-[#64748B]">
+                        <div className="text-[11px] font-mono text-foreground-muted">
                           Pedido: #{r.customerOrderId.substring(0, 8)} • Bodega: {warehouse?.location ?? r.warehouseId}
                         </div>
                       </div>
@@ -275,7 +275,7 @@ export function SellerReturnsPage() {
                           <span
                             className={`text-xs font-medium px-2 py-1 rounded-full ${
                               r.isGoodCondition
-                                ? 'bg-[#00D4AA]/10 text-[#00D4AA] border border-[#00D4AA]/30'
+                                ? 'bg-brand/10 text-brand border border-brand/30'
                                 : 'bg-red-950/40 text-red-400 border border-red-900/40'
                             }`}
                           >
@@ -283,7 +283,7 @@ export function SellerReturnsPage() {
                           </span>
                         </div>
                         <ChevronRight
-                          className={`h-5 w-5 ${isSelected ? 'text-[#00D4AA]' : 'text-[#64748B]'}`}
+                          className={`h-5 w-5 ${isSelected ? 'text-brand' : 'text-foreground-muted'}`}
                         />
                       </div>
                     </div>
@@ -297,50 +297,50 @@ export function SellerReturnsPage() {
         {/* Lado Derecho (35%): Ficha de Dictamen y Decisión Comercial ──── */}
         <aside className="lg:col-span-4 space-y-6">
           {selectedReturn ? (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-6">
-              <div className="space-y-1 pb-4 border-b border-[#1F293D]">
+            <div className="rounded-2xl border border-border bg-surface p-6 space-y-6">
+              <div className="space-y-1 pb-4 border-b border-border">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-base font-bold text-white font-sans">
+                  <h2 className="text-base font-bold text-foreground font-sans">
                     Expediente de Devolución
                   </h2>
                   <StatusBadge tone={TONOS_DE_ESTADO_DE_DEVOLUCION[selectedReturn.status]}>
                     {NOMBRES_DE_ESTADO_DE_DEVOLUCION[selectedReturn.status]}
                   </StatusBadge>
                 </div>
-                <p className="font-mono text-xs text-[#00D4AA] truncate">
+                <p className="font-mono text-xs text-brand truncate">
                   ID: {selectedReturn.id}
                 </p>
-                <p className="text-[11px] text-[#64748B]">
+                <p className="text-[11px] text-foreground-muted">
                   Pedido: {selectedReturn.customerOrderId}
                 </p>
               </div>
 
               {/* Dictamen de Inspección Física (ADR-0018) */}
               <div className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
                   Inspección Física en Bodega
                 </h3>
 
                 <div
                   className={`rounded-xl border p-4 space-y-2 ${
                     selectedReturn.isGoodCondition
-                      ? 'border-[#00D4AA]/40 bg-[#00D4AA]/5'
+                      ? 'border-brand/40 bg-brand/5'
                       : 'border-red-900/40 bg-red-950/20'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     {selectedReturn.isGoodCondition ? (
-                      <ShieldCheck className="h-5 w-5 text-[#00D4AA]" />
+                      <ShieldCheck className="h-5 w-5 text-brand" />
                     ) : (
                       <ShieldAlert className="h-5 w-5 text-red-400" />
                     )}
-                    <span className="text-xs font-bold text-white">
+                    <span className="text-xs font-bold text-foreground">
                       {selectedReturn.isGoodCondition
                         ? 'Dictamen Favorable'
                         : 'Dictamen Desfavorable'}
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#94A3B8] leading-relaxed">
+                  <p className="text-[11px] text-foreground-muted leading-relaxed">
                     {selectedReturn.isGoodCondition
                       ? 'El operador logístico verificó que el producto devuelto se encuentra íntegro y sin daños.'
                       : 'El operador logístico constató que el producto presenta anomalías, rotura o empaque violentado.'}
@@ -349,22 +349,22 @@ export function SellerReturnsPage() {
               </div>
 
               {/* Detalles de la Variante y Cantidad */}
-              <div className="rounded-xl border border-[#1F293D] bg-[#161F30]/60 p-4 space-y-2 text-xs">
+              <div className="rounded-xl border border-border bg-surface-muted/60 p-4 space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-[#94A3B8]">Variante:</span>
-                  <span className="font-mono text-white truncate max-w-[160px]">
+                  <span className="text-foreground-muted">Variante:</span>
+                  <span className="font-mono text-foreground truncate max-w-[160px]">
                     {selectedReturn.variantId}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#94A3B8]">Cantidad Solicitada:</span>
-                  <span className="font-mono font-semibold text-white">
+                  <span className="text-foreground-muted">Cantidad Solicitada:</span>
+                  <span className="font-mono font-semibold text-foreground">
                     {selectedReturn.quantity} unidades
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#94A3B8]">Bodega Receptora:</span>
-                  <span className="text-white">
+                  <span className="text-foreground-muted">Bodega Receptora:</span>
+                  <span className="text-foreground">
                     {warehouseMap.get(selectedReturn.warehouseId)?.location ?? selectedReturn.warehouseId}
                   </span>
                 </div>
@@ -373,14 +373,14 @@ export function SellerReturnsPage() {
               {/* Botones de Decisión Comercial (Exclusivos del Vendedor) */}
               {selectedReturn.status === ReturnStatus.Requested && (
                 <div className="space-y-3 pt-2">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
                     Resolución Comercial
                   </h3>
 
                   <Button
                     onClick={() => handleApprove(selectedReturn.id)}
                     disabled={approveMutation.isPending}
-                    className="w-full bg-[#00D4AA] text-[#0B0F19] hover:bg-[#00D4AA]/90 font-semibold"
+                    className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold"
                   >
                     {approveMutation.isPending ? (
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -407,12 +407,12 @@ export function SellerReturnsPage() {
               )}
 
               {selectedReturn.status === ReturnStatus.Approved && (
-                <div className="rounded-xl border border-[#00D4AA]/30 bg-[#00D4AA]/10 p-4 text-center space-y-1">
-                  <CheckCircle2 className="h-6 w-6 text-[#00D4AA] mx-auto" />
-                  <p className="text-xs font-semibold text-[#00D4AA]">
+                <div className="rounded-xl border border-brand/30 bg-brand/10 p-4 text-center space-y-1">
+                  <CheckCircle2 className="h-6 w-6 text-brand mx-auto" />
+                  <p className="text-xs font-semibold text-brand">
                     Devolución Aprobada
                   </p>
-                  <p className="text-[11px] text-[#94A3B8]">
+                  <p className="text-[11px] text-foreground-muted">
                     Pendiente de liquidación y desembolso de reembolso por el Administrador.
                   </p>
                 </div>
@@ -424,34 +424,34 @@ export function SellerReturnsPage() {
                   <p className="text-xs font-semibold text-red-400">
                     Devolución Rechazada
                   </p>
-                  <p className="text-[11px] text-[#94A3B8]">
+                  <p className="text-[11px] text-foreground-muted">
                     La solicitud fue denegada comercialmente por el vendedor.
                   </p>
                 </div>
               )}
 
               {selectedReturn.status === ReturnStatus.Refunded && (
-                <div className="rounded-xl border border-[#00D4AA]/30 bg-[#00D4AA]/10 p-4 text-center space-y-1">
-                  <CheckCircle2 className="h-6 w-6 text-[#00D4AA] mx-auto" />
-                  <p className="text-xs font-semibold text-[#00D4AA]">
+                <div className="rounded-xl border border-brand/30 bg-brand/10 p-4 text-center space-y-1">
+                  <CheckCircle2 className="h-6 w-6 text-brand mx-auto" />
+                  <p className="text-xs font-semibold text-brand">
                     Reembolsada al Comprador
                   </p>
-                  <p className="text-[11px] text-[#94A3B8]">
+                  <p className="text-[11px] text-foreground-muted">
                     El Administrador ya acreditó el reembolso financiero al comprador.
                   </p>
                 </div>
               )}
 
               {/* Nota ADR-0006 */}
-              <div className="rounded-xl border border-[#1F293D] bg-[#161F30]/30 p-3.5">
-                <p className="text-[11px] text-[#94A3B8] leading-relaxed">
+              <div className="rounded-xl border border-border bg-surface-muted/30 p-3.5">
+                <p className="text-[11px] text-foreground-muted leading-relaxed">
                   <strong>ADR-0006:</strong> Al aprobar una devolución sobre producto físico en buen estado,
                   el backend reingresa automáticamente las existencias a la categoría de <em>Stock Usado</em> (usedQuantity).
                 </p>
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-8 text-center text-sm text-[#64748B]">
+            <div className="rounded-2xl border border-border bg-surface p-8 text-center text-sm text-foreground-muted">
               Selecciona una solicitud para dictaminar su aprobación o rechazo.
             </div>
           )}

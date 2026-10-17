@@ -100,8 +100,8 @@ export function RequestReturnPage() {
   if (isLoadingOrders) {
     return (
       <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <Skeleton className="h-8 w-48 bg-[#111827]" />
-        <Skeleton className="h-96 rounded-2xl bg-[#111827]" />
+        <Skeleton className="h-8 w-48 bg-surface" />
+        <Skeleton className="h-96 rounded-2xl bg-surface" />
       </div>
     );
   }
@@ -111,19 +111,19 @@ export function RequestReturnPage() {
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-3xl mx-auto w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Link to="/buyer/orders">
-              <Button variant="outline" size="sm" className="border-[#1F293D] text-[#94A3B8] hover:text-white mr-2">
+              <Button variant="outline" size="sm" className="border-border text-foreground-muted hover:text-foreground mr-2">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Solicitud de Devolución
             </h1>
           </div>
-          <p className="text-sm font-mono text-[#94A3B8]">
+          <p className="text-sm font-mono text-foreground-muted">
             Aplica exclusivamente a productos físicos en estado Entregado (Delivered) dentro de los 30 días.
           </p>
         </div>
@@ -134,12 +134,12 @@ export function RequestReturnPage() {
           variant={feedback.type === 'success' ? 'default' : 'destructive'}
           className={
             feedback.type === 'success'
-              ? 'border-[#00D4AA]/40 bg-[#00D4AA]/10 text-[#00D4AA]'
+              ? 'border-brand/40 bg-brand/10 text-brand'
               : 'border-red-900 bg-red-950/40 text-red-200'
           }
         >
           {feedback.type === 'success' ? (
-            <CheckCircle2 className="h-5 w-5 text-[#00D4AA]" />
+            <CheckCircle2 className="h-5 w-5 text-brand" />
           ) : (
             <AlertCircle className="h-5 w-5 text-red-400" />
           )}
@@ -149,10 +149,10 @@ export function RequestReturnPage() {
       )}
 
       {/* ── Formulario de Solicitud ─────────────────────────────────────── */}
-      <form noValidate onSubmit={handleSubmit} className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 sm:p-8 space-y-6 shadow-xl">
+      <form noValidate onSubmit={handleSubmit} className="rounded-2xl border border-border bg-surface p-6 sm:p-8 space-y-6 shadow-xl">
         {/* Selección de Pedido */}
         <div className="space-y-2">
-          <label className="text-xs font-mono uppercase text-[#94A3B8] block">
+          <label className="text-xs font-mono uppercase text-foreground-muted block">
             1. Seleccione el Pedido Entregado
           </label>
           <select
@@ -161,7 +161,7 @@ export function RequestReturnPage() {
               setSelectedOrderId(e.target.value);
               setSelectedVariantId('');
             }}
-            className="w-full rounded-lg border border-[#1F293D] bg-[#161F30] px-3.5 py-2.5 text-sm font-mono text-white focus:border-[#00D4AA] focus:outline-none"
+            className="w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-sm font-mono text-foreground focus:border-brand focus:outline-none"
           >
             <option value="">-- Seleccionar Pedido --</option>
             {eligibleOrders.map((o) => (
@@ -171,7 +171,7 @@ export function RequestReturnPage() {
             ))}
           </select>
           {eligibleOrders.length === 0 && (
-            <p className="text-xs font-mono text-[#FFB800]">
+            <p className="text-xs font-mono text-warning">
               No cuenta con pedidos en estado Entregado (Delivered) disponibles para devolución.
             </p>
           )}
@@ -180,11 +180,11 @@ export function RequestReturnPage() {
         {/* Selección de Variante de la Orden */}
         {selectedOrderId && (
           <div className="space-y-2">
-            <label className="text-xs font-mono uppercase text-[#94A3B8] block">
+            <label className="text-xs font-mono uppercase text-foreground-muted block">
               2. Variante del Producto a Devolver
             </label>
             {orderItems.length === 0 ? (
-              <p className="text-xs font-mono text-[#64748B]">Cargando ítems del pedido...</p>
+              <p className="text-xs font-mono text-foreground-muted">Cargando ítems del pedido...</p>
             ) : (
               <div className="space-y-2">
                 {orderItems.map((item: OrderItem) => {
@@ -198,25 +198,25 @@ export function RequestReturnPage() {
                       }}
                       className={`cursor-pointer rounded-xl border p-4 transition-all flex items-center justify-between ${
                         isSelected
-                          ? 'border-[#00D4AA] bg-[#00D4AA]/10'
-                          : 'border-[#1F293D] bg-[#161F30]/60 hover:border-[#94A3B8]/40'
+                          ? 'border-brand bg-brand/10'
+                          : 'border-border bg-surface-muted/60 hover:border-foreground-muted/40'
                       }`}
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4 text-[#00D4AA]" />
-                          <span className="text-xs font-mono font-bold text-white">
+                          <Package className="h-4 w-4 text-brand" />
+                          <span className="text-xs font-mono font-bold text-foreground">
                             Variante SKU: {item.variantId.slice(0, 8)}
                           </span>
                         </div>
-                        <p className="text-xs font-mono text-[#64748B]">
+                        <p className="text-xs font-mono text-foreground-muted">
                           Cantidad comprada: {item.quantity} ud(s) • Total: ${item.totalPrice.toLocaleString('es-CO')}
                         </p>
                       </div>
 
                       <Badge
                         variant="outline"
-                        className={isSelected ? 'border-[#00D4AA] text-[#00D4AA]' : 'border-[#1F293D] text-[#64748B]'}
+                        className={isSelected ? 'border-brand text-brand' : 'border-border text-foreground-muted'}
                       >
                         {isSelected ? 'Seleccionado' : 'Elegir'}
                       </Badge>
@@ -232,7 +232,7 @@ export function RequestReturnPage() {
         {selectedVariantId && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-[#94A3B8] block">
+              <label className="text-xs font-mono uppercase text-foreground-muted block">
                 3. Cantidad a Devolver
               </label>
               <Input
@@ -240,18 +240,18 @@ export function RequestReturnPage() {
                 min={1}
                 value={quantity}
                 onChange={(e) => setQuantity(Number(e.target.value))}
-                className="bg-[#161F30] border-[#1F293D] font-mono text-white"
+                className="bg-surface-muted border-border font-mono text-foreground"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-[#94A3B8] block">
+              <label className="text-xs font-mono uppercase text-foreground-muted block">
                 Bodega de Recepción
               </label>
               <select
                 value={selectedWarehouseId}
                 onChange={(e) => setSelectedWarehouseId(e.target.value)}
-                className="w-full rounded-lg border border-[#1F293D] bg-[#161F30] px-3.5 py-2 text-sm font-mono text-white focus:border-[#00D4AA] focus:outline-none"
+                className="w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2 text-sm font-mono text-foreground focus:border-brand focus:outline-none"
               >
                 <option value="">Bodega por defecto del despacho</option>
                 {(warehouses ?? []).map((w: Warehouse) => (
@@ -266,7 +266,7 @@ export function RequestReturnPage() {
 
         {/* Motivo de la Devolución */}
         <div className="space-y-2">
-          <label className="text-xs font-mono uppercase text-[#94A3B8] block">
+          <label className="text-xs font-mono uppercase text-foreground-muted block">
             4. Motivo de la Solicitud
           </label>
           <textarea
@@ -274,17 +274,17 @@ export function RequestReturnPage() {
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Describa el motivo técnico o comercial de la devolución..."
-            className="w-full rounded-lg border border-[#1F293D] bg-[#161F30] p-3 text-sm font-sans text-white placeholder-[#64748B] focus:border-[#00D4AA] focus:outline-none"
+            className="w-full rounded-lg border border-border bg-surface-muted p-3 text-sm font-sans text-foreground placeholder-foreground-muted focus:border-brand focus:outline-none"
           />
         </div>
 
         {/* Advertencia Legal / Dominio */}
         <div className="rounded-xl border border-amber-900/50 bg-amber-950/20 p-4 space-y-1 text-xs">
-          <div className="flex items-center gap-2 text-[#FFB800] font-mono font-bold">
+          <div className="flex items-center gap-2 text-warning font-mono font-bold">
             <ShieldAlert className="h-4 w-4" />
             Condiciones de Devolución (ZENTRIC.md Dominio 10 y 11)
           </div>
-          <p className="text-[#94A3B8] leading-relaxed">
+          <p className="text-foreground-muted leading-relaxed">
             Al registrar la solicitud, un Operador Logístico inspeccionará el paquete físico en bodega. Si el dictamen es favorable, el vendedor podrá aprobar el reingreso como stock usado y se autorizará el reembolso financiero.
           </p>
         </div>
@@ -293,7 +293,7 @@ export function RequestReturnPage() {
         <Button
           type="submit"
           disabled={!selectedOrderId || !selectedVariantId || requestReturnMutation.isPending}
-          className="w-full h-12 bg-[#00D4AA] hover:bg-[#00D4AA]/90 text-[#0B0F19] font-bold text-sm shadow-lg shadow-[#00D4AA]/20 disabled:opacity-40"
+          className="w-full h-12 bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-sm shadow-lg shadow-brand/20 disabled:opacity-40"
         >
           {requestReturnMutation.isPending ? (
             <span className="flex items-center gap-2">

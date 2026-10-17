@@ -93,10 +93,10 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
   if (isLoading) {
     return (
       <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
-        <Skeleton className="h-10 w-64 bg-[#111827]" />
+        <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-7 h-96 rounded-2xl bg-[#111827]" />
-          <Skeleton className="lg:col-span-5 h-96 rounded-2xl bg-[#111827]" />
+          <Skeleton className="lg:col-span-7 h-96 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-5 h-96 rounded-2xl bg-surface" />
         </div>
       </div>
     );
@@ -113,7 +113,7 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
           </AlertDescription>
         </Alert>
         <Link to="/logistics/fulfillments">
-          <Button variant="outline" className="border-[#1F293D] text-white hover:bg-[#1F293D]">
+          <Button variant="outline" className="border-border text-foreground hover:bg-border">
             <ArrowLeft className="h-4 w-4 mr-2" /> Volver a Despachos
           </Button>
         </Link>
@@ -130,23 +130,23 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
   return (
     <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Link
               to="/logistics/fulfillments"
-              className="text-[#94A3B8] hover:text-white transition-colors mr-1"
+              className="text-foreground-muted hover:text-foreground transition-colors mr-1"
             >
               <ArrowLeft className="h-5 w-5" />
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Estación Operativa de Despacho
             </h1>
-            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
               #{fulfillment.id.substring(0, 8)}
             </Badge>
           </div>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-foreground-muted">
             Transición secuencial de empaque, despacho y entrega de paquetes en la red Zentric.
           </p>
         </div>
@@ -156,7 +156,7 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
           size="sm"
           onClick={() => refetch()}
           disabled={isFetching}
-          className="border-[#1F293D] text-[#94A3B8] hover:text-white"
+          className="border-border text-foreground-muted hover:text-foreground"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
           Refrescar
@@ -165,8 +165,8 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
 
       {/* ── Feedback de Operación ────────────────────────────────────────── */}
       {actionSuccess && (
-        <Alert className="border-[#00D4AA]/40 bg-[#00D4AA]/10 text-[#00D4AA]">
-          <CheckCircle className="h-4 w-4 text-[#00D4AA]" />
+        <Alert className="border-brand/40 bg-brand/10 text-brand">
+          <CheckCircle className="h-4 w-4 text-brand" />
           <AlertTitle>Operación Exitosa</AlertTitle>
           <AlertDescription className="text-xs">{actionSuccess}</AlertDescription>
         </Alert>
@@ -184,11 +184,11 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Lado Izquierdo (60%): Expediente de Despacho y Guías ──────────── */}
         <section className="lg:col-span-7 space-y-6">
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 sm:p-8 space-y-6">
-            <div className="flex items-center justify-between border-b border-[#1F293D] pb-4">
+          <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 space-y-6">
+            <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
-                <span className="text-[11px] font-mono text-[#64748B] block">ORDEN DE ENVÍO</span>
-                <h3 className="text-lg font-bold text-white mt-0.5">
+                <span className="text-[11px] font-mono text-foreground-muted block">ORDEN DE ENVÍO</span>
+                <h3 className="text-lg font-bold text-foreground mt-0.5">
                   Despacho #{fulfillment.id}
                 </h3>
               </div>
@@ -196,9 +196,9 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
                 variant="outline"
                 className={`font-mono text-xs ${
                   fulfillment.status === FulfillmentStatus.PendingPack
-                    ? 'border-[#FFB800]/40 text-[#FFB800] bg-[#FFB800]/10'
+                    ? 'border-warning/40 text-warning bg-warning/10'
                     : fulfillment.status === FulfillmentStatus.Packed || fulfillment.status === FulfillmentStatus.Dispatched
-                    ? 'border-[#00D4AA]/40 text-[#00D4AA] bg-[#00D4AA]/10'
+                    ? 'border-brand/40 text-brand bg-brand/10'
                     : fulfillment.status === FulfillmentStatus.Delivered
                     ? 'border-emerald-400/40 text-emerald-300 bg-emerald-500/10'
                     : 'border-red-400/40 text-red-400 bg-red-400/10'
@@ -209,19 +209,19 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="p-3.5 rounded-xl bg-[#161F30]/60 border border-[#1F293D]">
-                <span className="text-[#94A3B8] block text-[11px] font-sans">Pedido Relacionado</span>
-                <span className="text-white mt-1 block font-mono font-semibold">#{fulfillment.customerOrderId}</span>
+              <div className="p-3.5 rounded-xl bg-surface-muted/60 border border-border">
+                <span className="text-foreground-muted block text-[11px] font-sans">Pedido Relacionado</span>
+                <span className="text-foreground mt-1 block font-mono font-semibold">#{fulfillment.customerOrderId}</span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-[#161F30]/60 border border-[#1F293D]">
-                <span className="text-[#94A3B8] block text-[11px] font-sans">Vendedor Titular</span>
-                <span className="text-[#00D4AA] mt-1 block font-semibold">
+              <div className="p-3.5 rounded-xl bg-surface-muted/60 border border-border">
+                <span className="text-foreground-muted block text-[11px] font-sans">Vendedor Titular</span>
+                <span className="text-brand mt-1 block font-semibold">
                   {fulfillment.vendorId === '0b01129d-c0a9-4325-8394-4b9e636a4e88'
                     ? 'Valeria Mendoza (seller@zentric.local)'
                     : `Vendedor #${fulfillment.vendorId.substring(0, 8)}`}
                 </span>
-                <span className="text-[10px] font-mono text-[#64748B] block mt-0.5">
+                <span className="text-[10px] font-mono text-foreground-muted block mt-0.5">
                   ID: {fulfillment.vendorId}
                 </span>
               </div>
@@ -229,29 +229,29 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
 
             {/* Guías y Envíos Físicos */}
             <div className="space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#94A3B8] font-sans flex items-center gap-2">
-                <Truck className="h-4 w-4 text-[#00D4AA]" />
+              <h4 className="text-xs font-bold uppercase tracking-wider text-foreground-muted font-sans flex items-center gap-2">
+                <Truck className="h-4 w-4 text-brand" />
                 Envíos y Guías de Transporte
               </h4>
 
               {fulfillment.shipments && fulfillment.shipments.length > 0 ? (
-                <div className="divide-y divide-[#1F293D] rounded-xl border border-[#1F293D] overflow-hidden">
+                <div className="divide-y divide-border rounded-xl border border-border overflow-hidden">
                   {fulfillment.shipments.map((s, idx) => (
-                    <div key={s.id || idx} className="p-3 bg-[#161F30]/40 flex justify-between items-center text-xs">
+                    <div key={s.id || idx} className="p-3 bg-surface-muted/40 flex justify-between items-center text-xs">
                       <div>
-                        <span className="text-white font-mono">Guía: {s.trackingNumber}</span>
-                        <span className="text-[11px] text-[#64748B] block font-mono">
+                        <span className="text-foreground font-mono">Guía: {s.trackingNumber}</span>
+                        <span className="text-[11px] text-foreground-muted block font-mono">
                           Bodega: #{s.warehouseId.substring(0, 8)}
                         </span>
                       </div>
-                      <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] text-[10px] font-mono">
+                      <Badge variant="outline" className="border-border text-brand text-[10px] font-mono">
                         Asignada
                       </Badge>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="p-4 rounded-xl bg-[#161F30]/40 border border-[#1F293D] text-xs text-[#94A3B8]">
+                <div className="p-4 rounded-xl bg-surface-muted/40 border border-border text-xs text-foreground-muted">
                   Guías de transporte pendientes de generación por transportadora.
                 </div>
               )}
@@ -261,22 +261,22 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
 
         {/* Lado Derecho (40%): Estación de Transición Secuencial ─────────── */}
         <section className="lg:col-span-5 space-y-6">
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-6 space-y-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-white font-sans flex items-center gap-2">
-              <Package className="h-4 w-4 text-[#00D4AA]" />
+          <div className="rounded-2xl border border-border bg-surface p-6 space-y-5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground font-sans flex items-center gap-2">
+              <Package className="h-4 w-4 text-brand" />
               Transición de Estado
             </h3>
 
             {/* Botón de Empaque */}
             {isPendingPack && (
               <div className="space-y-3">
-                <p className="text-xs text-[#94A3B8] leading-relaxed">
+                <p className="text-xs text-foreground-muted leading-relaxed">
                   El paquete se encuentra en cola de empaque. Verifique unidades físicas en bodega antes de sellar.
                 </p>
                 <Button
                   onClick={handlePack}
                   disabled={packMutation.isPending}
-                  className="w-full bg-[#00D4AA] text-[#0B0F19] hover:bg-[#00D4AA]/90 font-semibold text-xs"
+                  className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold text-xs"
                 >
                   <Package className="h-4 w-4 mr-2" />
                   {packMutation.isPending ? 'Empacando...' : 'Registrar Empaque (Packed)'}
@@ -287,13 +287,13 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
             {/* Botón de Despacho */}
             {isPacked && (
               <div className="space-y-3">
-                <p className="text-xs text-[#94A3B8] leading-relaxed">
+                <p className="text-xs text-foreground-muted leading-relaxed">
                   El paquete está sellado y listo en muelle de carga. Registre la salida con la transportadora.
                 </p>
                 <Button
                   onClick={handleDispatch}
                   disabled={dispatchMutation.isPending}
-                  className="w-full bg-[#FFB800] text-[#0B0F19] hover:bg-[#FFB800]/90 font-semibold text-xs"
+                  className="w-full bg-warning text-primary-foreground hover:bg-warning/90 font-semibold text-xs"
                 >
                   <Send className="h-4 w-4 mr-2" />
                   {dispatchMutation.isPending ? 'Despachando...' : 'Despachar Paquete (Dispatched)'}
@@ -304,13 +304,13 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
             {/* Botón Exclusivo de Entrega */}
             {isDispatched && (
               <div className="space-y-3">
-                <p className="text-xs text-[#94A3B8] leading-relaxed">
+                <p className="text-xs text-foreground-muted leading-relaxed">
                   El paquete se encuentra en tránsito. Certifique la entrega efectiva en el domicilio del comprador.
                 </p>
                 <Button
                   onClick={handleDeliver}
                   disabled={deliverMutation.isPending}
-                  className="w-full bg-[#00D4AA] text-[#0B0F19] hover:bg-[#00D4AA]/90 font-bold text-xs"
+                  className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-bold text-xs"
                 >
                   <CheckCheck className="h-4 w-4 mr-2" />
                   {deliverMutation.isPending ? 'Certificando...' : 'Certificar Entrega al Comprador (Delivered)'}
@@ -319,12 +319,12 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
             )}
 
             {isDelivered && (
-              <div className="p-4 rounded-xl bg-[#00D4AA]/10 border border-[#00D4AA]/30 text-center space-y-1">
-                <CheckCircle className="h-6 w-6 text-[#00D4AA] mx-auto" />
-                <h4 className="text-xs font-bold text-[#00D4AA] uppercase tracking-wider">
+              <div className="p-4 rounded-xl bg-brand/10 border border-brand/30 text-center space-y-1">
+                <CheckCircle className="h-6 w-6 text-brand mx-auto" />
+                <h4 className="text-xs font-bold text-brand uppercase tracking-wider">
                   Entrega Certificada
                 </h4>
-                <p className="text-[11px] text-[#94A3B8]">
+                <p className="text-[11px] text-foreground-muted">
                   Ciclo de despacho cerrado exitosamente. El comprador ha recibido el producto.
                 </p>
               </div>
@@ -346,7 +346,7 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
 
             {/* Acción de Quiebre por Stock Fantasma (ADR-0014) */}
             {!isDelivered && !isCancelled && (
-              <div className="pt-3 border-t border-[#1F293D]">
+              <div className="pt-3 border-t border-border">
                 <Link
                   to="/logistics/fulfillments/$id/ghost-stock"
                   params={{ id: fulfillment.id }}
@@ -363,12 +363,12 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
             )}
           </div>
 
-          <div className="rounded-2xl border border-[#1F293D] bg-[#111827] p-5 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#00D4AA]">
+          <div className="rounded-2xl border border-border bg-surface p-5 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-semibold text-brand">
               <ShieldCheck className="h-4 w-4" />
               <span>Potestad Exclusiva de Entrega</span>
             </div>
-            <p className="text-[11px] text-[#94A3B8] leading-relaxed">
+            <p className="text-[11px] text-foreground-muted leading-relaxed">
               La certificación de entrega (`Delivered`) es potestad exclusiva del Operador Logístico (política `FulfillmentDeliver`). El Vendedor tiene prohibida esta acción para prevenir fraudes en la liquidación de fondos.
             </p>
           </div>

@@ -8,6 +8,8 @@ import { ThemeToggle } from '../components/ThemeToggle';
 interface LayoutHeaderProps {
   title?: string;
   onToggleSidebar?: () => void;
+  /** Densa (h-14) para el Tablero de Colas logístico; estándar h-16 (§9.6). */
+  dense?: boolean;
   children?: ReactNode;
 }
 
@@ -17,11 +19,12 @@ interface LayoutHeaderProps {
  * Muestra:
  * - Botón de menú móvil / colapso lateral.
  * - Título del módulo o sección.
- * - Indicador semántico del rol autenticado (según domainLabels.ts).
+ * - Chip de rol con tinte del acento del rol: --brand se resuelve por el scope
+ *   [data-role] del layout, así la identidad cromática acompaña al usuario.
  * - Identidad del usuario (nombre / correo) en Geist Sans y Geist Mono.
- * - Botón accesible de cierre de sesión en RAM (ADR-0009).
+ * - Selector de tema dual y cierre de sesión en RAM (ADR-0009).
  */
-export function LayoutHeader({ title, onToggleSidebar, children }: LayoutHeaderProps) {
+export function LayoutHeader({ title, onToggleSidebar, dense = false, children }: LayoutHeaderProps) {
   const { user, role, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -41,7 +44,9 @@ export function LayoutHeader({ title, onToggleSidebar, children }: LayoutHeaderP
   return (
     <header
       aria-label="Cabecera operativa principal"
-      className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-border bg-surface/95 px-4 backdrop-blur-md sm:px-6"
+      className={`sticky top-0 z-20 flex w-full items-center justify-between border-b border-border bg-surface/95 px-4 backdrop-blur-md sm:px-6 ${
+        dense ? 'h-14' : 'h-16'
+      }`}
     >
       <div className="flex items-center gap-3">
         {onToggleSidebar && (
@@ -68,15 +73,15 @@ export function LayoutHeader({ title, onToggleSidebar, children }: LayoutHeaderP
           </div>
 
           <div
-            className="flex items-center gap-1.5 rounded-full border border-border-subtle bg-surface-muted px-2.5 py-1"
+            className="flex items-center gap-1.5 rounded-full border border-brand/25 bg-brand/10 px-2.5 py-1"
             title={`Rol: ${roleLabel}`}
           >
             <Shield className="h-3.5 w-3.5 text-brand" />
-            <span className="text-xs font-medium text-foreground-muted">{roleLabel}</span>
+            <span className="text-xs font-medium text-brand">{roleLabel}</span>
           </div>
         </div>
 
-        {/* Selector de Tema Dual (Light/Dark) */}
+        {/* Selector de Tema Dual (Porcelana / Grafito) */}
         <ThemeToggle />
 
         {/* Botón de cierre de sesión */}
