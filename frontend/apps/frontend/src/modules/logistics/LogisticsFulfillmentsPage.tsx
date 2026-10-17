@@ -24,6 +24,7 @@ import {
   useCreateFulfillmentMutation,
 } from '../../application/services';
 import { CreateFulfillmentSchema } from '../../application/schemas';
+import { NOMBRES_DE_ESTADO_DE_DESPACHO } from '../../components/domainLabels';
 import type { CreateFulfillmentInput, FulfillmentOrder } from '../../domain';
 import { FulfillmentStatus } from '../../domain';
 
@@ -213,36 +214,54 @@ export function LogisticsFulfillmentsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#1F293D]/60">
-                    {filteredFulfillments.map((ful: FulfillmentOrder) => (
-                      <tr key={ful.id} className="hover:bg-[#161F30]/40 transition-colors">
-                        <td className="py-4 px-4 font-mono font-semibold text-white">
-                          #{ful.id.substring(0, 8)}
-                        </td>
-                        <td className="py-4 px-4 font-mono text-[#E2E8F0]">
-                          #{ful.customerOrderId.substring(0, 8)}
-                        </td>
-                        <td className="py-4 px-4 font-mono text-[#00D4AA]">
-                          #{ful.vendorId.substring(0, 8)}
-                        </td>
-                        <td className="py-4 px-4">
-                          <Badge
-                            variant="outline"
-                            className="border-[#1F293D] text-[#94A3B8] text-[11px] font-mono"
-                          >
-                            {ful.status}
-                          </Badge>
-                        </td>
-                        <td className="py-4 px-4 text-right">
-                          <Link
-                            to="/logistics/fulfillments/$id"
-                            params={{ id: ful.id }}
-                            className="inline-flex items-center gap-1 text-[#00D4AA] hover:text-[#00D4AA]/80 font-semibold"
-                          >
-                            Operar <ArrowUpRight className="h-3.5 w-3.5" />
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredFulfillments.map((ful: FulfillmentOrder) => {
+                      const statusName = NOMBRES_DE_ESTADO_DE_DESPACHO[ful.status] ?? ful.status;
+                      const isSellerSeed = ful.vendorId === '0b01129d-c0a9-4325-8394-4b9e636a4e88';
+                      const vendorLabel = isSellerSeed ? 'Valeria Mendoza (Vendedor)' : `Vendedor #${ful.vendorId.substring(0, 8)}`;
+                      const vendorSub = isSellerSeed ? 'seller@zentric.local' : ful.vendorId;
+
+                      return (
+                        <tr key={ful.id} className="hover:bg-[#161F30]/40 transition-colors">
+                          <td className="py-4 px-4 font-mono font-semibold text-white">
+                            <div>#{ful.id.substring(0, 8)}</div>
+                            <div className="text-[10px] text-[#64748B] font-mono">Despacho</div>
+                          </td>
+                          <td className="py-4 px-4 font-mono text-[#E2E8F0]">
+                            <div>#{ful.customerOrderId.substring(0, 8)}</div>
+                            <div className="text-[10px] text-[#64748B] font-sans">Pedido Comercial</div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="font-semibold text-white text-xs">{vendorLabel}</div>
+                            <div className="text-[11px] font-mono text-[#94A3B8]">{vendorSub}</div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <Badge
+                              variant="outline"
+                              className={`text-[11px] font-mono ${
+                                ful.status === FulfillmentStatus.PendingPack
+                                  ? 'border-[#FFB800]/40 text-[#FFB800] bg-[#FFB800]/10'
+                                  : ful.status === FulfillmentStatus.Packed || ful.status === FulfillmentStatus.Dispatched
+                                  ? 'border-[#00D4AA]/40 text-[#00D4AA] bg-[#00D4AA]/10'
+                                  : ful.status === FulfillmentStatus.Delivered
+                                  ? 'border-emerald-400/40 text-emerald-300 bg-emerald-500/10'
+                                  : 'border-red-400/40 text-red-400 bg-red-400/10'
+                              }`}
+                            >
+                              {statusName}
+                            </Badge>
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            <Link
+                              to="/logistics/fulfillments/$id"
+                              params={{ id: ful.id }}
+                              className="inline-flex items-center gap-1 text-[#00D4AA] hover:text-[#00D4AA]/80 font-semibold"
+                            >
+                              Operar <ArrowUpRight className="h-3.5 w-3.5" />
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

@@ -238,7 +238,7 @@ export function BuyerCatalogPage() {
                 </div>
 
                 <div className="p-5 flex flex-col flex-1 justify-between space-y-4">
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     {/* Título de Producto */}
                     <h3 className="text-base font-semibold text-white group-hover:text-[#00D4AA] transition-colors line-clamp-2">
                       {product.name}
@@ -246,6 +246,30 @@ export function BuyerCatalogPage() {
                     <p className="text-xs text-[#94A3B8] line-clamp-2 leading-relaxed">
                       {product.description || 'Sin descripción técnica disponible.'}
                     </p>
+
+                    {/* Disponibilidad de Stock en Bodega */}
+                    {(() => {
+                      const totalAvailableStock =
+                        product.variants?.reduce(
+                          (acc, v) => acc + (v.availableStock ?? 0),
+                          0,
+                        ) ?? 0;
+                      return (
+                        <div className="pt-1 flex items-center gap-1.5 text-[11px] font-mono">
+                          {totalAvailableStock > 0 ? (
+                            <span className="text-[#00D4AA] flex items-center gap-1 font-medium">
+                              <span className="h-1.5 w-1.5 rounded-full bg-[#00D4AA]" />
+                              {totalAvailableStock} unid. disponibles en bodega
+                            </span>
+                          ) : (
+                            <span className="text-red-400 flex items-center gap-1 font-medium">
+                              <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                              Agotado en bodega
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Footer de Tarjeta con Precio y Enlace a Detalle */}

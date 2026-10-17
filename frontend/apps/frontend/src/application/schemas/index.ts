@@ -10,6 +10,7 @@ import type {
   CreateProductInput,
   CreateUserInput,
   CreateWarehouseInput,
+  UpdateWarehouseInput,
   InspectReturnInput,
   LoginInput,
   RequestReturnInput,
@@ -67,6 +68,13 @@ export const CreateWarehouseSchema: z.ZodType<CreateWarehouseInput, CreateWareho
     },
   );
 export const RegistrarBodegaSchema = CreateWarehouseSchema;
+
+export const UpdateWarehouseSchema: z.ZodType<UpdateWarehouseInput, UpdateWarehouseInput> = z.object({
+  name: z.string().trim().min(1, 'El nombre de la bodega es obligatorio'),
+  location: z.string().trim().min(1, 'La ubicación es obligatoria'),
+  capacity: z.number().int('La capacidad debe ser un entero').nonnegative('La capacidad no puede ser negativa'),
+  isActive: z.boolean(),
+});
 
 // ── 4. AddStockSchema ───────────────────────────────────────────────────────
 export const AddStockSchema: z.ZodType<AddStockInput, AddStockInput> = z.object({

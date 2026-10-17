@@ -56,8 +56,9 @@ namespace Zentric.Tests.Presentation
                 ["UsersController.BlockUser"] = AuthorizationPolicies.UserAdministration,
                 ["UsersController.ActivateUser"] = AuthorizationPolicies.UserAdministration,
 
-                // 2. Bodegas. Alta solo del Admin (seccion 5 y 6.1 paso 1).
+                // 2. Bodegas. Alta y edicion (WarehouseManagement).
                 ["WarehousesController.CreateWarehouse"] = AuthorizationPolicies.WarehouseManagement,
+                ["WarehousesController.UpdateWarehouse"] = AuthorizationPolicies.WarehouseManagement,
                 ["WarehousesController.GetWarehouses"] = AuthorizationPolicies.WarehouseRead,
                 ["WarehousesController.GetWarehouseById"] = AuthorizationPolicies.WarehouseRead,
 

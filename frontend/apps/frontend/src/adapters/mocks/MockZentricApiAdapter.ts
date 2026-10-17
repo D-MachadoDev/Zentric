@@ -32,6 +32,7 @@ import type {
   User,
   UserRole,
   Warehouse,
+  UpdateWarehouseInput,
   ZentricApiPort,
 } from '../../domain';
 import { ProblemDetailsError } from '../../domain';
@@ -267,6 +268,21 @@ export class MockZentricApiAdapter implements ZentricApiPort {
       });
     }
     return { ...wh };
+  }
+
+  async updateWarehouse(id: string, input: UpdateWarehouseInput): Promise<void> {
+    const wh = this.warehouses.find((w) => w.id === id);
+    if (!wh) {
+      throw new ProblemDetailsError({
+        status: 404,
+        title: 'Bodega no encontrada',
+        detail: `No se encontró la bodega ${id}.`,
+      });
+    }
+    if (input.name !== undefined) wh.name = input.name;
+    if (input.location !== undefined) wh.location = input.location;
+    if (input.capacity !== undefined) wh.capacity = input.capacity;
+    if (input.isActive !== undefined) wh.isActive = input.isActive;
   }
 
   // ── Inventories ──────────────────────────────────────────────────────────

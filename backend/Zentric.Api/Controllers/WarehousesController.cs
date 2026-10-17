@@ -96,7 +96,6 @@ namespace Zentric.Api.Controllers
         [Authorize(Policy = AuthorizationPolicies.WarehouseRead)]
         [ProducesResponseType(typeof(WarehouseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetWarehouseById(Guid id)
         {
             var userId = _currentUser.UserId;
@@ -107,5 +106,33 @@ namespace Zentric.Api.Controllers
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
+
+        /// <summary>
+        /// Actualiza los datos de una bodega física (nombre, ubicación, capacidad, estado activo).
+        /// </summary>
+        /// <param name="id">Identificador único (Guid) de la bodega.</param>
+        /// <param name="request">Datos actualizados de la bodega.</param>
+        /// <response code="200">Bodega actualizada exitosamente.</response>
+        /// <response code="400">Error si los datos son inválidos.</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        /// <response code="404">Bodega no encontrada.</response>
+        [HttpPut("{id}")]
+        [Authorize(Policy = AuthorizationPolicies.WarehouseManagement)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateWarehouse(Guid id, [FromBody] UpdateWarehouseRequest request)
+        {
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var command = new UpdateWarehouseCommand(id, request.Name, request.Location, request.Capacity, request.IsActive, userId.Value, role.Value);
+            var result = await _mediator.Send(command);
+            if (result.IsFailure) return result.ToProblem();
+            return Ok();
+        }
     }
+
+    public record UpdateWarehouseRequest(string Name, string Location, int Capacity, bool IsActive);
 }

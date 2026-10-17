@@ -29,3 +29,13 @@ export interface CreateWarehouseInput {
   type: WarehouseType;
   vendorId: string | null;
 }
+
+/**
+ * Edición de bodega (`UpdateWarehouseRequest`).
+ */
+export interface UpdateWarehouseInput {
+  name: string;
+  location: string;
+  capacity: number;
+  isActive: boolean;
+}

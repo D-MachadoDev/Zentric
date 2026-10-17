@@ -10,6 +10,7 @@ export interface ProductVariant {
   id: string;
   sku: string;
   canBeSold: boolean;
+  availableStock?: number;
 }
 
 /**

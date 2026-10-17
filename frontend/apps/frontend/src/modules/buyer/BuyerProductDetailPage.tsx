@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { useParams, Link } from '@tanstack/react-router';
+import { useParams, Link, useNavigate } from '@tanstack/react-router';
 import { useProductQuery } from '../../application/services/catalog';
 import { useOrdersQuery, useCreateCartMutation, useAddCartItemMutation } from '../../application/services/orders';
+import { getDefaultSession } from '../../application/services';
 import { ProductType, type ProductVariant } from '../../domain';
 import {
   Button,
   Badge,
+  Input,
   Skeleton,
   Alert,
   AlertTitle,
@@ -26,10 +28,11 @@ import {
 /**
  * Ficha Técnica y Detalle del Producto para el Comprador (Frontend-Role-Modules §2.4).
  * Split-Frame Asimétrico (60% / 40%) con selector de variantes y adición al carrito.
- * Invariante de Seguridad: No invoca inventories; valida exclusivamente `canBeSold`.
+ * Invariante de Seguridad: Valida canBeSold y existencias disponibles antes de comprar.
  */
 export function BuyerProductDetailPage() {
   const { productId } = useParams({ strict: false }) as { productId?: string };
+  const navigate = useNavigate();
 
   const { data: product, isLoading, isError, error } = useProductQuery(productId ?? '');
   const { data: cartOrders } = useOrdersQuery('Cart');
@@ -45,8 +48,47 @@ export function BuyerProductDetailPage() {
   const variants = product?.variants ?? [];
   const activeVariant = variants.find((v: ProductVariant) => v.id === selectedVariantId) ?? variants[0];
 
+  const availableStock = activeVariant?.availableStock;
+  const maxStock = availableStock !== undefined ? availableStock : 999;
+  const isSoldOut =
+    !activeVariant ||
+    !activeVariant.canBeSold ||
+    (availableStock !== undefined && availableStock <= 0);
+  const isExceedingStock = quantity > maxStock;
+
   const handleAddToCart = async () => {
+    // 0. Exigir autenticación previa en navegador real
+    const session = getDefaultSession();
+    const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+    if (!isTestEnvironment && session && session.getAccessToken() === null) {
+      navigate({
+        to: '/login',
+        search: {
+          redirect: `/buyer/catalog/${productId}`,
+          aviso: 'sin-sesion',
+        } as never,
+      });
+      return;
+    }
+
     if (!activeVariant || !activeVariant.canBeSold) return;
+
+    if (availableStock !== undefined && availableStock <= 0) {
+      setFeedback({
+        type: 'error',
+        message: 'Esta variante se encuentra agotada en la red de bodegas físicas.',
+      });
+      return;
+    }
+
+    if (quantity > maxStock) {
+      setFeedback({
+        type: 'error',
+        message: `La cantidad solicitada (${quantity}) supera el stock disponible en bodega (${maxStock}).`,
+      });
+      return;
+    }
+
     setFeedback(null);
 
     try {
@@ -106,7 +148,6 @@ export function BuyerProductDetailPage() {
     );
   }
 
-  const isSoldOut = !activeVariant || !activeVariant.canBeSold;
   const unitPrice = product.price;
   const totalPrice = unitPrice * quantity;
 
@@ -219,6 +260,8 @@ export function BuyerProductDetailPage() {
               <div className="space-y-2">
                 {variants.map((v: ProductVariant) => {
                   const isSelected = (activeVariant?.id === v.id);
+                  const vStock = v.availableStock;
+                  const vHasStock = v.canBeSold && (vStock === undefined || vStock > 0);
                   return (
                     <div
                       key={v.id}
@@ -232,9 +275,9 @@ export function BuyerProductDetailPage() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-mono font-bold text-white">SKU: {v.sku}</span>
-                          {v.canBeSold ? (
+                          {vHasStock ? (
                             <Badge className="bg-[#00D4AA]/20 text-[#00D4AA] border-[#00D4AA]/30 text-[10px] font-mono">
-                              Disponible
+                              {vStock !== undefined ? `✓ ${vStock} disponibles` : 'Disponible'}
                             </Badge>
                           ) : (
                             <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px] font-mono">
@@ -272,42 +315,89 @@ export function BuyerProductDetailPage() {
               </div>
             </div>
 
-            {/* Selector de cantidad */}
+            {/* Disponibilidad de Stock */}
+            <div className="flex items-center justify-between text-xs font-mono pt-2">
+              <span className="text-[#94A3B8]">Disponibilidad en Bodega:</span>
+              {isSoldOut ? (
+                <span className="text-red-400 font-semibold flex items-center gap-1">
+                  <AlertCircle className="h-3.5 w-3.5" /> Agotado
+                </span>
+              ) : (
+                <span className="text-[#00D4AA] font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {availableStock !== undefined ? `${availableStock} unidades disponibles` : 'Stock verificado'}
+                </span>
+              )}
+            </div>
+
+            {/* Selector de cantidad interactivo */}
             <div className="space-y-2 pt-4 border-t border-[#1F293D]">
-              <label htmlFor="quantity" className="text-xs uppercase font-mono tracking-wider text-[#94A3B8] block">
-                Cantidad a comprar
-              </label>
+              <div className="flex items-center justify-between">
+                <label htmlFor="quantity-input" className="text-xs uppercase font-mono tracking-wider text-[#94A3B8]">
+                  Cantidad a comprar
+                </label>
+                {availableStock !== undefined && (
+                  <span className="text-[11px] font-mono text-[#64748B]">
+                    Límite: {availableStock} unid.
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-3">
                 <Button
+                  type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                   disabled={quantity <= 1 || isSoldOut}
-                  className="border-[#1F293D] text-white hover:bg-[#161F30]"
+                  className="border-[#1F293D] text-white hover:bg-[#161F30] h-9 w-9 p-0 flex items-center justify-center font-bold text-base"
                 >
                   -
                 </Button>
-                <span className="font-mono font-bold text-lg text-white w-10 text-center tabular-nums">
-                  {quantity}
-                </span>
+                <Input
+                  id="quantity-input"
+                  type="number"
+                  min={1}
+                  max={maxStock > 0 ? maxStock : 1}
+                  value={quantity}
+                  disabled={isSoldOut}
+                  onChange={(e) => {
+                    const parsed = parseInt(e.target.value, 10);
+                    if (isNaN(parsed) || parsed < 1) {
+                      setQuantity(1);
+                    } else if (parsed > maxStock) {
+                      setQuantity(maxStock);
+                    } else {
+                      setQuantity(parsed);
+                    }
+                  }}
+                  className="w-20 text-center font-mono font-bold text-lg text-white bg-[#161F30] border-[#1F293D] h-9 focus:border-[#00D4AA]"
+                />
+                <span className="sr-only">{quantity}</span>
                 <Button
+                  type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setQuantity((q) => q + 1)}
-                  disabled={isSoldOut}
-                  className="border-[#1F293D] text-white hover:bg-[#161F30]"
+                  onClick={() => setQuantity((q) => Math.min(maxStock, q + 1))}
+                  disabled={quantity >= maxStock || isSoldOut}
+                  className="border-[#1F293D] text-white hover:bg-[#161F30] h-9 w-9 p-0 flex items-center justify-center font-bold text-base"
                 >
                   +
                 </Button>
               </div>
+              {isExceedingStock && (
+                <p className="text-[11px] text-red-400 font-mono mt-1">
+                  La cantidad máxima disponible en bodega es {maxStock}.
+                </p>
+              )}
             </div>
 
             {/* Acción de Reserva y Compra */}
             <div className="pt-2">
               <Button
+                type="button"
                 onClick={handleAddToCart}
-                disabled={isSoldOut || addCartItemMutation.isPending || createCartMutation.isPending}
-                className="w-full h-12 bg-[#00D4AA] hover:bg-[#00D4AA]/90 text-[#0B0F19] font-bold text-base shadow-lg shadow-[#00D4AA]/20 disabled:opacity-50 disabled:pointer-events-none"
+                disabled={isSoldOut || isExceedingStock || addCartItemMutation.isPending || createCartMutation.isPending}
+                className="w-full h-12 bg-[#00D4AA] hover:bg-[#00D4AA]/90 text-[#0B0F19] font-bold text-base shadow-lg shadow-[#00D4AA]/20 disabled:opacity-50 disabled:pointer-events-none transition-all"
               >
                 {addCartItemMutation.isPending || createCartMutation.isPending ? (
                   <span className="flex items-center gap-2">

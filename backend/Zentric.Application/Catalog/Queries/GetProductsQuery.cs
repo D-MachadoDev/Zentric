@@ -1,12 +1,17 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Zentric.Application.Common.Messaging;
 using Zentric.Application.Common.Models;
+using Zentric.Domain.Inventories.Ports;
 using Zentric.Domain.Products.Enums;
 using Zentric.Domain.Products.Ports;
 
 namespace Zentric.Application.Catalog.Queries
 {
-    public record ProductVariantDto(Guid Id, string Sku, bool CanBeSold);
+    public record ProductVariantDto(Guid Id, string Sku, bool CanBeSold, int AvailableStock = 0);
 
     public record ProductDto(
         Guid Id,
@@ -44,10 +49,12 @@ namespace Zentric.Application.Catalog.Queries
     public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, Result<IReadOnlyList<ProductDto>>>
     {
         private readonly IProductRepository _productRepository;
+        private readonly IInventoryRepository? _inventoryRepository;
 
-        public GetProductsQueryHandler(IProductRepository productRepository)
+        public GetProductsQueryHandler(IProductRepository productRepository, IInventoryRepository? inventoryRepository = null)
         {
             _productRepository = productRepository;
+            _inventoryRepository = inventoryRepository;
         }
 
         public async Task<Result<IReadOnlyList<ProductDto>>> Handle(GetProductsQuery request, CancellationToken cancellationToken)
@@ -56,19 +63,33 @@ namespace Zentric.Application.Catalog.Queries
                 request.VendorId,
                 CatalogVisibility.VisibleStatus(request.VendorId, request.CallerId),
                 cancellationToken);
-            var dtos = list.Select(p => new ProductDto(
-                p.Id,
-                p.Name,
-                p.Description,
-                p.Price.Amount,
-                p.Price.Currency,
-                p.VendorId,
-                p.Type.ToString(),
-                p.Status.ToString(),
-                p.Variants.Select(v => new ProductVariantDto(v.Id, v.Sku, v.CanBeSold)).ToList(),
-                p.CreatedAt,
-                p.ImageUrl
-            )).ToList();
+
+            var dtos = new List<ProductDto>();
+            foreach (var p in list)
+            {
+                var variantDtos = new List<ProductVariantDto>();
+                foreach (var v in p.Variants)
+                {
+                    var stock = _inventoryRepository != null
+                        ? await _inventoryRepository.GetTotalAvailableStockAsync(v.Id, cancellationToken)
+                        : 0;
+                    variantDtos.Add(new ProductVariantDto(v.Id, v.Sku, v.CanBeSold, stock));
+                }
+
+                dtos.Add(new ProductDto(
+                    p.Id,
+                    p.Name,
+                    p.Description,
+                    p.Price.Amount,
+                    p.Price.Currency,
+                    p.VendorId,
+                    p.Type.ToString(),
+                    p.Status.ToString(),
+                    variantDtos,
+                    p.CreatedAt,
+                    p.ImageUrl
+                ));
+            }
 
             return Result<IReadOnlyList<ProductDto>>.Success(dtos);
         }
@@ -79,10 +100,12 @@ namespace Zentric.Application.Catalog.Queries
     public class GetProductByIdQueryHandler : IRequestHandler<GetProductByIdQuery, Result<ProductDto>>
     {
         private readonly IProductRepository _productRepository;
+        private readonly IInventoryRepository? _inventoryRepository;
 
-        public GetProductByIdQueryHandler(IProductRepository productRepository)
+        public GetProductByIdQueryHandler(IProductRepository productRepository, IInventoryRepository? inventoryRepository = null)
         {
             _productRepository = productRepository;
+            _inventoryRepository = inventoryRepository;
         }
 
         public async Task<Result<ProductDto>> Handle(GetProductByIdQuery request, CancellationToken cancellationToken)
@@ -91,6 +114,15 @@ namespace Zentric.Application.Catalog.Queries
             if (p == null)
             {
                 return Result<ProductDto>.NotFound("Product not found.");
+            }
+
+            var variantDtos = new List<ProductVariantDto>();
+            foreach (var v in p.Variants)
+            {
+                var stock = _inventoryRepository != null
+                    ? await _inventoryRepository.GetTotalAvailableStockAsync(v.Id, cancellationToken)
+                    : 0;
+                variantDtos.Add(new ProductVariantDto(v.Id, v.Sku, v.CanBeSold, stock));
             }
 
             var dto = new ProductDto(
@@ -102,7 +134,7 @@ namespace Zentric.Application.Catalog.Queries
                 p.VendorId,
                 p.Type.ToString(),
                 p.Status.ToString(),
-                p.Variants.Select(v => new ProductVariantDto(v.Id, v.Sku, v.CanBeSold)).ToList(),
+                variantDtos,
                 p.CreatedAt,
                 p.ImageUrl
             );
@@ -125,10 +157,12 @@ namespace Zentric.Application.Catalog.Queries
     public class GetProductsPagedQueryHandler : IRequestHandler<GetProductsPagedQuery, Result<PagedResult<ProductDto>>>
     {
         private readonly IProductRepository _productRepository;
+        private readonly IInventoryRepository? _inventoryRepository;
 
-        public GetProductsPagedQueryHandler(IProductRepository productRepository)
+        public GetProductsPagedQueryHandler(IProductRepository productRepository, IInventoryRepository? inventoryRepository = null)
         {
             _productRepository = productRepository;
+            _inventoryRepository = inventoryRepository;
         }
 
         public async Task<Result<PagedResult<ProductDto>>> Handle(
@@ -141,13 +175,25 @@ namespace Zentric.Application.Catalog.Queries
                 CatalogVisibility.VisibleStatus(request.VendorId, request.CallerId),
                 page.Skip, page.Take, cancellationToken);
 
-            var dtos = products.Select(p => new ProductDto(
-                p.Id, p.Name, p.Description, p.Price.Amount, p.Price.Currency, p.VendorId,
-                p.Type.ToString(), p.Status.ToString(),
-                p.Variants.Select(v => new ProductVariantDto(v.Id, v.Sku, v.CanBeSold)).ToList(),
-                p.CreatedAt,
-                p.ImageUrl
-            )).ToList();
+            var dtos = new List<ProductDto>();
+            foreach (var p in products)
+            {
+                var variantDtos = new List<ProductVariantDto>();
+                foreach (var v in p.Variants)
+                {
+                    var stock = _inventoryRepository != null
+                        ? await _inventoryRepository.GetTotalAvailableStockAsync(v.Id, cancellationToken)
+                        : 0;
+                    variantDtos.Add(new ProductVariantDto(v.Id, v.Sku, v.CanBeSold, stock));
+                }
+
+                dtos.Add(new ProductDto(
+                    p.Id, p.Name, p.Description, p.Price.Amount, p.Price.Currency, p.VendorId,
+                    p.Type.ToString(), p.Status.ToString(), variantDtos,
+                    p.CreatedAt,
+                    p.ImageUrl
+                ));
+            }
 
             return Result<PagedResult<ProductDto>>.Success(
                 new PagedResult<ProductDto>(dtos, page.Page, page.Size, total));

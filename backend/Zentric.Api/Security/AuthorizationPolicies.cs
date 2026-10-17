@@ -92,12 +92,8 @@ namespace Zentric.Api.Security
 
         /// <summary>
         /// Consulta de existencias de una variante.
-        ///
-        /// [INFERIDO] Espejo de la escritura anterior: quien administra el inventario lo lee.
-        /// Admin y Supervisor quedan fuera porque el dictamen del Owner (opcion A) les da lectura
-        /// de pedidos, despachos, devoluciones y facturas, y el inventario no esta en esa lista
-        /// ni en la fila de inventario de la seccion 12. El Comprador tampoco: la disponibilidad
-        /// la obtiene al validar el item contra el stock (Validaciones Criticas, seccion 11).
+        /// [ADDENDUM 2026-10-17]: Abierto a Administrador y Supervisor para auditoria
+        /// y gestion de existencias (conteo fisico y monitoreo global de red).
         /// </summary>
         public const string InventoryRead = "Zentric.InventoryRead";
 
@@ -297,7 +293,13 @@ namespace Zentric.Api.Security
 
                     [InventoryManagement] = new[] { Role(UserRole.Seller), Role(UserRole.LogisticsOperator) },
 
-                    [InventoryRead] = new[] { Role(UserRole.Seller), Role(UserRole.LogisticsOperator) },
+                    [InventoryRead] = new[]
+                    {
+                        Role(UserRole.Seller),
+                        Role(UserRole.LogisticsOperator),
+                        Role(UserRole.Administrator),
+                        Role(UserRole.Supervisor),
+                    },
 
                     [InventoryAdjust] = new[]
                     {

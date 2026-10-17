@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CreateWarehouseInput, Warehouse, ZentricApiPort } from '../../domain';
+import type { CreateWarehouseInput, UpdateWarehouseInput, Warehouse, ZentricApiPort } from '../../domain';
 import { queryKeys } from './queryKeys';
 import { resolveApi } from './apiContext';
 
@@ -33,6 +33,21 @@ export function useCreateWarehouseMutation(api?: ZentricApiPort) {
 
   return useMutation({
     mutationFn: (input: CreateWarehouseInput) => resolveApi(api).createWarehouse(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.warehouses.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para actualizar una bodega existente.
+ */
+export function useUpdateWarehouseMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateWarehouseInput }) =>
+      resolveApi(api).updateWarehouse(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.warehouses.all });
     },

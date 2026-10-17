@@ -9,6 +9,9 @@ import {
   Layers,
   MapPin,
   Building2,
+  Edit2,
+  X,
+  User as UserIcon,
 } from 'lucide-react';
 import {
   Button,
@@ -22,9 +25,11 @@ import {
 import {
   useWarehousesQuery,
   useCreateWarehouseMutation,
+  useUpdateWarehouseMutation,
+  useUsersQuery,
 } from '../../application/services';
-import { CreateWarehouseSchema } from '../../application/schemas';
-import type { CreateWarehouseInput, Warehouse } from '../../domain';
+import { CreateWarehouseSchema, UpdateWarehouseSchema } from '../../application/schemas';
+import type { CreateWarehouseInput, UpdateWarehouseInput, Warehouse, User } from '../../domain';
 import { WarehouseType } from '../../domain';
 
 export function WarehouseListPage() {
@@ -39,6 +44,16 @@ export function WarehouseListPage() {
     vendorId: null,
   });
 
+  const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
+  const [editFormData, setEditFormData] = useState<UpdateWarehouseInput>({
+    name: '',
+    location: '',
+    capacity: 1000,
+    isActive: true,
+  });
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [editError, setEditError] = useState<string | null>(null);
+
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -52,7 +67,10 @@ export function WarehouseListPage() {
     isFetching,
   } = useWarehousesQuery();
 
+  const { data: users = [] } = useUsersQuery();
+
   const createMutation = useCreateWarehouseMutation();
+  const updateMutation = useUpdateWarehouseMutation();
 
   const filteredWarehouses = warehouses.filter((w: Warehouse) => {
     const matchesSearch =
@@ -119,6 +137,73 @@ export function WarehouseListPage() {
         err instanceof Error ? err.message : 'Error al crear la bodega física.'
       );
     }
+  };
+
+  const handleStartEdit = (w: Warehouse) => {
+    setEditingWarehouse(w);
+    setEditFormData({
+      name: w.name,
+      location: w.location,
+      capacity: w.capacity,
+      isActive: w.isActive,
+    });
+    setEditErrors({});
+    setEditError(null);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingWarehouse) return;
+    setEditError(null);
+    setEditErrors({});
+
+    const validation = UpdateWarehouseSchema.safeParse(editFormData);
+    if (!validation.success) {
+      const errMap: Record<string, string> = {};
+      for (const err of validation.error.issues) {
+        if (err.path[0]) {
+          errMap[err.path[0] as string] = err.message;
+        }
+      }
+      setEditErrors(errMap);
+      return;
+    }
+
+    try {
+      await updateMutation.mutateAsync({
+        id: editingWarehouse.id,
+        input: validation.data,
+      });
+      setActionSuccess(`Bodega "${validation.data.name}" actualizada con éxito.`);
+      setEditingWarehouse(null);
+    } catch (err) {
+      setEditError(
+        err instanceof Error ? err.message : 'Error al actualizar la bodega física.'
+      );
+    }
+  };
+
+  const getWarehouseOwnerLabel = (w: Warehouse) => {
+    if (w.type === WarehouseType.Marketplace) {
+      return {
+        title: 'Zentric Marketplace',
+        subtitle: 'Fulfillment Central',
+        isCentral: true,
+      };
+    }
+    const owner = users.find((u: User) => u.id === w.vendorId);
+    if (owner) {
+      return {
+        title: owner.name,
+        subtitle: owner.email,
+        isCentral: false,
+      };
+    }
+    return {
+      title: 'Vendedor Titular',
+      subtitle: w.vendorId ? `ID: ${w.vendorId.substring(0, 8)}...` : 'Sin asignar',
+      isCentral: false,
+    };
   };
 
   if (isLoading) {
@@ -230,71 +315,95 @@ export function WarehouseListPage() {
                       <th className="py-3 px-4">Bodega</th>
                       <th className="py-3 px-4">Ubicación</th>
                       <th className="py-3 px-4 text-right">Capacidad</th>
+                      <th className="py-3 px-4">Titular / Propietario</th>
                       <th className="py-3 px-4">Tipo</th>
                       <th className="py-3 px-4">Estado</th>
+                      <th className="py-3 px-4 text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#1F293D]/60">
-                    {filteredWarehouses.map((w: Warehouse) => (
-                      <tr key={w.id} className="hover:bg-[#161F30]/40 transition-colors">
-                        <td className="py-4 px-4">
-                          <div className="font-semibold text-white flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-[#00D4AA]" />
-                            {w.name}
-                          </div>
-                          <div className="text-[11px] font-mono text-[#64748B] mt-0.5">
-                            ID: {w.id}
-                          </div>
-                        </td>
-                        <td className="py-4 px-4 text-[#E2E8F0] font-sans">
-                          <div className="flex items-center gap-1.5">
-                            <MapPin className="h-3.5 w-3.5 text-[#94A3B8]" />
-                            {w.location}
-                          </div>
-                        </td>
-                        <td className="py-4 px-4 text-right font-mono font-semibold text-white tabular-nums">
-                          {w.capacity.toLocaleString('es-CO')}{' '}
-                          <span className="text-[10px] text-[#94A3B8] uppercase">m³</span>
-                        </td>
-                        <td className="py-4 px-4">
-                          {w.type === WarehouseType.Marketplace ? (
-                            <Badge
-                              variant="outline"
-                              className="border-[#00D4AA]/40 text-[#00D4AA] text-[11px] font-mono"
-                            >
-                              Marketplace
-                            </Badge>
-                          ) : (
+                    {filteredWarehouses.map((w: Warehouse) => {
+                      const owner = getWarehouseOwnerLabel(w);
+                      return (
+                        <tr key={w.id} className="hover:bg-[#161F30]/40 transition-colors">
+                          <td className="py-4 px-4">
+                            <div className="font-semibold text-white flex items-center gap-2">
+                              <Building2 className="h-4 w-4 text-[#00D4AA]" />
+                              {w.name}
+                            </div>
+                            <div className="text-[11px] font-mono text-[#64748B] mt-0.5">
+                              ID: {w.id}
+                            </div>
+                          </td>
+                          <td className="py-4 px-4 text-[#E2E8F0] font-sans">
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="h-3.5 w-3.5 text-[#94A3B8]" />
+                              {w.location}
+                            </div>
+                          </td>
+                          <td className="py-4 px-4 text-right font-mono font-semibold text-white tabular-nums">
+                            {w.capacity.toLocaleString('es-CO')}{' '}
+                            <span className="text-[10px] text-[#94A3B8] uppercase">m³</span>
+                          </td>
+                          <td className="py-4 px-4">
                             <div className="space-y-0.5">
+                              <div className="font-semibold text-white flex items-center gap-1.5">
+                                <UserIcon
+                                  className={`h-3.5 w-3.5 ${
+                                    owner.isCentral ? 'text-[#00D4AA]' : 'text-[#FFB800]'
+                                  }`}
+                                />
+                                <span>{owner.title}</span>
+                              </div>
+                              <div className="text-[11px] font-mono text-[#94A3B8]">
+                                {owner.subtitle}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-4">
+                            {w.type === WarehouseType.Marketplace ? (
+                              <Badge
+                                variant="outline"
+                                className="border-[#00D4AA]/40 text-[#00D4AA] text-[11px] font-mono"
+                              >
+                                Central Marketplace
+                              </Badge>
+                            ) : (
                               <Badge
                                 variant="outline"
                                 className="border-[#FFB800]/40 text-[#FFB800] text-[11px] font-mono"
                               >
                                 Vendedor
                               </Badge>
-                              {w.vendorId && (
-                                <div className="text-[10px] font-mono text-[#94A3B8]">
-                                  Dueño: {w.vendorId.substring(0, 8)}...
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-4 px-4">
-                          {w.isActive ? (
-                            <span className="inline-flex items-center gap-1.5 text-xs text-[#00D4AA]">
-                              <span className="h-1.5 w-1.5 rounded-full bg-[#00D4AA]" />
-                              Activa
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 text-xs text-[#64748B]">
-                              <span className="h-1.5 w-1.5 rounded-full bg-[#64748B]" />
-                              Inactiva
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                            )}
+                          </td>
+                          <td className="py-4 px-4">
+                            {w.isActive ? (
+                              <span className="inline-flex items-center gap-1.5 text-xs text-[#00D4AA]">
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#00D4AA]" />
+                                Activa
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 text-xs text-[#64748B]">
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#64748B]" />
+                                Inactiva
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleStartEdit(w)}
+                              className="border-[#1F293D] hover:border-[#00D4AA] text-[#E2E8F0] hover:text-[#00D4AA] text-xs h-7 px-2.5 transition-colors"
+                            >
+                              <Edit2 className="h-3 w-3 mr-1" /> Editar
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -441,6 +550,136 @@ export function WarehouseListPage() {
           </div>
         </section>
       </div>
+
+      {/* ── Modal de Edición de Bodega ───────────────────────────────────── */}
+      {editingWarehouse && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#111827] border border-[#1F293D] rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-[#1F293D] pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-[#00D4AA]/10 text-[#00D4AA]">
+                  <Edit2 className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Editar Bodega Física</h3>
+                  <p className="text-[11px] font-mono text-[#94A3B8]">ID: {editingWarehouse.id}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingWarehouse(null)}
+                className="text-[#94A3B8] hover:text-white p-1 rounded-lg hover:bg-[#161F30] transition-colors"
+                aria-label="Cerrar modal"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {editError && (
+              <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
+                <AlertCircle className="h-4 w-4 text-red-400" />
+                <AlertTitle>Error al actualizar</AlertTitle>
+                <AlertDescription className="text-xs">{editError}</AlertDescription>
+              </Alert>
+            )}
+
+            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+              <div className="space-y-1">
+                <label className="text-[#E2E8F0] font-semibold">Nombre de la Bodega</label>
+                <Input
+                  type="text"
+                  value={editFormData.name}
+                  onChange={(e) =>
+                    setEditFormData((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  className="bg-[#161F30] border-[#1F293D] text-white text-xs focus:border-[#00D4AA]"
+                />
+                {editErrors.name && (
+                  <p className="text-[11px] text-red-400">{editErrors.name}</p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[#E2E8F0] font-semibold">Ubicación</label>
+                <Input
+                  type="text"
+                  value={editFormData.location}
+                  onChange={(e) =>
+                    setEditFormData((prev) => ({ ...prev, location: e.target.value }))
+                  }
+                  className="bg-[#161F30] border-[#1F293D] text-white text-xs focus:border-[#00D4AA]"
+                />
+                {editErrors.location && (
+                  <p className="text-[11px] text-red-400">{editErrors.location}</p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[#E2E8F0] font-semibold">Capacidad de Almacenamiento (m³)</label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={editFormData.capacity}
+                  onChange={(e) =>
+                    setEditFormData((prev) => ({
+                      ...prev,
+                      capacity: Number(e.target.value),
+                    }))
+                  }
+                  className="bg-[#161F30] border-[#1F293D] text-white font-mono text-xs focus:border-[#00D4AA]"
+                />
+                {editErrors.capacity && (
+                  <p className="text-[11px] text-red-400">{editErrors.capacity}</p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#161F30] border border-[#1F293D]">
+                <div>
+                  <div className="text-xs font-semibold text-[#E2E8F0]">Estado Operativo</div>
+                  <div className="text-[11px] text-[#94A3B8]">
+                    {editFormData.isActive
+                      ? 'Bodega activa para recepción de stock y despachos'
+                      : 'Bodega inactiva temporalmente'}
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  id="warehouse-active-toggle"
+                  checked={editFormData.isActive}
+                  onChange={(e) =>
+                    setEditFormData((prev) => ({ ...prev, isActive: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-[#1F293D] text-[#00D4AA] focus:ring-[#00D4AA] focus:ring-offset-0 bg-[#111827] cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#1F293D]">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingWarehouse(null)}
+                  className="border-[#1F293D] text-white hover:bg-[#161F30] text-xs"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={updateMutation.isPending}
+                  className="bg-[#00D4AA] text-[#0B0F19] hover:bg-[#00D4AA]/90 font-semibold text-xs"
+                >
+                  {updateMutation.isPending ? (
+                    <>
+                      <RefreshCw className="h-3 w-3 mr-1.5 animate-spin" /> Guardando...
+                    </>
+                  ) : (
+                    'Guardar Cambios'
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

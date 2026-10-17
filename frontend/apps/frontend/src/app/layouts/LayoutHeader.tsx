@@ -24,7 +24,8 @@ export function LayoutHeader({ title, onToggleSidebar, children }: LayoutHeaderP
   const { user, role, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const roleLabel = role ? NOMBRES_DE_ROL[role] : 'Sin Rol';
+  const activeRole = role ?? user?.role ?? null;
+  const roleLabel = activeRole ? NOMBRES_DE_ROL[activeRole] : 'Sin Rol';
 
   const handleLogout = (): void => {
     setIsLoggingOut(true);

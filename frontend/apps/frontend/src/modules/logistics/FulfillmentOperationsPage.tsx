@@ -27,6 +27,7 @@ import {
   useDispatchFulfillmentMutation,
   useDeliverFulfillmentMutation,
 } from '../../application/services';
+import { NOMBRES_DE_ESTADO_DE_DESPACHO } from '../../components/domainLabels';
 import { FulfillmentStatus } from '../../domain';
 
 interface FulfillmentOperationsPageProps {
@@ -193,21 +194,36 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
               </div>
               <Badge
                 variant="outline"
-                className="border-[#1F293D] text-[#00D4AA] font-mono text-xs"
+                className={`font-mono text-xs ${
+                  fulfillment.status === FulfillmentStatus.PendingPack
+                    ? 'border-[#FFB800]/40 text-[#FFB800] bg-[#FFB800]/10'
+                    : fulfillment.status === FulfillmentStatus.Packed || fulfillment.status === FulfillmentStatus.Dispatched
+                    ? 'border-[#00D4AA]/40 text-[#00D4AA] bg-[#00D4AA]/10'
+                    : fulfillment.status === FulfillmentStatus.Delivered
+                    ? 'border-emerald-400/40 text-emerald-300 bg-emerald-500/10'
+                    : 'border-red-400/40 text-red-400 bg-red-400/10'
+                }`}
               >
-                {fulfillment.status}
+                {NOMBRES_DE_ESTADO_DE_DESPACHO[fulfillment.status] ?? fulfillment.status}
               </Badge>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+            <div className="grid grid-cols-2 gap-4 text-xs">
               <div className="p-3.5 rounded-xl bg-[#161F30]/60 border border-[#1F293D]">
                 <span className="text-[#94A3B8] block text-[11px] font-sans">Pedido Relacionado</span>
-                <span className="text-white mt-1 block">#{fulfillment.customerOrderId}</span>
+                <span className="text-white mt-1 block font-mono font-semibold">#{fulfillment.customerOrderId}</span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-[#161F30]/60 border border-[#1F293D]">
                 <span className="text-[#94A3B8] block text-[11px] font-sans">Vendedor Titular</span>
-                <span className="text-[#00D4AA] mt-1 block">#{fulfillment.vendorId}</span>
+                <span className="text-[#00D4AA] mt-1 block font-semibold">
+                  {fulfillment.vendorId === '0b01129d-c0a9-4325-8394-4b9e636a4e88'
+                    ? 'Valeria Mendoza (seller@zentric.local)'
+                    : `Vendedor #${fulfillment.vendorId.substring(0, 8)}`}
+                </span>
+                <span className="text-[10px] font-mono text-[#64748B] block mt-0.5">
+                  ID: {fulfillment.vendorId}
+                </span>
               </div>
             </div>
 

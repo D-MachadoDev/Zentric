@@ -11,6 +11,7 @@ import type {
   CreateProductInput,
   CreateUserInput,
   CreateWarehouseInput,
+  UpdateWarehouseInput,
   CreatedProduct,
   CurrentUser,
   FulfillmentOrder,
@@ -236,6 +237,13 @@ export class HttpClient implements ZentricApiPort {
 
   createWarehouse(input: CreateWarehouseInput): Promise<string> {
     return this.#guid('/api/Warehouses', this.#post(input));
+  }
+
+  updateWarehouse(id: string, input: UpdateWarehouseInput): Promise<void> {
+    return this.#json<void>(`/api/Warehouses/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
   }
 
   listWarehouses(vendorId?: string): Promise<Warehouse[]> {

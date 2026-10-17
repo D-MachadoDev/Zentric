@@ -10,6 +10,7 @@ import type {
   CreateProductInput,
   CreateUserInput,
   CreateWarehouseInput,
+  UpdateWarehouseInput,
   CreatedProduct,
   CurrentUser,
   FulfillmentOrder,
@@ -60,6 +61,7 @@ export interface ZentricApiPort {
 
   // ── Módulo 2: Bodegas Físicas (/api/warehouses) ─────────────────────────
   createWarehouse(input: CreateWarehouseInput): Promise<string>;
+  updateWarehouse(id: string, input: UpdateWarehouseInput): Promise<void>;
   listWarehouses(vendorId?: string): Promise<Warehouse[]>;
   getWarehouseById(id: string): Promise<Warehouse>;
 
