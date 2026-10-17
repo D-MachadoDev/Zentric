@@ -20,7 +20,7 @@ export interface RouterContext {
 /**
  * Parámetros de búsqueda reconocidos en `/login` y `/entrar`.
  */
-export type LoginAviso = 'sin-sesion' | 'expirada' | 'desconectado';
+export type LoginAviso = 'sin-sesion' | 'expirada' | 'desconectado' | 'cuenta-creada';
 
 export interface LoginSearch {
   aviso?: LoginAviso;
@@ -30,7 +30,10 @@ export interface LoginSearch {
 export function parseLoginSearch(search: Record<string, unknown>): LoginSearch {
   const avisoRaw = search['aviso'];
   const aviso: LoginAviso | undefined =
-    avisoRaw === 'sin-sesion' || avisoRaw === 'expirada' || avisoRaw === 'desconectado'
+    avisoRaw === 'sin-sesion' ||
+    avisoRaw === 'expirada' ||
+    avisoRaw === 'desconectado' ||
+    avisoRaw === 'cuenta-creada'
       ? (avisoRaw as LoginAviso)
       : undefined;
 

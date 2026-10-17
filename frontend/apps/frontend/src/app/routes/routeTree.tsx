@@ -12,6 +12,7 @@ import {
   LogisticsLayout,
   SupervisorLayout,
 } from '../layouts';
+import { LoginPage, RegisterBuyerPage, HealthStatusPage } from '../../modules/auth';
 
 /**
  * Raíz del árbol de rutas con contexto tipado de dependencias (SessionPort, ApiPort, QueryClient).
@@ -38,10 +39,7 @@ export const loginRoute = createRoute({
   },
   component: () => (
     <PublicLayout>
-      <div className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-surface p-8 shadow-2xl">
-        <h1 className="text-2xl font-bold tracking-tight text-white">Entrar a la consola</h1>
-        <p className="text-sm text-foreground-muted">Ingrese sus credenciales de acceso.</p>
-      </div>
+      <LoginPage />
     </PublicLayout>
   ),
 });
@@ -60,10 +58,7 @@ export const entrarRoute = createRoute({
   },
   component: () => (
     <PublicLayout>
-      <div className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-surface p-8 shadow-2xl">
-        <h1 className="text-2xl font-bold tracking-tight text-white">Entrar a la consola</h1>
-        <p className="text-sm text-foreground-muted">Ingrese sus credenciales de acceso.</p>
-      </div>
+      <LoginPage />
     </PublicLayout>
   ),
 });
@@ -81,10 +76,7 @@ export const registerRoute = createRoute({
   },
   component: () => (
     <PublicLayout>
-      <div className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-surface p-8 shadow-2xl">
-        <h1 className="text-2xl font-bold tracking-tight text-white">Registro de Comprador</h1>
-        <p className="text-sm text-foreground-muted">Cree una cuenta para acceder al catálogo.</p>
-      </div>
+      <RegisterBuyerPage />
     </PublicLayout>
   ),
 });
@@ -97,10 +89,7 @@ export const healthRoute = createRoute({
   path: '/health',
   component: () => (
     <PublicLayout>
-      <div className="w-full max-w-2xl space-y-6 rounded-2xl border border-border bg-surface p-8 shadow-2xl">
-        <h1 className="text-2xl font-bold tracking-tight text-white">Estado del Sistema</h1>
-        <p className="text-sm text-foreground-muted">Telemetría de servicios centrales y base de datos.</p>
-      </div>
+      <HealthStatusPage />
     </PublicLayout>
   ),
 });
