@@ -47,7 +47,7 @@ RUN printf '%s\n' \
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost/ > /dev/null || exit 1
+  CMD wget -qO- http://127.0.0.1/ > /dev/null || exit 1
 
 # Usuario no root
 RUN addgroup -S zentric && adduser -S zentric -G zentric \
