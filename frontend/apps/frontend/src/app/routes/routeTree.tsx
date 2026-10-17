@@ -47,6 +47,15 @@ import {
   GhostStockReportPage,
   LogisticsReturnsInspectPage,
 } from '../../modules/logistics';
+import {
+  SupervisorDashboardPage,
+  SupervisorOrdersPage,
+  SupervisorOrderAuditPage,
+  SupervisorFulfillmentsPage,
+  SupervisorReturnsPage,
+  SupervisorInvoicesPage,
+  SupervisorInventoryAuditPage,
+} from '../../modules/supervisor';
 
 
 /**
@@ -426,78 +435,43 @@ export const supervisorLayoutRoute = createRoute({
 export const supervisorIndexRoute = createRoute({
   getParentRoute: () => supervisorLayoutRoute,
   path: '/',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Fiscalización y Telemetría</h1>
-      <p className="text-sm text-foreground-muted">Monitoreo transversal en modo sólo lectura</p>
-    </div>
-  ),
+  component: () => <SupervisorDashboardPage />,
 });
 
 export const supervisorOrdersRoute = createRoute({
   getParentRoute: () => supervisorLayoutRoute,
   path: '/orders',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Pedidos Globales</h1>
-      <p className="text-sm text-foreground-muted">Auditoría 360° de pedidos en plataforma</p>
-    </div>
-  ),
+  component: () => <SupervisorOrdersPage />,
 });
 
 export const supervisorOrderAuditRoute = createRoute({
   getParentRoute: () => supervisorLayoutRoute,
   path: '/orders/$orderId',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Auditoría de Pedido</h1>
-      <p className="text-sm text-foreground-muted">Expediente 360° de líneas, despachos y split tributario</p>
-    </div>
-  ),
+  component: () => <SupervisorOrderAuditPage />,
 });
 
 export const supervisorFulfillmentsRoute = createRoute({
   getParentRoute: () => supervisorLayoutRoute,
   path: '/fulfillments',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Monitoreo de Despachos</h1>
-      <p className="text-sm text-foreground-muted">Trazabilidad de guías y cancelaciones por quiebre</p>
-    </div>
-  ),
+  component: () => <SupervisorFulfillmentsPage />,
 });
 
 export const supervisorReturnsRoute = createRoute({
   getParentRoute: () => supervisorLayoutRoute,
   path: '/returns',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Expedientes de Devolución</h1>
-      <p className="text-sm text-foreground-muted">Seguimiento de dictámenes y resoluciones</p>
-    </div>
-  ),
+  component: () => <SupervisorReturnsPage />,
 });
 
 export const supervisorInvoicesRoute = createRoute({
   getParentRoute: () => supervisorLayoutRoute,
   path: '/invoices',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Libro Mayor Tributario</h1>
-      <p className="text-sm text-foreground-muted">Desglose de facturas y comisiones</p>
-    </div>
-  ),
+  component: () => <SupervisorInvoicesPage />,
 });
 
 export const supervisorAuditRoute = createRoute({
   getParentRoute: () => supervisorLayoutRoute,
   path: '/inventory-audit',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Auditoría de Stock</h1>
-      <p className="text-sm text-foreground-muted">Ajuste por conteo físico con idempotencia</p>
-    </div>
-  ),
+  component: () => <SupervisorInventoryAuditPage />,
 });
 
 // ============================================================================
