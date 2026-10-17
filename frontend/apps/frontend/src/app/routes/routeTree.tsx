@@ -32,6 +32,21 @@ import {
   SellerFulfillmentsPage,
   SellerReturnsPage,
 } from '../../modules/seller';
+import {
+  AdminDashboardPage,
+  UserListPage,
+  CreateUserPage,
+  WarehouseListPage,
+  InventoryAdjustPage,
+  RefundListPage,
+  InvoiceManagementPage,
+} from '../../modules/admin';
+import {
+  LogisticsFulfillmentsPage,
+  FulfillmentOperationsPage,
+  GhostStockReportPage,
+  LogisticsReturnsInspectPage,
+} from '../../modules/logistics';
 
 
 /**
@@ -184,78 +199,43 @@ export const adminLayoutRoute = createRoute({
 export const adminIndexRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: '/',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Panel General</h1>
-      <p className="text-sm text-foreground-muted">Métricas consolidadas de la plataforma</p>
-    </div>
-  ),
+  component: () => <AdminDashboardPage />,
 });
 
 export const adminUsersRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: '/users',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Directorio de Usuarios</h1>
-      <p className="text-sm text-foreground-muted">Gestión RBAC y control de acceso</p>
-    </div>
-  ),
+  component: () => <UserListPage />,
 });
 
 export const adminUserCreateRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: '/users/new',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Alta de Usuario</h1>
-      <p className="text-sm text-foreground-muted">Registro de administradores, vendedores, supervisores y operadores logísticos</p>
-    </div>
-  ),
+  component: () => <CreateUserPage />,
 });
 
 export const adminWarehousesRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: '/warehouses',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Red de Bodegas Físicas</h1>
-      <p className="text-sm text-foreground-muted">Bodegas centrales de Zentric y de vendedores</p>
-    </div>
-  ),
+  component: () => <WarehouseListPage />,
 });
 
 export const adminAdjustmentsRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: '/inventory-adjustments',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Ajustes de Inventario</h1>
-      <p className="text-sm text-foreground-muted">Auditoría y conciliación por conteo físico</p>
-    </div>
-  ),
+  component: () => <InventoryAdjustPage />,
 });
 
 export const adminReturnsRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: '/returns',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Reembolsos de Devolución</h1>
-      <p className="text-sm text-foreground-muted">Desembolso financiero tras aprobación comercial</p>
-    </div>
-  ),
+  component: () => <RefundListPage />,
 });
 
 export const adminInvoicesRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: '/invoices',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Facturación Split</h1>
-      <p className="text-sm text-foreground-muted">Facturas Maestras y comisiones de plataforma</p>
-    </div>
-  ),
+  component: () => <InvoiceManagementPage />,
 });
 
 // ============================================================================
@@ -401,56 +381,31 @@ export const logisticsLayoutRoute = createRoute({
 export const logisticsIndexRoute = createRoute({
   getParentRoute: () => logisticsLayoutRoute,
   path: '/',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Panel Logístico</h1>
-      <p className="text-sm text-foreground-muted">Supervisión operativa de envíos y paquetes</p>
-    </div>
-  ),
+  component: () => <LogisticsFulfillmentsPage />,
 });
 
 export const logisticsFulfillmentsRoute = createRoute({
   getParentRoute: () => logisticsLayoutRoute,
   path: '/fulfillments',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Órdenes de Despacho</h1>
-      <p className="text-sm text-foreground-muted">Ciclo completo de fulfillment y entrega</p>
-    </div>
-  ),
+  component: () => <LogisticsFulfillmentsPage />,
 });
 
 export const logisticsFulfillmentDetailRoute = createRoute({
   getParentRoute: () => logisticsLayoutRoute,
   path: '/fulfillments/$id',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Operaciones de Despacho</h1>
-      <p className="text-sm text-foreground-muted">Empaque, despacho y certificación de entrega</p>
-    </div>
-  ),
+  component: () => <FulfillmentOperationsPage />,
 });
 
 export const logisticsGhostStockRoute = createRoute({
   getParentRoute: () => logisticsLayoutRoute,
   path: '/fulfillments/$id/ghost-stock',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Reporte de Stock Fantasma</h1>
-      <p className="text-sm text-foreground-muted">Cancelación operativa por quiebre de stock no conciliado</p>
-    </div>
-  ),
+  component: () => <GhostStockReportPage />,
 });
 
 export const logisticsReturnsRoute = createRoute({
   getParentRoute: () => logisticsLayoutRoute,
   path: '/returns',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Inspección de Devoluciones</h1>
-      <p className="text-sm text-foreground-muted">Dictamen técnico físico de paquetes recibidos</p>
-    </div>
-  ),
+  component: () => <LogisticsReturnsInspectPage />,
 });
 
 // ============================================================================
