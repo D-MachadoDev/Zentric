@@ -21,6 +21,7 @@ import {
   BuyerOrderDetailPage,
   BuyerOrderPaymentPage,
   RequestReturnPage,
+  BuyerProfilePage,
 } from '../../modules/buyer';
 import {
   SellerDashboardPage,
@@ -378,6 +379,12 @@ export const buyerReturnRequestRoute = createRoute({
   component: () => <RequestReturnPage />,
 });
 
+export const buyerProfileRoute = createRoute({
+  getParentRoute: () => buyerLayoutRoute,
+  path: '/profile',
+  component: () => <BuyerProfilePage />,
+});
+
 // ============================================================================
 // SUBÁRBOL LOGÍSTICA (/logistics)
 // ============================================================================
@@ -518,6 +525,7 @@ export const routeTree = rootRoute.addChildren([
     buyerOrderDetailRoute,
     buyerOrderPaymentRoute,
     buyerReturnRequestRoute,
+    buyerProfileRoute,
   ]),
   logisticsLayoutRoute.addChildren([
     logisticsIndexRoute,

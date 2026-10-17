@@ -30,7 +30,7 @@ export function ZentricDataTable<T>(props: ZentricDataTableProps<T>) {
               <tr key={props.keyExtractor(row, i)} className='hover:bg-surface-hover/50'> 
                 {props.columns.map((col) => ( 
                   <td key={col.id} className={cn('px-4 py-3 text-foreground/90', col.numeric ? 'font-mono tabular-nums text-right' : '')}> 
-                    {col.cell ? col.cell({ row, value: col.accessorKey ? row[col.accessorKey] : null, index: i }) : col.accessorKey ? String(row[col.accessorKey]) : ''} 
+                    {col.cell ? col.cell({ row, value: col.accessorKey ? (row as Record<string, any>)[col.accessorKey] : null, index: i }) : col.accessorKey ? String((row as Record<string, any>)[col.accessorKey] ?? '') : ''} 
                   </td> 
                 ))} 
               </tr> 

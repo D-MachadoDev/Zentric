@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from '@tanstack/react-router';
 import { useProductQuery } from '../../application/services/catalog';
 import { useOrdersQuery, useCreateCartMutation, useAddCartItemMutation } from '../../application/services/orders';
 import { getDefaultSession } from '../../application/services';
 import { ProductType, type ProductVariant } from '../../domain';
+import { getProductImageUrl, saveRecentlyViewedProduct } from './productImages';
 import {
   Button,
   Badge,
@@ -57,6 +58,13 @@ export function BuyerProductDetailPage() {
     !activeVariant.canBeSold ||
     (availableStock !== undefined && availableStock <= 0);
   const isExceedingStock = quantity > maxStock;
+
+  // Registrar producto como visto recientemente para el carrusel del catálogo
+  useEffect(() => {
+    if (product) {
+      saveRecentlyViewedProduct(product);
+    }
+  }, [product]);
 
   const handleAddToCart = async () => {
     // 0. Exigir autenticación previa en navegador real
@@ -231,17 +239,11 @@ export function BuyerProductDetailPage() {
 
             {/* Fotografía Protagonista del Producto (16:10) */}
             <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-surface-muted border border-border shadow-xs">
-              {product.imageUrl ? (
-                <img
-                  src={product.imageUrl}
-                  alt={product.name}
-                  className="h-full w-full object-cover object-center"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-surface-muted to-surface text-foreground-muted">
-                  <Package className="h-16 w-16 opacity-30" />
-                </div>
-              )}
+              <img
+                src={getProductImageUrl(product)}
+                alt={product.name}
+                className="h-full w-full object-cover object-center"
+              />
             </div>
 
             {/* Descripción */}

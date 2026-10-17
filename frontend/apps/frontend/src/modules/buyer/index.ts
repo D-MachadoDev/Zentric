@@ -13,3 +13,5 @@ export * from './BuyerOrdersPage';
 export * from './BuyerOrderDetailPage';
 export * from './BuyerOrderPaymentPage';
 export * from './RequestReturnPage';
+export * from './BuyerProfilePage';
+export * from './productImages';

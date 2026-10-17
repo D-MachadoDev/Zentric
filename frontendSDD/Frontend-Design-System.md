@@ -1,3 +1,27 @@
+# Frontend Design System
+
+## 1. Catálogo de Estilos de Diseño Funcional
+
+### 1.1 Modo `COMMAND_CENTER` (Admin/Supervisor)
+- **Contexto:** Panel de control de alto nivel.
+- **Prioridad de Información:** KPIs críticos, alertas de sistema, estado de salud de la plataforma, logs de auditoría en tiempo real.
+- **Densidad:** Ultra-alta. Interlineado compacto (rem 1.25), tipografía Geist Mono para tabular datos, Geist Sans para etiquetas.
+- **Controles:** Navegación por búsqueda global, filtros avanzados en panel lateral colapsable, paginación infinita o tablas 'Grid-Ledger' con carga diferida.
+- **Visual:** Paleta de neutros (`#0B0F19`, `#161F30`), bordes de 1px (`#1F293D`).
+
+### 1.2 Modo `WORKFLOW_QUEUE` (Logística/Operaciones)
+- **Contexto:** Gestión de colas de tareas, órdenes de fulfillment, devoluciones.
+- **Prioridad de Información:** Identificador de tarea, estado actual (badge ámbar/esmeralda), tiempo transcurrido, urgencia, acción requerida.
+- **Densidad:** Media-alta. Enfoque en escaneo rápido vertical (lista).
+- **Controles:** Acciones de fila (inline), filtros de estado preconfigurados, ordenamiento rápido.
+- **Visual:** Enfoque en la visibilidad del estado: `#00D4AA` para OK, `#FFB800` para advertencia.
+
+### 1.3 Modo `COMMERCE_CATALOG` (Comprador/Vendedor)
+- **Contexto:** Exploración de catálogo, gestión de inventario comercial.
+- **Prioridad de Información:** Imagen de producto (si aplica), nombre claro, SKU, disponibilidad (stock), precio, acción de compra/gestión.
+- **Densidad:** Media. Espaciado generoso (rem 1.5) para evitar fatiga visual en catálogos extensos.
+- **Controles:** Grid/List view toggle, filtros de facetas, buy-box destacada o modal de acción rápida.
+- **Visual:** Equilibrio visual, tipografía Geist Sans dominante para legibilidad comercial.
 # Sistema de Diseño, Tokens Semánticos y Composición Visual (Frontend Design System)
 
 > Especificación normativa del sistema de diseño para la consola web de **Zentric Marketplace** (`frontend/packages/ui` y `frontend/apps/frontend`).  
