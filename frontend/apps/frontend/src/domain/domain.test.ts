@@ -9,7 +9,7 @@ import {
   UserRole,
   WarehouseType,
 } from './enums';
-import { ApiError, isApiError } from './models';
+import { ApiError, DomainError, ProblemDetailsError, isApiError, isProblemDetailsError } from './models';
 
 // Estos tests fijan el contrato de ADR-0012 como red de seguridad. Un enum
 // publicado con índices numéricos en vez de nombres, o con un valor de menos,
@@ -101,7 +101,7 @@ describe('Enums del dominio (ADR-0012)', () => {
   });
 });
 
-describe('ApiError (Frontend-Architecture §5)', () => {
+describe('ApiError y ProblemDetailsError (Frontend-Architecture §5)', () => {
   it('expone el ProblemDetails del servidor como mensaje apto para el usuario', () => {
     const error = new ApiError(409, 'El documento ya está registrado.');
 
@@ -122,4 +122,22 @@ describe('ApiError (Frontend-Architecture §5)', () => {
     expect(isApiError(new ApiError(401, 'Sesión expirada.'))).toBe(true);
     expect(isApiError(new Error('Sesión expirada.'))).toBe(false);
   });
+
+  it('construye DomainError y ProblemDetailsError con valores por defecto y predicado de tipo', () => {
+    const domainErr = new DomainError('Invariante rota');
+    expect(domainErr.name).toBe('DomainError');
+
+    const emptyProblem = new ProblemDetailsError({});
+    expect(emptyProblem.status).toBe(500);
+    expect(emptyProblem.title).toBe('Error');
+    expect(emptyProblem.detail).toBe('Error HTTP 500');
+    expect(emptyProblem.userMessage).toBe('Error HTTP 500');
+
+    const titledProblem = new ProblemDetailsError({ status: 400, title: 'Solicitud inválida' });
+    expect(titledProblem.detail).toBe('Solicitud inválida');
+
+    expect(isProblemDetailsError(emptyProblem)).toBe(true);
+    expect(isProblemDetailsError(domainErr)).toBe(false);
+  });
 });
+

@@ -147,8 +147,12 @@ describe('Módulo de Autenticación y Salud (W4-S01-auth-module)', () => {
       expect(screen.getByRole('button', { name: /Crear Cuenta de Comprador/i })).toBeInTheDocument();
     });
 
-    it('valida coincidencia de contraseñas y requisitos mínimos', async () => {
+    it('valida coincidencia de contraseñas y requisitos mínimos limpiando errores al escribir', async () => {
       renderWithClient(<RegisterBuyerPage />);
+
+      // Enviar vacío primero para mostrar todos los errores de campo
+      fireEvent.click(screen.getByRole('button', { name: /Crear Cuenta de Comprador/i }));
+      expect(await screen.findByText(/El documento de identidad es obligatorio/i)).toBeInTheDocument();
 
       fireEvent.change(screen.getByLabelText(/Documento de Identidad/i), {
         target: { value: '123456789' },
@@ -251,6 +255,7 @@ describe('Módulo de Autenticación y Salud (W4-S01-auth-module)', () => {
       expect(screen.getByText(/CONECTADO \(UP\)/i)).toBeInTheDocument();
       expect(screen.getByText(/API Core v1.1.0/i)).toBeInTheDocument();
       expect(screen.getByText(/PostgreSQL 16/i)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /^Actualizar$/i }));
     });
 
     it('muestra alerta descriptiva cuando la sonda técnica falla', async () => {
@@ -288,3 +293,4 @@ describe('Módulo de Autenticación y Salud (W4-S01-auth-module)', () => {
     });
   });
 });
+

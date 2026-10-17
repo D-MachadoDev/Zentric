@@ -5,7 +5,13 @@ import { describe, expect, it } from 'vitest';
 import { Alert, AlertDescription, AlertTitle } from './alert';
 import {
   AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogTitle,
   AlertDialogTrigger,
 } from './alert-dialog';
@@ -17,14 +23,26 @@ import { Dialog, DialogContent, DialogTitle, DialogTrigger } from './dialog';
 import { Input } from './input';
 import { Label } from './label';
 import { MoneyAmount } from './money-amount';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from './select';
 import { Skeleton } from './skeleton';
+import { Toaster } from './sonner';
 import { StateView } from './state-view';
 import { StatusBadge } from './status-badge';
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -144,9 +162,10 @@ describe('Alert', () => {
 });
 
 describe('Table', () => {
-  it('renderiza cabeceras y filas densas', () => {
+  it('renderiza cabeceras, pie, caption y filas densas', () => {
     render(
       <Table>
+        <TableCaption>Listado de existencias</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead>Producto</TableHead>
@@ -159,12 +178,19 @@ describe('Table', () => {
             <TableCell>12</TableCell>
           </TableRow>
         </TableBody>
+        <TableFooter>
+          <TableRow>
+            <TableCell>Total</TableCell>
+            <TableCell>12</TableCell>
+          </TableRow>
+        </TableFooter>
       </Table>,
     );
     const grid = screen.getByRole('table');
     expect(within(grid).getByRole('columnheader', { name: 'Producto' })).toBeInTheDocument();
     expect(within(grid).getByRole('cell', { name: 'Teclado' })).toBeInTheDocument();
-    expect(within(grid).getByRole('cell', { name: '12' })).toBeInTheDocument();
+    expect(within(grid).getByText('Total')).toBeInTheDocument();
+    expect(screen.getByText('Listado de existencias')).toBeInTheDocument();
   });
 });
 
@@ -186,12 +212,20 @@ describe('Dialog', () => {
 });
 
 describe('AlertDialog', () => {
-  it('abre y anuncia su titulo como dialogo modal', async () => {
+  it('abre y anuncia su titulo, descripcion, media y acciones como dialogo modal', async () => {
     render(
       <AlertDialog>
         <AlertDialogTrigger>Eliminar pedido</AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogTitle>Confirmar eliminacion</AlertDialogTitle>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogMedia>!</AlertDialogMedia>
+            <AlertDialogTitle>Confirmar eliminacion</AlertDialogTitle>
+            <AlertDialogDescription>Esta accion es irreversible.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>,
     );
@@ -199,29 +233,37 @@ describe('AlertDialog', () => {
     // AlertDialog expone role="alertdialog" para distinguirlo de Dialog.
     expect(screen.getByRole('alertdialog')).toBeInTheDocument();
     expect(screen.getByText('Confirmar eliminacion')).toBeInTheDocument();
+    expect(screen.getByText('Esta accion es irreversible.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirmar' })).toBeInTheDocument();
   });
 });
 
 describe('Select', () => {
-  it('abre y selecciona una opcion', async () => {
+  it('abre y selecciona una opcion con grupo, etiqueta y separador', async () => {
     render(
       <Select>
-        <SelectTrigger aria-label="Moneda">
+        <SelectTrigger aria-label="Moneda" size="sm">
           <SelectValue placeholder="Elegir" />
         </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="COP">COP</SelectItem>
-          <SelectItem value="USD">USD</SelectItem>
+        <SelectContent position="popper">
+          <SelectGroup>
+            <SelectLabel>Divisas</SelectLabel>
+            <SelectItem value="COP">COP</SelectItem>
+            <SelectSeparator />
+            <SelectItem value="USD">USD</SelectItem>
+          </SelectGroup>
         </SelectContent>
       </Select>,
     );
     await userEvent.click(screen.getByRole('combobox', { name: 'Moneda' }));
+    expect(screen.getByText('Divisas')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('option', { name: 'COP' }));
     expect(screen.getByRole('combobox', { name: 'Moneda' })).toHaveTextContent('COP');
   });
 });
 
-describe('StatusBadge', () => {
+describe('StatusBadge y Toaster', () => {
   it('muestra el texto de estado, que es su único portador de significado (§5)', () => {
     render(<StatusBadge tone="success">Pagado</StatusBadge>);
     // §5: el color nunca puede ser el único indicador, así que el texto es
@@ -231,11 +273,16 @@ describe('StatusBadge', () => {
     expect(insignia.querySelector('[aria-hidden="true"]')).not.toBeNull();
   });
 
-  it('expone el tono aplicado para poder teñirlo desde el dominio', () => {
-    render(<StatusBadge tone="danger">Reembolsada</StatusBadge>);
-    // `getByText` devuelve el propio elemento de la insignia: el texto es hijo
-    // directo del envoltorio que lleva `data-tone`.
+  it('expone el tono aplicado y tono neutral por defecto', () => {
+    render(
+      <>
+        <StatusBadge tone="danger">Reembolsada</StatusBadge>
+        <StatusBadge>Borrador</StatusBadge>
+        <Toaster />
+      </>,
+    );
     expect(screen.getByText('Reembolsada')).toHaveAttribute('data-tone', 'danger');
+    expect(screen.getByText('Borrador')).toHaveAttribute('data-tone', 'neutral');
   });
 });
 

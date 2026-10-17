@@ -22,6 +22,7 @@ import {
   FulfillmentStatus,
   ReturnStatus,
   WarehouseType,
+  type Order,
   type Product,
   type OrderListItem,
   type SellerOrderView,
@@ -457,16 +458,36 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       expect(screen.getByText('Teclado Mecánico RGB')).toBeInTheDocument();
     });
 
-    it('muestra error y permite reintentar cuando falla la carga', async () => {
-      vi.spyOn(appServices.api, 'listProducts').mockRejectedValue(new Error('Fallo de catálogo'));
-      renderWithClient(<SellerProductsPage />);
+    it('muestra error y permite reintentar cuando falla la carga, soporta productos digitales sin descripción y catálogo vacío', async () => {
+      vi.spyOn(appServices.api, 'listProducts').mockRejectedValueOnce(new Error('Fallo de catálogo'));
+      const { unmount } = renderWithClient(<SellerProductsPage />);
 
       expect(await screen.findByText('Error al cargar catálogo propio')).toBeInTheDocument();
       expect(screen.getByText('Fallo de catálogo')).toBeInTheDocument();
       const retryBtn = screen.getByRole('button', { name: /Reintentar/i });
-      expect(retryBtn).toBeInTheDocument();
-    });
+      fireEvent.click(retryBtn);
 
+      unmount();
+      vi.spyOn(appServices.api, 'listProducts').mockResolvedValueOnce([
+        {
+          ...mockProduct1,
+          type: ProductType.Digital,
+          description: '',
+        },
+      ]);
+      const { unmount: unmount2 } = renderWithClient(<SellerProductsPage />);
+      expect(await screen.findByText('Digital')).toBeInTheDocument();
+      expect(screen.getByText('Sin descripción provista.')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
+
+      unmount2();
+      vi.spyOn(appServices.api, 'listProducts').mockResolvedValueOnce([]);
+      renderWithClient(<SellerProductsPage />);
+      expect(
+        await screen.findByText('Aún no tiene productos registrados en su catálogo de vendedor.')
+      ).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Crear Producto' }));
+    });
   });
 
 
@@ -615,8 +636,9 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
 
   // ── 5. SellerProductDetailPage ───────────────────────────────────────
   describe('SellerProductDetailPage', () => {
-    it('muestra ficha técnica y tabla de variantes del producto', async () => {
+    it('muestra ficha técnica y tabla de variantes del producto y permite suspender', async () => {
       mockParams = { productId: 'prod-1111-1111' };
+      const suspendSpy = vi.spyOn(appServices.api, 'suspendProduct').mockResolvedValue(undefined);
       renderWithClient(<SellerProductDetailPage />);
 
       expect(await screen.findByText('Teclado Mecánico RGB')).toBeInTheDocument();
@@ -624,12 +646,20 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       expect(screen.getByText(/KB-RGB-02/i)).toBeInTheDocument();
 
       const toggleBtn = screen.getByRole('button', { name: /Suspender Venta/i });
-      expect(toggleBtn).toBeInTheDocument();
+      fireEvent.click(toggleBtn);
+      await waitFor(() => {
+        expect(suspendSpy).toHaveBeenCalledWith('prod-1111-1111');
+      });
     });
 
-    it('permite alternar producto de suspendido a publicado', async () => {
+    it('permite alternar producto de suspendido a publicado y soporta producto Digital', async () => {
       mockParams = { productId: 'prod-2222-2222' };
-      vi.spyOn(appServices.api, 'getProductById').mockResolvedValue(mockProduct2);
+      vi.spyOn(appServices.api, 'getProductById').mockResolvedValue({
+        ...mockProduct2,
+        type: ProductType.Digital,
+        description: '',
+        variants: [],
+      });
       const publishSpy = vi.spyOn(appServices.api, 'publishProduct').mockResolvedValue(undefined);
 
       renderWithClient(<SellerProductDetailPage />);
@@ -638,7 +668,6 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
 
       const toggleBtn = screen.getByRole('button', { name: /Publicar Producto/i });
       fireEvent.click(toggleBtn);
-
 
       await waitFor(() => {
         expect(publishSpy).toHaveBeenCalledWith('prod-2222-2222');
@@ -771,12 +800,28 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       expect(retryBtn).toBeInTheDocument();
     });
 
-    it('muestra alerta cuando la mutación addStock falla', async () => {
+    it('muestra alerta cuando la mutación addStock falla y cubre filtros, estados vacíos y fallbacks de mapeo', async () => {
+      vi.spyOn(appServices.api, 'listInventories').mockResolvedValue([
+        {
+          id: 'inv-unknown-1',
+          variantId: 'var-unknown-9999',
+          warehouseId: 'wh-unknown-9999',
+          availableQuantity: 10,
+          reservedQuantity: 0,
+          usedQuantity: 0,
+          damagedQuantity: 0,
+        },
+      ]);
       vi.spyOn(appServices.api, 'addStock').mockRejectedValue(new Error('Capacidad excedida en bodega'));
       renderWithClient(<SellerInventoryPage />);
 
-      const variantSelect = await screen.findByLabelText(/Seleccionar variante de producto/i);
-      fireEvent.change(variantSelect, { target: { value: 'var-1111-1111' } });
+      expect(await screen.findByText('Variante Registrada')).toBeInTheDocument();
+      expect(screen.getByText('Bodega Física')).toBeInTheDocument();
+
+      // Escribir ID de variante en el input manual
+      fireEvent.change(screen.getByPlaceholderText(/ID de Variante \(UUID\)/i), {
+        target: { value: 'var-1111-1111' },
+      });
 
       const warehouseSelect = screen.getByLabelText(/Seleccionar bodega/i);
       fireEvent.change(warehouseSelect, { target: { value: 'wh-1111-1111' } });
@@ -785,6 +830,22 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       fireEvent.click(submitBtn);
 
       expect(await screen.findByText('Capacidad excedida en bodega')).toBeInTheDocument();
+
+      // Filtrar por texto y por bodega para estado vacío con filtros
+      fireEvent.change(screen.getByPlaceholderText(/Buscar por SKU, variante o ubicación/i), {
+        target: { value: 'Inexistente' },
+      });
+      expect(screen.getByText('No hay inventarios que coincidan con los filtros aplicados.')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
+    });
+
+    it('muestra mensaje vacío inicial cuando no existen posiciones de inventario', async () => {
+      vi.spyOn(appServices.api, 'listInventories').mockResolvedValue([]);
+      renderWithClient(<SellerInventoryPage />);
+
+      expect(
+        await screen.findByText('Aún no has registrado existencias de tus variantes en ninguna bodega física.')
+      ).toBeInTheDocument();
     });
   });
 
@@ -803,7 +864,16 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       expect(screen.getAllByText(/ADR-0013/i).length).toBeGreaterThanOrEqual(1);
     });
 
-    it('permite seleccionar otro pedido del listado', async () => {
+    it('permite seleccionar otro pedido del listado y soporta vendorSubtotal y líneas vacías', async () => {
+      vi.spyOn(appServices.api, 'getOrderById').mockResolvedValue({
+        id: 'order-2222-2222',
+        status: OrderStatus.Paid,
+        currency: 'COP',
+        vendorSubtotal: 120000,
+        items: [],
+        createdAt: new Date().toISOString(),
+      } as unknown as Order);
+
       renderWithClient(<SellerOrdersPage />);
 
       expect(await screen.findByText('Pedidos Recibidos')).toBeInTheDocument();
@@ -811,18 +881,31 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       const secondOrderCard = screen.getByText(/#order-22/i);
       fireEvent.click(secondOrderCard);
 
-      expect(secondOrderCard).toBeInTheDocument();
+      expect(await screen.findByText('Sin líneas de variantes especificadas.')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
     });
 
-    it('permite filtrar pedidos por estado', async () => {
-      renderWithClient(<SellerOrdersPage />);
+    it('permite filtrar pedidos por estado, buscar por texto y ver estado vacío sin filtros', async () => {
+      const { unmount } = renderWithClient(<SellerOrdersPage />);
 
       expect(await screen.findByText('Pedidos Recibidos')).toBeInTheDocument();
+
+      fireEvent.change(screen.getByPlaceholderText(/Buscar por ID de pedido/i), {
+        target: { value: 'order-11' },
+      });
 
       const filterSelect = screen.getByLabelText(/Filtrar por estado del pedido/i);
       fireEvent.change(filterSelect, { target: { value: OrderStatus.Cancelled } });
 
       expect(screen.getByText('No hay pedidos registrados')).toBeInTheDocument();
+      expect(screen.getByText('Selecciona un pedido para inspeccionar su liquidación.')).toBeInTheDocument();
+
+      unmount();
+      vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([]);
+      renderWithClient(<SellerOrdersPage />);
+      expect(
+        await screen.findByText('Aún no se han recibido compras que contengan productos de tu catálogo.')
+      ).toBeInTheDocument();
     });
 
     it('muestra error y permite reintentar cuando falla la carga', async () => {
@@ -832,7 +915,7 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       expect(await screen.findByText('Error al cargar pedidos')).toBeInTheDocument();
       expect(screen.getByText('Fallo de pedidos')).toBeInTheDocument();
       const retryBtn = screen.getByRole('button', { name: /Reintentar/i });
-      expect(retryBtn).toBeInTheDocument();
+      fireEvent.click(retryBtn);
     });
   });
 
@@ -956,15 +1039,31 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
         await screen.findByText('Debe especificar la bodega física del quiebre.')
       ).toBeInTheDocument();
 
-      // Modificar cantidad a través del input
+      // Seleccionar bodega pero cantidad 0
+      const warehouseSelect = screen.getByLabelText(/Seleccionar bodega física del quiebre/i);
+      fireEvent.change(warehouseSelect, { target: { value: 'wh-1111-1111' } });
       const qtyInput = screen.getByDisplayValue('1');
-      fireEvent.change(qtyInput, { target: { value: '3' } });
-      expect(screen.getByDisplayValue('3')).toBeInTheDocument();
+      fireEvent.change(qtyInput, { target: { value: '0' } });
+      fireEvent.click(confirmBtn);
+      expect(
+        await screen.findByText('La cantidad a cancelar debe ser mayor que cero.')
+      ).toBeInTheDocument();
+
+      // Filtrar por texto y estado para cubrir estados vacíos y sin selección
+      fireEvent.change(screen.getByPlaceholderText(/Buscar por ID de despacho o pedido/i), {
+        target: { value: 'Inexistente' },
+      });
+      fireEvent.change(screen.getByLabelText(/Filtrar por estado de despacho/i), {
+        target: { value: FulfillmentStatus.Packed },
+      });
+      expect(screen.getByText('No hay despachos que coincidan con los filtros aplicados.')).toBeInTheDocument();
+      expect(screen.getByText('Selecciona un despacho para operar o verificar su estado.')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
     });
 
-    it('maneja error cuando la API falla al reportar stock fantasma', async () => {
+    it('maneja error cuando la API falla al reportar stock fantasma y lista vacía inicial', async () => {
       vi.spyOn(appServices.api, 'cancelGhostStock').mockRejectedValue(new Error('Fallo al cancelar por quiebre'));
-      renderWithClient(<SellerFulfillmentsPage />);
+      const { unmount } = renderWithClient(<SellerFulfillmentsPage />);
 
       const openGhostBtn = await screen.findByRole('button', { name: /Reportar Quiebre de Stock Fantasma/i });
       fireEvent.click(openGhostBtn);
@@ -979,6 +1078,13 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       fireEvent.click(confirmBtn);
 
       expect(await screen.findByText('Fallo al cancelar por quiebre')).toBeInTheDocument();
+
+      unmount();
+      vi.spyOn(appServices.api, 'listFulfillments').mockResolvedValue([]);
+      renderWithClient(<SellerFulfillmentsPage />);
+      expect(
+        await screen.findByText('No tienes órdenes de despacho activas en este momento.')
+      ).toBeInTheDocument();
     });
 
     it('muestra error y permite reintentar cuando falla la carga', async () => {
@@ -988,7 +1094,7 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       expect(await screen.findByText('Error al cargar despachos')).toBeInTheDocument();
       expect(screen.getByText('Fallo de logística')).toBeInTheDocument();
       const retryBtn = screen.getByRole('button', { name: /Reintentar/i });
-      expect(retryBtn).toBeInTheDocument();
+      fireEvent.click(retryBtn);
     });
   });
 
@@ -1036,8 +1142,8 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       expect(await screen.findByText(/Solicitud de devolución rechazada comercialmente/i)).toBeInTheDocument();
     });
 
-    it('exhibe estados aprobados, reembolsados y rechazados en el panel de detalle', async () => {
-      renderWithClient(<SellerReturnsPage />);
+    it('exhibe estados aprobados, reembolsados, rechazados, filtros y bandeja vacía', async () => {
+      const { unmount } = renderWithClient(<SellerReturnsPage />);
 
       expect(await screen.findByText('Resolución de Devoluciones')).toBeInTheDocument();
 
@@ -1055,6 +1161,24 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       const rejectedCard = screen.getByText(/Devolución #ret-5555/i);
       fireEvent.click(rejectedCard);
       expect(await screen.findByText('Devolución Rechazada')).toBeInTheDocument();
+
+      // Filtrar por texto y estado para cubrir estado vacío con filtros
+      fireEvent.change(screen.getByPlaceholderText(/Buscar por ID, pedido o variante/i), {
+        target: { value: 'Inexistente' },
+      });
+      fireEvent.change(screen.getByLabelText(/Filtrar por estado de devolución/i), {
+        target: { value: ReturnStatus.Approved },
+      });
+      expect(screen.getByText('No hay solicitudes de devolución que coincidan con los filtros aplicados.')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
+
+      unmount();
+      vi.spyOn(appServices.api, 'listReturns').mockResolvedValue([]);
+      renderWithClient(<SellerReturnsPage />);
+      expect(
+        await screen.findByText('Ningún comprador ha solicitado devolución para tus productos.')
+      ).toBeInTheDocument();
+      expect(screen.getByText('Selecciona una solicitud para dictaminar su aprobación o rechazo.')).toBeInTheDocument();
     });
 
     it('muestra error y permite reintentar cuando falla la carga', async () => {
@@ -1064,8 +1188,9 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       expect(await screen.findByText('Error al cargar devoluciones')).toBeInTheDocument();
       expect(screen.getByText('Fallo de devoluciones')).toBeInTheDocument();
       const retryBtn = screen.getByRole('button', { name: /Reintentar/i });
-      expect(retryBtn).toBeInTheDocument();
+      fireEvent.click(retryBtn);
     });
   });
 });
+
 

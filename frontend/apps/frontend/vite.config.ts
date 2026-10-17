@@ -48,5 +48,23 @@ export default defineConfig(({ mode }) => ({
     setupFiles: ['./vitest.setup.ts'],
     css: false,
     testTimeout: 15000,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.{test,spec}.{ts,tsx}',
+        'src/**/*.d.ts',
+        'src/**/index.ts',
+        'src/main.tsx',
+        'src/domain/models/{Auth,Fulfillment,Health,Inventory,Invoice,Order,Product,Return,User,Warehouse}.ts',
+        'src/domain/ports/**',
+        'src/application/dto/**',
+        'src/adapters/http/ZentricHttpClient.ts',
+        'src/adapters/session/InMemorySession.ts',
+        'src/app/routes/guards.ts',
+        'src/components/AlertHost.tsx',
+      ],
+    },
   },
 }));

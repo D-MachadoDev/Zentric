@@ -2,9 +2,10 @@ import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { createMemoryHistory, createRouter, RouterProvider } from '@tanstack/react-router';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { UserRole } from '../../domain';
+import { ApiError, UserRole } from '../../domain';
 import { AppQueryClientProvider } from '../providers/AppQueryClientProvider';
 import { AuthProvider } from '../providers/AuthProvider';
+import { useAuth } from '../providers/authContext';
 import { appServices } from '../providers/appServices';
 import { routerOptions } from '../routes/routerOptions';
 
@@ -65,7 +66,7 @@ describe('Layouts de Rol y Componentes de Shell (C4-4-Codigo-React.md §2)', () 
     expect(screen.getByText('Administrador')).toBeInTheDocument();
   });
 
-  it('SellerLayout se monta en /seller con sidebar y cabecera de Consola del Vendedor', async () => {
+  it('SellerLayout se monta en /seller con sidebar, cabecera y alternancia móvil', async () => {
     authAs(UserRole.Seller);
     renderAppAt('/seller');
 
@@ -73,6 +74,11 @@ describe('Layouts de Rol y Componentes de Shell (C4-4-Codigo-React.md §2)', () 
     expect(screen.getByText('Mis Productos')).toBeInTheDocument();
     expect(screen.getByText('Mi Inventario')).toBeInTheDocument();
     expect(screen.getByText('Cola de Despachos')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Alternar menú lateral'));
+    expect(screen.getByRole('presentation')).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Cerrar navegación'));
+    expect(screen.queryByRole('presentation')).not.toBeInTheDocument();
   });
 
   it('BuyerLayout se monta en /buyer con navegación horizontal del comprador', async () => {
@@ -85,21 +91,31 @@ describe('Layouts de Rol y Componentes de Shell (C4-4-Codigo-React.md §2)', () 
     expect(screen.getAllByText('Mis Pedidos').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('LogisticsLayout se monta en /logistics con cabecera de Operaciones Logísticas', async () => {
+  it('LogisticsLayout se monta en /logistics con cabecera y alternancia móvil', async () => {
     authAs(UserRole.LogisticsOperator);
     renderAppAt('/logistics');
 
     expect(await screen.findByText('Operaciones Logísticas')).toBeInTheDocument();
     expect(screen.getByText('Inspección de Devoluciones')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Alternar menú lateral'));
+    expect(screen.getByRole('presentation')).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Cerrar navegación'));
+    expect(screen.queryByRole('presentation')).not.toBeInTheDocument();
   });
 
-  it('SupervisorLayout se monta en /supervisor con cabecera de Auditoría y Fiscalización', async () => {
+  it('SupervisorLayout se monta en /supervisor con cabecera y alternancia móvil', async () => {
     authAs(UserRole.Supervisor);
     renderAppAt('/supervisor');
 
     expect(await screen.findByText('Auditoría y Fiscalización')).toBeInTheDocument();
     expect(screen.getByText('Fiscalización General')).toBeInTheDocument();
     expect(screen.getByText('Libro Mayor Facturas')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Alternar menú lateral'));
+    expect(screen.getByRole('presentation')).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Cerrar navegación'));
+    expect(screen.queryByRole('presentation')).not.toBeInTheDocument();
   });
 
   it('LayoutHeader ejecuta logout al hacer click en Salir', async () => {
@@ -133,4 +149,69 @@ describe('Layouts de Rol y Componentes de Shell (C4-4-Codigo-React.md §2)', () 
     // Al pulsar el botón de cierre, el backdrop se desmonta
     expect(screen.queryByRole('presentation')).not.toBeInTheDocument();
   });
+
+  it('AuthProvider limpia la sesión cuando getCurrentUser responde 401 al restaurar y soporta login/clearExpiredNotice', async () => {
+    appServices.session.setAccessToken('expired-jwt-token');
+    appServices.session.setRole(UserRole.Administrator);
+    const err401 = new ApiError(401, 'Token expirado');
+    vi.spyOn(appServices.api, 'getCurrentUser').mockRejectedValue(err401);
+    vi.spyOn(appServices.api, 'currentUser').mockRejectedValue(err401);
+    vi.spyOn(appServices.api, 'login').mockResolvedValue({
+      token: 'new-jwt-token',
+      userId: '00000000-0000-0000-0000-000000000001',
+      email: 'admin@zentric.com',
+      fullName: 'Admin',
+      role: UserRole.Administrator,
+      expiresAt: '2026-12-31T23:59:59Z',
+    });
+
+    function AuthHarness() {
+      const auth = useAuth();
+      return (
+        <div>
+          <span>{auth.expiredNotice ?? 'SIN_AVISO'}</span>
+          <button
+            type="button"
+            onClick={() => {
+              void auth.login({ email: 'admin@zentric.com', password: 'Password123!' });
+            }}
+          >
+            Login Directo
+          </button>
+          <button type="button" onClick={() => auth.clearExpiredNotice()}>
+            Limpiar Aviso
+          </button>
+        </div>
+      );
+    }
+
+    render(
+      <AuthProvider>
+        <AuthHarness />
+      </AuthProvider>,
+    );
+
+    expect(await screen.findByText('Tu sesión ha caducado. Vuelve a entrar.')).toBeInTheDocument();
+    expect(appServices.session.getAccessToken()).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limpiar Aviso' }));
+    expect(screen.getByText('SIN_AVISO')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Login Directo' }));
+    await vi.waitFor(() => {
+      expect(appServices.session.getAccessToken()).toBeTruthy();
+    });
+  });
+
+  it('useAuth lanza error descriptivo si se invoca fuera de AuthProvider', () => {
+    function OrphanConsumer() {
+      useAuth();
+      return null;
+    }
+
+    expect(() => render(<OrphanConsumer />)).toThrow(
+      'useAuth() requiere <AuthProvider> en el árbol.',
+    );
+  });
 });
+

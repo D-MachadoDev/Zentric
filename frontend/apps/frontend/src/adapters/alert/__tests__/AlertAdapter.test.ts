@@ -94,4 +94,39 @@ describe('AlertAdapter', () => {
 
     await expect(promesa).resolves.toBe(true);
   });
+
+  it('soporta sobrecargas basadas en objetos para show y confirm (incluyendo variant danger)', async () => {
+    const { adapter, avisos, confirmaciones } = crearHost();
+
+    await adapter.show({
+      title: 'Fallo crítico',
+      description: 'No se pudo procesar.',
+      variant: 'danger',
+    });
+    await adapter.show({
+      title: 'Operación exitosa',
+      variant: 'success',
+    });
+
+    expect(avisos).toEqual([
+      { kind: 'error', title: 'Fallo crítico', message: 'No se pudo procesar.' },
+      { kind: 'success', title: 'Operación exitosa', message: undefined },
+    ]);
+
+    const promesa = adapter.confirm({
+      title: 'Anular factura',
+      description: '¿Confirmar anulación?',
+      confirmLabel: 'Anular ahora',
+      variant: 'destructive',
+    });
+
+    expect(confirmaciones[0]).toMatchObject({
+      title: 'Anular factura',
+      message: '¿Confirmar anulación?',
+      confirmLabel: 'Anular ahora',
+      variant: 'destructive',
+    });
+    confirmaciones[0]?.cerrar(true);
+    await expect(promesa).resolves.toBe(true);
+  });
 });

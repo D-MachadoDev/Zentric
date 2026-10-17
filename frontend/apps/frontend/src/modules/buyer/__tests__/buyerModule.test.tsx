@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as BuyerExports from '../index';
@@ -395,14 +395,26 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       expect(screen.getByRole('button', { name: /Variante sin existencias/i })).toBeDisabled();
     });
 
-    it('muestra alerta de error si el producto no existe o falla la consulta', async () => {
+    it('muestra alerta de error si el producto no existe o falla la consulta y soporta producto Digital sin descripción', async () => {
       mockParams = { productId: 'invalid-id' };
-      vi.spyOn(appServices.api, 'getProductById').mockRejectedValue(new Error('Producto no encontrado'));
+      vi.spyOn(appServices.api, 'getProductById').mockRejectedValueOnce(new Error('Producto no encontrado'));
 
-      renderWithClient(<BuyerProductDetailPage />);
+      const { unmount } = renderWithClient(<BuyerProductDetailPage />);
 
       expect(await screen.findByText('Error al cargar el producto')).toBeInTheDocument();
       expect(screen.getByText(/Producto no encontrado/i)).toBeInTheDocument();
+
+      unmount();
+      vi.spyOn(appServices.api, 'getProductById').mockResolvedValueOnce({
+        ...mockPhysicalProduct,
+        type: ProductType.Digital,
+        description: '',
+      });
+      renderWithClient(<BuyerProductDetailPage />);
+      expect(await screen.findByText('Producto Digital')).toBeInTheDocument();
+      expect(
+        screen.getByText('Sin descripción detallada provista por el vendedor.'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -435,12 +447,27 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
     });
 
     it('renderiza líneas del carrito, precios congelados y dispara checkout de 15 min', async () => {
-      vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([mockCartOrder]);
+      vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([
+        {
+          ...mockCartOrder,
+          items: [
+            ...mockCartOrder.items,
+            {
+              id: 'item-2222',
+              variantId: 'var-2222-2222',
+              quantity: 1,
+              unitPrice: 50000,
+              totalPrice: 50000,
+            },
+          ],
+        },
+      ]);
       const checkoutSpy = vi.spyOn(appServices.api, 'checkoutOrder').mockResolvedValue();
 
       renderWithClient(<BuyerCartPage />);
 
       expect(await screen.findByText(/Carrito de Compras/i)).toBeInTheDocument();
+      expect(screen.getByText('2 líneas')).toBeInTheDocument();
       expect(screen.getByText(/Variante SKU: var-1111/i)).toBeInTheDocument();
       expect(screen.getByText('Confirmar Checkout (Reserva 15 min)')).toBeInTheDocument();
 
@@ -463,6 +490,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
 
       renderWithClient(<BuyerCartPage />);
       expect(await screen.findByText(/Carrito de Compras/i)).toBeInTheDocument();
+      expect(screen.getByText('1 línea')).toBeInTheDocument();
 
       const checkoutBtn = screen.getByRole('button', { name: /Confirmar Checkout/i });
       fireEvent.click(checkoutBtn);
@@ -692,6 +720,56 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
 
       expect(await screen.findByText('Error al consultar el pedido para pago')).toBeInTheDocument();
     });
+
+    it('transiciona a estado urgente (<= 180s) y expirado (00:00) con el temporizador de 15 minutos', async () => {
+      let intervalCallback: (() => void) | null = null;
+      const origSetInterval = globalThis.setInterval;
+      const setIntervalSpy = vi
+        .spyOn(globalThis, 'setInterval')
+        .mockImplementation(((cb: TimerHandler, ms?: number, ...args: unknown[]) => {
+          if (ms === 1000 && typeof cb === 'function') {
+            intervalCallback = cb as () => void;
+          }
+          return origSetInterval(cb, ms, ...args);
+        }) as typeof setInterval);
+
+      try {
+        mockParams = { orderId: mockPendingPaymentOrder.id };
+        vi.spyOn(appServices.api, 'getOrderById').mockResolvedValue({
+          id: mockPendingPaymentOrder.id,
+          buyerId: 'buyer-1',
+          status: OrderStatus.PendingPayment,
+          totalAmount: 150000,
+          currency: 'COP',
+          items: mockPendingPaymentOrder.items,
+          createdAt: new Date().toISOString(),
+        });
+
+        renderWithClient(<BuyerOrderPaymentPage />);
+        expect(await screen.findByText('Pasarela de Pago')).toBeInTheDocument();
+
+        fireEvent.change(screen.getByDisplayValue(/4532 •••• •••• 8821/i), {
+          target: { value: '4111 2222 3333 4444' },
+        });
+
+        act(() => {
+          for (let i = 0; i < 730; i += 1) {
+            intervalCallback?.();
+          }
+        });
+        expect(screen.getByText(/¡Últimos minutos!/i)).toBeInTheDocument();
+
+        act(() => {
+          for (let i = 0; i < 175; i += 1) {
+            intervalCallback?.();
+          }
+        });
+        expect(screen.getByText('Reserva Expirada')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Tiempo de reserva agotado/i })).toBeDisabled();
+      } finally {
+        setIntervalSpy.mockRestore();
+      }
+    });
   });
 
   // ==========================================================================
@@ -765,9 +843,15 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       vi.spyOn(appServices.api, 'getOrderById').mockResolvedValue(mockDeliveredOrder);
       vi.spyOn(appServices.api, 'listWarehouses').mockResolvedValue([]);
       vi.spyOn(appServices.api, 'listFulfillments').mockResolvedValue([]);
+      vi.spyOn(appServices.api, 'requestReturn').mockRejectedValue(new Error('Rechazo de devolución en servidor'));
 
-      renderWithClient(<RequestReturnPage />);
+      const { container } = renderWithClient(<RequestReturnPage />);
       expect(await screen.findByText('Solicitud de Devolución')).toBeInTheDocument();
+
+      // Submit sin pedido seleccionado
+      const form = container.querySelector('form');
+      if (form) fireEvent.submit(form);
+      expect(await screen.findByText(/Debe seleccionar un pedido entregado y una variante/i)).toBeInTheDocument();
 
       // Seleccionar pedido desde dropdown
       const orderSelect = screen.getByRole('combobox');
@@ -784,6 +868,24 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       fireEvent.click(submitBtn);
 
       expect(await screen.findByText(/La cantidad debe ser mayor a cero/i)).toBeInTheDocument();
+
+      // Configurar cantidad válida y disparar fallo del servidor
+      fireEvent.change(quantityInput, { target: { value: '1' } });
+      fireEvent.click(submitBtn);
+      expect(await screen.findByText(/Rechazo de devolución en servidor/i)).toBeInTheDocument();
+    });
+
+    it('muestra aviso cuando no hay pedidos entregados elegibles', async () => {
+      mockSearch = {};
+      vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([]);
+      vi.spyOn(appServices.api, 'listWarehouses').mockResolvedValue([]);
+      vi.spyOn(appServices.api, 'listFulfillments').mockResolvedValue([]);
+
+      renderWithClient(<RequestReturnPage />);
+      expect(
+        await screen.findByText(/No cuenta con pedidos en estado Entregado/i),
+      ).toBeInTheDocument();
     });
   });
 });
+

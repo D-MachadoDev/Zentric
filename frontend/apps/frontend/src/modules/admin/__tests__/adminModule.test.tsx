@@ -486,7 +486,51 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
 
       expect(await screen.findByText('Error al cargar la red de bodegas')).toBeInTheDocument();
       const retryBtn = screen.getByRole('button', { name: /Reintentar/i });
-      expect(retryBtn).toBeInTheDocument();
+      fireEvent.click(retryBtn);
+    });
+
+    it('maneja bodegas inactivas, cambio de tipo Vendor a Marketplace y errores de creación', async () => {
+      vi.spyOn(appServices.api, 'listWarehouses').mockResolvedValue([
+        {
+          id: 'wh-inactive-1',
+          name: 'Bodega Inactiva Sur',
+          location: 'Bogotá Sur',
+          capacity: 500,
+          type: WarehouseType.Marketplace,
+          vendorId: null,
+          isActive: false,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+      vi.spyOn(appServices.api, 'createWarehouse').mockRejectedValue(new Error('Nombre de bodega duplicado'));
+
+      renderWithClient(<WarehouseListPage />);
+
+      expect(await screen.findByText('Bodega Inactiva Sur')).toBeInTheDocument();
+      expect(screen.getByText('Inactiva')).toBeInTheDocument();
+
+      // Enviar vacío para activar formErrors.name y formErrors.location
+      const submitBtn = screen.getByRole('button', { name: /Guardar Bodega/i });
+      fireEvent.click(submitBtn);
+
+      // Cambiar a Vendor, escribir vendorId y volver a Marketplace
+      const typeSelect = screen.getByLabelText(/Seleccionar tipo de bodega/i);
+      fireEvent.change(typeSelect, { target: { value: WarehouseType.Vendor } });
+      fireEvent.change(screen.getByPlaceholderText(/UUID del vendedor titular/i), {
+        target: { value: '11111111-1111-4111-8111-111111111111' },
+      });
+      fireEvent.change(typeSelect, { target: { value: WarehouseType.Marketplace } });
+
+      fireEvent.change(screen.getByPlaceholderText(/Bodega Central Fontibón/i), {
+        target: { value: 'Bodega Fallida' },
+      });
+      fireEvent.change(screen.getByPlaceholderText(/Calle 26/i), {
+        target: { value: 'Dirección Válida 123' },
+      });
+      fireEvent.click(submitBtn);
+
+      expect(await screen.findByText('Nombre de bodega duplicado')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
     });
   });
 
@@ -534,7 +578,7 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
       expect(screen.getByText('95 unidades')).toBeInTheDocument();
     });
 
-    it('valida campos requeridos antes de enviar', async () => {
+    it('valida campos requeridos antes de enviar y errores de esquema Zod', async () => {
       renderWithClient(<InventoryAdjustPage />);
 
       const submitBtn = await screen.findByRole('button', { name: /Registrar Ajuste Físico/i });
@@ -543,9 +587,16 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
       expect(
         await screen.findByText('Debe seleccionar o especificar la posición de inventario a ajustar.')
       ).toBeInTheDocument();
+
+      // Seleccionar inventario pero dejar motivo vacío para disparar validación Zod
+      const invCard = screen.getByText(/100 Disp/i);
+      fireEvent.click(invCard);
+      fireEvent.click(submitBtn);
+
+      expect(await screen.findByText(/El motivo del ajuste físico es obligatorio/i)).toBeInTheDocument();
     });
 
-    it('muestra alerta cuando la mutación adjustInventory falla', async () => {
+    it('muestra alerta cuando falla la consulta de inventarios o la mutación adjustInventory', async () => {
       vi.spyOn(appServices.api, 'adjustInventory').mockRejectedValue(new Error('Conteo no puede ser negativo'));
       renderWithClient(<InventoryAdjustPage />);
 
@@ -559,17 +610,27 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
       fireEvent.click(submitBtn);
 
       expect(await screen.findByText('Conteo no puede ser negativo')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
+    });
+
+    it('muestra estado de error y permite reintentar cuando listInventories falla', async () => {
+      vi.spyOn(appServices.api, 'listInventories').mockRejectedValue(new Error('Fallo de red inventarios'));
+      renderWithClient(<InventoryAdjustPage />);
+
+      expect(await screen.findByText('Error al cargar inventarios')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Reintentar/i }));
     });
   });
 
   // ── 6. RefundListPage ─────────────────────────────────────────────────
   describe('RefundListPage', () => {
-    it('muestra devoluciones aprobadas y permite acreditar reembolso financiero', async () => {
-      const refundSpy = vi.spyOn(appServices.api, 'refundReturn').mockResolvedValue(undefined);
+    it('muestra devoluciones aprobadas, selecciona filas y permite acreditar o manejar fallo de reembolso', async () => {
+      const refundSpy = vi.spyOn(appServices.api, 'refundReturn').mockResolvedValueOnce(undefined);
       renderWithClient(<RefundListPage />);
 
       expect(await screen.findByText('Reembolsos y Liquidación de Devoluciones')).toBeInTheDocument();
-      expect(screen.getByText('#ret-1111')).toBeInTheDocument();
+      const rowCell = screen.getByText('#ret-1111');
+      fireEvent.click(rowCell);
 
       const refundBtn = screen.getByRole('button', { name: /Acreditar Reembolso/i });
       fireEvent.click(refundBtn);
@@ -581,6 +642,12 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
       expect(
         await screen.findByText('Reembolso financiero acreditado exitosamente al comprador.')
       ).toBeInTheDocument();
+
+      // Simular fallo en reembolso
+      refundSpy.mockRejectedValueOnce(new Error('Fallo bancario al reembolsar'));
+      fireEvent.click(refundBtn);
+      expect(await screen.findByText('Fallo bancario al reembolsar')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
     });
 
     it('permite filtrar por estado y buscar por texto', async () => {
@@ -589,6 +656,7 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
       expect(await screen.findByText('#ret-1111')).toBeInTheDocument();
 
       const filterSelect = screen.getByLabelText(/Filtrar por estado de devolución/i);
+      fireEvent.change(filterSelect, { target: { value: 'All' } });
       fireEvent.change(filterSelect, { target: { value: ReturnStatus.Refunded } });
 
       const searchInput = await screen.findByPlaceholderText(/Buscar por ID de devolución/i);
@@ -603,7 +671,46 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
 
       expect(await screen.findByText('Error al cargar devoluciones')).toBeInTheDocument();
       const retryBtn = screen.getByRole('button', { name: /Reintentar/i });
-      expect(retryBtn).toBeInTheDocument();
+      fireEvent.click(retryBtn);
+    });
+
+    it('renderiza estados Refunded, Requested y dictámenes físicos dañado/pendiente', async () => {
+      vi.spyOn(appServices.api, 'listReturns').mockResolvedValue([
+        {
+          id: 'ret-ref-2222',
+          customerOrderId: 'order-2222-2222',
+          variantId: 'var-2222-2222',
+          warehouseId: 'wh-1111-1111',
+          quantity: 2,
+          status: ReturnStatus.Refunded,
+          isGoodCondition: false,
+          vendorApproved: false,
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'ret-req-3333',
+          customerOrderId: 'order-3333-3333',
+          variantId: 'var-3333-3333',
+          warehouseId: 'wh-1111-1111',
+          quantity: 1,
+          status: ReturnStatus.Requested,
+          isGoodCondition: false,
+          vendorApproved: false,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+
+      renderWithClient(<RefundListPage />);
+
+      expect(await screen.findByText('#ret-ref-')).toBeInTheDocument();
+      expect(screen.getAllByText('Dañado').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText('Reembolso Acreditado al Comprador')).toBeInTheDocument();
+
+      // Seleccionar la devolución en estado Requested
+      fireEvent.click(screen.getByText('#ret-req-'));
+      expect(
+        await screen.findByText(/No elegible para desembolso directo/i)
+      ).toBeInTheDocument();
     });
   });
 
@@ -648,9 +755,12 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
         });
       });
       expect(await screen.findByText(/Facturas anuladas exitosamente/i)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
     });
 
-    it('valida campos obligatorios en las estaciones de emisión y anulación', async () => {
+    it('valida campos obligatorios y errores de servidor en emisión y anulación', async () => {
+      vi.spyOn(appServices.api, 'generateInvoices').mockRejectedValue(new Error('Pedido sin pago confirmado'));
+      vi.spyOn(appServices.api, 'annulInvoices').mockRejectedValue(new Error('Factura ya anulada'));
       renderWithClient(<InvoiceManagementPage />);
 
       const generateBtn = await screen.findByRole('button', { name: /Emitir Facturación Split/i });
@@ -659,11 +769,30 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
         await screen.findByText('Debe ingresar el ID del pedido para emitir facturación.')
       ).toBeInTheDocument();
 
+      fireEvent.change(screen.getByPlaceholderText(/UUID del pedido a facturar/i), {
+        target: { value: 'order-fail' },
+      });
+      fireEvent.click(generateBtn);
+      expect(await screen.findByText('Pedido sin pago confirmado')).toBeInTheDocument();
+
       const annulBtn = screen.getByRole('button', { name: /Anular Facturas del Pedido/i });
       fireEvent.click(annulBtn);
       expect(
         await screen.findByText('Debe ingresar el ID del pedido a anular.')
       ).toBeInTheDocument();
+
+      // Con orderId pero sin reason
+      fireEvent.change(screen.getByPlaceholderText(/UUID del pedido facturado/i), {
+        target: { value: 'order-1111-1111' },
+      });
+      fireEvent.click(annulBtn);
+
+      // Con reason para disparar error de servidor
+      fireEvent.change(screen.getByPlaceholderText(/Devolución total del pedido/i), {
+        target: { value: 'Motivo válido' },
+      });
+      fireEvent.click(annulBtn);
+      expect(await screen.findByText('Factura ya anulada')).toBeInTheDocument();
     });
 
     it('permite filtrar facturas por tipo y buscar por texto', async () => {
@@ -686,7 +815,7 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
 
       expect(await screen.findByText('Error al cargar facturas')).toBeInTheDocument();
       const retryBtn = screen.getByRole('button', { name: /Reintentar/i });
-      expect(retryBtn).toBeInTheDocument();
+      fireEvent.click(retryBtn);
     });
   });
 });

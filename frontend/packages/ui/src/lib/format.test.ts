@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatDateTime, formatRelativeTime } from './dates';
+import { formatDate, formatDateRange, formatDateTime, formatRelativeTime } from './dates';
 import { formatCount, formatRate, shortId } from './format';
 
 // Zona fija: sin ella el resultado dependria del reloj de la maquina.
@@ -7,16 +7,24 @@ const ISO = '2026-10-10T14:32:00Z';
 const TZ = 'America/Bogota';
 
 describe('fechas', () => {
-  it('formatea la fecha corta para tablas', () => {
+  it('formatea la fecha corta para tablas con y sin zona explícita', () => {
     expect(formatDate(ISO, TZ)).toMatch(/2026/);
+    expect(formatDate(ISO)).toMatch(/2026/);
   });
 
   it('usa hora de 24 digitos en fecha y hora', () => {
     expect(formatDateTime(ISO, TZ)).toMatch(/\b(14|09):32\b/);
   });
 
-  it('caye a fecha absoluta cuando la diferencia supera 7 dias', () => {
+  it('formatea tiempos relativos en minutos y cae a fecha absoluta pasados 7 dias', () => {
+    expect(formatRelativeTime(ISO, new Date('2026-10-10T14:35:00Z'))).toBeTruthy();
     expect(formatRelativeTime(ISO, new Date('2026-10-20T14:32:00Z'))).toMatch(/2026/);
+  });
+
+  it('formatea un rango de fechas compacto', () => {
+    const range = formatDateRange('2026-10-10T14:32:00Z', '2026-10-14T14:32:00Z', TZ);
+    expect(range).toContain('–');
+    expect(range).toMatch(/2026/);
   });
 });
 

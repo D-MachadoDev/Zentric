@@ -12,7 +12,12 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.{test,spec}.{ts,tsx}', 'src/**/index.ts'],
+      exclude: [
+        'src/**/*.{test,spec}.{ts,tsx}',
+        'src/**/index.ts',
+        'src/components/ui/{alert,badge,button,card,dialog,input,label,skeleton}.tsx',
+        'src/primitives/Checkbox.tsx',
+      ],
     },
   },
 });

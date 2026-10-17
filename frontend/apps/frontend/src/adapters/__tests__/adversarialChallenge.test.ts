@@ -643,5 +643,127 @@ describe('ADVERSARIAL CHALLENGE SUITE (W2-S01)', () => {
       // In Mock adapter, it overwrites status to 'Cancelled' instead of rejecting
       expect(fulAfter.status).toBe('Cancelled');
     });
+
+    it('covers all MockZentricApiAdapter lifecycle operations, filters, aliases, and mutation 404 guards', async () => {
+      const mock = new MockZentricApiAdapter();
+
+      expect((await mock.getHealth()).status).toBe('healthy');
+      expect((await mock.currentUser()).email).toBe('admin@zentric.test');
+
+      const existingUserId = mock.users[0]!.id;
+      expect((await mock.getUser(existingUserId)).id).toBe(existingUserId);
+      await mock.blockUser(existingUserId);
+      expect((await mock.getUserById(existingUserId)).isActive).toBe(false);
+      await mock.activateUser(existingUserId);
+      expect((await mock.getUserById(existingUserId)).isActive).toBe(true);
+      expect(await mock.listUsers('Seller' as UserRole)).toHaveLength(1);
+
+      const whId = await mock.createWarehouse({
+        name: 'Bodega Seller',
+        location: 'Medellín',
+        capacity: 500,
+        type: WarehouseType.Vendor,
+        vendorId: 'ven-1',
+      });
+      expect(await mock.listWarehouses('ven-1')).toHaveLength(1);
+      expect(await mock.listWarehouses()).toHaveLength(2);
+
+      // Existing inventory increment vs new inventory record
+      const existingInv = mock.inventories[0]!;
+      await mock.addStock({
+        variantId: existingInv.variantId,
+        warehouseId: existingInv.warehouseId,
+        quantity: 5,
+      });
+      await mock.addStock({
+        variantId: 'var-new',
+        warehouseId: whId,
+        quantity: 12,
+      });
+      expect((await mock.listInventories()).length).toBeGreaterThanOrEqual(2);
+      expect(await mock.listInventoryByVariant('var-new')).toHaveLength(1);
+      const adj = await mock.adjustInventory(existingInv.id, {
+        countedQuantity: 80,
+        reason: 'Conteo físico',
+      });
+      expect(adj.newAvailableQuantity).toBe(80);
+
+      // Product lifecycle & filters
+      const createdProd = await mock.createProduct({
+        name: 'Monitor 4K',
+        description: 'IPS',
+        priceAmount: 400,
+        priceCurrency: 'USD',
+        type: ProductType.Physical,
+        variants: [{ sku: 'MON-4K', attributes: [{ name: 'size', value: '27' }] }],
+      });
+      await expect(mock.suspendProduct(createdProd.productId)).resolves.toBeUndefined();
+      await expect(mock.publishProduct(createdProd.productId)).resolves.toBeUndefined();
+      expect((await mock.getProduct(createdProd.productId)).status).toBe('Published');
+      expect((await mock.listProducts(mock.currentUserData.userId)).length).toBeGreaterThanOrEqual(1);
+      expect((await mock.listProducts()).length).toBeGreaterThanOrEqual(2);
+      expect((await mock.listProductsPaged()).items.length).toBeGreaterThanOrEqual(1);
+      expect(
+        (await mock.listProductsPaged({ vendorId: mock.currentUserData.userId })).items.length,
+      ).toBeGreaterThanOrEqual(1);
+
+      // Order, Fulfillment, Return, Billing lifecycles & aliases
+      const cartId = await mock.createCart();
+      await mock.addCartItem({ orderId: cartId, variantId: 'var-new', quantity: 1 });
+      await mock.checkoutOrder(cartId);
+      await mock.payOrder(cartId);
+      expect((await mock.getOrder(cartId)).status).toBe('Paid');
+      expect((await mock.listOrders('Paid')).length).toBeGreaterThanOrEqual(1);
+      expect((await mock.listOrders()).length).toBeGreaterThanOrEqual(1);
+
+      const fulId = await mock.createFulfillment({ customerOrderId: cartId, vendorId: 'ven-1' });
+      expect((await mock.getFulfillment(fulId)).id).toBe(fulId);
+      expect((await mock.listFulfillments('PendingPack')).length).toBeGreaterThanOrEqual(1);
+      expect((await mock.listFulfillments()).length).toBeGreaterThanOrEqual(1);
+
+      const retId = await mock.requestReturn({
+        customerOrderId: cartId,
+        variantId: 'var-new',
+        warehouseId: whId,
+        quantity: 1,
+      });
+      await mock.inspectReturn(retId, { isGoodCondition: true });
+      await mock.approveReturn(retId);
+      await mock.refundReturn(retId);
+      expect((await mock.getReturn(retId)).status).toBe('Refunded');
+
+      const retId2 = await mock.requestReturn({
+        customerOrderId: cartId,
+        variantId: 'var-new',
+        warehouseId: whId,
+        quantity: 1,
+      });
+      await mock.rejectReturn(retId2);
+      expect((await mock.listReturns('Rejected')).length).toBeGreaterThanOrEqual(1);
+      expect((await mock.listReturns()).length).toBeGreaterThanOrEqual(2);
+
+      await mock.generateInvoices(cartId);
+      expect((await mock.listInvoices()).length).toBeGreaterThanOrEqual(1);
+      expect((await mock.getInvoicesByOrder(cartId)).length).toBeGreaterThanOrEqual(1);
+      await expect(mock.annulInvoices(cartId, { reason: 'Error en cobro' })).resolves.toBeUndefined();
+
+      // Mutation 404 guards
+      await expect(mock.blockUser('missing')).rejects.toThrow(ProblemDetailsError);
+      await expect(mock.activateUser('missing')).rejects.toThrow(ProblemDetailsError);
+      await expect(
+        mock.addCartItem({ orderId: 'missing', variantId: 'v', quantity: 1 }),
+      ).rejects.toThrow(ProblemDetailsError);
+      await expect(mock.checkoutOrder('missing')).rejects.toThrow(ProblemDetailsError);
+      await expect(mock.payOrder('missing')).rejects.toThrow(ProblemDetailsError);
+      await expect(mock.packFulfillment('missing')).rejects.toThrow(ProblemDetailsError);
+      await expect(mock.dispatchFulfillment('missing')).rejects.toThrow(ProblemDetailsError);
+      await expect(mock.deliverFulfillment('missing')).rejects.toThrow(ProblemDetailsError);
+      await expect(mock.inspectReturn('missing', { isGoodCondition: false })).rejects.toThrow(
+        ProblemDetailsError,
+      );
+      await expect(mock.approveReturn('missing')).rejects.toThrow(ProblemDetailsError);
+      await expect(mock.rejectReturn('missing')).rejects.toThrow(ProblemDetailsError);
+      await expect(mock.refundReturn('missing')).rejects.toThrow(ProblemDetailsError);
+    });
   });
 });

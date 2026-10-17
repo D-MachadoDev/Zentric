@@ -271,6 +271,46 @@ describe('Módulo Logístico (Logistics Module - W4-S04)', () => {
       expect(await screen.findByText('Error al cargar el despacho')).toBeInTheDocument();
       expect(screen.getByText('Despacho inexistente')).toBeInTheDocument();
     });
+
+    it('maneja errores en mutaciones de empaque, despacho y entrega, y despachos sin guías', async () => {
+      vi.spyOn(appServices.api, 'getFulfillmentById').mockResolvedValue({
+        ...mockFulfillments[0]!,
+        shipments: [],
+      });
+      vi.spyOn(appServices.api, 'packFulfillment').mockRejectedValue(new Error('Fallo al empacar'));
+      vi.spyOn(appServices.api, 'dispatchFulfillment').mockRejectedValue(new Error('Fallo al despachar'));
+      vi.spyOn(appServices.api, 'deliverFulfillment').mockRejectedValue(new Error('Fallo al entregar'));
+
+      const { rerender } = renderWithClient(<FulfillmentOperationsPage />);
+
+      expect(
+        await screen.findByText(/Guías de transporte pendientes de generación/i)
+      ).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: /Registrar Empaque/i }));
+      expect(await screen.findByText('Fallo al empacar')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
+
+      vi.spyOn(appServices.api, 'getFulfillmentById').mockResolvedValue(mockFulfillments[1]!);
+      rerender(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <FulfillmentOperationsPage fulfillmentId="ful-2222-2222" />
+        </QueryClientProvider>
+      );
+      expect(await screen.findByRole('button', { name: /Despachar Paquete/i })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Despachar Paquete/i }));
+      expect(await screen.findByText('Fallo al despachar')).toBeInTheDocument();
+
+      vi.spyOn(appServices.api, 'getFulfillmentById').mockResolvedValue(mockFulfillments[2]!);
+      rerender(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <FulfillmentOperationsPage fulfillmentId="ful-3333-3333" />
+        </QueryClientProvider>
+      );
+      expect(await screen.findByRole('button', { name: /Certificar Entrega al Comprador/i })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Certificar Entrega al Comprador/i }));
+      expect(await screen.findByText('Fallo al entregar')).toBeInTheDocument();
+    });
   });
 
   // ── 3. GhostStockReportPage ───────────────────────────────────────────
@@ -308,15 +348,22 @@ describe('Módulo Logístico (Logistics Module - W4-S04)', () => {
       expect(await screen.findByText('Quiebre por Stock Fantasma Notificado')).toBeInTheDocument();
     });
 
-    it('muestra error de validación cuando falta la variante o la bodega', async () => {
-      renderWithClient(<GhostStockReportPage fulfillmentId="ful-1111-1111" />);
+    it('muestra error de validación cuando falta el despacho, la variante, la bodega o cantidad inválida', async () => {
+      const { container } = renderWithClient(<GhostStockReportPage />);
 
-      const confirmBtn = await screen.findByRole('button', { name: /Confirmar Quiebre y Cancelar Despacho/i });
-      fireEvent.click(confirmBtn);
+      const qtyInput = await screen.findByDisplayValue('1');
+      fireEvent.change(qtyInput, { target: { value: '0' } });
+
+      const form = container.querySelector('form');
+      if (form) fireEvent.submit(form);
 
       expect(
         await screen.findByText('El identificador de variante es obligatorio')
       ).toBeInTheDocument();
+
+      fireEvent.change(screen.getByPlaceholderText(/UUID del despacho/i), {
+        target: { value: 'ful-manual-1111' },
+      });
     });
 
     it('muestra alerta si la mutación cancelGhostStock falla', async () => {
@@ -359,14 +406,18 @@ describe('Módulo Logístico (Logistics Module - W4-S04)', () => {
       expect(await screen.findByText(/Dictamen técnico \(Favorable\) registrado exitosamente/i)).toBeInTheDocument();
     });
 
-    it('permite seleccionar dictamen desfavorable por producto dañado', async () => {
-      const inspectSpy = vi.spyOn(appServices.api, 'inspectReturn').mockResolvedValue(undefined);
+    it('permite seleccionar dictamen desfavorable, cambiar fila, refrescar y manejar error', async () => {
+      const inspectSpy = vi.spyOn(appServices.api, 'inspectReturn').mockResolvedValueOnce(undefined);
       renderWithClient(<LogisticsReturnsInspectPage />);
 
-      expect(await screen.findByText('#ret-1111')).toBeInTheDocument();
+      const rowCell = await screen.findByText('#ret-1111');
+      fireEvent.click(rowCell);
 
-      // Cambiar a desfavorable
+      // Cambiar a desfavorable y luego alternar
       const badBtn = screen.getByRole('button', { name: /Desfavorable \(Dañado\)/i });
+      fireEvent.click(badBtn);
+      const goodBtn = screen.getByRole('button', { name: /Favorable \(Intacto\)/i });
+      fireEvent.click(goodBtn);
       fireEvent.click(badBtn);
 
       const submitBtn = screen.getByRole('button', { name: /Emitir Dictamen Físico/i });
@@ -379,6 +430,13 @@ describe('Módulo Logístico (Logistics Module - W4-S04)', () => {
       });
 
       expect(await screen.findByText(/Dictamen técnico \(Desfavorable\) registrado exitosamente/i)).toBeInTheDocument();
+
+      // Simular fallo de servidor al inspeccionar
+      inspectSpy.mockRejectedValueOnce(new Error('Fallo al guardar inspección'));
+      fireEvent.click(submitBtn);
+      expect(await screen.findByText('Fallo al guardar inspección')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
     });
 
     it('permite filtrar por estado y buscar por texto', async () => {
@@ -387,6 +445,7 @@ describe('Módulo Logístico (Logistics Module - W4-S04)', () => {
       expect(await screen.findByText('#ret-1111')).toBeInTheDocument();
 
       const filterSelect = screen.getByLabelText(/Filtrar por estado de devolución/i);
+      fireEvent.change(filterSelect, { target: { value: 'All' } });
       fireEvent.change(filterSelect, { target: { value: ReturnStatus.Approved } });
 
       const searchInput = await screen.findByPlaceholderText(/Buscar por ID devolución/i);
@@ -401,7 +460,7 @@ describe('Módulo Logístico (Logistics Module - W4-S04)', () => {
 
       expect(await screen.findByText('Error al cargar devoluciones')).toBeInTheDocument();
       const retryBtn = screen.getByRole('button', { name: /Reintentar/i });
-      expect(retryBtn).toBeInTheDocument();
+      fireEvent.click(retryBtn);
     });
   });
 });

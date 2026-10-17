@@ -3,18 +3,48 @@ import { ProductType, UserRole } from '../../domain';
 import type { CreateProductInput, SessionPort, UserRole as UserRoleType, ZentricApiPort } from '../../domain';
 import {
   AbrirCarritoService,
+  AgregarLineaCarritoService,
+  AprobarDevolucionService,
+  CancelarPorStockFantasmaService,
   CerrarSesionService,
   ConsultarBodegasService,
   ConsultarCatalogoService,
+  ConsultarDespachoService,
+  ConsultarDespachosService,
+  ConsultarDevolucionService,
   ConsultarDevolucionesService,
+  ConsultarFacturasPorPedidoService,
+  ConsultarPedidoService,
+  ConsultarProductoService,
+  ConsultarStockPorVarianteService,
+  ConsultarUsuariosService,
+  CrearDespachoService,
+  DespacharDespachoService,
+  EmpacarDespachoService,
+  EntregarDespachoService,
   ExportarService,
+  IngresarStockService,
   IniciarSesionService,
+  InspeccionarDevolucionService,
+  ListarPedidosService,
+  PagarPedidoService,
+  PublicarProductoService,
   ReembolsarDevolucionService,
   RegistrarBodegaService,
   RegistrarProductoService,
   RegistrarUsuarioService,
   RestaurarSesionService,
+  SolicitarDevolucionService,
+  SuspenderProductoService,
+  VerificarEstadoServidorService,
+  getDefaultApi,
+  getDefaultSession,
+  resolveApi,
+  resolveSession,
+  setDefaultApi,
+  setDefaultSession,
 } from './index';
+import { queryKeys } from './queryKeys';
 
 /** Sesión en memoria real: el access token vive sólo ahí (ADR-0009). */
 function crearSesion(): SessionPort {
@@ -274,3 +304,139 @@ describe('ExportarService (§3)', () => {
     expect(new ExportarService().ejecutar([])).toBe('');
   });
 });
+
+describe('Servicios de dominio complementarios y apiContext', () => {
+  it('ejercita los servicios de catálogo, inventario, pedidos, logística, devoluciones, facturación y salud', async () => {
+    const api = crearApi({
+      getProductById: vi.fn().mockResolvedValue({ id: 'p-1', variants: [{ id: 'v-1', sku: 'SKU-1' }] }),
+      createProduct: vi.fn().mockResolvedValue({ productId: 'p-1', variantIds: ['v-1'] }),
+      publishProduct: vi.fn().mockResolvedValue(undefined),
+      suspendProduct: vi.fn().mockResolvedValue(undefined),
+      addStock: vi.fn().mockResolvedValue('inv-1'),
+      listInventoryByVariant: vi.fn().mockResolvedValue([]),
+      addCartItem: vi.fn().mockResolvedValue(undefined),
+      getOrderById: vi.fn().mockResolvedValue({ id: 'o-1' }),
+      listOrders: vi.fn().mockResolvedValue([]),
+      payOrder: vi.fn().mockResolvedValue(undefined),
+      createFulfillment: vi.fn().mockResolvedValue('f-1'),
+      listFulfillments: vi.fn().mockResolvedValue([]),
+      getFulfillmentById: vi.fn().mockResolvedValue({ id: 'f-1' }),
+      packFulfillment: vi.fn().mockResolvedValue(undefined),
+      dispatchFulfillment: vi.fn().mockResolvedValue(undefined),
+      deliverFulfillment: vi.fn().mockResolvedValue(undefined),
+      cancelGhostStock: vi.fn().mockResolvedValue(true),
+      requestReturn: vi.fn().mockResolvedValue('r-1'),
+      inspectReturn: vi.fn().mockResolvedValue(undefined),
+      approveReturn: vi.fn().mockResolvedValue(undefined),
+      getReturnById: vi.fn().mockResolvedValue({ id: 'r-1' }),
+      listReturns: vi.fn().mockResolvedValue([]),
+      getInvoicesByOrder: vi.fn().mockResolvedValue([]),
+      listUsers: vi.fn().mockResolvedValue([]),
+      getHealth: vi.fn().mockResolvedValue({ status: 'healthy', database: 'up', timestamp: 'now' }),
+    });
+
+    await expect(new ConsultarProductoService(api).ejecutar('p-1')).resolves.toMatchObject({ id: 'p-1' });
+    await expect(new RegistrarProductoService(api).ejecutar(entradaProducto())).resolves.toEqual({
+      productId: 'p-1',
+      variantId: 'v-1',
+      sku: 'SKU-1',
+    });
+    await expect(new PublicarProductoService(api).ejecutar('p-1')).resolves.toBeUndefined();
+    await expect(new SuspenderProductoService(api).ejecutar('p-1')).resolves.toBeUndefined();
+
+    await expect(
+      new IngresarStockService(api).ejecutar({ variantId: 'v-1', warehouseId: 'w-1', quantity: 5 }),
+    ).resolves.toBe('inv-1');
+    await expect(new ConsultarStockPorVarianteService(api).ejecutar('v-1')).resolves.toEqual([]);
+
+    await expect(
+      new AgregarLineaCarritoService(api).ejecutar({ orderId: 'o-1', variantId: 'v-1', quantity: 2 }),
+    ).resolves.toBeUndefined();
+    await expect(new ConsultarPedidoService(api).ejecutar('o-1')).resolves.toEqual({ id: 'o-1' });
+    await expect(new ListarPedidosService(api).ejecutar('Paid')).resolves.toEqual([]);
+    await expect(new PagarPedidoService(api).ejecutar('o-1')).resolves.toBeUndefined();
+
+    await expect(
+      new CrearDespachoService(api).ejecutar({ customerOrderId: 'o-1', vendorId: 'v-1' }),
+    ).resolves.toBe('f-1');
+    await expect(new ConsultarDespachosService(api).ejecutar('Packed')).resolves.toEqual([]);
+    await expect(new ConsultarDespachoService(api).ejecutar('f-1')).resolves.toEqual({ id: 'f-1' });
+    await expect(new EmpacarDespachoService(api).ejecutar('f-1')).resolves.toBeUndefined();
+    await expect(new DespacharDespachoService(api).ejecutar('f-1')).resolves.toBeUndefined();
+    await expect(new EntregarDespachoService(api).ejecutar('f-1')).resolves.toBeUndefined();
+    await expect(
+      new CancelarPorStockFantasmaService(api).ejecutar({
+        fulfillmentOrderId: 'f-1',
+        variantId: 'v-1',
+        warehouseId: 'w-1',
+        quantityToCancel: 1,
+      }),
+    ).resolves.toBe(true);
+
+    await expect(
+      new SolicitarDevolucionService(api).ejecutar({
+        customerOrderId: 'o-1',
+        variantId: 'v-1',
+        warehouseId: 'w-1',
+        quantity: 1,
+      }),
+    ).resolves.toBe('r-1');
+    await expect(
+      new InspeccionarDevolucionService(api).ejecutar('r-1', { isGoodCondition: true }),
+    ).resolves.toBeUndefined();
+    await expect(new AprobarDevolucionService(api).ejecutar('r-1')).resolves.toBeUndefined();
+    await expect(new ConsultarDevolucionService(api).ejecutar('r-1')).resolves.toEqual({ id: 'r-1' });
+    await expect(new ConsultarDevolucionesService(api).ejecutar('Requested')).resolves.toEqual([]);
+
+    await expect(new ConsultarFacturasPorPedidoService(api).ejecutar('o-1')).resolves.toEqual([]);
+    await expect(new ConsultarUsuariosService(api).ejecutar()).resolves.toEqual([]);
+    await expect(new VerificarEstadoServidorService(api).ejecutar()).resolves.toMatchObject({
+      status: 'healthy',
+    });
+  });
+
+  it('apiContext gestiona y resuelve instancias por defecto o explícitas', () => {
+    const api = crearApi({});
+    const sesion = crearSesion();
+
+    setDefaultApi(api);
+    setDefaultSession(sesion);
+
+    expect(getDefaultApi()).toBe(api);
+    expect(getDefaultSession()).toBe(sesion);
+    expect(resolveApi()).toBe(api);
+    expect(resolveSession()).toBe(sesion);
+    expect(resolveApi(api)).toBe(api);
+    expect(resolveSession(sesion)).toBe(sesion);
+  });
+
+  it('queryKeys genera claves deterministas con y sin filtros opcionales', () => {
+    expect(queryKeys.health.all).toEqual(['health']);
+    expect(queryKeys.auth.me()).toEqual(['auth', 'me']);
+    expect(queryKeys.users.list()).toEqual(['users', 'list', {}]);
+    expect(queryKeys.users.list({ role: UserRole.Administrator })).toEqual(['users', 'list', { role: UserRole.Administrator }]);
+    expect(queryKeys.users.detail('u-1')).toEqual(['users', 'detail', 'u-1']);
+    expect(queryKeys.warehouses.list()).toEqual(['warehouses', 'list', {}]);
+    expect(queryKeys.warehouses.list({ vendorId: 'v-1' })).toEqual(['warehouses', 'list', { vendorId: 'v-1' }]);
+    expect(queryKeys.warehouses.detail('w-1')).toEqual(['warehouses', 'detail', 'w-1']);
+    expect(queryKeys.inventories.list()).toEqual(['inventories', 'list']);
+    expect(queryKeys.inventories.variant('var-1')).toEqual(['inventories', 'variant', 'var-1']);
+    expect(queryKeys.products.list()).toEqual(['products', 'list', {}]);
+    expect(queryKeys.products.list({ vendorId: 'v-1' })).toEqual(['products', 'list', { vendorId: 'v-1' }]);
+    expect(queryKeys.products.paged()).toEqual(['products', 'paged', {}]);
+    expect(queryKeys.products.paged({ page: 1, size: 10 })).toEqual(['products', 'paged', { page: 1, size: 10 }]);
+    expect(queryKeys.products.detail('p-1')).toEqual(['products', 'detail', 'p-1']);
+    expect(queryKeys.orders.list()).toEqual(['orders', 'list', {}]);
+    expect(queryKeys.orders.list({ status: 'Paid' })).toEqual(['orders', 'list', { status: 'Paid' }]);
+    expect(queryKeys.orders.detail('o-1')).toEqual(['orders', 'detail', 'o-1']);
+    expect(queryKeys.fulfillments.list()).toEqual(['fulfillments', 'list', {}]);
+    expect(queryKeys.fulfillments.list({ status: 'Packed' })).toEqual(['fulfillments', 'list', { status: 'Packed' }]);
+    expect(queryKeys.fulfillments.detail('f-1')).toEqual(['fulfillments', 'detail', 'f-1']);
+    expect(queryKeys.returns.list()).toEqual(['returns', 'list', {}]);
+    expect(queryKeys.returns.list({ status: 'Requested' })).toEqual(['returns', 'list', { status: 'Requested' }]);
+    expect(queryKeys.returns.detail('r-1')).toEqual(['returns', 'detail', 'r-1']);
+    expect(queryKeys.invoices.list()).toEqual(['invoices', 'list']);
+    expect(queryKeys.invoices.order('o-1')).toEqual(['invoices', 'order', 'o-1']);
+  });
+});
+
