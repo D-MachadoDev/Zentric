@@ -91,6 +91,7 @@ describe('Módulo de Autenticación y Salud (W4-S01-auth-module)', () => {
     it('autentica exitosamente y navega a la ruta de rol (/buyer)', async () => {
       vi.spyOn(appServices.api, 'login').mockResolvedValue({
         token: 'test-buyer-jwt-token',
+        expiresAt: new Date(Date.now() + 3600_000).toISOString(),
         userId: '11111111-1111-1111-1111-111111111111',
         email: 'buyer@zentric.me',
         fullName: 'Comprador Demo',
@@ -276,8 +277,9 @@ describe('Módulo de Autenticación y Salud (W4-S01-auth-module)', () => {
 
     it('muestra insignia de fuera de línea cuando el estado no es saludable ni degradado', async () => {
       vi.spyOn(appServices.api, 'getHealth').mockResolvedValue({
-        status: 'unhealthy',
+        status: 'unhealthy' as never,
         database: 'down',
+        timestamp: new Date().toISOString(),
       });
 
       renderWithClient(<HealthStatusPage />);

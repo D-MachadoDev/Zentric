@@ -13,6 +13,15 @@ import {
   SupervisorLayout,
 } from '../layouts';
 import { LoginPage, RegisterBuyerPage, HealthStatusPage } from '../../modules/auth';
+import {
+  BuyerCatalogPage,
+  BuyerProductDetailPage,
+  BuyerCartPage,
+  BuyerOrdersPage,
+  BuyerOrderDetailPage,
+  BuyerOrderPaymentPage,
+  RequestReturnPage,
+} from '../../modules/buyer';
 
 /**
  * Raíz del árbol de rutas con contexto tipado de dependencias (SessionPort, ApiPort, QueryClient).
@@ -357,89 +366,49 @@ export const buyerLayoutRoute = createRoute({
 export const buyerIndexRoute = createRoute({
   getParentRoute: () => buyerLayoutRoute,
   path: '/',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Catálogo de Productos</h1>
-      <p className="text-sm text-foreground-muted">Exploración de productos y compra directa</p>
-    </div>
-  ),
+  component: () => <BuyerCatalogPage />,
 });
 
 export const buyerCatalogRoute = createRoute({
   getParentRoute: () => buyerLayoutRoute,
   path: '/catalog',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Catálogo de Productos</h1>
-      <p className="text-sm text-foreground-muted">Exploración de productos y compra directa</p>
-    </div>
-  ),
+  component: () => <BuyerCatalogPage />,
 });
 
 export const buyerProductDetailRoute = createRoute({
   getParentRoute: () => buyerLayoutRoute,
   path: '/catalog/$productId',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Detalle de Producto</h1>
-      <p className="text-sm text-foreground-muted">Especificación y selección de variantes</p>
-    </div>
-  ),
+  component: () => <BuyerProductDetailPage />,
 });
 
 export const buyerCartRoute = createRoute({
   getParentRoute: () => buyerLayoutRoute,
   path: '/cart',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Carrito de Compras</h1>
-      <p className="text-sm text-foreground-muted">Reserva atómica de 15 minutos en checkout</p>
-    </div>
-  ),
+  component: () => <BuyerCartPage />,
 });
 
 export const buyerOrdersRoute = createRoute({
   getParentRoute: () => buyerLayoutRoute,
   path: '/orders',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Mis Pedidos</h1>
-      <p className="text-sm text-foreground-muted">Historial de compras y comprobantes maestros</p>
-    </div>
-  ),
+  component: () => <BuyerOrdersPage />,
 });
 
 export const buyerOrderDetailRoute = createRoute({
   getParentRoute: () => buyerLayoutRoute,
   path: '/orders/$orderId',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Detalle del Pedido</h1>
-      <p className="text-sm text-foreground-muted">Líneas, guías de despacho y factura maestra</p>
-    </div>
-  ),
+  component: () => <BuyerOrderDetailPage />,
 });
 
 export const buyerOrderPaymentRoute = createRoute({
   getParentRoute: () => buyerLayoutRoute,
   path: '/orders/$orderId/pay',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Pago de Pedido</h1>
-      <p className="text-sm text-foreground-muted">Checkout con reserva atómica de 15 minutos</p>
-    </div>
-  ),
+  component: () => <BuyerOrderPaymentPage />,
 });
 
 export const buyerReturnRequestRoute = createRoute({
   getParentRoute: () => buyerLayoutRoute,
   path: '/returns/new',
-  component: () => (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Solicitud de Devolución</h1>
-      <p className="text-sm text-foreground-muted">Registro de solicitud sobre productos físicos entregados</p>
-    </div>
-  ),
+  component: () => <RequestReturnPage />,
 });
 
 // ============================================================================

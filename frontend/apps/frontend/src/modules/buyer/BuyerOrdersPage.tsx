@@ -1,0 +1,288 @@
+import { useState } from 'react';
+import { Link } from '@tanstack/react-router';
+import { useOrdersQuery } from '../../application/services/orders';
+import { OrderStatus, type OrderListItem } from '../../domain';
+import {
+  NOMBRES_DE_ESTADO_DE_PEDIDO,
+  TONOS_DE_ESTADO_DE_PEDIDO,
+} from '../../components/domainLabels';
+import {
+  Button,
+  Badge,
+  Skeleton,
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  StateView,
+  MoneyAmount,
+  StatusBadge,
+  StatCard,
+} from '@zentric/ui';
+import {
+  ShoppingBag,
+  CreditCard,
+  Eye,
+  RefreshCw,
+  Clock,
+  CheckCircle,
+  Truck,
+} from 'lucide-react';
+
+/**
+ * Historial de Pedidos del Comprador (Frontend-Role-Modules §2.4).
+ * Hero KPI Strip + Listado Filtrable con acceso al pago atómico de 15 min y detalle de despacho.
+ */
+export function BuyerOrdersPage() {
+  const [selectedStatus, setSelectedStatus] = useState<string>('All');
+  const { data: orders, isLoading, isError, error, refetch, isFetching } = useOrdersQuery();
+
+  const allOrders = orders ?? [];
+
+  // Excluir carritos abiertos de la vista de pedidos confirmados
+  const nonCartOrders = allOrders.filter((o: OrderListItem) => o.status !== OrderStatus.Cart);
+
+  // Métricas para el Hero KPI Strip
+  const pendingPaymentOrders = nonCartOrders.filter(
+    (o: OrderListItem) => o.status === OrderStatus.PendingPayment
+  );
+  const deliveredOrders = nonCartOrders.filter(
+    (o: OrderListItem) => o.status === OrderStatus.Delivered
+  );
+  const paidOrDispatchedOrders = nonCartOrders.filter(
+    (o: OrderListItem) =>
+      o.status === OrderStatus.Paid || o.status === OrderStatus.Dispatched
+  );
+
+  // Filtrado de lista por estado
+  const filteredOrders = nonCartOrders.filter((o: OrderListItem) => {
+    if (selectedStatus === 'All') return true;
+    return o.status === selectedStatus;
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+        <Skeleton className="h-8 w-48 bg-[#111827]" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <Skeleton className="h-28 rounded-2xl bg-[#111827]" />
+          <Skeleton className="h-28 rounded-2xl bg-[#111827]" />
+          <Skeleton className="h-28 rounded-2xl bg-[#111827]" />
+        </div>
+        <Skeleton className="h-80 rounded-2xl bg-[#111827]" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6 sm:p-10 max-w-4xl mx-auto w-full space-y-4">
+        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
+          <AlertTitle>Error al cargar el historial de pedidos</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : 'No fue posible consultar sus compras.'}
+          </AlertDescription>
+        </Alert>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          className="border-[#1F293D] text-[#94A3B8]"
+        >
+          <RefreshCw className="h-4 w-4 mr-1.5" /> Reintentar
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      {/* ── Encabezado ─────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1F293D]">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+              Mis Pedidos
+            </h1>
+            <Badge variant="outline" className="border-[#1F293D] text-[#00D4AA] font-mono text-xs">
+              {nonCartOrders.length} totales
+            </Badge>
+          </div>
+          <p className="text-sm text-[#94A3B8]">
+            Historial de transacciones, estado de despachos y facturas tributarias de la plataforma.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="border-[#1F293D] text-[#94A3B8] hover:text-white"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
+            Refrescar
+          </Button>
+
+          <Link to="/buyer/cart">
+            <Button variant="secondary" size="sm" className="bg-[#111827] border border-[#1F293D] text-[#00D4AA]">
+              <ShoppingBag className="h-4 w-4 mr-1.5" /> Ver Carrito
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* ── Hero KPI Strip Asimétrico ───────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <StatCard
+          title="Pendientes de Pago (15 min)"
+          value={pendingPaymentOrders.length.toString()}
+          badge={{
+            label: pendingPaymentOrders.length > 0 ? 'Acción Requerida' : 'Al Día',
+            tone: pendingPaymentOrders.length > 0 ? 'warning' : 'neutral',
+          }}
+          icon={Clock}
+          subtitle="Pedidos en ventana de checkout atómico"
+        />
+        <StatCard
+          title="En Proceso y Despacho"
+          value={paidOrDispatchedOrders.length.toString()}
+          badge={{ label: 'En Ruta', tone: 'info' }}
+          icon={Truck}
+          subtitle="Pagados y en preparación o en camino"
+        />
+        <StatCard
+          title="Entregados"
+          value={deliveredOrders.length.toString()}
+          badge={{ label: 'Completados', tone: 'success' }}
+          icon={CheckCircle}
+          subtitle="Entregas completadas satisfactoriamente"
+        />
+      </div>
+
+      {/* ── Filtros por Estado ─────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2">
+        {[
+          { id: 'All', label: 'Todos' },
+          { id: OrderStatus.PendingPayment, label: 'Pendientes de Pago' },
+          { id: OrderStatus.Paid, label: 'Pagados' },
+          { id: OrderStatus.Dispatched, label: 'Despachados' },
+          { id: OrderStatus.Delivered, label: 'Entregados' },
+          { id: OrderStatus.Cancelled, label: 'Cancelados' },
+        ].map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            onClick={() => setSelectedStatus(f.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors whitespace-nowrap ${
+              selectedStatus === f.id
+                ? 'bg-[#00D4AA] text-[#0B0F19] font-bold'
+                : 'bg-[#111827] text-[#94A3B8] hover:text-white border border-[#1F293D]'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Lista de Pedidos ────────────────────────────────────────────── */}
+      {filteredOrders.length === 0 ? (
+        <StateView
+          state="empty"
+          title="No se encontraron pedidos"
+          description={
+            selectedStatus !== 'All'
+              ? 'No tienes pedidos registrados en el estado seleccionado.'
+              : 'Aún no has confirmado ningún pedido. Explora el catálogo para comenzar.'
+          }
+          action={
+            selectedStatus !== 'All'
+              ? {
+                  label: 'Mostrar todos',
+                  onClick: () => setSelectedStatus('All'),
+                }
+              : {
+                  label: 'Explorar Catálogo',
+                  onClick: () => window.location.assign('/buyer/catalog'),
+                }
+          }
+        />
+      ) : (
+        <div className="space-y-4">
+          {filteredOrders.map((order: OrderListItem) => {
+            const isPendingPayment = order.status === OrderStatus.PendingPayment;
+
+            return (
+              <div
+                key={order.id}
+                className={`rounded-2xl border p-5 sm:p-6 transition-all bg-[#111827] flex flex-col md:flex-row md:items-center justify-between gap-6 ${
+                  isPendingPayment
+                    ? 'border-[#FFB800]/50 shadow-lg shadow-[#FFB800]/5'
+                    : 'border-[#1F293D] hover:border-[#00D4AA]/40'
+                }`}
+              >
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-sm font-mono font-bold text-white">
+                      Pedido #{order.id.slice(0, 8)}
+                    </span>
+                    <StatusBadge tone={TONOS_DE_ESTADO_DE_PEDIDO[order.status]}>
+                      {NOMBRES_DE_ESTADO_DE_PEDIDO[order.status]}
+                    </StatusBadge>
+                    {isPendingPayment && (
+                      <Badge className="bg-[#FFB800]/20 text-[#FFB800] border-[#FFB800]/30 text-xs font-mono animate-pulse">
+                        <Clock className="h-3 w-3 mr-1 inline" />
+                        Reserva activa (15 min)
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-[#94A3B8]">
+                    <span>Fecha: {new Date(order.createdAt).toLocaleDateString('es-CO')}</span>
+                    <span>•</span>
+                    <span>
+                      {order.itemCount} {order.itemCount === 1 ? 'artículo' : 'artículos'}
+                    </span>
+                    <span>•</span>
+                    <span className="text-[#64748B]">ID: {order.id}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 md:gap-6 border-t md:border-t-0 pt-4 md:pt-0 border-[#1F293D]">
+                  <div className="text-left sm:text-right">
+                    <span className="text-[10px] uppercase font-mono text-[#64748B] block">Importe Total</span>
+                    <div className="text-xl font-bold font-mono text-white tabular-nums">
+                      <MoneyAmount amount={order.totalAmount} currency={order.currency} />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {isPendingPayment && (
+                      <Link to="/buyer/orders/$orderId/pay" params={{ orderId: order.id }}>
+                        <Button size="sm" className="bg-[#FFB800] hover:bg-[#FFB800]/90 text-[#0B0F19] font-bold text-xs shadow-md shadow-[#FFB800]/20">
+                          <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+                          Pagar Pedido
+                        </Button>
+                      </Link>
+                    )}
+
+                    <Link to="/buyer/orders/$orderId" params={{ orderId: order.id }}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-[#1F293D] text-[#94A3B8] hover:text-white hover:bg-[#161F30]"
+                      >
+                        <Eye className="h-3.5 w-3.5 mr-1.5" />
+                        Ver Detalle
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
