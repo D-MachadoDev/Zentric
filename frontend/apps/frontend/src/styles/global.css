@@ -1,7 +1,106 @@
 @import '@zentric/ui/styles/theme.css';
 @source "../";
 
-/* Estilos globales de la app regidos por design.md (Zentric Swiss Pulse Editorial). */
+/* ============================================================================
+   Zentric Marketplace — Estilos Globales, Dual Theme & Modern High-End Commerce
+   Decisiones dictadas por Owner en /grill-me (A1: Modern Commerce, A2: Dual Theme)
+   ============================================================================ */
+
+:root {
+  /* --- Modo Claro Profesional (Shopify / Stripe / Mercado Libre) --- */
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #F1F5F9;
+  --color-border: #E2E8F0;
+  --color-border-subtle: #F1F5F9;
+
+  --color-foreground: #0F172A;
+  --color-foreground-muted: #64748B;
+  --color-foreground-subtle: #94A3B8;
+
+  --color-brand: #4F46E5;
+  --color-brand-strong: #4338CA;
+  --color-warning: #D97706;
+  --color-success: #059669;
+  --color-danger: #DC2626;
+  --color-info: #2563EB;
+
+  --color-primary: #4F46E5;
+  --color-primary-foreground: #FFFFFF;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #0F172A;
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #0F172A;
+  --color-secondary: #F1F5F9;
+  --color-secondary-foreground: #0F172A;
+  --color-muted: #F1F5F9;
+  --color-muted-foreground: #64748B;
+  --color-accent: #F1F5F9;
+  --color-accent-foreground: #0F172A;
+  --ring: #4F46E5;
+  --color-ring: #4F46E5;
+
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+  --card: var(--color-card);
+  --card-foreground: var(--color-card-foreground);
+  --border: var(--color-border);
+  --border-subtle: var(--color-border-subtle);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-foreground);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: var(--color-secondary-foreground);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted-foreground);
+}
+
+.dark {
+  /* --- Modo Oscuro Operativo (Swiss Console / Linear Commerce) --- */
+  --color-background: #0A0F1D;
+  --color-surface: #11192C;
+  --color-surface-muted: #162038;
+  --color-border: #1E2C4A;
+  --color-border-subtle: #162238;
+
+  --color-foreground: #F8FAFC;
+  --color-foreground-muted: #94A3B8;
+  --color-foreground-subtle: #64748B;
+
+  --color-brand: #6366F1;
+  --color-brand-strong: #4F46E5;
+  --color-warning: #FFB800;
+  --color-success: #10B981;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+
+  --color-primary: #6366F1;
+  --color-primary-foreground: #FFFFFF;
+  --color-card: #11192C;
+  --color-card-foreground: #F8FAFC;
+  --color-popover: #11192C;
+  --color-popover-foreground: #F8FAFC;
+  --color-secondary: #162038;
+  --color-secondary-foreground: #F8FAFC;
+  --color-muted: #162038;
+  --color-muted-foreground: #94A3B8;
+  --color-accent: #162038;
+  --color-accent-foreground: #F8FAFC;
+  --ring: #6366F1;
+  --color-ring: #6366F1;
+
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+  --card: var(--color-card);
+  --card-foreground: var(--color-card-foreground);
+  --border: var(--color-border);
+  --border-subtle: var(--color-border-subtle);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-foreground);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: var(--color-secondary-foreground);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted-foreground);
+}
 
 html,
 body,
@@ -9,31 +108,41 @@ body,
   height: 100%;
 }
 
-/* El shell ocupa la ventana completa: la consola desplaza los paneles internos
-   conservando una atmósfera arquitectónica suiza persistente. */
 #root {
   display: flex;
   flex-direction: column;
 }
 
-/* Retícula arquitectónica suiza de fondo (design.md §2: swiss-coordinate-grid) */
+/* Retícula arquitectónica suave adaptable a tema */
 .bg-swiss-grid {
+  background-color: var(--color-background);
   background-image:
-    radial-gradient(circle at 50% 0%, rgba(0, 212, 170, 0.08), transparent 65%),
-    linear-gradient(to right, rgba(31, 41, 61, 0.35) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(31, 41, 61, 0.35) 1px, transparent 1px);
+    radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.05), transparent 70%),
+    linear-gradient(to right, rgba(226, 232, 240, 0.6) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(226, 232, 240, 0.6) 1px, transparent 1px);
   background-size: 100% 100%, 32px 32px, 32px 32px;
   background-position: center top;
 }
 
-/* Elevación por hairline de 1px + micro-bisel superior (Code-Editorial / design.md) */
+.dark .bg-swiss-grid {
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08), transparent 70%),
+    linear-gradient(to right, rgba(30, 44, 74, 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30, 44, 74, 0.4) 1px, transparent 1px);
+}
+
+/* Elevación de tarjeta comercial */
 .surface-hairline {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+}
+
+.dark .surface-hairline {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-/* Eyebrow indexical en Geist Mono con marca ✱ en esmeralda */
+/* Eyebrow indexical en Geist Mono con marca ✱ en acento de marca */
 .kicker-spike {
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -53,22 +162,21 @@ body,
   line-height: 1;
 }
 
-/* Scrollbars sutiles acordes al carbón tintado */
+/* Scrollbars accesibles según tema */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A0E1A;
+  background: var(--color-background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1F293D;
+  background: var(--color-border);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2D3B55;
+  background: var(--color-foreground-subtle);
 }
-

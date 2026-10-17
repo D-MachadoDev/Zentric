@@ -77,6 +77,26 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
       <main className="flex-1 bg-swiss-grid p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-7xl">{children}</div>
       </main>
+
+      {/* ── Footer Comercial Zentric Marketplace ── */}
+      <footer className="border-t border-border bg-surface/90 py-8 px-4 sm:px-6 lg:px-8 text-xs text-foreground-muted">
+        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-foreground tracking-tight font-sans text-sm">Zentric Marketplace</span>
+            <span>·</span>
+            <span>Comercio Transaccional con Reserva Atómica</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono">
+            <span>Red de Bodegas Físicas</span>
+            <span>·</span>
+            <span>Despacho Particionado</span>
+            <span>·</span>
+            <span>Inspección Técnica Certificada</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
+

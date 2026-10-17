@@ -156,3 +156,30 @@ Antes de aprobar las salidas de los agentes `07-frontend-tokens-primitives`, `08
 | **3. Composición Split-Frame y Densidad** | Las vistas operativas implementan división asimétrica (`65%/35%` o `70%/30%`) y bandas de KPI con métrica primaria dominante; cero cuadrículas de tarjetas clonadas idénticas. | Revisión estructural de layouts en `src/modules/**` y pruebas de renderizado RTL. |
 | **4. Reglas Anti-IA Genérica** | Cero clases `bg-clip-text text-transparent bg-gradient-*`, cero barras laterales de colores chillones (`border-l-4`) en tarjetas y cero sombras de neón. | Búsqueda estática automatizada (`rg "bg-clip-text|border-l-4"`) con resultado igual a `0`. |
 | **5. Accesibilidad WAI-ARIA (WCAG 2.1 AA)** | Contraste $\ge 4.5:1$, navegación completa por teclado (`Tab`, `Enter`, `Escape`), `aria-busy="true"` en mutaciones activas, `role="status"` en esqueletos y `role="alert"` en errores RFC 7807. | Suite de pruebas Vitest + React Testing Library (`getByRole`, `toHaveAttribute`). |
+
+---
+
+## 8. [ADDENDUM - DICTADO POR OWNER EN /GRILL-ME]: Modern High-End Commerce & Dual Theme
+
+> **Fecha:** 2026-10-17  
+> **Origen:** Sesión `/grill-me` con el Owner del Producto.  
+> **Objetivo:** Erradicar la apariencia de plantilla genérica de IA (monolito oscuro con acentos cian neón) y transformar Zentric en un marketplace SaaS de grado empresarial (referencias: Stripe, Linear Commerce, Shopify, Mercado Libre).
+
+### 8.1 Decisiones Normativas Dictadas por el Owner
+1. **Paleta y Personalidad (Decisión A1):**
+   - Transición hacia *Modern High-End Commerce*: Acento de acción primaria en **Índigo Eléctrico (`#4F46E5` en modo claro / `#6366F1` en modo oscuro)**, complementado con neutros de carbón tintado en lugar de cajas oscuras planas.
+2. **Arquitectura Dual Theme con Selector (Decisión A2):**
+   - **Modo Claro (Por defecto):** Fondo base Slate 50 (`#F8FAFC`), superficies elevadas en blanco nítido (`#FFFFFF`), bordes estructurales sutiles Slate 200 (`#E2E8F0`), texto principal Slate 900 (`#0F172A`) y texto secundario Slate 500 (`#64748B`).
+   - **Modo Oscuro (Consola Suiza):** Fondo base carbón profundo (`#0A0F1D`), superficies operativas (`#11192C`), bordes estructurales (`#1E2C4A`) y texto primario hueso (`#F8FAFC`).
+   - **Componente `ThemeToggle`:** Botón accesible en `LayoutHeader` con persistencia en `localStorage.getItem('zentric.theme')` y sincronización con clase `.dark` en `document.documentElement`.
+3. **Portal del Comprador — Marketplace Integral (Decisión A3):**
+   - **Hero Banner Comercial:** Franja de alta jerarquía con propuestas de valor destacadas:
+     - ⚡ **Reserva Atómica 15 Minutos:** Garantía de bloqueo en bodega física sin riesgo de sobreventa.
+     - 🚚 **Red Logística Multi-Bodega:** Despacho particionado y trazabilidad en tiempo real.
+     - 🛡️ **Inspección Técnica de Calidad:** Conciliación automática y split de facturación 5%/95%.
+   - **Segmentación por Categorías:** Píldoras de filtrado contextual rápido (*Hardware*, *Monitores*, *Ergonomía*, *Cloud*) integradas con la barra de búsqueda y el filtro de tipo de producto (*Físicos* vs *Digitales*).
+4. **Tarjeta Comercial Enriquecida (Decisión A4):**
+   - Relación de aspecto fotográfica `16:10` con efecto *hover zoom* controlado.
+   - Píldoras flotantes de stock en tiempo real (`✓ X disp.` en esmeralda o `Agotado` en rojo).
+   - Identificación de SKU en `Geist Mono` y precio destacado en moneda local.
+   - Botón de acción comercial con micro-interacción de flecha (`Ver Detalle` / `Agregar al Carrito`).

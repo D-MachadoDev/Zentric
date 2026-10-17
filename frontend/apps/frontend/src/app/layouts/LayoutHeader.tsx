@@ -3,6 +3,7 @@ import { LogOut, Menu, Shield } from 'lucide-react';
 import { useAuth } from '../providers/authContext';
 import { NOMBRES_DE_ROL } from '../../components/domainLabels';
 import { Button } from '@zentric/ui/components/ui/button';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 interface LayoutHeaderProps {
   title?: string;
@@ -74,6 +75,9 @@ export function LayoutHeader({ title, onToggleSidebar, children }: LayoutHeaderP
             <span className="text-xs font-medium text-foreground-muted">{roleLabel}</span>
           </div>
         </div>
+
+        {/* Selector de Tema Dual (Light/Dark) */}
+        <ThemeToggle />
 
         {/* Botón de cierre de sesión */}
         <Button

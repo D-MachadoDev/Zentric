@@ -5,6 +5,7 @@ import { AppQueryClientProvider } from './app/providers/AppQueryClientProvider';
 import { AuthProvider } from './app/providers/AuthProvider';
 import { AppRouterProvider } from './app/routes/AppRouter';
 import { AlertHost } from './components/alert/AlertHost';
+import { ThemeProvider } from './app/providers/ThemeProvider';
 import './styles/global.css';
 
 // Punto de entrada determinista (C4-4-Codigo-React.md sección 1).
@@ -13,8 +14,9 @@ import './styles/global.css';
 // 2. GlobalErrorBoundary (captura fallos de renderizado y reinicio limpio)
 // 3. AppQueryClientProvider (TanStack Query v5 caché e interceptores)
 // 4. AuthProvider (sesión en RAM sin refresh tokens según ADR-0009)
-// 5. AppRouterProvider (TanStack Router con contexto inyectado)
-// 6. AlertHost (cola accesible de toasts y modales de confirmación)
+// 5. ThemeProvider (soporte dual Light / Dark persistente)
+// 6. AppRouterProvider (TanStack Router con contexto inyectado)
+// 7. AlertHost (cola accesible de toasts y modales de confirmación)
 const container = document.getElementById('root');
 
 if (!container) {
@@ -27,10 +29,13 @@ createRoot(container).render(
     <GlobalErrorBoundary>
       <AppQueryClientProvider>
         <AuthProvider>
-          <AppRouterProvider />
+          <ThemeProvider>
+            <AppRouterProvider />
+          </ThemeProvider>
         </AuthProvider>
         <AlertHost />
       </AppQueryClientProvider>
     </GlobalErrorBoundary>
   </StrictMode>,
 );
+
