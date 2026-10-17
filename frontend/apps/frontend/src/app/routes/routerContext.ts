@@ -1,33 +1,46 @@
-import type { SessionPort } from '../../domain';
+import type { QueryClient } from '@tanstack/react-query';
+import type { SessionPort, ZentricApiPort } from '../../domain';
 
 /**
- * Contrato de lo que una guarda necesita para decidir (Frontend-Role-Modules §3).
+ * Contrato de contexto inyectado al router en beforeLoad y loaders (C4-4-Codigo-React.md §1.1).
  *
- * Las guardas `beforeLoad` corren FUERA del render, así que no pueden usar
- * hooks y reciben la instancia por parámetro. Es la MISMA `SessionPort` que
- * consumen los componentes vía `useAuth()` — nunca una copia: una copia
- * quedaría con el token viejo después de cada login y la guarda dejaría de ver
- * la sesión recién abierta.
+ * Contiene dependencias inyectadas para resolución determinista:
+ * - `session`: Puerto de sesión en memoria RAM (ADR-0009).
+ * - `api`: Puerto de cliente API central Zentric.
+ * - `queryClient`: Gestor de caché TanStack Query para invalidación y prefetching.
  */
 export interface RouterContext {
   session: SessionPort;
+  sessionPort?: SessionPort;
+  api?: ZentricApiPort;
+  apiPort?: ZentricApiPort;
+  queryClient?: QueryClient;
 }
 
 /**
- * Parámetros de búsqueda de `/entrar`.
- *
- * Las guardas dejan un aviso en la URL al redirigir sin sesión, para que la
- * pantalla de acceso explique POR QUÉ pide credenciales en vez de mostrar un
- * formulario mudo (§3: "Redirección a `/entrar` con aviso").
+ * Parámetros de búsqueda reconocidos en `/login` y `/entrar`.
  */
+export type LoginAviso = 'sin-sesion' | 'expirada' | 'desconectado';
+
+export interface LoginSearch {
+  aviso?: LoginAviso;
+  redirect?: string;
+}
+
+export function parseLoginSearch(search: Record<string, unknown>): LoginSearch {
+  const avisoRaw = search['aviso'];
+  const aviso: LoginAviso | undefined =
+    avisoRaw === 'sin-sesion' || avisoRaw === 'expirada' || avisoRaw === 'desconectado'
+      ? (avisoRaw as LoginAviso)
+      : undefined;
+
+  const redirectRaw = search['redirect'];
+  const redirect = typeof redirectRaw === 'string' && redirectRaw.startsWith('/') ? redirectRaw : undefined;
+
+  return { aviso, redirect };
+}
+
+// Aliases para compatibilidad con código existente
 export type EntrarAviso = 'sin-sesion';
-
-export interface EntrarSearch {
-  aviso?: EntrarAviso;
-}
-
-export function parseEntrarSearch(search: Record<string, unknown>): EntrarSearch {
-  // Sólo se reconoce el aviso que las guardas saben emitir: cualquier otro
-  // valor que llegue en la URL se descarta en vez de reflejarse en pantalla.
-  return { aviso: search['aviso'] === 'sin-sesion' ? 'sin-sesion' : undefined };
-}
+export type EntrarSearch = LoginSearch;
+export const parseEntrarSearch = parseLoginSearch;

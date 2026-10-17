@@ -4,27 +4,28 @@ import { routeTree } from './routeTree';
 import { appServices } from '../providers/appServices';
 
 /**
- * Opciones compartidas del router.
+ * Opciones compartidas del router (C4-4-Codigo-React.md §1.1).
  *
- * En producción y en las pruebas se usan las MISMAS opciones: si el
- * `defaultNotFoundComponent` sólo viviera en el componente, el test seguiría
- * pasando con una app que en pantalla real se quedaría en blanco.
+ * En producción y en pruebas unitarias se aplican las MISMAS opciones, garantizando
+ * que el contexto de dependencias y el tratamiento de errores 403 / 404 sean idénticos.
  */
 export const routerOptions = {
   routeTree,
   context: {
     session: appServices.session,
+    sessionPort: appServices.session,
+    api: appServices.api,
+    apiPort: appServices.api,
   },
   defaultPreload: 'intent',
-  // Sin esto el error de ruta no llega a ningún componente y la app se queda
-  // en blanco sin diagnóstico.
   defaultNotFoundComponent: () => (
-    <main className="grid place-items-center gap-4 p-12">
-      <h1 className="text-2xl font-semibold">Página no encontrada</h1>
-      <p className="text-foreground/60">La ruta solicitada no existe en la consola.</p>
+    <main className="grid place-items-center gap-4 p-12 text-center text-foreground">
+      <div className="max-w-md space-y-3 rounded-xl border border-border bg-surface p-8 shadow-xl">
+        <span className="font-mono text-sm font-semibold text-warning">404</span>
+        <h1 className="text-2xl font-semibold">Página no encontrada</h1>
+        <p className="text-sm text-foreground-muted">La ruta solicitada no existe en la consola.</p>
+      </div>
     </main>
   ),
-  // §3: una guarda que lanza `RolNoAutorizadoError` debe pintar un 403 que
-  // conserve la sesión, no una pantalla genérica de fallo.
   defaultErrorComponent: RouteErrorComponent,
 } satisfies Parameters<typeof createRouter>[0];

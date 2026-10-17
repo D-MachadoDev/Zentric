@@ -448,3 +448,6 @@ FodyWeavers.xsd
 # Archivos y capturas temporales de workflows de exploracion de navegador
 .archify/
 
+# Carpetas temporales de enjambres y subagentes teamwork
+.agents/teamwork/
+
