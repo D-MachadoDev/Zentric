@@ -11,15 +11,26 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 12.6.0
+          version: 10.6.5
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - working-directory: frontend
+        name: Install dependencies
         run: pnpm install --frozen-lockfile
       - working-directory: frontend
-        run: pnpm --filter frontend typecheck
+        name: Typecheck monorepo
+        run: pnpm typecheck
+      - working-directory: frontend/packages/ui
+        name: Test @zentric/ui with >=90% coverage gate
+        run: pnpm exec vitest run --coverage
+      - working-directory: frontend/apps/frontend
+        name: Test @zentric/frontend with >=90% coverage gate
+        run: pnpm exec vitest run --coverage
       - working-directory: frontend
-        run: pnpm --filter frontend test:run --coverage
+        name: Build production bundle
+        run: pnpm build
+      - name: Build production Docker image
+        run: docker build -f frontend/Dockerfile -t zentric-frontend:ci ./frontend

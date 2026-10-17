@@ -12,6 +12,11 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
-      - run: dotnet restore backend/Zentric.slnx
-      - run: dotnet build backend/Zentric.slnx -warnaserror --no-restore
-      - run: dotnet test backend/Zentric.slnx --filter "FullyQualifiedName!~E2E" --no-build --collect:"XPlat Code Coverage"
+      - name: Restore dependencies
+        run: dotnet restore backend/Zentric.slnx
+      - name: Build with zero warnings
+        run: dotnet build backend/Zentric.slnx -warnaserror --no-restore -nodeReuse:false
+      - name: Run unit, integration and security tests with >=90% Coverlet gate
+        run: dotnet test backend/Zentric.slnx --filter "FullyQualifiedName!~E2E" --no-build --settings backend/Coverlet.runsettings --collect:"XPlat Code Coverage"
+      - name: Build production Docker image
+        run: docker build -f backend/Dockerfile -t zentric-api:ci .
