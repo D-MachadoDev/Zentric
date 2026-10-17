@@ -40,6 +40,14 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             return list.Select(WarehouseMapper.ToDomain).ToList();
         }
 
+        public async Task<IReadOnlyList<Warehouse>> GetForSellerAsync(Guid sellerVendorId, CancellationToken cancellationToken = default)
+        {
+            var list = await _dbContext.Warehouses.AsNoTracking()
+                .Where(w => w.VendorId == sellerVendorId || (w.Type == Zentric.Domain.Warehouses.Enum.WarehouseType.Marketplace && w.IsActive))
+                .ToListAsync(cancellationToken);
+            return list.Select(WarehouseMapper.ToDomain).ToList();
+        }
+
         public Task AddAsync(Warehouse warehouse, CancellationToken cancellationToken = default)
         {
             var dbModel = WarehouseMapper.ToDbModel(warehouse);

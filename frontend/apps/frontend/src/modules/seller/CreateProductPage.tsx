@@ -39,6 +39,7 @@ export function CreateProductPage() {
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [priceAmount, setPriceAmount] = useState<number>(0);
   const [type, setType] = useState<ProductType>(ProductType.Physical);
 
@@ -103,6 +104,7 @@ export function CreateProductPage() {
         priceCurrency: 'COP',
         type,
         variants: formattedVariants.length > 0 ? formattedVariants : undefined,
+        imageUrl: imageUrl.trim() || undefined,
       });
 
       setCreatedResult(result);
@@ -208,6 +210,32 @@ export function CreateProductPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full rounded-lg border border-[#1F293D] bg-[#161F30] p-3 text-sm text-white placeholder-[#64748B] focus:border-[#00D4AA] focus:outline-none"
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-mono uppercase text-[#94A3B8] block">
+                URL de Imagen Fotográfica del Producto (Opcional)
+              </label>
+              <Input
+                type="url"
+                placeholder="https://images.unsplash.com/photo-..."
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                className="bg-[#161F30] border-[#1F293D] font-mono text-white text-xs"
+              />
+              {imageUrl.trim() && (
+                <div className="mt-2 flex items-center gap-3 rounded-lg border border-[#1F293D] bg-[#111827] p-2">
+                  <img
+                    src={imageUrl.trim()}
+                    alt="Vista previa"
+                    className="h-12 w-12 rounded object-cover border border-[#1F293D]"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                  <span className="text-xs font-mono text-[#00D4AA]">Vista previa de fotografía cargada</span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

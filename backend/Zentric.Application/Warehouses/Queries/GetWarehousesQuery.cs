@@ -45,13 +45,14 @@ namespace Zentric.Application.Warehouses.Queries
                         "A seller can only list their own warehouses.");
                 }
 
-                var own = await _warehouseRepository.GetAllAsync(request.CallerId, cancellationToken);
-                return Result<IReadOnlyList<WarehouseDto>>.Success(own.Select(WarehouseMapper.ToDto).ToList());
+                // [ADDENDUM 2026-10-17]: el Vendedor lista sus bodegas propias y las bodegas centrales activas de Zentric (Marketplace)
+                var list = await _warehouseRepository.GetForSellerAsync(request.CallerId, cancellationToken);
+                return Result<IReadOnlyList<WarehouseDto>>.Success(list.Select(WarehouseMapper.ToDto).ToList());
             }
 
             // Operador y Administrador: sin restriccion de dueno.
-            var list = await _warehouseRepository.GetAllAsync(request.VendorId, cancellationToken);
-            return Result<IReadOnlyList<WarehouseDto>>.Success(list.Select(WarehouseMapper.ToDto).ToList());
+            var all = await _warehouseRepository.GetAllAsync(request.VendorId, cancellationToken);
+            return Result<IReadOnlyList<WarehouseDto>>.Success(all.Select(WarehouseMapper.ToDto).ToList());
         }
     }
 
@@ -78,10 +79,16 @@ namespace Zentric.Application.Warehouses.Queries
                 return Result<WarehouseDto>.NotFound("Warehouse not found.");
             }
 
-            // Q-21b: la bodega de otro vendedor se trata como inexistente.
-            if (request.CallerRole == UserRole.Seller && w.VendorId != request.CallerId)
+            // [ADDENDUM 2026-10-17]: la bodega de otro vendedor se trata como inexistente;
+            // pero las bodegas centrales Marketplace de Zentric son accesibles para el Vendedor.
+            if (request.CallerRole == UserRole.Seller)
             {
-                return Result<WarehouseDto>.NotFound("Warehouse not found.");
+                var isOwn = w.VendorId == request.CallerId;
+                var isMarketplace = w.Type == Zentric.Domain.Warehouses.Enum.WarehouseType.Marketplace && w.IsActive;
+                if (!isOwn && !isMarketplace)
+                {
+                    return Result<WarehouseDto>.NotFound("Warehouse not found.");
+                }
             }
 
             return Result<WarehouseDto>.Success(WarehouseMapper.ToDto(w));

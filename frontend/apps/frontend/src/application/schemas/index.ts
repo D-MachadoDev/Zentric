@@ -104,6 +104,7 @@ export const CreateProductSchema: z.ZodType<CreateProductInput, CreateProductInp
     priceCurrency: z.string().trim().length(3, 'La moneda debe tener exactamente 3 caracteres ISO (ej. COP, USD)'),
     type: z.enum([ProductType.Physical, ProductType.Digital]),
     variants: z.array(CreateProductVariantSchema).optional(),
+    imageUrl: z.string().trim().url('Debe ser una URL válida').optional().nullable(),
   })
   .refine(
     (val) =>

@@ -371,7 +371,7 @@ export function SellerInventoryPage() {
                   <option value="">-- Seleccionar Bodega --</option>
                   {allWarehouses.map((w: Warehouse) => (
                     <option key={w.id} value={w.id}>
-                      {w.location} ({w.type})
+                      {w.location} — {w.type === 'Marketplace' ? '⚡ Centro Fulfillment Zentric' : '📦 Bodega Propia'}
                     </option>
                   ))}
                 </select>

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { LayoutDashboard, Package, Layers, ShoppingBag, Truck, RotateCcw } from 'lucide-react';
+import { LayoutDashboard, Package, Layers, Warehouse as WarehouseIcon, ShoppingBag, Truck, RotateCcw } from 'lucide-react';
 import { LayoutHeader } from './LayoutHeader';
 import { LayoutSidebar, type NavItem } from './LayoutSidebar';
 
@@ -7,6 +7,7 @@ const sellerNavItems: NavItem[] = [
   { href: '/seller', label: 'Panel del Vendedor', icon: LayoutDashboard },
   { href: '/seller/products', label: 'Mis Productos', icon: Package },
   { href: '/seller/inventory', label: 'Mi Inventario', icon: Layers },
+  { href: '/seller/warehouses', label: 'Mis Bodegas', icon: WarehouseIcon },
   { href: '/seller/orders', label: 'Pedidos Recibidos', icon: ShoppingBag },
   { href: '/seller/fulfillments', label: 'Cola de Despachos', icon: Truck },
   { href: '/seller/returns', label: 'Resolución Devoluciones', icon: RotateCcw },

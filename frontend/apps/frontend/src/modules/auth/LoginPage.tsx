@@ -41,6 +41,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showDemoSelector, setShowDemoSelector] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -332,56 +333,70 @@ export function LoginPage() {
             </Button>
           </form>
 
-          {/* Selector rápido de perfiles para pruebas locales de los 5 roles */}
-          <div className="rounded-xl border border-[#1F293D] bg-[#111827]/90 p-3.5 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-[11px] font-semibold tracking-wider text-[#94A3B8] uppercase">
-                ✱ Autocompletar Rol Demo
-              </span>
-              <span className="font-mono text-[10px] text-[#728399]">1-clic</span>
-            </div>
-            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-              <button
-                type="button"
-                onClick={() => applyDemoCredentials('admin@zentric.local', 'AdminLocal12345')}
-                className="rounded-lg border border-[#1F293D] bg-[#161F30]/80 px-2.5 py-1.5 text-left font-mono text-[11px] text-white transition-colors hover:border-[#00D4AA]/60 hover:text-[#00D4AA]"
-              >
-                <div className="font-semibold">Admin</div>
-                <div className="truncate text-[10px] text-[#94A3B8]">admin@zentric.local</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => applyDemoCredentials('seller@zentric.local', 'SellerLocal12345')}
-                className="rounded-lg border border-[#1F293D] bg-[#161F30]/80 px-2.5 py-1.5 text-left font-mono text-[11px] text-white transition-colors hover:border-[#00D4AA]/60 hover:text-[#00D4AA]"
-              >
-                <div className="font-semibold">Seller</div>
-                <div className="truncate text-[10px] text-[#94A3B8]">seller@zentric.local</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => applyDemoCredentials('buyer@zentric.local', 'BuyerLocal12345')}
-                className="rounded-lg border border-[#1F293D] bg-[#161F30]/80 px-2.5 py-1.5 text-left font-mono text-[11px] text-white transition-colors hover:border-[#00D4AA]/60 hover:text-[#00D4AA]"
-              >
-                <div className="font-semibold">Buyer</div>
-                <div className="truncate text-[10px] text-[#94A3B8]">buyer@zentric.local</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => applyDemoCredentials('logistics@zentric.local', 'LogisticsLocal12345')}
-                className="rounded-lg border border-[#1F293D] bg-[#161F30]/80 px-2.5 py-1.5 text-left font-mono text-[11px] text-white transition-colors hover:border-[#00D4AA]/60 hover:text-[#00D4AA]"
-              >
-                <div className="font-semibold">Logistics</div>
-                <div className="truncate text-[10px] text-[#94A3B8]">logistics@zentric.local</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => applyDemoCredentials('supervisor@zentric.local', 'SupervisorLocal12345')}
-                className="col-span-2 rounded-lg border border-[#1F293D] bg-[#161F30]/80 px-2.5 py-1.5 text-left font-mono text-[11px] text-white transition-colors hover:border-[#00D4AA]/60 hover:text-[#00D4AA] sm:col-span-1"
-              >
-                <div className="font-semibold">Supervisor</div>
-                <div className="truncate text-[10px] text-[#94A3B8]">supervisor@zentric.local</div>
-              </button>
-            </div>
+          {/* Conmutador discreto Modo Demo / QA (ADR-0012 & design.md) */}
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => setShowDemoSelector((v) => !v)}
+              className="flex items-center gap-1.5 text-[11px] font-mono text-[#64748B] hover:text-[#00D4AA] transition-colors"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span>{showDemoSelector ? 'Ocultar Cuentas Demo' : 'Acceso Rápido Demo / QA (5 Roles)'}</span>
+              <span className="text-[10px] text-[#475569]">{showDemoSelector ? '▲' : '▼'}</span>
+            </button>
+
+            {showDemoSelector && (
+              <div className="mt-2.5 rounded-xl border border-[#1F293D] bg-[#111827]/90 p-3.5 space-y-2.5 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[11px] font-semibold tracking-wider text-[#94A3B8] uppercase">
+                    ✱ Autocompletar Rol Demo
+                  </span>
+                  <span className="font-mono text-[10px] text-[#728399]">1-clic</span>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                  <button
+                    type="button"
+                    onClick={() => applyDemoCredentials('admin@zentric.local', 'AdminLocal12345')}
+                    className="rounded-lg border border-[#1F293D] bg-[#161F30]/80 px-2.5 py-1.5 text-left font-mono text-[11px] text-white transition-colors hover:border-[#00D4AA]/60 hover:text-[#00D4AA]"
+                  >
+                    <div className="font-semibold">Admin</div>
+                    <div className="truncate text-[10px] text-[#94A3B8]">admin@zentric.local</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyDemoCredentials('seller@zentric.local', 'SellerLocal12345')}
+                    className="rounded-lg border border-[#1F293D] bg-[#161F30]/80 px-2.5 py-1.5 text-left font-mono text-[11px] text-white transition-colors hover:border-[#00D4AA]/60 hover:text-[#00D4AA]"
+                  >
+                    <div className="font-semibold">Seller</div>
+                    <div className="truncate text-[10px] text-[#94A3B8]">seller@zentric.local</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyDemoCredentials('buyer@zentric.local', 'BuyerLocal12345')}
+                    className="rounded-lg border border-[#1F293D] bg-[#161F30]/80 px-2.5 py-1.5 text-left font-mono text-[11px] text-white transition-colors hover:border-[#00D4AA]/60 hover:text-[#00D4AA]"
+                  >
+                    <div className="font-semibold">Buyer</div>
+                    <div className="truncate text-[10px] text-[#94A3B8]">buyer@zentric.local</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyDemoCredentials('logistics@zentric.local', 'LogisticsLocal12345')}
+                    className="rounded-lg border border-[#1F293D] bg-[#161F30]/80 px-2.5 py-1.5 text-left font-mono text-[11px] text-white transition-colors hover:border-[#00D4AA]/60 hover:text-[#00D4AA]"
+                  >
+                    <div className="font-semibold">Logistics</div>
+                    <div className="truncate text-[10px] text-[#94A3B8]">logistics@zentric.local</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyDemoCredentials('supervisor@zentric.local', 'SupervisorLocal12345')}
+                    className="col-span-2 rounded-lg border border-[#1F293D] bg-[#161F30]/80 px-2.5 py-1.5 text-left font-mono text-[11px] text-white transition-colors hover:border-[#00D4AA]/60 hover:text-[#00D4AA] sm:col-span-1"
+                  >
+                    <div className="font-semibold">Supervisor</div>
+                    <div className="truncate text-[10px] text-[#94A3B8]">supervisor@zentric.local</div>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col items-center justify-between gap-3 border-t border-[#1F293D]/80 pt-4 text-xs text-[#94A3B8] sm:flex-row">

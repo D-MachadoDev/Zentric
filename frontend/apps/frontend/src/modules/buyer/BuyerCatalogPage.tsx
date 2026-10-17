@@ -18,8 +18,6 @@ import {
   Filter,
   ArrowRight,
   Package,
-  FileCode,
-  Tag,
   RefreshCw,
 } from 'lucide-react';
 
@@ -41,7 +39,7 @@ export function BuyerCatalogPage() {
     refetch,
     isFetching,
   } = useProductsPagedQuery({
-    page,
+    page: page - 1,
     size: pageSize,
   });
 
@@ -197,68 +195,78 @@ export function BuyerCatalogPage() {
         />
       ) : (
         <div className="space-y-8">
-          {/* Cuadrícula de Tarjetas con Doctrina Anti-IA Genérica */}
+          {/* Cuadrícula de Tarjetas con Doctrina Anti-IA Genérica y Fotografía Real */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product: Product) => (
               <div
                 key={product.id}
-                className="group relative flex flex-col justify-between rounded-2xl border border-[#1F293D] bg-[#111827] p-5 transition-all hover:border-[#00D4AA]/50 hover:shadow-xl hover:shadow-[#00D4AA]/5"
+                className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[#1F293D] bg-[#111827] transition-all hover:border-[#00D4AA]/60 hover:shadow-xl hover:shadow-[#00D4AA]/10"
               >
-                <div className="space-y-3">
-                  {/* Encabezado de Tarjeta con Tipo */}
-                  <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-[#64748B] flex items-center gap-1 truncate">
-                      <Tag className="h-3 w-3" />
-                      Zentric
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className={`text-xs ${
-                        product.type === ProductType.Physical
-                          ? 'border-[#00D4AA]/30 text-[#00D4AA] bg-[#00D4AA]/5'
-                          : 'border-blue-500/30 text-blue-400 bg-blue-500/5'
-                      }`}
-                    >
+                {/* ── Contenedor Fotográfico de Producto ── */}
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#161F30]">
+                  {product.imageUrl ? (
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#161F30] to-[#111827] text-[#64748B]">
+                      <Package className="h-12 w-12 opacity-30" />
+                    </div>
+                  )}
+
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[#0B0F19]/80 backdrop-blur-md px-2.5 py-1 text-[11px] font-semibold text-[#00D4AA] border border-[#00D4AA]/30">
                       {product.type === ProductType.Physical ? (
-                        <span className="flex items-center gap-1">
-                          <Package className="h-3 w-3" /> Físico
-                        </span>
+                        <>
+                          <span>⚡ Zentric Full · </span>
+                          <span>Físico</span>
+                        </>
                       ) : (
-                        <span className="flex items-center gap-1">
-                          <FileCode className="h-3 w-3" /> Digital
-                        </span>
+                        <span>Digital</span>
                       )}
-                    </Badge>
+                    </span>
                   </div>
 
-                  {/* Título de Producto */}
-                  <div>
-                    <h3 className="text-base font-semibold text-white group-hover:text-[#00D4AA] transition-colors line-clamp-2">
-                      {product.name}
-                    </h3>
-                    <p className="text-xs text-[#94A3B8] mt-1 line-clamp-2">
-                      {product.description || 'Sin descripción técnica disponible.'}
-                    </p>
+                  <div className="absolute top-3 right-3">
+                    <span className="inline-flex items-center rounded-md bg-[#0B0F19]/80 backdrop-blur-md px-2 py-0.5 text-[10px] font-mono text-[#94A3B8] border border-[#1F293D]">
+                      {product.variants?.length ? `${product.variants.length} var.` : '1 SKU'}
+                    </span>
                   </div>
                 </div>
 
-                {/* Footer de Tarjeta con Precio y Enlace a Detalle */}
-                <div className="mt-5 pt-4 border-t border-[#1F293D] flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-[#64748B]">
-                      Precio base
-                    </span>
-                    <div className="text-lg font-bold font-mono text-white tabular-nums">
-                      ${product.price.toLocaleString('es-CO', { minimumFractionDigits: 2 })}
-                    </div>
+                <div className="p-5 flex flex-col flex-1 justify-between space-y-4">
+                  <div className="space-y-1.5">
+                    {/* Título de Producto */}
+                    <h3 className="text-base font-semibold text-white group-hover:text-[#00D4AA] transition-colors line-clamp-2">
+                      {product.name}
+                    </h3>
+                    <p className="text-xs text-[#94A3B8] line-clamp-2 leading-relaxed">
+                      {product.description || 'Sin descripción técnica disponible.'}
+                    </p>
                   </div>
 
-                  <Link to="/buyer/catalog/$productId" params={{ productId: product.id }}>
-                    <Button size="sm" className="bg-[#161F30] hover:bg-[#00D4AA] text-[#00D4AA] hover:text-[#0B0F19] font-medium border border-[#1F293D] hover:border-transparent transition-all">
-                      Ver Ficha
-                      <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                    </Button>
-                  </Link>
+                  {/* Footer de Tarjeta con Precio y Enlace a Detalle */}
+                  <div className="pt-3 border-t border-[#1F293D] flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] uppercase font-mono tracking-wider text-[#64748B]">
+                        Precio contado
+                      </span>
+                      <div className="text-lg font-bold font-mono text-white tabular-nums">
+                        ${product.price.toLocaleString('es-CO', { minimumFractionDigits: 0 })}
+                        <span className="text-xs font-normal text-[#64748B] ml-1">{product.currency || 'COP'}</span>
+                      </div>
+                    </div>
+
+                    <Link to="/buyer/catalog/$productId" params={{ productId: product.id }}>
+                      <Button size="sm" className="bg-[#161F30] hover:bg-[#00D4AA] text-[#00D4AA] hover:text-[#0B0F19] font-medium border border-[#1F293D] hover:border-transparent transition-all">
+                        Ver
+                        <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}

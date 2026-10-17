@@ -12,6 +12,7 @@ namespace Zentric.Domain.Products
         public Money Price { get; private set; }
         public ProductType Type { get; private set; }
         public ProductStatus Status { get; private set; }
+        public string? ImageUrl { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
         public DateTime? DeletedAt { get; private set; }
@@ -55,7 +56,8 @@ namespace Zentric.Domain.Products
             Money price,
             Guid vendorId,
             ProductType type,
-            IEnumerable<(string Sku, IEnumerable<VariantAttribute> Attributes)>? variants = null)
+            IEnumerable<(string Sku, IEnumerable<VariantAttribute> Attributes)>? variants = null,
+            string? imageUrl = null)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -96,6 +98,7 @@ namespace Zentric.Domain.Products
             Price = price;
             Type = type;
             Status = ProductStatus.Published;
+            ImageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = CreatedAt;
             DeletedAt = null;
@@ -165,7 +168,7 @@ namespace Zentric.Domain.Products
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void Update(string name, string description, Money price)
+        public void Update(string name, string description, Money price, string? imageUrl = null)
         {
             if (IsDeleted)
             {
@@ -187,6 +190,21 @@ namespace Zentric.Domain.Products
             Name = name.Trim();
             Description = description.Trim();
             Price = price;
+            if (imageUrl != null)
+            {
+                ImageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
+            }
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void UpdateImageUrl(string? imageUrl)
+        {
+            if (IsDeleted)
+            {
+                throw new InvalidOperationException("Cannot update image of a deleted product.");
+            }
+
+            ImageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
             UpdatedAt = DateTime.UtcNow;
         }
 

@@ -82,3 +82,19 @@ Todas las respuestas de error del backend (`400`, `401`, `403`, `404`, `409`, `4
 | `detail` | `string` | `Error.Description` (en español) | Mensaje de negocio legible por el usuario final |
 | `code` | `string?` | `Error.Code` (`extensions["code"]`) | Código de dominio en `Geist Mono` (ej. `Inventory.InsufficientStock`, `Order.CheckoutExpired`) |
 | `errors` | `Record<string, string[]>?` | `ValidationError` | Mapa de errores por campo vinculado a los inputs del formulario |
+
+---
+
+## 5. [ADDENDUM - DICTADO POR OWNER 2026-10-17]
+
+1. **Modelo Híbrido de Bodegas (*Zentric Full* + *Bodega Propia*):**
+   - `WarehouseManagement` (`POST /api/warehouses`) autoriza a `Administrator` y `Seller`. Cuando invoca un `Seller`, el servidor fuerza `Type = WarehouseType.Vendor` y `VendorId = CallerId`.
+   - `GET /api/warehouses` y `GET /api/warehouses/{id}` para `Seller` retornan sus bodegas propias (`VendorId == CallerId`) **más** todas las bodegas centrales activas de Zentric (`Type == WarehouseType.Marketplace && IsActive`).
+   - `POST /api/inventories/add-stock` para `Seller` permite ingresar existencias de sus propios productos tanto en sus bodegas propias (`Vendor`) como en las bodegas centrales activas de Zentric (`Marketplace`).
+2. **Soporte Visual de Catálogo (`imageUrl`):**
+   - `Product`, `CreateProductCommand`, `ProductDto`, `ProductDbModel` y `ProductSchema` (Zod) incorporan `imageUrl?: string | null`.
+3. **Paginación Basada en Cero (`GET /api/catalog/products/paged`):**
+   - El frontend envía `page = currentPage - 1` (`0` para la primera página) sincronizado con `PageRequest` en C#.
+4. **Reactividad de Sesión en `AuthProvider`:**
+   - `AuthProvider` se suscribe a `session.subscribe(...)` para actualizar instantáneamente `role`, `user` y el encabezado global tras `useLoginMutation()` o cambios en `localStorage`.
+

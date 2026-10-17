@@ -186,6 +186,21 @@ export function BuyerProductDetailPage() {
               </h1>
             </div>
 
+            {/* Fotografía Protagonista del Producto */}
+            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-[#161F30] border border-[#1F293D]">
+              {product.imageUrl ? (
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="h-full w-full object-cover object-center"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#161F30] to-[#111827] text-[#64748B]">
+                  <Package className="h-16 w-16 opacity-30" />
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2 pt-2 border-t border-[#1F293D]">
               <h2 className="text-xs uppercase font-mono tracking-wider text-[#94A3B8]">
                 Descripción del Producto

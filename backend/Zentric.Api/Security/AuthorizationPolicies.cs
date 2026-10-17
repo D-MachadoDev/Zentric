@@ -284,7 +284,7 @@ namespace Zentric.Api.Security
 
                     [UserAdministration] = new[] { Role(UserRole.Administrator) },
 
-                    [WarehouseManagement] = new[] { Role(UserRole.Administrator) },
+                    [WarehouseManagement] = new[] { Role(UserRole.Administrator), Role(UserRole.Seller) },
 
                     [WarehouseRead] = new[]
                     {

@@ -20,6 +20,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(() => session.getUser());
   const [expiredNotice, setExpiredNotice] = useState<string | null>(null);
 
+  // Sincroniza reactivamente el estado de AuthProvider con SessionPort (useLoginMutation, localStorage)
+  useEffect(() => {
+    const unsubscribe = session.subscribe?.(() => {
+      setUser(session.getUser?.() ?? null);
+    });
+    return () => {
+      unsubscribe?.();
+    };
+  }, [session]);
+
   // C4-4 §4: al montar, valida `GET /api/auth/me` sólo si queda token en
   // memoria. Al abrir la app normalmente no lo hay (se perdió al recargar), así
   // que la llamada no se hace y no hay tráfico espurio.

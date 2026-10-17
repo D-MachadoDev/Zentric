@@ -31,6 +31,7 @@ export interface Product {
   variants: ProductVariant[];
   /** ISO-8601 (DateTime). */
   createdAt: string;
+  imageUrl?: string | null;
 }
 
 /** Atributo de una variante (`VariantAttributeDto`). */
@@ -61,6 +62,7 @@ export interface CreateProductInput {
   priceCurrency: string;
   type: ProductType;
   variants?: CreateProductVariantInput[];
+  imageUrl?: string | null;
 }
 
 /**

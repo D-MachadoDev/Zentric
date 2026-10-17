@@ -266,3 +266,20 @@ El ciclo de estados del pedido se completa con un sexto estado:
 ## DOMINIO 8 — Alcance de la cancelación por quiebre de stock
 
 Se aclara la frase «el pedido se cancela con devolución obligatoria»: ante un quiebre de stock fantasma **se cancela el despacho afectado** (la porción de un vendedor), no el pedido completo. La cancelación dispara la **devolución parcial** de las líneas afectadas; el resto del pedido y sus demás despachos continúan su flujo hasta la entrega. El pedido completo solo termina como **Anulado** según la adición anterior.
+
+---
+
+# [ADDENDUM - DICTADO POR OWNER 2026-10-17]
+
+*Adiciones ratificadas por el Owner tras validación operativa del sistema en vivo.*
+
+## DOMINIO 4 y DOMINIO 6 — Modelo Operativo Híbrido de Bodegas y Abastecimiento (*Zentric Full* + *Bodega Propia*)
+
+1. **Administración de Red Central e Incorporación (`Administrator`):** El Administrador gestiona las bodegas centrales de la plataforma (`WarehouseType.Marketplace`, con `VendorId = null`) y registra la primera bodega del vendedor durante su incorporación inicial (§6.1 paso 1). Por integridad contable e histórica de pedidos e inventarios, no existe borrado físico (`DELETE`) de bodegas, sino control de estado operativo (`IsActive`: Activa/Inactiva).
+2. **Autonomía de Sucursales del Vendedor (`Seller`):** Además de su primera bodega de incorporación, el Vendedor está facultado para registrar nuevas bodegas propias adicionales (`WarehouseType.Vendor`), las cuales quedan vinculadas de forma forzosa a su propio `VendorId`.
+3. **Abastecimiento en Bodegas del Marketplace (*Zentric Full*):** Las bodegas centrales activas de Zentric (`WarehouseType.Marketplace`) son visibles para todos los Vendedores autenticados. El Vendedor puede ingresar existencias (`AddStock`) de las variantes de sus propios productos tanto en sus bodegas propias (`WarehouseType.Vendor`) como en cualquier bodega central activa de Zentric (`WarehouseType.Marketplace`).
+
+## DOMINIO 5 — Soporte Visual de Catálogo (`ImageUrl`)
+
+- Cada ficha de producto del catálogo admite un atributo opcional de imagen principal (`ImageUrl`), permitiendo su exhibición visual en el catálogo comercial y en los paneles operativos.
+

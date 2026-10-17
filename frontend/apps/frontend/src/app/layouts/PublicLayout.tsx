@@ -25,7 +25,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
             <span className="text-sm font-bold tracking-tight text-foreground">Zentric Core</span>
           </Link>
           <span className="hidden h-4 w-px bg-border sm:inline-block" aria-hidden="true" />
-          <span className="kicker-spike hidden sm:inline-flex">SWISS PULSE · CONSOLA HEXAGONAL</span>
+          <span className="kicker-spike hidden sm:inline-flex">SWISS PULSE · CONSOLA OPERATIVA SUIZA HEXAGONAL</span>
         </div>
         <Link
           to="/health"
@@ -44,7 +44,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       {/* Pie de página institucional */}
       <footer className="relative z-10 flex h-14 items-center justify-between border-t border-border bg-background/85 px-6 font-mono text-xs text-foreground-subtle backdrop-blur-md">
         <span>© {new Date().getFullYear()} Zentric Marketplace Inc.</span>
-        <span>SWISS PULSE EDITORIAL · v1.1.0</span>
+        <span>Consola Operativa Suiza · SWISS PULSE EDITORIAL · v1.1.0</span>
       </footer>
     </div>
   );

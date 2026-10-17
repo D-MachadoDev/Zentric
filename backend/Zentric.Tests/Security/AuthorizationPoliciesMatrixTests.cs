@@ -19,7 +19,7 @@ namespace Zentric.Tests.Security
             {
                 [AuthorizationPolicies.AnyAuthenticatedUser] = Array.Empty<string>(),
                 [AuthorizationPolicies.UserAdministration] = new[] { nameof(UserRole.Administrator) },
-                [AuthorizationPolicies.WarehouseManagement] = new[] { nameof(UserRole.Administrator) },
+                [AuthorizationPolicies.WarehouseManagement] = new[] { nameof(UserRole.Administrator), nameof(UserRole.Seller) },
                 [AuthorizationPolicies.WarehouseRead] = new[]
                 {
                     nameof(UserRole.Administrator),
@@ -128,12 +128,20 @@ namespace Zentric.Tests.Security
         [InlineData(AuthorizationPolicies.ProductManagement, nameof(UserRole.Seller))]
         [InlineData(AuthorizationPolicies.BillingGenerate, nameof(UserRole.Administrator))]
         [InlineData(AuthorizationPolicies.UserAdministration, nameof(UserRole.Administrator))]
-        [InlineData(AuthorizationPolicies.WarehouseManagement, nameof(UserRole.Administrator))]
         public void Policy_HasExclusiveRole(string policyName, string expectedExclusiveRole)
         {
             var allowedRoles = AuthorizationPolicies.RolesByPolicy[policyName];
             Assert.Single(allowedRoles);
             Assert.Equal(expectedExclusiveRole, allowedRoles.Single());
+        }
+
+        [Fact]
+        public void WarehouseManagement_AllowsAdministratorAndSeller()
+        {
+            var allowedRoles = AuthorizationPolicies.RolesByPolicy[AuthorizationPolicies.WarehouseManagement];
+            Assert.Equal(2, allowedRoles.Count);
+            Assert.Contains(nameof(UserRole.Administrator), allowedRoles);
+            Assert.Contains(nameof(UserRole.Seller), allowedRoles);
         }
 
         [Fact]

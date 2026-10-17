@@ -309,6 +309,12 @@ export const sellerReturnsRoute = createRoute({
   component: () => <SellerReturnsPage />,
 });
 
+export const sellerWarehousesRoute = createRoute({
+  getParentRoute: () => sellerLayoutRoute,
+  path: '/warehouses',
+  component: () => <WarehouseListPage />,
+});
+
 
 // ============================================================================
 // SUBÁRBOL COMPRADOR (/buyer)
@@ -498,6 +504,7 @@ export const routeTree = rootRoute.addChildren([
     sellerProductCreateRoute,
     sellerProductDetailRoute,
     sellerInventoryRoute,
+    sellerWarehousesRoute,
     sellerOrdersRoute,
     sellerFulfillmentsRoute,
     sellerReturnsRoute,

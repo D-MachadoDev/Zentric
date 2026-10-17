@@ -21,6 +21,7 @@ namespace Zentric.Infrastructure.Persistence.Mappers
             typeof(Product).GetProperty("Price")?.SetValue(prod, new Money(dbModel.Price.Amount, dbModel.Price.Currency));
             typeof(Product).GetProperty("Type")?.SetValue(prod, dbModel.Type);
             typeof(Product).GetProperty("Status")?.SetValue(prod, dbModel.Status);
+            typeof(Product).GetProperty("ImageUrl")?.SetValue(prod, dbModel.ImageUrl);
             typeof(Product).GetProperty("CreatedAt")?.SetValue(prod, dbModel.CreatedAt);
             typeof(Product).GetProperty("UpdatedAt")?.SetValue(prod, dbModel.UpdatedAt);
             typeof(Product).GetProperty("DeletedAt")?.SetValue(prod, dbModel.DeletedAt);
@@ -71,6 +72,7 @@ namespace Zentric.Infrastructure.Persistence.Mappers
                 Price = new MoneyDbModel { Amount = domain.Price.Amount, Currency = domain.Price.Currency },
                 Type = domain.Type,
                 Status = domain.Status,
+                ImageUrl = domain.ImageUrl,
                 CreatedAt = domain.CreatedAt,
                 UpdatedAt = domain.UpdatedAt,
                 DeletedAt = domain.DeletedAt

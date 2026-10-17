@@ -18,7 +18,8 @@ namespace Zentric.Application.Catalog.Queries
         string Type,
         string Status,
         IReadOnlyList<ProductVariantDto> Variants,
-        DateTime CreatedAt);
+        DateTime CreatedAt,
+        string? ImageUrl = null);
 
     /// <summary>
     /// Visibilidad del catalogo (Q-27, dictamen Q22=B).
@@ -65,7 +66,8 @@ namespace Zentric.Application.Catalog.Queries
                 p.Type.ToString(),
                 p.Status.ToString(),
                 p.Variants.Select(v => new ProductVariantDto(v.Id, v.Sku, v.CanBeSold)).ToList(),
-                p.CreatedAt
+                p.CreatedAt,
+                p.ImageUrl
             )).ToList();
 
             return Result<IReadOnlyList<ProductDto>>.Success(dtos);
@@ -101,7 +103,8 @@ namespace Zentric.Application.Catalog.Queries
                 p.Type.ToString(),
                 p.Status.ToString(),
                 p.Variants.Select(v => new ProductVariantDto(v.Id, v.Sku, v.CanBeSold)).ToList(),
-                p.CreatedAt
+                p.CreatedAt,
+                p.ImageUrl
             );
 
             return Result<ProductDto>.Success(dto);
@@ -142,7 +145,8 @@ namespace Zentric.Application.Catalog.Queries
                 p.Id, p.Name, p.Description, p.Price.Amount, p.Price.Currency, p.VendorId,
                 p.Type.ToString(), p.Status.ToString(),
                 p.Variants.Select(v => new ProductVariantDto(v.Id, v.Sku, v.CanBeSold)).ToList(),
-                p.CreatedAt
+                p.CreatedAt,
+                p.ImageUrl
             )).ToList();
 
             return Result<PagedResult<ProductDto>>.Success(
