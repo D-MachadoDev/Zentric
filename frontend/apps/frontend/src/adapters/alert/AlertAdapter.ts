@@ -1,13 +1,9 @@
-import type { AlertPort } from '../../domain';
-
-/**
- * Adaptador de `AlertPort` (Frontend-Architecture §4, Frontend-Adapters §5).
- *
- * Es PURO TypeScript: no conoce React ni `sonner`. Sólo administra quién está
- * escuchando y resuelve las promesas. La pintada vive en
- * `components/alert/AlertHost.tsx`, porque §2 prohíbe a `adapters/` importar
- * componentes de UI.
- */
+import type {
+  AlertKind,
+  AlertPort,
+  ConfirmOptions,
+  ShowNotificationOptions,
+} from '../../domain';
 
 /** Aviso flotante ya reducido a lo que el design system sabe pintar. */
 export interface AvisoAlerta {
@@ -21,6 +17,7 @@ export interface ConfirmacionAlerta {
   title: string;
   message: string;
   confirmLabel?: string;
+  variant?: 'default' | 'destructive';
   /** El host invoca esto con la elección del usuario; el adapter la ignora si ya se resolvió. */
   cerrar: (aceptada: boolean) => void;
 }
@@ -31,6 +28,12 @@ export interface AlertHostBindings {
   abrirConfirmacion: (confirmacion: ConfirmacionAlerta) => void;
 }
 
+/**
+ * Adaptador de `AlertPort` (Frontend-Architecture §5.3, Frontend-Adapters §4).
+ *
+ * Es PURO TypeScript: no conoce React ni librerías de UI externas.
+ * Administra la cola de alertas y resuelve promesas de confirmación modal.
+ */
 export class AlertAdapter implements AlertPort {
   #mostrarAviso: AlertHostBindings['mostrarAviso'] | null = null;
   #abrirConfirmacion: AlertHostBindings['abrirConfirmacion'] | null = null;
@@ -38,8 +41,8 @@ export class AlertAdapter implements AlertPort {
   #resolverPendiente: ((aceptada: boolean) => void) | null = null;
 
   /**
-   * Registra el host y devuelve el desenlace. Mientras no haya host,
-   * `confirm()` se resuelve `false` en vez de quedar colgada para siempre.
+   * Registra el host y devuelve el método de desmontaje.
+   * Mientras no haya host, `confirm()` se resuelve `false`.
    */
   bind(bindings: AlertHostBindings): () => void {
     this.#mostrarAviso = bindings.mostrarAviso;
@@ -53,28 +56,55 @@ export class AlertAdapter implements AlertPort {
   }
 
   /**
-   * `AlertPort.show`. Un toast se cierra solo, así que la promesa resuelve al
-   * encolarlo: esperar a que desaparezca no significa nada para quien lo invoca.
+   * Muestra un toast / notificación flotante.
+   * Acepta tanto opciones como parámetros posicionales.
    */
-  show(kind: AvisoAlerta['kind'], title: string, message?: string): Promise<void> {
-    this.#mostrarAviso?.({ kind, title, message });
+  show(
+    kindOrOptions: ShowNotificationOptions | Exclude<AlertKind, 'confirm'>,
+    title?: string,
+    message?: string,
+  ): Promise<void> {
+    if (typeof kindOrOptions === 'object') {
+      const { title: t, description, variant } = kindOrOptions;
+      const kind = variant === 'danger' ? 'error' : variant;
+      this.#mostrarAviso?.({ kind, title: t, message: description });
+    } else {
+      this.#mostrarAviso?.({ kind: kindOrOptions, title: title ?? '', message });
+    }
     return Promise.resolve();
   }
 
   /**
-   * `AlertPort.confirm`. Sólo hay UNA confirmación a la vez: si llega otra
-   * mientras el diálogo está abierto, la anterior se resuelve `false` (§5).
+   * Abre un diálogo modal de confirmación.
+   * Acepta tanto objeto `ConfirmOptions` como parámetros posicionales.
    */
-  confirm(title: string, message: string, confirmLabel?: string): Promise<boolean> {
+  confirm(
+    optionsOrTitle: ConfirmOptions | string,
+    message?: string,
+    confirmLabel?: string,
+  ): Promise<boolean> {
     this.#cancelarPendiente();
 
     const abrir = this.#abrirConfirmacion;
     if (abrir === null) return Promise.resolve(false);
 
+    let title: string;
+    let desc: string;
+    let label: string | undefined;
+    let variant: 'default' | 'destructive' | undefined;
+
+    if (typeof optionsOrTitle === 'object') {
+      title = optionsOrTitle.title;
+      desc = optionsOrTitle.description;
+      label = optionsOrTitle.confirmLabel;
+      variant = optionsOrTitle.variant;
+    } else {
+      title = optionsOrTitle;
+      desc = message ?? '';
+      label = confirmLabel;
+    }
+
     return new Promise<boolean>((resolve) => {
-      // Una vez elegida la opción, las llamadas posteriores (por ejemplo el
-      // `onOpenChange` que Radix dispara al cerrar) se ignoran: la promesa ya
-      // se ha asentado y su resultado no debe poder cambiar.
       let elegido = false;
       const cerrar = (aceptada: boolean) => {
         if (elegido) return;
@@ -84,7 +114,7 @@ export class AlertAdapter implements AlertPort {
       };
 
       this.#resolverPendiente = cerrar;
-      abrir({ title, message, confirmLabel, cerrar });
+      abrir({ title, message: desc, confirmLabel: label, variant, cerrar });
     });
   }
 

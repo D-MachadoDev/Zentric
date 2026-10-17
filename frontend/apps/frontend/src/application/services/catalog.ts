@@ -1,15 +1,98 @@
-import type { CreateProductInput, Product, ZentricApiPort } from '../../domain';
-import type { ProductoRegistrado } from '../dto';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type {
+  CreateProductInput,
+  CreatedProduct,
+  ListProductsPagedParams,
+  Product,
+  ZentricApiPort,
+} from '../../domain';
 
-/** Casos de uso de catálogo (Frontend-Domain-Services §2.2). */
+import type { ProductoRegistrado } from '../dto';
+import { queryKeys } from './queryKeys';
+import { resolveApi } from './apiContext';
+
+/**
+ * Hook de consulta para listar productos del catálogo.
+ */
+export function useProductsQuery(vendorId?: string, api?: ZentricApiPort) {
+  return useQuery({
+    queryKey: queryKeys.products.list({ vendorId }),
+    queryFn: () => resolveApi(api).listProducts(vendorId),
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Hook de consulta para listar productos paginados.
+ */
+export function useProductsPagedQuery(params?: ListProductsPagedParams, api?: ZentricApiPort) {
+  return useQuery({
+    queryKey: queryKeys.products.paged(params),
+    queryFn: () => resolveApi(api).listProductsPaged(params),
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Hook de consulta para obtener el detalle de un producto por id.
+ */
+export function useProductQuery(id: string, api?: ZentricApiPort) {
+  return useQuery({
+    queryKey: queryKeys.products.detail(id),
+    queryFn: () => resolveApi(api).getProductById(id),
+    enabled: Boolean(id),
+  });
+}
+
+/**
+ * Hook de mutación para dar de alta un nuevo producto.
+ * Retorna `{ productId, variantIds }` e invalida ['products'].
+ */
+export function useCreateProductMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateProductInput): Promise<CreatedProduct> =>
+      resolveApi(api).createProduct(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para publicar un producto.
+ */
+export function usePublishProductMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (productId: string) => resolveApi(api).publishProduct(productId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para suspender un producto del catálogo comercial.
+ */
+export function useSuspendProductMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (productId: string) => resolveApi(api).suspendProduct(productId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+    },
+  });
+}
+
+// ── Clases de servicio heredadas ──────────────────────────────────────────
 
 export class ConsultarCatalogoService {
   constructor(private readonly api: ZentricApiPort) {}
 
-  /**
-   * `GET /api/catalog/products`. Con `vendorId` es la vista de gestión del dueño
-   * (ve también los suspendidos); sin él es el catálogo comercial, sólo `Published` (Q-27).
-   */
   ejecutar(vendorId?: string): Promise<Product[]> {
     return this.api.listProducts(vendorId);
   }
@@ -18,31 +101,25 @@ export class ConsultarCatalogoService {
 export class ConsultarProductoService {
   constructor(private readonly api: ZentricApiPort) {}
 
-  /** Detalle con variantes. */
   ejecutar(id: string): Promise<Product> {
-    return this.api.getProduct(id);
+    return this.api.getProductById(id);
   }
 }
 
 export class RegistrarProductoService {
   constructor(private readonly api: ZentricApiPort) {}
 
-  /**
-   * `POST /api/catalog/products`. El identificador útil para inventario y
-   * carrito es el de la VARIANTE (riesgo FR-03), que el propio alta entrega en
-   * `variantIds` (CAT-01), así que no hace falta releer para obtenerlo.
-   * Se relée únicamente para recuperar el `sku`, que la alta no devuelve.
-   */
   async ejecutar(input: CreateProductInput): Promise<ProductoRegistrado> {
     const created = await this.api.createProduct(input);
     const variantId = created.variantIds[0] ?? null;
 
-    // Un producto Digital puede nacer sin variantes (ADR-0003).
     if (variantId === null) {
       return { productId: created.productId, variantId: null, sku: null };
     }
 
-    const product = await this.api.getProduct(created.productId);
+    const product = this.api.getProductById
+      ? await this.api.getProductById(created.productId)
+      : await this.api.getProduct(created.productId);
     const variant = product.variants.find((candidate) => candidate.id === variantId);
 
     return { productId: created.productId, variantId, sku: variant?.sku ?? null };
@@ -52,7 +129,6 @@ export class RegistrarProductoService {
 export class PublicarProductoService {
   constructor(private readonly api: ZentricApiPort) {}
 
-  /** Reactiva un producto `Suspended` devolviéndolo a `Published`. */
   ejecutar(productId: string): Promise<void> {
     return this.api.publishProduct(productId);
   }
@@ -61,11 +137,6 @@ export class PublicarProductoService {
 export class SuspenderProductoService {
   constructor(private readonly api: ZentricApiPort) {}
 
-  /**
-   * `POST /api/catalog/products/{id}/suspend` (Q-27). El producto sale del
-   * catálogo comercial y el carrito lo rechaza; sólo el Vendedor puede hacerlo
-   * (política `ProductManagement`).
-   */
   ejecutar(productId: string): Promise<void> {
     return this.api.suspendProduct(productId);
   }

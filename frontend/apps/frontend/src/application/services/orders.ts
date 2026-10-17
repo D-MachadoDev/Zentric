@@ -1,20 +1,116 @@
-import type { AddCartItemInput, Order, OrderListItem, ZentricApiPort } from '../../domain';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type {
+  AddCartItemInput,
+  Order,
+  OrderListItem,
+  OrderStatus,
+  SellerOrderView,
+  ZentricApiPort,
+} from '../../domain';
+import { queryKeys } from './queryKeys';
+import { resolveApi } from './apiContext';
 
-/** Casos de uso de carrito y pedidos (Frontend-Domain-Services §2.4). */
+/**
+ * Hook de consulta para listar pedidos.
+ */
+export function useOrdersQuery(status?: OrderStatus | string, api?: ZentricApiPort) {
+  return useQuery({
+    queryKey: queryKeys.orders.list({ status }),
+    queryFn: () => resolveApi(api).listOrders(status),
+    staleTime: 30_000,
+  });
+}
 
-export class AbrirCarritoService {
+/**
+ * Hook de consulta para consultar un pedido por id.
+ */
+export function useOrderQuery(id: string, api?: ZentricApiPort) {
+  return useQuery({
+    queryKey: queryKeys.orders.detail(id),
+    queryFn: () => resolveApi(api).getOrderById(id),
+    enabled: Boolean(id),
+  });
+}
+
+/**
+ * Hook de mutación para crear un nuevo carrito.
+ */
+export function useCreateCartMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => resolveApi(api).createCart(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para añadir una línea al carrito.
+ */
+export function useAddCartItemMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: AddCartItemInput) => resolveApi(api).addCartItem(input),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para ejecutar el checkout atómico (ventana de 15 minutos).
+ * Invalida ['orders'], ['inventories'] y ['fulfillments'].
+ */
+export function useCheckoutOrderMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (orderId: string) => resolveApi(api).checkoutOrder(orderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventories.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.fulfillments.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para pagar un pedido confirmado.
+ * Invalida ['orders'], ['fulfillments'] y ['invoices'].
+ */
+export function usePayOrderMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (orderId: string) => resolveApi(api).payOrder(orderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.fulfillments.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}
+
+// ── Clases de servicio heredadas ──────────────────────────────────────────
+
+export class CrearCarritoService {
   constructor(private readonly api: ZentricApiPort) {}
 
-  /** `POST /api/orders/cart`. Sin cuerpo: el carrito es del comprador del token. */
   ejecutar(): Promise<string> {
     return this.api.createCart();
   }
 }
 
-export class AgregarAlCarritoService {
+export { CrearCarritoService as AbrirCarritoService };
+
+
+export class AgregarLineaCarritoService {
   constructor(private readonly api: ZentricApiPort) {}
 
-  /** `POST /api/orders/cart/items`. Añade una línea con su `variantId`. */
   ejecutar(input: AddCartItemInput): Promise<void> {
     return this.api.addCartItem(input);
   }
@@ -23,41 +119,22 @@ export class AgregarAlCarritoService {
 export class ConsultarPedidoService {
   constructor(private readonly api: ZentricApiPort) {}
 
-  /** Detalle con líneas y total. */
-  ejecutar(id: string): Promise<Order> {
-    return this.api.getOrder(id);
+  ejecutar(id: string): Promise<Order | SellerOrderView> {
+    return this.api.getOrderById(id);
   }
 }
 
 export class ListarPedidosService {
   constructor(private readonly api: ZentricApiPort) {}
 
-  /** Listado de pedidos visibles para el llamante (ADR-0017). */
   ejecutar(status?: string): Promise<OrderListItem[]> {
     return this.api.listOrders(status);
-  }
-}
-
-export class RealizarCheckoutService {
-  constructor(private readonly api: ZentricApiPort) {}
-
-  /**
-   * `POST /api/orders/{id}/checkout`: `Cart` → `PendingPayment` y reserva el
-   * stock. El servidor responde `200 OK` **sin cuerpo**, así que el caso de uso
-   * no devuelve estado: la UI lo relee con `ConsultarPedidoService` si lo necesita.
-   */
-  ejecutar(orderId: string): Promise<void> {
-    return this.api.checkoutOrder(orderId);
   }
 }
 
 export class PagarPedidoService {
   constructor(private readonly api: ZentricApiPort) {}
 
-  /**
-   * `POST /api/orders/{id}/pay`: `PendingPayment` → `Paid`. **No cobra**: el
-   * backend no tiene pasarela de pago (ADR-0009). Responde `200 OK` sin cuerpo.
-   */
   ejecutar(orderId: string): Promise<void> {
     return this.api.payOrder(orderId);
   }

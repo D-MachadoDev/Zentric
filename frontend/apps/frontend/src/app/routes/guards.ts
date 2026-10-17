@@ -37,9 +37,10 @@ export class RolNoAutorizadoError extends Error {
  */
 export function exigirSesion(context: RouterContext): void {
   if (context.session.getAccessToken() === null || context.session.getRole() === null) {
-    throw redirect({ to: '/' as any });
+    throw redirect({ to: '/entrar' as any, search: { aviso: 'sin-sesion' } as any });
   }
 }
+
 
 /** Exige sesión y además el rol exacto del módulo. */
 export function exigirRol(context: RouterContext, rol: UserRole): void {

@@ -4,6 +4,8 @@ import type { HealthStatus, ZentricApiPort } from '../../domain';
  * Servicios transversales (Frontend-Domain-Services §3).
  */
 
+export { useHealthQuery } from './health';
+
 export class VerificarEstadoServidorService {
   constructor(private readonly api: ZentricApiPort) {}
 
@@ -12,6 +14,7 @@ export class VerificarEstadoServidorService {
     return this.api.getHealth();
   }
 }
+
 
 /**
  * Escapa un valor al formato CSV (RFC 4180): entrecomilla sólo lo que lo

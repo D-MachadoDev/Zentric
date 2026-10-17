@@ -29,6 +29,14 @@ export interface AddStockInput {
 }
 
 /**
+ * Entrada para ajuste de inventario por conteo físico.
+ */
+export interface AdjustInventoryInput {
+  countedQuantity: number;
+  reason: string;
+}
+
+/**
  * Resultado de un conteo físico (`AdjustInventoryResult`, ADR-0021).
  * Devuelve el antes y el después para que la UI pueda mostrar la diferencia.
  */
@@ -42,3 +50,4 @@ export interface AdjustInventoryResult {
   /** ISO-8601 (DateTime). */
   countedAt: string;
 }
+

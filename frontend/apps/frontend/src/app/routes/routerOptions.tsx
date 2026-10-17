@@ -1,6 +1,7 @@
 import type { createRouter } from '@tanstack/react-router';
 import { RouteErrorComponent } from './RouteErrorComponent';
 import { routeTree } from './routeTree';
+import { appServices } from '../providers/appServices';
 
 /**
  * Opciones compartidas del router.
@@ -11,6 +12,9 @@ import { routeTree } from './routeTree';
  */
 export const routerOptions = {
   routeTree,
+  context: {
+    session: appServices.session,
+  },
   defaultPreload: 'intent',
   // Sin esto el error de ruta no llega a ningún componente y la app se queda
   // en blanco sin diagnóstico.

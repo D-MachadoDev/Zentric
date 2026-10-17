@@ -1,3 +1,4 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   AuthToken,
   CurrentUser,
@@ -5,15 +6,154 @@ import type {
   LoginInput,
   SessionPort,
   User,
+  UserRole,
   ZentricApiPort,
 } from '../../domain';
+import { queryKeys } from './queryKeys';
+import { resolveApi, resolveSession } from './apiContext';
 
 /**
- * Casos de uso de identidad y acceso (Frontend-Domain-Services §2.1).
+ * Hook de mutación para inicio de sesión (Frontend-Domain-Services §3.1).
  *
- * El access token vive SOLO en memoria (ADR-0009): no hay refresh, así que
- * ninguna sesión sobrevive a recargar la página.
+ * Guarda el token y el perfil en SessionPort en memoria RAM (ADR-0009) y
+ * actualiza la clave ['auth', 'me'] en TanStack Query.
  */
+export function useLoginMutation(api?: ZentricApiPort, session?: SessionPort) {
+  const queryClient = useQueryClient();
+  const apiPort = api;
+  const sessionPort = session;
+
+  return useMutation({
+    mutationFn: async (input: LoginInput): Promise<AuthToken> => {
+      const activeApi = resolveApi(apiPort);
+      const activeSession = resolveSession(sessionPort);
+
+      const result = await activeApi.login(input);
+      activeSession.setAccessToken(result.token);
+      activeSession.setUser?.({
+        userId: result.userId,
+        email: result.email,
+        fullName: result.fullName,
+        role: result.role,
+      });
+
+      queryClient.setQueryData(queryKeys.auth.me(), {
+        userId: result.userId,
+        email: result.email,
+        fullName: result.fullName,
+        role: result.role,
+      });
+
+      return result;
+    },
+  });
+}
+
+/**
+ * Hook de consulta para el usuario autenticado actual.
+ */
+export function useCurrentUserQuery(
+  api?: ZentricApiPort,
+  session?: SessionPort,
+  options?: { enabled?: boolean },
+) {
+  return useQuery({
+    queryKey: queryKeys.auth.me(),
+    queryFn: async (): Promise<CurrentUser> => {
+      const activeApi = resolveApi(api);
+      const activeSession = resolveSession(session);
+      const user = await activeApi.getCurrentUser();
+      activeSession.setUser?.(user);
+      return user;
+    },
+
+    enabled: options?.enabled,
+    staleTime: 5 * 60_000,
+  });
+}
+
+/**
+ * Hook de mutación local para cierre de sesión (ADR-0009).
+ * Purga la memoria RAM y limpia la caché completa del QueryClient.
+ */
+export function useLogoutMutation(session?: SessionPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (): Promise<void> => {
+      const activeSession = resolveSession(session);
+      activeSession.clear();
+      queryClient.clear();
+    },
+  });
+}
+
+/**
+ * Hook de consulta para listar usuarios (Exclusivo Administrador).
+ */
+export function useUsersQuery(role?: UserRole, api?: ZentricApiPort) {
+  return useQuery({
+    queryKey: queryKeys.users.list({ role }),
+    queryFn: () => resolveApi(api).listUsers(role),
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Hook de consulta para obtener ficha técnica de un usuario por id.
+ */
+export function useUserQuery(id: string, api?: ZentricApiPort) {
+  return useQuery({
+    queryKey: queryKeys.users.detail(id),
+    queryFn: () => resolveApi(api).getUserById(id),
+    enabled: Boolean(id),
+  });
+}
+
+/**
+ * Hook de mutación para dar de alta un usuario.
+ * No altera la sesión del llamante (INV-APP-01).
+ */
+export function useCreateUserMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateUserInput) => resolveApi(api).createUser(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para bloquear un usuario.
+ */
+export function useBlockUserMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => resolveApi(api).blockUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para reactivar un usuario.
+ */
+export function useActivateUserMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => resolveApi(api).activateUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+    },
+  });
+}
+
+// ── Clases de servicio heredadas para compatibilidad total ──────────────────
 
 export class IniciarSesionService {
   constructor(
@@ -21,15 +161,20 @@ export class IniciarSesionService {
     private readonly session: SessionPort,
   ) {}
 
-  /**
-   * `POST /api/auth/login`. Guarda el token en memoria y devuelve la identidad.
-   * No devuelve el token: quien llama no debe manipularlo.
-   */
   async ejecutar(input: LoginInput): Promise<CurrentUser> {
     const auth: AuthToken = await this.api.login(input);
     this.session.setAccessToken(auth.token);
-    this.session.setRole(auth.role);
-    this.session.setUserId(auth.userId);
+    if (this.session.setUser) {
+      this.session.setUser({
+        userId: auth.userId,
+        email: auth.email,
+        fullName: auth.fullName,
+        role: auth.role,
+      });
+    } else {
+      this.session.setRole(auth.role);
+      this.session.setUserId(auth.userId);
+    }
 
     return {
       userId: auth.userId,
@@ -46,24 +191,27 @@ export class RestaurarSesionService {
     private readonly session: SessionPort,
   ) {}
 
-  /**
-   * Reconstruye la identidad al abrir la app. Sin token no se restaura nada:
-   * no existe refresh (ADR-0009), de modo que hay que volver a autenticarse.
-   */
   async ejecutar(): Promise<CurrentUser | null> {
     if (this.session.getAccessToken() === null) return null;
 
-    const user = await this.api.currentUser();
-    this.session.setRole(user.role);
-    this.session.setUserId(user.userId);
+    const user = this.api.getCurrentUser
+      ? await this.api.getCurrentUser()
+      : await this.api.currentUser();
+
+    if (this.session.setUser) {
+      this.session.setUser(user);
+    } else {
+      this.session.setRole(user.role);
+      this.session.setUserId(user.userId);
+    }
     return user;
   }
 }
 
+
 export class CerrarSesionService {
   constructor(private readonly session: SessionPort) {}
 
-  /** Limpia la sesión en memoria y devuelve el estado inicial. */
   ejecutar(): void {
     this.session.clear();
   }
@@ -72,14 +220,6 @@ export class CerrarSesionService {
 export class RegistrarUsuarioService {
   constructor(private readonly api: ZentricApiPort) {}
 
-  /**
-   * `POST /api/users`. La unicidad de documento y correo la valida el servidor
-   * (Validación crítica); el cliente no la replica, la pide y propaga el error.
-   *
-   * La sesión **no** se toca: el `Guid` devuelto pertenece al usuario CREADO,
-   * no al llamante. Sobrescribir el `userId` de la sesión con él dejaría al
-   * Administrador que da de alta un Vendedor creyéndose ese Vendedor.
-   */
   ejecutar(input: CreateUserInput): Promise<string> {
     return this.api.createUser(input);
   }
@@ -88,7 +228,6 @@ export class RegistrarUsuarioService {
 export class ConsultarUsuariosService {
   constructor(private readonly api: ZentricApiPort) {}
 
-  /** Listado para el panel del Administrador. */
   ejecutar(): Promise<User[]> {
     return this.api.listUsers();
   }

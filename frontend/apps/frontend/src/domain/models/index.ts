@@ -1,3 +1,4 @@
+export * from './DomainError';
 export * from './ApiError';
 export * from './Health';
 export * from './Auth';

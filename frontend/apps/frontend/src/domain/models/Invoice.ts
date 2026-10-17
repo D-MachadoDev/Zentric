@@ -17,3 +17,9 @@ export interface Invoice {
   /** ISO-8601 (DateTime). */
   issuedAt: string;
 }
+
+/** Entrada para anulación de facturas */
+export interface AnnulInvoiceInput {
+  reason: string;
+}
+

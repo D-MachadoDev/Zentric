@@ -1,7 +1,7 @@
 {
   "extends": "../../packages/config/tsconfig/app.json",
   "compilerOptions": {
-    "types": ["node", "vite/client", "vitest/globals", "@testing-library/jest-dom"],
+    "types": ["node", "vite/client", "vitest/globals", "@testing-library/jest-dom/vitest"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],

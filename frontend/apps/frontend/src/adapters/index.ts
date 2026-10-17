@@ -1,30 +1,28 @@
 import type { ZentricApiPort } from '../domain';
-import { ZentricHttpClient } from './http/ZentricHttpClient';
-import type { ZentricHttpClientOptions } from './http/ZentricHttpClient';
-import { InMemorySession } from './session/InMemorySession';
+import { HttpClient } from './http/HttpClient';
+import type { HttpClientOptions } from './http/HttpClient';
+import { MemorySessionAdapter } from './session/MemorySessionAdapter';
 
 export * from './http/problemDetails';
-export * from './http/ZentricHttpClient';
-export * from './session/InMemorySession';
+export * from './http/HttpClient';
+export * from './session/MemorySessionAdapter';
 export * from './alert/AlertAdapter';
 
 export interface ApiClientBundle {
-  session: InMemorySession;
+  session: MemorySessionAdapter;
   api: ZentricApiPort;
 }
 
 /**
- * Compone la sesión y el cliente HTTP, que se necesitan mutuamente: el cliente
- * lee el token de la sesión y `SessionPort.restore()` necesita al cliente para
- * llamar a `GET /api/auth/me`. Se construye primero la sesión sin dependencias
- * y recién después se enlaza el cargador de identidad.
+ * Compone la sesión en memoria y el cliente HTTP.
  *
- * Fuera de esta función nadie conoce ambos lados a la vez (Frontend-Architecture §2).
+ * El cliente lee el token de la sesión síncronamente y `SessionPort.restore()`
+ * usa el cliente para llamar a `GET /api/auth/me`.
  */
-export function createApiClient(options: Omit<ZentricHttpClientOptions, 'session'> = {}): ApiClientBundle {
-  const session = new InMemorySession();
-  const api = new ZentricHttpClient({ ...options, session });
-  session.bindIdentityLoader(() => api.currentUser());
+export function createApiClient(options: Omit<HttpClientOptions, 'session'> = {}): ApiClientBundle {
+  const session = new MemorySessionAdapter();
+  const api = new HttpClient({ ...options, session });
+  session.bindIdentityLoader(() => api.getCurrentUser());
 
   return { session, api };
 }

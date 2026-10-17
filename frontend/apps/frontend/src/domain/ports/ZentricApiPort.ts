@@ -1,6 +1,9 @@
 import type {
   AddCartItemInput,
   AddStockInput,
+  AdjustInventoryInput,
+  AdjustInventoryResult,
+  AnnulInvoiceInput,
   AuthToken,
   CancelGhostStockInput,
   CreateFulfillmentInput,
@@ -14,111 +17,103 @@ import type {
   InspectReturnInput,
   Invoice,
   Inventory,
+  ListProductsPagedParams,
   LoginInput,
   Order,
   OrderListItem,
+  PagedResult,
   Product,
   RequestReturnInput,
   ReturnRequest,
+  SellerOrderView,
   User,
   Warehouse,
 } from '../models';
+import type { FulfillmentStatus, OrderStatus, ReturnStatus, UserRole } from '../enums';
 
 /**
- * Puerto de salida hacia la API de Zentric (Frontend-Architecture §4).
+ * Puerto de salida unificado hacia la API de Zentric (Frontend-Architecture §5.1).
  *
- * Define QUÉ necesita el cliente, nunca CÓMO se obtiene. Es la única abstracción
- * que conocen los servicios de aplicación; el adaptador HTTP de `adapters/http/`
- * es quien lo implementa.
+ * Contiene los 45 métodos canónicos en inglés (Decision A2) que orquestan los 44 endpoints
+ * REST de negocio de backendSDD/Presentation/01-endpoints.md + 1 sonda /health.
  *
- * Los `*Input` omiten deliberadamente cualquier identidad del llamante
- * (`BuyerId`, `CallerId`, `CallerRole`, `vendorId` cuando aplica): Q-21b dicta
- * que "la identidad la fija el token, no el cuerpo", y el backend la sobreescribe
- * antes del caso de uso. Enviarla sería ruido que se descarta.
+ * Se proporcionan alias compatibles para firmas previas (ej. `getUser` para `getUserById`).
  */
 export interface ZentricApiPort {
-  // ── Transversal ────────────────────────────────────────────────
+  // ── Módulo 9: Sonda de Disponibilidad (/health) ─────────────────────────
   getHealth(): Promise<HealthStatus>;
 
-  // ── Identidad y acceso (§2.1) ──────────────────────────────────
+  // ── Módulo 0: Autenticación e Identidad (/api/auth) ─────────────────────
   login(input: LoginInput): Promise<AuthToken>;
+  getCurrentUser(): Promise<CurrentUser>;
+  /** Alias compatible para getCurrentUser */
   currentUser(): Promise<CurrentUser>;
-  listUsers(): Promise<User[]>;
-  createUser(input: CreateUserInput): Promise<string>;
 
-  // ── Catálogo (§2.2) ────────────────────────────────────────────
-  listProducts(vendorId?: string): Promise<Product[]>;
-  getProduct(id: string): Promise<Product>;
+  // ── Módulo 1: Usuarios y Gestión de Acceso (/api/users) ─────────────────
+  createUser(input: CreateUserInput): Promise<string>;
+  listUsers(role?: UserRole): Promise<User[]>;
+  getUserById(id: string): Promise<User>;
+  /** Alias compatible para getUserById */
+  getUser(id: string): Promise<User>;
+  blockUser(id: string): Promise<void>;
+  activateUser(id: string): Promise<void>;
+
+  // ── Módulo 2: Bodegas Físicas (/api/warehouses) ─────────────────────────
+  createWarehouse(input: CreateWarehouseInput): Promise<string>;
+  listWarehouses(vendorId?: string): Promise<Warehouse[]>;
+  getWarehouseById(id: string): Promise<Warehouse>;
+
+  // ── Módulo 3: Inventarios y Control de Stock (/api/inventories) ─────────
+  addStock(input: AddStockInput): Promise<string>;
+  listInventories(): Promise<Inventory[]>;
+  listInventoryByVariant(variantId: string): Promise<Inventory[]>;
+  adjustInventory(id: string, input: AdjustInventoryInput): Promise<AdjustInventoryResult>;
+
+  // ── Módulo 4: Catálogo de Productos (/api/catalog) ──────────────────────
   createProduct(input: CreateProductInput): Promise<CreatedProduct>;
   publishProduct(productId: string): Promise<void>;
-  /** `POST /api/catalog/products/{id}/suspend` — saca el producto del catálogo comercial (Q-27). Sólo Vendedor. */
   suspendProduct(productId: string): Promise<void>;
+  listProducts(vendorId?: string): Promise<Product[]>;
+  listProductsPaged(params?: ListProductsPagedParams): Promise<PagedResult<Product>>;
+  getProductById(id: string): Promise<Product>;
+  /** Alias compatible para getProductById */
+  getProduct(id: string): Promise<Product>;
 
-  // ── Inventario (§2.3) ──────────────────────────────────────────
-  addStock(input: AddStockInput): Promise<string>;
-  listInventoryByVariant(variantId: string): Promise<Inventory[]>;
-
-  // ── Bodegas ────────────────────────────────────────────────────
-  listWarehouses(): Promise<Warehouse[]>;
-  createWarehouse(input: CreateWarehouseInput): Promise<string>;
-
-  // ── Carrito y pedidos (§2.4) ───────────────────────────────────
-  /** Sin cuerpo: el backend fija el comprador desde el token (Q-21b). */
+  // ── Módulo 5: Carrito y Pedidos (/api/orders) ───────────────────────────
   createCart(): Promise<string>;
   addCartItem(input: AddCartItemInput): Promise<void>;
-  getOrder(id: string): Promise<Order>;
-  /**
-   * `GET /api/Orders` — listado de pedidos visibles para el llamante (ADR-0017).
-   * El Comprador ve los suyos; status es filtro opcional (ADR-0012).
-   */
-  listOrders(status?: string): Promise<OrderListItem[]>;
-  /** `200 OK` **sin cuerpo** (verificado en `OrdersController.Checkout`). */
   checkoutOrder(orderId: string): Promise<void>;
-  /** `200 OK` **sin cuerpo**. No cobra: el backend no tiene pasarela (ADR-0009). */
   payOrder(orderId: string): Promise<void>;
+  listOrders(status?: OrderStatus | string): Promise<OrderListItem[]>;
+  getOrderById(id: string): Promise<Order | SellerOrderView>;
+  /** Alias compatible para getOrderById */
+  getOrder(id: string): Promise<Order | SellerOrderView>;
 
-  // ── Facturación (§2.5) ─────────────────────────────────────────
-  generateInvoices(orderId: string): Promise<boolean>;
-  getInvoicesByOrder(orderId: string): Promise<Invoice[]>;
-
-  // ── Logística (§2.6) ───────────────────────────────────────────
+  // ── Módulo 6: Logística y Despacho (/api/logistics) ─────────────────────
   createFulfillment(input: CreateFulfillmentInput): Promise<string>;
-  /**
-   * `GET /api/Logistics/fulfillments` — cola de despachos visibles (`ADR-0017`).
-   * Operador, Administrador y Supervisor ven la cola completa; status es filtro opcional.
-   */
-  listFulfillments(status?: string): Promise<FulfillmentOrder[]>;
-  /** `GET /api/Logistics/fulfillment/{id}` — detalle de despacho. */
-  getFulfillment(id: string): Promise<FulfillmentOrder>;
-  /**
-   * Ciclo de vida del despacho (`backendSDD/Domain/07-lifecycle.md`): nace en
-   * `PendingPack`, hay que empacar **antes** de despachar y sólo el Operador
-   * Logístico cierra la entrega (Q-23). Los tres devuelven `200 OK` sin cuerpo.
-   */
   packFulfillment(id: string): Promise<void>;
   dispatchFulfillment(id: string): Promise<void>;
   deliverFulfillment(id: string): Promise<void>;
   cancelGhostStock(input: CancelGhostStockInput): Promise<boolean>;
+  listFulfillments(status?: FulfillmentStatus | string): Promise<FulfillmentOrder[]>;
+  getFulfillmentById(id: string): Promise<FulfillmentOrder>;
+  /** Alias compatible para getFulfillmentById */
+  getFulfillment(id: string): Promise<FulfillmentOrder>;
 
-  // ── Devoluciones (§2.7) ────────────────────────────────────────
+  // ── Módulo 7: Devoluciones y Garantías (/api/returns) ───────────────────
   requestReturn(input: RequestReturnInput): Promise<string>;
   inspectReturn(id: string, input: InspectReturnInput): Promise<void>;
-  approveReturn(returnRequestId: string): Promise<void>;
-  /**
-   * `GET /api/Returns` — bandeja propia (`ADR-0017`, sin paginación aún).
-   *
-   * El reparto por rol lo hace el SERVIDOR: el Comprador ve las de sus pedidos,
-   * el Vendedor las de sus productos, y el Operador, el Administrador y el
-   * Supervisor leen sin filtro de dueño. Status es filtro opcional (ADR-0012).
-   */
-  listReturns(status?: string): Promise<ReturnRequest[]>;
-  /** `GET /api/Returns/{id}` — detalle y dictamen de una solicitud. */
-  getReturn(id: string): Promise<ReturnRequest>;
-  /**
-   * `POST /api/Returns/{id}/refund` — **sólo Administrador** (Q-24).
-   *
-   * Acredita el dinero al comprador y sólo cabe sobre una devolución ya
-   * aprobada. Devuelve `200 OK` sin cuerpo.
-   */
+  approveReturn(id: string): Promise<void>;
+  rejectReturn(id: string): Promise<void>;
   refundReturn(id: string): Promise<void>;
+  listReturns(status?: ReturnStatus | string): Promise<ReturnRequest[]>;
+  getReturnById(id: string): Promise<ReturnRequest>;
+  /** Alias compatible para getReturnById */
+  getReturn(id: string): Promise<ReturnRequest>;
+
+  // ── Módulo 8: Facturación Split (/api/billing) ──────────────────────────
+  generateInvoices(orderId: string): Promise<boolean>;
+  annulInvoices(orderId: string, input: AnnulInvoiceInput): Promise<void>;
+  listInvoices(): Promise<Invoice[]>;
+  getInvoicesByOrder(orderId: string): Promise<Invoice[]>;
 }

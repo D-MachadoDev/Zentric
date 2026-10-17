@@ -3,46 +3,40 @@ import { ProductType, UserRole, WarehouseType } from '../../domain';
 import type {
   AddCartItemInput,
   AddStockInput,
+  AdjustInventoryInput,
+  AnnulInvoiceInput,
+  CancelGhostStockInput,
   CreateFulfillmentInput,
   CreateProductInput,
-  CreateWarehouseInput,
   CreateUserInput,
+  CreateWarehouseInput,
+  InspectReturnInput,
   LoginInput,
   RequestReturnInput,
 } from '../../domain';
 
 /**
- * Esquemas de formulario (Q13: React Hook Form + Zod).
+ * Esquemas de validación Zod derivados 1:1 de los contratos OpenAPI y FluentValidation
+ * (Frontend-Domain-Services §4 y backendSDD/Presentation/01-endpoints.md).
  *
- * Regla de §4: el esquema se deriva del contrato real del backend, no al revés.
- * Cada esquema está anclado al tipo de entrada del puerto (`z.ZodType<T, T>`),
- * de modo que una divergencia entre el formulario y el contrato deja de compilar
- * en lugar de fallar en tiempo de ejecución.
- *
- * Alcance: validación ESTRUCTURAL (presencia y tipo). Las reglas de negocio —
- * unicidad de documento y correo, propiedad del recurso, disponibilidad de
- * existencias — las impone el servidor; el cliente sólo ofrece feedback
- * inmediato y propaga el error (Frontend-Domain-Services §1).
+ * Cada esquema está estrictamente anclado al tipo de entrada del puerto (`z.ZodType<T, T>`).
+ * Se proporcionan identificadores en inglés (Decision A2) y alias en español para
+ * compatibilidad retroactiva total.
  */
 
-/**
- * Acceso con credenciales (ADR-0009): correo y contraseña.
- *
- * No valida el formato de correo con una expresión regular: la dirección no es
- * un campo estructural de negocio y el servidor ya decide si acepta el
- * identificador. Aquí sólo se exige presencia para poder dar feedback
- * inmediato sin esperar al `401`.
- */
-export const IniciarSesionSchema: z.ZodType<LoginInput, LoginInput> = z.object({
-  email: z.string().min(1),
-  password: z.string().min(1),
+// ── 1. LoginSchema ──────────────────────────────────────────────────────────
+export const LoginSchema: z.ZodType<LoginInput, LoginInput> = z.object({
+  email: z.string().trim().min(1, 'El correo electrónico es obligatorio'),
+  password: z.string().min(1, 'La contraseña es obligatoria'),
 });
+export const IniciarSesionSchema = LoginSchema;
 
-export const RegistrarUsuarioSchema: z.ZodType<CreateUserInput, CreateUserInput> = z.object({
-  identityDocument: z.string().min(1),
-  fullName: z.string().min(1),
-  email: z.string().min(3),
-  password: z.string().min(1),
+// ── 2. CreateUserSchema ─────────────────────────────────────────────────────
+export const CreateUserSchema: z.ZodType<CreateUserInput, CreateUserInput> = z.object({
+  identityDocument: z.string().trim().min(1, 'El documento de identidad es obligatorio'),
+  fullName: z.string().trim().min(1, 'El nombre completo es obligatorio'),
+  email: z.string().trim().min(3, 'El correo debe tener al menos 3 caracteres'),
+  password: z.string().min(1, 'La contraseña es obligatoria'),
   role: z.enum([
     UserRole.Buyer,
     UserRole.Seller,
@@ -51,86 +45,116 @@ export const RegistrarUsuarioSchema: z.ZodType<CreateUserInput, CreateUserInput>
     UserRole.LogisticsOperator,
   ]),
 });
+export const RegistrarUsuarioSchema = CreateUserSchema;
 
-export const RegistrarBodegaSchema: z.ZodType<CreateWarehouseInput, CreateWarehouseInput> = z
+// ── 3. CreateWarehouseSchema ────────────────────────────────────────────────
+export const CreateWarehouseSchema: z.ZodType<CreateWarehouseInput, CreateWarehouseInput> = z
   .object({
-    name: z.string().min(1),
-    location: z.string().min(1),
-    // El servidor acepta capacidad >= 0 (`CreateWarehouseCommandValidator`).
-    capacity: z.number().int().nonnegative(),
+    name: z.string().trim().min(1, 'El nombre de la bodega es obligatorio'),
+    location: z.string().trim().min(1, 'La ubicación es obligatoria'),
+    capacity: z.number().int('La capacidad debe ser un entero').nonnegative('La capacidad no puede ser negativa'),
     type: z.enum([WarehouseType.Marketplace, WarehouseType.Vendor]),
     vendorId: z.string().nullable(),
   })
-  // Feedback inmediato de lo que el servidor ya valida: una bodega Marketplace
-  // no tiene dueño y una Vendor sí. La autoridad sigue siendo el backend; aquí
-  // sólo se evita un `400` garantizado. El error se ancla a `vendorId` para que
-  // el formulario lo muestre junto al único campo que puede estar mal.
   .refine(
-    (valor) =>
-      valor.type === WarehouseType.Vendor
-        ? valor.vendorId !== null && valor.vendorId.trim().length > 0
-        : valor.vendorId === null,
+    (val) =>
+      val.type === WarehouseType.Vendor
+        ? val.vendorId !== null && val.vendorId.trim().length > 0
+        : val.vendorId === null,
     {
       message: 'Una bodega Vendor necesita el vendedor dueño; una Marketplace no tiene dueño.',
       path: ['vendorId'],
     },
   );
+export const RegistrarBodegaSchema = CreateWarehouseSchema;
 
-const AtributoVarianteSchema = z.object({
-  name: z.string().min(1),
-  value: z.string().min(1),
+// ── 4. AddStockSchema ───────────────────────────────────────────────────────
+export const AddStockSchema: z.ZodType<AddStockInput, AddStockInput> = z.object({
+  variantId: z.string().min(1, 'El identificador de variante es obligatorio'),
+  warehouseId: z.string().min(1, 'El identificador de bodega es obligatorio'),
+  quantity: z.number().int('La cantidad debe ser un entero').positive('La cantidad debe ser mayor a cero'),
+});
+export const IngresarExistenciasSchema = AddStockSchema;
+
+// ── 5. AdjustInventorySchema ────────────────────────────────────────────────
+export const AdjustInventorySchema: z.ZodType<AdjustInventoryInput, AdjustInventoryInput> = z.object({
+  countedQuantity: z
+    .number()
+    .int('La cantidad contada debe ser un entero')
+    .nonnegative('La cantidad contada no puede ser negativa'),
+  reason: z.string().trim().min(1, 'El motivo del ajuste físico es obligatorio'),
 });
 
-const VarianteProductoSchema = z.object({
-  sku: z.string().min(1),
-  attributes: z.array(AtributoVarianteSchema),
+// ── 6. CreateProductSchema ──────────────────────────────────────────────────
+export const VariantAttributeSchema = z.object({
+  name: z.string().trim().min(1, 'El nombre del atributo es obligatorio'),
+  value: z.string().trim().min(1, 'El valor del atributo es obligatorio'),
 });
 
-export const RegistrarProductoSchema: z.ZodType<CreateProductInput, CreateProductInput> = z
+export const CreateProductVariantSchema = z.object({
+  sku: z.string().trim().min(1, 'El SKU es obligatorio'),
+  attributes: z.array(VariantAttributeSchema),
+});
+
+export const CreateProductSchema: z.ZodType<CreateProductInput, CreateProductInput> = z
   .object({
-    name: z.string().min(1),
-    description: z.string().max(2000),
-    // ISO-4217: el backend recibe importe y moneda por separado, no un "precio".
-    priceAmount: z.number().positive(),
-    priceCurrency: z.string().length(3),
+    name: z.string().trim().min(1, 'El nombre del producto es obligatorio'),
+    description: z.string().trim().max(2000, 'La descripción no puede exceder 2000 caracteres'),
+    priceAmount: z.number().positive('El precio debe ser mayor a cero'),
+    priceCurrency: z.string().trim().length(3, 'La moneda debe tener exactamente 3 caracteres ISO (ej. COP, USD)'),
     type: z.enum([ProductType.Physical, ProductType.Digital]),
-    // Un producto Digital puede nacer sin variantes (ADR-0003).
-    variants: z.array(VarianteProductoSchema).optional(),
+    variants: z.array(CreateProductVariantSchema).optional(),
   })
-  // Feedback inmediato de lo que el servidor ya exige (ADR-0003): un producto
-  // `Physical` necesita al menos una variante con SKU. El error se ancla a
-  // `variants` para que el formulario lo muestre donde está el problema.
   .refine(
-    (valor) =>
-      valor.type !== ProductType.Physical ||
-      (valor.variants !== undefined && valor.variants.length > 0),
+    (val) =>
+      val.type !== ProductType.Physical ||
+      (val.variants !== undefined && val.variants.length > 0),
     {
       message: 'Un producto físico necesita al menos una variante con SKU.',
       path: ['variants'],
     },
   );
+export const RegistrarProductoSchema = CreateProductSchema;
 
-export const IngresarExistenciasSchema: z.ZodType<AddStockInput, AddStockInput> = z.object({
-  variantId: z.string().min(1),
-  warehouseId: z.string().min(1),
-  // INV-01: el cliente valida cantidad > 0 como feedback; la autoridad es el servidor.
-  quantity: z.number().int().positive(),
+// ── 7. AddCartItemSchema ────────────────────────────────────────────────────
+export const AddCartItemSchema: z.ZodType<AddCartItemInput, AddCartItemInput> = z.object({
+  orderId: z.string().min(1, 'El identificador de pedido es obligatorio'),
+  variantId: z.string().min(1, 'El identificador de variante es obligatorio'),
+  quantity: z.number().int('La cantidad debe ser un entero').positive('La cantidad debe ser mayor a cero'),
+});
+export const AgregarAlCarritoSchema = AddCartItemSchema;
+
+// ── 8. CreateFulfillmentSchema ──────────────────────────────────────────────
+export const CreateFulfillmentSchema: z.ZodType<CreateFulfillmentInput, CreateFulfillmentInput> = z.object({
+  customerOrderId: z.string().min(1, 'El identificador de pedido es obligatorio'),
+  vendorId: z.string().min(1, 'El identificador de vendedor es obligatorio'),
+});
+export const CrearDespachoSchema = CreateFulfillmentSchema;
+
+// ── 9. CancelGhostStockSchema ───────────────────────────────────────────────
+export const CancelGhostStockSchema: z.ZodType<CancelGhostStockInput, CancelGhostStockInput> = z.object({
+  fulfillmentOrderId: z.string().min(1, 'El identificador de despacho es obligatorio'),
+  variantId: z.string().min(1, 'El identificador de variante es obligatorio'),
+  warehouseId: z.string().min(1, 'El identificador de bodega es obligatorio'),
+  quantityToCancel: z.number().int().positive('La cantidad a cancelar debe ser mayor a cero'),
 });
 
-export const AgregarAlCarritoSchema: z.ZodType<AddCartItemInput, AddCartItemInput> = z.object({
-  orderId: z.string().min(1),
-  variantId: z.string().min(1),
-  quantity: z.number().int().positive(),
+// ── 10. RequestReturnSchema ─────────────────────────────────────────────────
+export const RequestReturnSchema: z.ZodType<RequestReturnInput, RequestReturnInput> = z.object({
+  customerOrderId: z.string().min(1, 'El identificador de pedido es obligatorio'),
+  variantId: z.string().min(1, 'El identificador de variante es obligatorio'),
+  warehouseId: z.string().min(1, 'El identificador de bodega es obligatorio'),
+  quantity: z.number().int().positive('La cantidad a devolver debe ser mayor a cero'),
+});
+export const SolicitarDevolucionSchema = RequestReturnSchema;
+
+// ── 11. InspectReturnSchema ─────────────────────────────────────────────────
+export const InspectReturnSchema: z.ZodType<InspectReturnInput, InspectReturnInput> = z.object({
+  isGoodCondition: z.boolean(),
 });
 
-export const SolicitarDevolucionSchema: z.ZodType<RequestReturnInput, RequestReturnInput> = z.object({
-  customerOrderId: z.string().min(1),
-  variantId: z.string().min(1),
-  warehouseId: z.string().min(1),
-  quantity: z.number().int().positive(),
-});
 
-export const CrearDespachoSchema: z.ZodType<CreateFulfillmentInput, CreateFulfillmentInput> = z.object({
-  customerOrderId: z.string().min(1),
-  vendorId: z.string().min(1),
+// ── 12. AnnulInvoiceSchema ──────────────────────────────────────────────────
+export const AnnulInvoiceSchema: z.ZodType<AnnulInvoiceInput, AnnulInvoiceInput> = z.object({
+  reason: z.string().trim().min(1, 'El motivo de anulación es obligatorio'),
 });

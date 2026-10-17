@@ -74,3 +74,22 @@ export interface CreatedProduct {
   productId: string;
   variantIds: string[];
 }
+
+/** Parámetros de consulta paginada del catálogo */
+export interface ListProductsPagedParams {
+  vendorId?: string;
+  page?: number;
+  size?: number;
+}
+
+/** Envoltorio estándar de paginación del backend */
+export interface PagedResult<T> {
+  items: T[];
+  page: number;
+  size: number;
+  totalItems: number;
+  totalPages: number;
+  hasPrevious?: boolean;
+  hasNext?: boolean;
+}
+
