@@ -48,27 +48,63 @@ namespace Zentric.Api.Bootstrap
             var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
+            bool changed = false;
+
             var existing = users.GetAllAsync(UserRole.Administrator).GetAwaiter().GetResult();
 
-            if (existing.Count > 0)
+            if (existing.Count == 0)
             {
-                logger.LogInformation("Ya existe un Administrador; no se crea otro.");
-                return;
+                var admin = new User(
+                    config["Bootstrap:AdministratorIdentityDocument"] ?? "DOC-BOOTSTRAP-0001",
+                    new FullName(config["Bootstrap:AdministratorFullName"] ?? "Administrador Inicial"),
+                    new Email(email),
+                    hasher.Hash(password),
+                    UserRole.Administrator);
+
+                users.AddAsync(admin).GetAwaiter().GetResult();
+                changed = true;
+                logger.LogWarning(
+                    "Administrador inicial creado con el correo {Email}. Cambie la contrasena y retire Bootstrap__* de la configuracion.",
+                    email);
             }
 
-            var admin = new User(
-                config["Bootstrap:AdministratorIdentityDocument"] ?? "DOC-BOOTSTRAP-0001",
-                new FullName(config["Bootstrap:AdministratorFullName"] ?? "Administrador Inicial"),
-                new Email(email),
-                hasher.Hash(password),
-                UserRole.Administrator);
+            // Cuentas canonicas de QA para pruebas locales y operacion determinista (sin credenciales aleatorias)
+            var qaAccounts = new (string Doc, string Name, string Email, string Pass, UserRole Role)[]
+            {
+                ("DOC-SELLER-001", "Valeria Mendoza (vendedor)", "seller@zentric.local", "SellerLocal12345", UserRole.Seller),
+                ("DOC-BUYER-001", "Andrés Castillo (comprador)", "buyer@zentric.local", "BuyerLocal12345", UserRole.Buyer),
+                ("DOC-LOG-001", "Camila Ríos (logística)", "logistics@zentric.local", "LogisticsLocal12345", UserRole.LogisticsOperator),
+                ("DOC-SUP-001", "Mateo Vargas (supervisor)", "supervisor@zentric.local", "SupervisorLocal12345", UserRole.Supervisor)
+            };
 
-            users.AddAsync(admin).GetAwaiter().GetResult();
-            unitOfWork.SaveChangesAsync().GetAwaiter().GetResult();
+            foreach (var qa in qaAccounts)
+            {
+                var existingUser = users.GetByEmailAsync(new Email(qa.Email)).GetAwaiter().GetResult();
+                if (existingUser is null)
+                {
+                    var newUser = new User(
+                        qa.Doc,
+                        new FullName(qa.Name),
+                        new Email(qa.Email),
+                        hasher.Hash(qa.Pass),
+                        qa.Role);
 
-            logger.LogWarning(
-                "Administrador inicial creado con el correo {Email}. Cambie la contrasena y retire Bootstrap__* de la configuracion.",
-                email);
+                    users.AddAsync(newUser).GetAwaiter().GetResult();
+                    changed = true;
+                    logger.LogInformation("Usuario canonico QA creado: {Email} ({Role})", qa.Email, qa.Role);
+                }
+                else if (existingUser.Status == UserStatus.Blocked)
+                {
+                    existingUser.Activate();
+                    changed = true;
+                    logger.LogInformation("Usuario canonico QA reactivado: {Email}", qa.Email);
+                }
+            }
+
+            if (changed)
+            {
+                unitOfWork.SaveChangesAsync().GetAwaiter().GetResult();
+            }
         }
     }
 }

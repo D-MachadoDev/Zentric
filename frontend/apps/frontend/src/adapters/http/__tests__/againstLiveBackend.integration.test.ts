@@ -70,7 +70,10 @@ async function loginComo(email: string, password: string): Promise<string> {
   return auth.userId;
 }
 
-describe.skipIf(!disponible)('ZentricHttpClient contra el backend real', () => {
+// Solo se ejecuta si se define explicitamente RUN_LIVE_BACKEND_TESTS=true para no mutar ni ensuciar la base de datos de desarrollo
+const shouldRunLive = disponible && process.env.RUN_LIVE_BACKEND_TESTS === 'true';
+
+describe.skipIf(!shouldRunLive)('ZentricHttpClient contra el backend real', () => {
   beforeAll(async () => {
     session.setAccessToken((await api.login(ADMIN)).token);
   });
