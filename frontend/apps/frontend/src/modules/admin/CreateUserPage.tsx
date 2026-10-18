@@ -178,7 +178,7 @@ export function CreateUserPage() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Documento de Identidad */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-border flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-foreground-muted flex items-center gap-1.5">
                     <FileText className="h-3.5 w-3.5 text-brand" />
                     Documento de Identidad (Cédula / NIT / Pasaporte)
                   </label>
@@ -196,7 +196,7 @@ export function CreateUserPage() {
 
                 {/* Nombre Completo */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-border flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-foreground-muted flex items-center gap-1.5">
                     <UserIcon className="h-3.5 w-3.5 text-brand" />
                     Nombre Completo o Razón Social
                   </label>
@@ -214,7 +214,7 @@ export function CreateUserPage() {
 
                 {/* Correo Electrónico */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-border flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-foreground-muted flex items-center gap-1.5">
                     <Mail className="h-3.5 w-3.5 text-brand" />
                     Correo Electrónico Institucional
                   </label>
@@ -232,7 +232,7 @@ export function CreateUserPage() {
 
                 {/* Contraseña */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-border flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-foreground-muted flex items-center gap-1.5">
                     <Lock className="h-3.5 w-3.5 text-brand" />
                     Contraseña Inicial
                   </label>
@@ -250,7 +250,7 @@ export function CreateUserPage() {
 
                 {/* Rol de Usuario */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-border flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-foreground-muted flex items-center gap-1.5">
                     <Shield className="h-3.5 w-3.5 text-brand" />
                     Rol en la Plataforma
                   </label>

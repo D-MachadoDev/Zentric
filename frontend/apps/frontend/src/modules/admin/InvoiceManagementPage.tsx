@@ -118,7 +118,7 @@ export function InvoiceManagementPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
@@ -150,7 +150,7 @@ export function InvoiceManagementPage() {
   }
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -236,7 +236,7 @@ export function InvoiceManagementPage() {
                         <td className="py-4 px-4 font-mono font-semibold text-foreground">
                           #{inv.id.substring(0, 8)}
                         </td>
-                        <td className="py-4 px-4 font-mono text-border">
+                        <td className="py-4 px-4 font-mono text-foreground-muted">
                           #{inv.customerOrderId.substring(0, 8)}
                         </td>
                         <td className="py-4 px-4">
@@ -311,7 +311,7 @@ export function InvoiceManagementPage() {
 
             <form onSubmit={handleGenerate} className="space-y-3 text-xs">
               <div>
-                <label className="text-border block mb-1">ID del Pedido Pagado (UUID)</label>
+                <label className="text-foreground-muted block mb-1">ID del Pedido Pagado (UUID)</label>
                 <Input
                   type="text"
                   placeholder="UUID del pedido a facturar"
@@ -354,7 +354,7 @@ export function InvoiceManagementPage() {
 
             <form onSubmit={handleAnnul} className="space-y-3 text-xs">
               <div>
-                <label className="text-border block mb-1">ID del Pedido a Anular (UUID)</label>
+                <label className="text-foreground-muted block mb-1">ID del Pedido a Anular (UUID)</label>
                 <Input
                   type="text"
                   placeholder="UUID del pedido facturado"
@@ -365,7 +365,7 @@ export function InvoiceManagementPage() {
               </div>
 
               <div>
-                <label className="text-border block mb-1">Motivo Legal de Anulación</label>
+                <label className="text-foreground-muted block mb-1">Motivo Legal de Anulación</label>
                 <Input
                   type="text"
                   placeholder="Ej. Devolución total del pedido"

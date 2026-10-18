@@ -450,4 +450,5 @@ FodyWeavers.xsd
 
 # Carpetas temporales de enjambres y subagentes teamwork
 .agents/teamwork/
+herdr-web-ui/
 

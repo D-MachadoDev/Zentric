@@ -95,7 +95,7 @@ export function UserListPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
@@ -127,7 +127,7 @@ export function UserListPage() {
   }
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -262,7 +262,7 @@ export function UserListPage() {
                             <div className="font-medium text-foreground">{u.name}</div>
                             <div className="text-[11px] text-foreground-muted font-mono">{u.email}</div>
                           </td>
-                          <td className="py-4 px-4 font-mono text-border">
+                          <td className="py-4 px-4 font-mono text-foreground-muted">
                             {u.identityDocument}
                           </td>
                           <td className="py-4 px-4">

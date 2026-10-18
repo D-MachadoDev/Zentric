@@ -45,6 +45,7 @@ export default defineConfig(({ mode }) => ({
   test: {
     environment: 'jsdom',
     globals: true,
+    pool: 'threads',
     setupFiles: ['./vitest.setup.ts'],
     css: false,
     testTimeout: 15000,

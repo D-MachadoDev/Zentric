@@ -208,7 +208,7 @@ export function WarehouseListPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
@@ -240,7 +240,7 @@ export function WarehouseListPage() {
   }
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -335,7 +335,7 @@ export function WarehouseListPage() {
                               ID: {w.id}
                             </div>
                           </td>
-                          <td className="py-4 px-4 text-border font-sans">
+                          <td className="py-4 px-4 text-foreground-muted font-sans">
                             <div className="flex items-center gap-1.5">
                               <MapPin className="h-3.5 w-3.5 text-foreground-muted" />
                               {w.location}
@@ -443,7 +443,7 @@ export function WarehouseListPage() {
             <form onSubmit={handleCreateWarehouse} className="space-y-4 text-xs">
               {/* Nombre */}
               <div className="space-y-1">
-                <label className="text-border font-semibold">Nombre de la Bodega</label>
+                <label className="text-foreground-muted font-semibold">Nombre de la Bodega</label>
                 <Input
                   type="text"
                   placeholder="Ej. Bodega Central Fontibón"
@@ -458,7 +458,7 @@ export function WarehouseListPage() {
 
               {/* Ubicación */}
               <div className="space-y-1">
-                <label className="text-border font-semibold">Ubicación / Dirección</label>
+                <label className="text-foreground-muted font-semibold">Ubicación / Dirección</label>
                 <Input
                   type="text"
                   placeholder="Ej. Calle 26 # 92-32, Bogotá"
@@ -473,7 +473,7 @@ export function WarehouseListPage() {
 
               {/* Capacidad */}
               <div className="space-y-1">
-                <label className="text-border font-semibold">Capacidad Volumétrica (m³)</label>
+                <label className="text-foreground-muted font-semibold">Capacidad Volumétrica (m³)</label>
                 <Input
                   type="number"
                   min={0}
@@ -490,7 +490,7 @@ export function WarehouseListPage() {
 
               {/* Tipo */}
               <div className="space-y-1">
-                <label className="text-border font-semibold">Tipo Canónico de Bodega</label>
+                <label className="text-foreground-muted font-semibold">Tipo Canónico de Bodega</label>
                 <select
                   value={formData.type}
                   onChange={(e) => handleFieldChange('type', e.target.value as WarehouseType)}
@@ -505,7 +505,7 @@ export function WarehouseListPage() {
               {/* Vendedor Dueño (sólo si Vendor) */}
               {formData.type === WarehouseType.Vendor && (
                 <div className="space-y-1">
-                  <label className="text-border font-semibold">
+                  <label className="text-foreground-muted font-semibold">
                     ID del Vendedor Dueño (UUID)
                   </label>
                   <Input
@@ -585,7 +585,7 @@ export function WarehouseListPage() {
 
             <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
               <div className="space-y-1">
-                <label className="text-border font-semibold">Nombre de la Bodega</label>
+                <label className="text-foreground-muted font-semibold">Nombre de la Bodega</label>
                 <Input
                   type="text"
                   value={editFormData.name}
