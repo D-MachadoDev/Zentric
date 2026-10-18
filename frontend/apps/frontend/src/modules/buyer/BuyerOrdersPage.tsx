@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useOrdersQuery } from '../../application/services/orders';
+import { useProductsQuery } from '../../application/services/catalog';
 import { OrderStatus, type OrderListItem } from '../../domain';
 import {
   NOMBRES_DE_ESTADO_DE_PEDIDO,
@@ -26,7 +27,10 @@ import {
   Clock,
   CheckCircle,
   Truck,
+  RotateCcw,
+  Package,
 } from 'lucide-react';
+import { getProductImageUrl } from './productImages';
 
 /**
  * Historial de Pedidos del Comprador (Frontend-Role-Modules §2.4).
@@ -35,6 +39,7 @@ import {
 export function BuyerOrdersPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const { data: orders, isLoading, isError, error, refetch, isFetching } = useOrdersQuery();
+  const { data: products } = useProductsQuery();
 
   const allOrders = orders ?? [];
 
@@ -208,20 +213,22 @@ export function BuyerOrdersPage() {
           }
         />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {filteredOrders.map((order: OrderListItem) => {
             const isPendingPayment = order.status === OrderStatus.PendingPayment;
+            const isDelivered = order.status === OrderStatus.Delivered;
 
             return (
               <div
                 key={order.id}
-                className={`rounded-2xl border p-5 sm:p-6 transition-all bg-surface flex flex-col md:flex-row md:items-center justify-between gap-6 ${
+                className={`rounded-2xl border bg-surface transition-all overflow-hidden ${
                   isPendingPayment
                     ? 'border-warning/50 shadow-lg shadow-warning/5'
-                    : 'border-border hover:border-brand/40'
+                    : 'border-border hover:border-brand/40 shadow-xs'
                 }`}
               >
-                <div className="space-y-2">
+                {/* ── Cabecera del Pedido ── */}
+                <div className="border-b border-border/70 bg-surface-muted/40 p-4 sm:px-6 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="text-sm font-mono font-bold text-foreground">
                       Pedido #{order.id.slice(0, 8)}
@@ -237,31 +244,119 @@ export function BuyerOrdersPage() {
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-foreground-muted">
-                    <span>Fecha: {new Date(order.createdAt).toLocaleDateString('es-CO')}</span>
+                  <div className="flex items-center gap-3 text-xs font-mono text-foreground-muted">
+                    <span>
+                      {new Date(order.createdAt).toLocaleDateString('es-CO', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </span>
                     <span>•</span>
                     <span>
                       {order.itemCount} {order.itemCount === 1 ? 'artículo' : 'artículos'}
                     </span>
-                    <span>•</span>
-                    <span className="text-foreground-muted">ID: {order.id}</span>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4 md:gap-6 border-t md:border-t-0 pt-4 md:pt-0 border-border">
-                  <div className="text-left sm:text-right">
-                    <span className="text-[10px] uppercase font-mono text-foreground-muted block">Importe Total</span>
+                {/* ── Desglose de Artículos del Pedido ── */}
+                <div className="p-4 sm:p-6 divide-y divide-border/50">
+                  {order.items && order.items.length > 0 ? (
+                    order.items.map((item) => {
+                      const matchedProduct = products?.find((p) =>
+                        p.variants?.some((v) => v.id === item.variantId)
+                      );
+                      const matchedVariant = matchedProduct?.variants?.find(
+                        (v) => v.id === item.variantId
+                      );
+                      const imageUrl = matchedProduct
+                        ? getProductImageUrl(matchedProduct)
+                        : 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=300&q=80';
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <img
+                              src={imageUrl}
+                              alt={matchedProduct?.name ?? 'Producto'}
+                              className="h-12 w-12 rounded-xl object-cover bg-surface-muted border border-border shrink-0"
+                              loading="lazy"
+                            />
+                            <div className="min-w-0 space-y-0.5">
+                              <h4 className="text-sm font-semibold text-foreground truncate">
+                                {matchedProduct?.name ?? 'Artículo de compra'}
+                              </h4>
+                              <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-foreground-muted">
+                                {matchedVariant?.sku && (
+                                  <span className="text-[11px] text-brand">
+                                    SKU: {matchedVariant.sku}
+                                  </span>
+                                )}
+                                <span>•</span>
+                                <span>Cant: {item.quantity}</span>
+                                <span>•</span>
+                                <span>
+                                  ${item.unitPrice.toLocaleString('es-CO', { minimumFractionDigits: 0 })} c/u
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <span className="block font-mono text-sm font-bold text-foreground tabular-nums">
+                              ${item.totalPrice.toLocaleString('es-CO', { minimumFractionDigits: 0 })}
+                            </span>
+                            <span className="text-[10px] font-mono text-foreground-muted">
+                              {order.currency || 'COP'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="py-2 text-xs text-foreground-muted font-mono flex items-center gap-2">
+                      <Package className="h-4 w-4 text-brand" />
+                      <span>{order.itemCount} artículo(s) procesados en esta orden.</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Pie del Pedido con Total y Acciones ── */}
+                <div className="border-t border-border/70 bg-surface-muted/20 p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <span className="text-[10px] uppercase font-mono tracking-wider text-foreground-muted block">
+                      Importe Total
+                    </span>
                     <div className="text-xl font-bold font-mono text-foreground tabular-nums">
                       <MoneyAmount amount={order.totalAmount} currency={order.currency} />
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {isPendingPayment && (
                       <Link to="/buyer/orders/$orderId/pay" params={{ orderId: order.id }}>
-                        <Button size="sm" className="bg-warning hover:bg-warning/90 text-primary-foreground font-bold text-xs shadow-md shadow-warning/20">
+                        <Button
+                          size="sm"
+                          className="bg-warning hover:bg-warning/90 text-primary-foreground font-bold text-xs shadow-md shadow-warning/20"
+                        >
                           <CreditCard className="h-3.5 w-3.5 mr-1.5" />
                           Pagar Pedido
+                        </Button>
+                      </Link>
+                    )}
+
+                    {isDelivered && (
+                      <Link to="/buyer/returns/new">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-border text-foreground-muted hover:text-foreground text-xs"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                          Devolución
                         </Button>
                       </Link>
                     )}
@@ -270,7 +365,7 @@ export function BuyerOrdersPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-border text-foreground-muted hover:text-foreground hover:bg-surface-muted"
+                        className="border-border text-foreground-muted hover:text-foreground hover:bg-surface-muted text-xs"
                       >
                         <Eye className="h-3.5 w-3.5 mr-1.5" />
                         Ver Detalle

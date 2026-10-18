@@ -25,7 +25,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Flame,
-  Star,
   RefreshCw,
   Zap,
 } from 'lucide-react';
@@ -224,8 +223,8 @@ export function BuyerCatalogPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4 rounded-xl border border-border/80 bg-surface/90 backdrop-blur-md p-3 text-xs flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-foreground">Despacho desde Bodega Bogotá</p>
-                  <p className="text-[11px] text-foreground-muted font-mono">Stock en tiempo real</p>
+                  <p className="font-semibold text-foreground">Bodegas Certificadas Zentric</p>
+                  <p className="text-[11px] text-foreground-muted font-mono">Stock validado por el backend</p>
                 </div>
                 <span className="rounded-md bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                   En Stock
@@ -356,10 +355,12 @@ export function BuyerCatalogPage() {
 
                   <div className="p-4 flex flex-col flex-1 justify-between space-y-3">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-1 text-[11px] text-amber-500">
-                        <Star className="h-3.5 w-3.5 fill-current" />
-                        <span className="font-bold text-foreground font-mono">4.9</span>
-                        <span className="text-foreground-muted">(38 reseñas)</span>
+                      <div className="flex items-center gap-1.5 text-[11px] text-foreground-muted font-mono">
+                        <span className="font-semibold text-brand">
+                          {product.type === ProductType.Physical ? 'Físico' : 'Digital'}
+                        </span>
+                        <span>·</span>
+                        <span>{product.variants?.length ?? 1} {(product.variants?.length ?? 1) === 1 ? 'variante' : 'variantes'}</span>
                       </div>
                       <h3 className="text-sm font-semibold text-foreground group-hover:text-brand transition-colors line-clamp-1">
                         {product.name}
@@ -661,15 +662,14 @@ export function BuyerCatalogPage() {
                   {/* Cuerpo de la Tarjeta */}
                   <div className="p-5 flex flex-col flex-1 justify-between space-y-4">
                     <div className="space-y-1.5">
-                      {/* Social Proof */}
-                      <div className="flex items-center gap-1 text-[11px] text-amber-500">
-                        <Star className="h-3.5 w-3.5 fill-current" />
-                        <span className="font-bold text-foreground font-mono">4.9</span>
-                        <span className="text-foreground-muted font-sans">(42)</span>
-                        <span className="text-foreground-muted mx-1">·</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                          Envío Zentric Full
+                      {/* Especificación de Variante y Despacho */}
+                      <div className="flex items-center gap-1.5 text-[11px] font-mono text-foreground-muted">
+                        <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Despacho Garantizado
                         </span>
+                        <span>·</span>
+                        <span>{product.variants?.length ?? 1} {(product.variants?.length ?? 1) === 1 ? 'variante' : 'variantes'}</span>
                       </div>
 
                       {/* Título de Producto */}

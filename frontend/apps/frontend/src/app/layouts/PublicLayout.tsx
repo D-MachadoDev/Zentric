@@ -17,7 +17,7 @@ interface PublicLayoutProps {
  */
 export function PublicLayout({ children }: PublicLayoutProps) {
   return (
-    <div className="relative flex min-h-screen flex-col bg-background bg-swiss-grid text-foreground">
+    <div className="relative flex min-h-screen flex-col bg-background text-foreground">
       {/* Cabecera institucional con hairline e indicador indexical */}
       <header className="relative z-10 flex h-16 items-center justify-between border-b border-border bg-background/85 px-6 backdrop-blur-md">
         <div className="flex items-center gap-4">

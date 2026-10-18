@@ -36,15 +36,30 @@ export function BuyerProfilePage() {
   const { user } = useAuth();
   const { data: orders = [] } = useOrdersQuery();
 
-  const [fullName, setFullName] = useState(user?.fullName ?? 'Comprador Zentric');
-  const [email] = useState(user?.email ?? 'comprador@zentric.co');
-  const [phone, setPhone] = useState('+57 310 987 6543');
-  const [address, setAddress] = useState('Carrera 7 # 156-68, Torre B, Apto 904');
-  const [city, setCity] = useState('Bogotá D.C.');
-  const [department, setDepartment] = useState('Cundinamarca');
-  const [postalCode, setPostalCode] = useState('110131');
+  const [fullName, setFullName] = useState(
+    () => localStorage.getItem('zentric_buyer_fullName') || user?.fullName || ''
+  );
+  const email = user?.email ?? '';
+  const [phone, setPhone] = useState(
+    () => localStorage.getItem('zentric_buyer_phone') || ''
+  );
+  const [documentId, setDocumentId] = useState(
+    () => localStorage.getItem('zentric_buyer_doc') || ''
+  );
+  const [address, setAddress] = useState(
+    () => localStorage.getItem('zentric_buyer_address') || ''
+  );
+  const [city, setCity] = useState(
+    () => localStorage.getItem('zentric_buyer_city') || ''
+  );
+  const [department, setDepartment] = useState(
+    () => localStorage.getItem('zentric_buyer_department') || ''
+  );
+  const [postalCode, setPostalCode] = useState(
+    () => localStorage.getItem('zentric_buyer_postalCode') || ''
+  );
   const [notifyEmail, setNotifyEmail] = useState(true);
-  const [notifySms, setNotifySms] = useState(true);
+  const [notifySms, setNotifySms] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const completedOrders = orders.filter((o) => o.status === 'Delivered').length;
@@ -52,6 +67,17 @@ export function BuyerProfilePage() {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    try {
+      localStorage.setItem('zentric_buyer_fullName', fullName);
+      localStorage.setItem('zentric_buyer_phone', phone);
+      localStorage.setItem('zentric_buyer_doc', documentId);
+      localStorage.setItem('zentric_buyer_address', address);
+      localStorage.setItem('zentric_buyer_city', city);
+      localStorage.setItem('zentric_buyer_department', department);
+      localStorage.setItem('zentric_buyer_postalCode', postalCode);
+    } catch {
+      // Ignorar fallos de almacenamiento local
+    }
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 4000);
   };
@@ -179,14 +205,15 @@ export function BuyerProfilePage() {
                     <div className="relative">
                       <Input
                         id="doc"
-                        value="1098765432-1"
-                        disabled
-                        className="pl-9 font-mono opacity-80"
+                        value={documentId}
+                        onChange={(e) => setDocumentId(e.target.value)}
+                        placeholder="Ej: 1098765432"
+                        className="pl-9 font-mono"
                       />
                       <FileText className="absolute left-3 top-2.5 h-4 w-4 text-foreground-muted" />
                     </div>
                     <span className="text-[10px] text-foreground-muted">
-                      Invariable según norma RG-01 de facturación split.
+                      Utilizado para la emisión de facturación electrónica.
                     </span>
                   </div>
                 </div>
@@ -213,6 +240,7 @@ export function BuyerProfilePage() {
                     id="address"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Ej: Carrera 7 # 156-68, Apto 904"
                     required
                   />
                 </div>
@@ -226,6 +254,7 @@ export function BuyerProfilePage() {
                       id="city"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
+                      placeholder="Ej: Bogotá D.C."
                       required
                     />
                   </div>
@@ -237,6 +266,7 @@ export function BuyerProfilePage() {
                       id="department"
                       value={department}
                       onChange={(e) => setDepartment(e.target.value)}
+                      placeholder="Ej: Cundinamarca"
                       required
                     />
                   </div>
@@ -248,6 +278,7 @@ export function BuyerProfilePage() {
                       id="postal"
                       value={postalCode}
                       onChange={(e) => setPostalCode(e.target.value)}
+                      placeholder="Ej: 110131"
                       className="font-mono"
                     />
                   </div>
