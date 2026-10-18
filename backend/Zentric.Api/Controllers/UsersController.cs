@@ -33,10 +33,6 @@ namespace Zentric.Api.Controllers
             _currentUser = currentUser;
         }
 
-        public UsersController(IMediator mediator) : this(mediator, null!)
-        {
-        }
-
         /// <summary>
         /// Registra un nuevo usuario en la plataforma Zentric.
         /// </summary>

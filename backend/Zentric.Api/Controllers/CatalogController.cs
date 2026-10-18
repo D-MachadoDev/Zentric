@@ -161,14 +161,15 @@ namespace Zentric.Api.Controllers
         [ProducesResponseType(typeof(PagedResult<ProductDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetProductsPaged(
             [FromQuery] Guid? vendorId = null,
-            [FromQuery] int page = 0,
+            [FromQuery] int page = 1,
             [FromQuery] int size = PageRequest.DefaultPageSize,
             [FromQuery] string? category = null)
         {
             var userId = _currentUser.UserId;
             if (userId is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
-            var result = await _mediator.Send(new GetProductsPagedQuery(vendorId, userId.Value, page, size, category));
+            var zeroBasedPage = page > 0 ? page - 1 : 0;
+            var result = await _mediator.Send(new GetProductsPagedQuery(vendorId, userId.Value, zeroBasedPage, size, category));
             return Ok(result.Value);
         }
         /// <summary>
