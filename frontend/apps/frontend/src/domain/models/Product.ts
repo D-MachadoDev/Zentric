@@ -33,6 +33,7 @@ export interface Product {
   /** ISO-8601 (DateTime). */
   createdAt: string;
   imageUrl?: string | null;
+  category?: string;
 }
 
 /** Atributo de una variante (`VariantAttributeDto`). */
@@ -64,6 +65,7 @@ export interface CreateProductInput {
   type: ProductType;
   variants?: CreateProductVariantInput[];
   imageUrl?: string | null;
+  category?: string;
 }
 
 /**
@@ -83,6 +85,7 @@ export interface ListProductsPagedParams {
   vendorId?: string;
   page?: number;
   size?: number;
+  category?: string;
 }
 
 /** Envoltorio estándar de paginación del backend */

@@ -58,7 +58,7 @@ export function BuyerCartPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-8 w-48 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-8 h-80 rounded-2xl bg-surface" />
@@ -82,7 +82,7 @@ export function BuyerCartPage() {
           variant="outline"
           size="sm"
           onClick={() => refetch()}
-          className="border-border text-foreground-muted"
+          className="border-border text-foreground-muted transition-all active:scale-[0.98]"
         >
           <RefreshCw className="h-4 w-4 mr-1.5" /> Reintentar
         </Button>
@@ -91,7 +91,7 @@ export function BuyerCartPage() {
   }
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -222,7 +222,7 @@ export function BuyerCartPage() {
               <Button
                 onClick={handleCheckout}
                 disabled={checkoutMutation.isPending}
-                className="w-full h-12 bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-sm shadow-lg shadow-brand/20 disabled:opacity-50"
+                className="w-full h-12 bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-sm shadow-lg shadow-brand/20 disabled:opacity-50 transition-all active:scale-[0.98]"
               >
                 {checkoutMutation.isPending ? (
                   <span className="flex items-center gap-2">

@@ -99,7 +99,7 @@ export function LogisticsFulfillmentsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
@@ -131,7 +131,7 @@ export function LogisticsFulfillmentsPage() {
   }
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -220,13 +220,22 @@ export function LogisticsFulfillmentsPage() {
                       const vendorLabel = isSellerSeed ? 'Valeria Mendoza (Vendedor)' : `Vendedor #${ful.vendorId.substring(0, 8)}`;
                       const vendorSub = isSellerSeed ? 'seller@zentric.local' : ful.vendorId;
 
+                      const isPendingPack = ful.status === FulfillmentStatus.PendingPack;
+
                       return (
-                        <tr key={ful.id} className="hover:bg-surface-muted/40 transition-colors">
+                        <tr
+                          key={ful.id}
+                          className={`transition-colors ${
+                            isPendingPack
+                              ? 'bg-warning/5 hover:bg-warning/10 border-l-2 border-l-warning'
+                              : 'hover:bg-surface-muted/40'
+                          }`}
+                        >
                           <td className="py-4 px-4 font-mono font-semibold text-foreground">
                             <div>#{ful.id.substring(0, 8)}</div>
                             <div className="text-[10px] text-foreground-muted font-mono">Despacho</div>
                           </td>
-                          <td className="py-4 px-4 font-mono text-border">
+                          <td className="py-4 px-4 font-mono text-foreground-muted">
                             <div>#{ful.customerOrderId.substring(0, 8)}</div>
                             <div className="text-[10px] text-foreground-muted font-sans">Pedido Comercial</div>
                           </td>
@@ -239,7 +248,7 @@ export function LogisticsFulfillmentsPage() {
                               variant="outline"
                               className={`text-[11px] font-mono ${
                                 ful.status === FulfillmentStatus.PendingPack
-                                  ? 'border-warning/40 text-warning bg-warning/10'
+                                  ? 'border-warning/50 text-warning bg-warning/15 font-semibold'
                                   : ful.status === FulfillmentStatus.Packed || ful.status === FulfillmentStatus.Dispatched
                                   ? 'border-brand/40 text-brand bg-brand/10'
                                   : ful.status === FulfillmentStatus.Delivered
@@ -247,6 +256,9 @@ export function LogisticsFulfillmentsPage() {
                                   : 'border-red-400/40 text-red-400 bg-red-400/10'
                               }`}
                             >
+                              {isPendingPack && (
+                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-warning animate-pulse mr-1" />
+                              )}
                               {statusName}
                             </Badge>
                           </td>
@@ -293,7 +305,7 @@ export function LogisticsFulfillmentsPage() {
 
             <form onSubmit={handleCreateSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="text-border block mb-1">ID del Pedido Pagado (UUID)</label>
+                <label className="text-foreground-muted block mb-1">ID del Pedido Pagado (UUID)</label>
                 <Input
                   type="text"
                   placeholder="UUID del pedido a despachar"
@@ -309,7 +321,7 @@ export function LogisticsFulfillmentsPage() {
               </div>
 
               <div>
-                <label className="text-border block mb-1">ID del Vendedor Titular (UUID)</label>
+                <label className="text-foreground-muted block mb-1">ID del Vendedor Titular (UUID)</label>
                 <Input
                   type="text"
                   placeholder="UUID del vendedor dueño del stock"

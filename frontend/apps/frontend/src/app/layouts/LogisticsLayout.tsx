@@ -76,7 +76,7 @@ export function LogisticsLayout({ children }: LogisticsLayoutProps) {
       />
 
       {/* Densidad operativa: padding reducido para máxima filas visibles. */}
-      <main className="flex-1 overflow-y-auto bg-swiss-grid p-4 lg:p-6">
+      <main className="flex-1 overflow-y-auto bg-background p-4 lg:p-6">
         {children}
       </main>
     </div>

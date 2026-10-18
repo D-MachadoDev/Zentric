@@ -20,16 +20,21 @@ namespace Zentric.Api.Controllers
     // Ley los deja solo en manos del Administrador (seccion 5: "responsable de la administracion
     // de vendedores"). El Supervisor NO los lee: su "consulta y seguimiento operativo" (seccion
     // 5) no incluye datos personales. Cada usuario conserva su propia identidad por GET /auth/me.
-    [Authorize(Policy = AuthorizationPolicies.UserAdministration)]
     [Tags("1. Usuarios y Roles")]
     [Produces("application/json")]
     public class UsersController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly ICurrentUserAccessor _currentUser;
 
-        public UsersController(IMediator mediator)
+        public UsersController(IMediator mediator, ICurrentUserAccessor currentUser)
         {
             _mediator = mediator;
+            _currentUser = currentUser;
+        }
+
+        public UsersController(IMediator mediator) : this(mediator, null!)
+        {
         }
 
         /// <summary>
@@ -97,6 +102,7 @@ namespace Zentric.Api.Controllers
         /// <param name="role">Filtro opcional por rol de usuario (Buyer, Vendor, Admin, LogisticsOperator, Supervisor).</param>
         /// <response code="200">Lista de usuarios obtenida exitosamente.</response>
         [HttpGet]
+        [Authorize(Policy = AuthorizationPolicies.UserAdministration)]
         [ProducesResponseType(typeof(IReadOnlyList<UserDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUsers([FromQuery] UserRole? role = null)
         {
@@ -111,6 +117,7 @@ namespace Zentric.Api.Controllers
         /// <response code="200">Detalle del usuario obtenido exitosamente.</response>
         /// <response code="404">Usuario no encontrado (RFC 7807 ProblemDetails).</response>
         [HttpGet("{id}")]
+        [Authorize(Policy = AuthorizationPolicies.UserAdministration)]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetUserById(Guid id)
@@ -143,6 +150,7 @@ namespace Zentric.Api.Controllers
         /// <response code="401">Sin token de autenticacion.</response>
         /// <response code="403">El rol del llamante no es Administrador.</response>
         [HttpPost("{id}/block")]
+        [Authorize(Policy = AuthorizationPolicies.UserAdministration)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -169,6 +177,7 @@ namespace Zentric.Api.Controllers
         /// <response code="401">Sin token de autenticacion.</response>
         /// <response code="403">El rol del llamante no es Administrador.</response>
         [HttpPost("{id}/activate")]
+        [Authorize(Policy = AuthorizationPolicies.UserAdministration)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -178,6 +187,56 @@ namespace Zentric.Api.Controllers
             var result = await _mediator.Send(new ActivateUserCommand(id));
             if (result.IsFailure) return result.ToProblem();
             return Ok();
+        }
+
+        /// <summary>
+        /// Obtiene el perfil del usuario autenticado (incluye dirección y teléfono para compradores).
+        /// </summary>
+        /// <response code="200">Perfil del usuario autenticado obtenido exitosamente.</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        /// <response code="404">Usuario no encontrado (RFC 7807 ProblemDetails).</response>
+        [HttpGet("profile")]
+        [Authorize(Policy = AuthorizationPolicies.AnyAuthenticatedUser)]
+        [ProducesResponseType(typeof(UserProfileDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userId = _currentUser.UserId;
+            if (userId is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var result = await _mediator.Send(new GetUserProfileQuery(userId.Value));
+            if (result.IsFailure) return result.ToProblem();
+            return Ok(result.Value);
+        }
+
+        /// <summary>
+        /// Actualiza el perfil del usuario autenticado (nombre, teléfono y dirección física).
+        /// </summary>
+        /// <param name="request">Datos a actualizar en el perfil.</param>
+        /// <response code="200">Perfil actualizado exitosamente.</response>
+        /// <response code="400">Error de validación (RFC 7807 ProblemDetails).</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        [HttpPut("profile")]
+        [Authorize(Policy = AuthorizationPolicies.AnyAuthenticatedUser)]
+        [ProducesResponseType(typeof(UserProfileDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileRequest request)
+        {
+            var userId = _currentUser.UserId;
+            if (userId is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var address = request.ResolveAddress();
+            var command = new UpdateUserProfileCommand(
+                userId.Value,
+                request.FullName,
+                request.Phone,
+                address);
+
+            var result = await _mediator.Send(command);
+            if (result.IsFailure) return result.ToProblem();
+            return Ok(result.Value);
         }
     }
 }

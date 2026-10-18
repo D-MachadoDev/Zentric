@@ -33,6 +33,8 @@ import type {
   SellerOrderView,
   SessionPort,
   User,
+  UserProfile,
+  UpdateUserProfileInput,
   UserRole,
   Warehouse,
   ZentricApiPort,
@@ -186,6 +188,10 @@ export class HttpClient implements ZentricApiPort {
     return body === undefined ? { method: 'POST' } : { method: 'POST', body: JSON.stringify(body) };
   }
 
+  #put(body?: unknown): RequestInit {
+    return body === undefined ? { method: 'PUT' } : { method: 'PUT', body: JSON.stringify(body) };
+  }
+
   // ── Módulo 9: Sonda de Disponibilidad (/health) ─────────────────────────
 
   getHealth(): Promise<HealthStatus> {
@@ -231,6 +237,14 @@ export class HttpClient implements ZentricApiPort {
 
   activateUser(id: string): Promise<void> {
     return this.#json<void>(`/api/Users/${encodeURIComponent(id)}/activate`, this.#post());
+  }
+
+  getUserProfile(): Promise<UserProfile> {
+    return this.#json<UserProfile>('/api/users/profile', { method: 'GET' });
+  }
+
+  updateUserProfile(input: UpdateUserProfileInput): Promise<UserProfile> {
+    return this.#json<UserProfile>('/api/users/profile', this.#put(input));
   }
 
   // ── Módulo 2: Bodegas Físicas (/api/Warehouses) ─────────────────────────
@@ -306,6 +320,7 @@ export class HttpClient implements ZentricApiPort {
     if (params?.vendorId) queryParams.set('vendorId', params.vendorId);
     if (params?.page !== undefined) queryParams.set('page', String(params.page));
     if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    if (params?.category) queryParams.set('category', params.category);
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
     return this.#json<PagedResult<Product>>(`/api/Catalog/products/paged${query}`, { method: 'GET' });
   }

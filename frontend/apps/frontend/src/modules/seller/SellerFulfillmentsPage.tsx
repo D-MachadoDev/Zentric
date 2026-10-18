@@ -160,7 +160,7 @@ export function SellerFulfillmentsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-8 w-48 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
@@ -194,7 +194,7 @@ export function SellerFulfillmentsPage() {
   }
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado de Despachos ─────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -486,7 +486,7 @@ export function SellerFulfillmentsPage() {
 
                   <form onSubmit={handleCancelGhostStock} noValidate className="space-y-3">
                     <div>
-                      <label className="text-[11px] text-border block mb-1">
+                      <label className="text-[11px] text-foreground-muted block mb-1">
                         ID de Variante
                       </label>
                       <Input
@@ -499,7 +499,7 @@ export function SellerFulfillmentsPage() {
                     </div>
 
                     <div>
-                      <label className="text-[11px] text-border block mb-1">
+                      <label className="text-[11px] text-foreground-muted block mb-1">
                         Bodega del Quiebre
                       </label>
                       <select
@@ -518,7 +518,7 @@ export function SellerFulfillmentsPage() {
                     </div>
 
                     <div>
-                      <label className="text-[11px] text-border block mb-1">
+                      <label className="text-[11px] text-foreground-muted block mb-1">
                         Cantidad Faltante
                       </label>
                       <Input

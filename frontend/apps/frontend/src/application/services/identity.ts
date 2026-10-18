@@ -6,6 +6,8 @@ import type {
   LoginInput,
   SessionPort,
   User,
+  UserProfile,
+  UpdateUserProfileInput,
   UserRole,
   ZentricApiPort,
 } from '../../domain';
@@ -152,6 +154,39 @@ export function useActivateUserMutation(api?: ZentricApiPort) {
     },
   });
 }
+
+/**
+ * Hook de consulta para el perfil del usuario autenticado (Slice 3).
+ * GET /api/users/profile
+ */
+export function useUserProfileQuery(api?: ZentricApiPort) {
+  return useQuery({
+    queryKey: queryKeys.users.profile(),
+    queryFn: (): Promise<UserProfile> => resolveApi(api).getUserProfile(),
+    staleTime: 30_000,
+  });
+}
+
+export const useUserProfile = useUserProfileQuery;
+
+/**
+ * Hook de mutación para actualizar el perfil del usuario autenticado (Slice 3).
+ * PUT /api/users/profile
+ */
+export function useUpdateUserProfileMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: UpdateUserProfileInput) => resolveApi(api).updateUserProfile(input),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(queryKeys.users.profile(), updated);
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.profile() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
+    },
+  });
+}
+
+export const useUpdateUserProfile = useUpdateUserProfileMutation;
 
 // ── Clases de servicio heredadas para compatibilidad total ──────────────────
 

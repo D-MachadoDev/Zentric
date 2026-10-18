@@ -24,7 +24,8 @@ namespace Zentric.Application.Catalog.Queries
         string Status,
         IReadOnlyList<ProductVariantDto> Variants,
         DateTime CreatedAt,
-        string? ImageUrl = null);
+        string? ImageUrl = null,
+        string? Category = null);
 
     /// <summary>
     /// Visibilidad del catalogo (Q-27, dictamen Q22=B).
@@ -44,7 +45,7 @@ namespace Zentric.Application.Catalog.Queries
             => vendorId.HasValue && vendorId.Value == callerId ? null : ProductStatus.Published;
     }
 
-    public record GetProductsQuery(Guid? VendorId, Guid CallerId) : IRequest<Result<IReadOnlyList<ProductDto>>>;
+    public record GetProductsQuery(Guid? VendorId, Guid CallerId, string? Category = null) : IRequest<Result<IReadOnlyList<ProductDto>>>;
 
     public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, Result<IReadOnlyList<ProductDto>>>
     {
@@ -62,6 +63,7 @@ namespace Zentric.Application.Catalog.Queries
             var list = await _productRepository.GetAllAsync(
                 request.VendorId,
                 CatalogVisibility.VisibleStatus(request.VendorId, request.CallerId),
+                request.Category,
                 cancellationToken);
 
             var dtos = new List<ProductDto>();
@@ -87,7 +89,8 @@ namespace Zentric.Application.Catalog.Queries
                     p.Status.ToString(),
                     variantDtos,
                     p.CreatedAt,
-                    p.ImageUrl
+                    p.ImageUrl,
+                    p.Category
                 ));
             }
 
@@ -136,7 +139,8 @@ namespace Zentric.Application.Catalog.Queries
                 p.Status.ToString(),
                 variantDtos,
                 p.CreatedAt,
-                p.ImageUrl
+                p.ImageUrl,
+                p.Category
             );
 
             return Result<ProductDto>.Success(dto);
@@ -151,7 +155,7 @@ namespace Zentric.Application.Catalog.Queries
     /// el estado visible baja al repositorio porque el total se cuenta antes del
     /// <c>Skip/Take</c>.
     /// </summary>
-    public record GetProductsPagedQuery(Guid? VendorId, Guid CallerId, int Page = 0, int Size = PageRequest.DefaultPageSize)
+    public record GetProductsPagedQuery(Guid? VendorId, Guid CallerId, int Page = 0, int Size = PageRequest.DefaultPageSize, string? Category = null)
         : IRequest<Result<PagedResult<ProductDto>>>;
 
     public class GetProductsPagedQueryHandler : IRequestHandler<GetProductsPagedQuery, Result<PagedResult<ProductDto>>>
@@ -173,7 +177,7 @@ namespace Zentric.Application.Catalog.Queries
             var (products, total) = await _productRepository.GetPagedAsync(
                 request.VendorId,
                 CatalogVisibility.VisibleStatus(request.VendorId, request.CallerId),
-                page.Skip, page.Take, cancellationToken);
+                page.Skip, page.Take, request.Category, cancellationToken);
 
             var dtos = new List<ProductDto>();
             foreach (var p in products)
@@ -191,7 +195,8 @@ namespace Zentric.Application.Catalog.Queries
                     p.Id, p.Name, p.Description, p.Price.Amount, p.Price.Currency, p.VendorId,
                     p.Type.ToString(), p.Status.ToString(), variantDtos,
                     p.CreatedAt,
-                    p.ImageUrl
+                    p.ImageUrl,
+                    p.Category
                 ));
             }
 

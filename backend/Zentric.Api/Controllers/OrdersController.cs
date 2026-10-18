@@ -86,6 +86,47 @@ namespace Zentric.Api.Controllers
         }
 
         /// <summary>
+        /// Obtiene el listado de pedidos realizados por el comprador autenticado.
+        /// </summary>
+        /// <remarks>
+        /// Satisface el contrato GET /api/orders/buyer. Devuelve la lista de órdenes con ítems enriquecidos
+        /// (nombre de producto, SKU, URL de imagen, vendedor) y tiempo de expiración.
+        /// </remarks>
+        /// <param name="status">Filtro opcional por estado de la orden.</param>
+        /// <response code="200">Listado de órdenes del comprador autenticado.</response>
+        /// <response code="400">Estado de orden inválido (RFC 7807 ProblemDetails).</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        [HttpGet("buyer")]
+        [Authorize(Policy = AuthorizationPolicies.OrderRead)]
+        [ProducesResponseType(typeof(IReadOnlyList<OrderListItemDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetBuyerOrders([FromQuery] string? status)
+        {
+            var userId = _currentUser.UserId;
+            if (userId is null) return MissingIdentity();
+
+            OrderStatus? parsed = null;
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                if (!Enum.TryParse<OrderStatus>(status, ignoreCase: true, out var value)
+                    || !Enum.IsDefined(value))
+                {
+                    return BadRequest(new ProblemDetails
+                    {
+                        Detail = $"'{status}' is not a valid order status. Valid values: {string.Join(", ", Enum.GetNames<OrderStatus>())}."
+                    });
+                }
+
+                parsed = value;
+            }
+
+            var result = await _mediator.Send(new GetOrdersQuery(userId.Value, UserRole.Buyer, parsed));
+            if (result.IsFailure) return result.ToProblem();
+            return Ok(result.Value);
+        }
+
+        /// <summary>
         /// Inicializa un nuevo carrito de compras para el comprador autenticado.
         /// </summary>
         /// <remarks>

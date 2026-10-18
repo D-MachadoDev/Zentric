@@ -1,15 +1,33 @@
 import { useState, type ReactNode } from 'react';
 import { LayoutDashboard, Users, Boxes, Sliders, RotateCcw, Receipt } from 'lucide-react';
 import { LayoutHeader } from './LayoutHeader';
-import { LayoutSidebar, type NavItem } from './LayoutSidebar';
+import { LayoutSidebar, type NavGroup, type NavItem } from './LayoutSidebar';
 
-const adminNavItems: NavItem[] = [
+const adminAnchor: NavItem[] = [
   { href: '/admin', label: 'Panel General', icon: LayoutDashboard },
-  { href: '/admin/users', label: 'Directorio de Usuarios', icon: Users },
-  { href: '/admin/warehouses', label: 'Red de Bodegas', icon: Boxes },
-  { href: '/admin/inventory-adjustments', label: 'Ajustes de Inventario', icon: Sliders },
-  { href: '/admin/returns', label: 'Reembolsos y Devoluciones', icon: RotateCcw },
-  { href: '/admin/invoices', label: 'Facturación Split', icon: Receipt },
+];
+
+const adminGroups: NavGroup[] = [
+  {
+    label: 'GOBERNANZA',
+    items: [
+      { href: '/admin/users', label: 'Directorio de Usuarios', icon: Users },
+    ],
+  },
+  {
+    label: 'INFRAESTRUCTURA',
+    items: [
+      { href: '/admin/warehouses', label: 'Red de Bodegas', icon: Boxes },
+      { href: '/admin/inventory-adjustments', label: 'Ajustes de Inventario', icon: Sliders },
+    ],
+  },
+  {
+    label: 'FINANZAS & POSTVENTA',
+    items: [
+      { href: '/admin/invoices', label: 'Facturación Split', icon: Receipt },
+      { href: '/admin/returns', label: 'Reembolsos y Devoluciones', icon: RotateCcw },
+    ],
+  },
 ];
 
 interface AdminLayoutProps {
@@ -20,18 +38,20 @@ interface AdminLayoutProps {
  * Shell del Administrador — "Centro de Mando" (Frontend-Design-System §9.6).
  * Exige rol Administrator en beforeLoad (C4-4-Codigo-React.md §2: AdminShell).
  *
- * Estructura diferenciada: navegación horizontal de gobernanza tipo pestañas
- * con subrayado de acento (índigo), en lugar de barra lateral persistente.
- * El drawer móvil monta SOLO abierto para no duplicar la navegación.
+ * Estructura diferenciada: barra lateral persistente con secciones mono-caps
+ * agrupadas (GOBERNANZA / INFRAESTRUCTURA / FINANZAS & POSTVENTA), acento
+ * índigo de gobernanza. El lienzo fluido se expande a ancho completo (w-full max-w-none)
+ * para evitar recortes en tablas de datos densas.
  */
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div data-role="admin" className="flex min-h-screen bg-background text-foreground">
-      {/* Barra lateral persistente de administración central */}
+      {/* Barra lateral persistente de administración central con navegación agrupada */}
       <LayoutSidebar
-        items={adminNavItems}
+        items={adminAnchor}
+        groups={adminGroups}
         homeHref="/admin"
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -43,7 +63,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 w-full">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 w-full max-w-none">
           {children}
         </main>
       </div>

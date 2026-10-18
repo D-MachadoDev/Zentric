@@ -15,6 +15,7 @@ namespace Zentric.Infrastructure.Persistence.Mappers
             
             typeof(Buyer).GetProperty("UserId")?.SetValue(buyer, dbModel.UserId);
             typeof(Buyer).GetProperty("MainAddress")?.SetValue(buyer, ToAddress(dbModel.MainAddress));
+            typeof(Buyer).GetProperty("Phone")?.SetValue(buyer, dbModel.Phone);
             typeof(Buyer).GetProperty("IsActiveForCommerce")?.SetValue(buyer, dbModel.IsActiveForCommerce);
             typeof(Buyer).GetProperty("CreatedAt")?.SetValue(buyer, dbModel.CreatedAt);
             typeof(Buyer).GetProperty("UpdatedAt")?.SetValue(buyer, dbModel.UpdatedAt);
@@ -28,6 +29,7 @@ namespace Zentric.Infrastructure.Persistence.Mappers
             {
                 UserId = domain.UserId,
                 MainAddress = FromAddress(domain.MainAddress),
+                Phone = domain.Phone,
                 IsActiveForCommerce = domain.IsActiveForCommerce,
                 CreatedAt = domain.CreatedAt,
                 UpdatedAt = domain.UpdatedAt

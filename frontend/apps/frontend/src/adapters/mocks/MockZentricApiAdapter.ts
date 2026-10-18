@@ -30,6 +30,8 @@ import type {
   ReturnStatus,
   SellerOrderView,
   User,
+  UserProfile,
+  UpdateUserProfileInput,
   UserRole,
   Warehouse,
   UpdateWarehouseInput,
@@ -138,6 +140,22 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     role: 'Administrator' as UserRole,
   };
 
+  userProfile: UserProfile = {
+    id: '00000000-0000-0000-0000-000000000003',
+    email: 'buyer@zentric.test',
+    fullName: 'Comprador Zentric',
+    documentNumber: '1098765432',
+    role: 'Buyer',
+    phone: '+57 300 123 4567',
+    address: {
+      street: 'Carrera 7 # 156-68, Apto 904',
+      city: 'Bogotá D.C.',
+      state: 'Cundinamarca',
+      zipCode: '110131',
+      country: 'Colombia',
+    },
+  };
+
   // ── Sonda /health ────────────────────────────────────────────────────────
   async getHealth(): Promise<HealthStatus> {
     return { ...this.healthStatus };
@@ -236,6 +254,21 @@ export class MockZentricApiAdapter implements ZentricApiPort {
       });
     }
     user.isActive = true;
+  }
+
+  async getUserProfile(): Promise<UserProfile> {
+    return { ...this.userProfile };
+  }
+
+  async updateUserProfile(input: UpdateUserProfileInput): Promise<UserProfile> {
+    this.userProfile = {
+      ...this.userProfile,
+      fullName: input.fullName,
+      phone: input.phone,
+      documentNumber: input.documentNumber ?? this.userProfile.documentNumber,
+      address: input.address ? { ...input.address } : this.userProfile.address,
+    };
+    return { ...this.userProfile };
   }
 
   // ── Warehouses ───────────────────────────────────────────────────────────
@@ -377,9 +410,18 @@ export class MockZentricApiAdapter implements ZentricApiPort {
   async listProductsPaged(params?: ListProductsPagedParams): Promise<PagedResult<Product>> {
     const page = params?.page ?? 0;
     const size = params?.size ?? 10;
-    const filtered = params?.vendorId
+    let filtered = params?.vendorId
       ? this.products.filter((p) => p.vendorId === params.vendorId)
       : this.products;
+    if (params?.category && params.category !== 'all') {
+      const cat = params.category.toLowerCase();
+      filtered = filtered.filter(
+        (p) =>
+          (p.category && p.category.toLowerCase() === cat) ||
+          p.name.toLowerCase().includes(cat) ||
+          (p.description && p.description.toLowerCase().includes(cat)),
+      );
+    }
     const start = page * size;
     const items = filtered.slice(start, start + size);
     return {
@@ -387,7 +429,7 @@ export class MockZentricApiAdapter implements ZentricApiPort {
       page,
       size,
       totalItems: filtered.length,
-      totalPages: Math.ceil(filtered.length / size),
+      totalPages: Math.ceil(filtered.length / size) || 1,
       hasPrevious: page > 0,
       hasNext: start + size < filtered.length,
     };

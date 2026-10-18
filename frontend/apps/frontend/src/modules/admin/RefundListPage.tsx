@@ -75,7 +75,7 @@ export function RefundListPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
@@ -107,7 +107,7 @@ export function RefundListPage() {
   }
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -221,7 +221,7 @@ export function RefundListPage() {
                           <td className="py-4 px-4 font-mono text-foreground">
                             #{ret.id.substring(0, 8)}
                           </td>
-                          <td className="py-4 px-4 font-mono text-border">
+                          <td className="py-4 px-4 font-mono text-foreground-muted">
                             #{ret.customerOrderId.substring(0, 8)}
                           </td>
                           <td className="py-4 px-4 text-right font-mono font-semibold text-foreground tabular-nums">

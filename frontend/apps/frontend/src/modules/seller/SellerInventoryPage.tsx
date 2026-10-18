@@ -125,7 +125,7 @@ export function SellerInventoryPage() {
 
   if (isLoadingInventories || isLoadingWarehouses) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-8 w-48 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
@@ -159,7 +159,7 @@ export function SellerInventoryPage() {
   }
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado de Inventario ─────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -234,7 +234,7 @@ export function SellerInventoryPage() {
 
             <div className="rounded-2xl border border-border bg-surface overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-border font-sans">
+                <table className="w-full text-left text-sm text-foreground font-sans">
                   <thead className="bg-surface-muted text-xs font-semibold text-foreground-muted uppercase tracking-wider border-b border-border">
                     <tr>
                       <th className="py-3 px-4">Variante / SKU</th>
@@ -259,15 +259,30 @@ export function SellerInventoryPage() {
                             <div className="font-medium text-foreground">
                               {variantInfo?.productName ?? 'Variante Registrada'}
                             </div>
-                            <div className="text-xs font-mono text-brand">
-                              SKU: {variantInfo?.sku ?? inv.variantId.substring(0, 8)}
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs font-mono text-brand font-semibold">
+                                SKU: {variantInfo?.sku ?? inv.variantId.substring(0, 8)}
+                              </span>
+                              {inv.availableQuantity === 0 ? (
+                                <Badge className="bg-rose-500/15 text-rose-400 border-rose-500/30 text-[10px] font-mono">
+                                  Agotado
+                                </Badge>
+                              ) : inv.availableQuantity <= 5 ? (
+                                <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-[10px] font-mono">
+                                  Bajo Stock
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px] font-mono">
+                                  En Stock
+                                </Badge>
+                              )}
                             </div>
                             <div className="text-[11px] font-mono text-foreground-muted">
                               ID: {inv.variantId}
                             </div>
                           </td>
                           <td className="py-4 px-4">
-                            <div className="font-medium text-border flex items-center gap-1.5">
+                            <div className="font-medium text-foreground flex items-center gap-1.5">
                               <WarehouseIcon className="h-3.5 w-3.5 text-foreground-muted" />
                               {warehouse?.location ?? 'Bodega Física'}
                             </div>
@@ -328,7 +343,7 @@ export function SellerInventoryPage() {
 
             <form onSubmit={handleAddStock} noValidate className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-border">
+                <label className="text-xs font-semibold text-foreground-muted">
                   Variante a Abastecer
                 </label>
                 <select
@@ -359,7 +374,7 @@ export function SellerInventoryPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-border">
+                <label className="text-xs font-semibold text-foreground-muted">
                   Bodega de Recepción
                 </label>
                 <select
@@ -378,7 +393,7 @@ export function SellerInventoryPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-border">
+                <label className="text-xs font-semibold text-foreground-muted">
                   Cantidad de Unidades
                 </label>
                 <Input

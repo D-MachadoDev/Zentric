@@ -259,7 +259,7 @@ Cada layout de rol ancla su raíz con `data-role="…"`; el scope CSS remapea **
 
 1. **Exención documentada del blanco:** `--surface: #FFFFFF` en claro es **papel nítido, no un gris desaturado**; la regla de tinte frío (`B > R`) se aplica al resto de neutros y a la tinta en ambos modos, y el test de tokens exige exactamente `#FFFFFF` allí.
 2. **Elevación:** en claro, hairline + sombra susurrada (`0 1px 2px` al 4-5% de la tinta); en oscuro, hairline + brillo superior interior (`inset 0 1px 0 rgba(255,255,255,0.04)`). Prohibidas las sombras difusas pesadas y los resplandores neón.
-3. **El resplandor focal es derivado, no literal:** `bg-swiss-grid` y los glows usan `color-mix(in srgb, var(--brand) N%, transparent)`, de modo que la atmósfera sigue al acento de rol y al modo sin rgba fijos.
+3. **El resplandor focal es derivado, no literal:** los acentos usan `color-mix(in srgb, var(--brand) N%, transparent)`, de modo que la atmósfera sigue al acento de rol y al modo sin rgba fijos.
 4. Los patrones prohibidos de §2.2 siguen vigentes: sin texto degradado multicolor, sin barras `border-l-4` chillonas, sin tarjetas clonadas de jerarquía idéntica.
 
 ### 9.4 Compuerta WCAG 2.1 AA (Resultados Verificados)
@@ -280,7 +280,7 @@ La suite `packages/ui/src/tokens/tokens.test.ts` exige programáticamente, para 
 1. **Tokens runtime con nombre final** (`:root` claro, `.dark` oscuro): los componentes y el CSS plano referencian `var(--background)`, `var(--brand)`… directamente en cualquier modo. La clase `.dark` la gobierna `ThemeProvider` (persistencia en `localStorage['zentric.theme']`, esquema nativo `color-scheme` sincronizado, claro por defecto).
 2. **Puente `@theme inline`:** cada token runtime se mapea a su utilidad Tailwind v4 (`bg-brand` → `var(--brand)`); al ser *inline*, las utilidades resuelven el valor **en uso**, por lo que `.dark` y `[data-role]` conmutan sin recompilar ni duplicar valores.
 3. **Tokens estáticos en `@theme` normal:** radios (6/8/12/16/9999), fuentes (`Geist Variable` + `Geist Mono Variable`, empaquetado local `@fontsource-variable`) y curvas de movimiento (`expo.out`, `quint.out`) se emiten a `:root` para el CSS plano.
-4. **`global.css` declarativo:** cero overrides de color; solo utilidades de composición (`bg-swiss-grid`, `surface-hairline`, `kicker-spike`, `nav-group-label`) construidas sobre tokens runtime.
+4. **`global.css` declarativo:** cero overrides de color; solo utilidades de composición (`surface-hairline`, `kicker-spike`, `nav-group-label`) construidas sobre tokens runtime.
 5. **Migración hex → token completada:** 2.271 literales de color del v1/§8 en `apps/frontend/src/modules/**` migrados a tokens (verificado `rg "\[#[0-9A-Fa-f]{6}\]"` = 0). Reglas aplicadas: `text-[#0B0F19]` → `text-primary-foreground` (siempre sobre relleno de acento, verificado caso a caso); `text-white` contextual → `text-primary-foreground` sobre rellenos de acento sólidos y `text-foreground` sobre superficies heredadas (cero gradientes de acento con `text-white` en el corpus).
 
 ### 9.6 Shells por Rol (Estructuras Diferenciadas, Misma Base de Diseño)
@@ -291,7 +291,7 @@ Base común: `LayoutHeader` (chip de rol tintado con el acento, identidad Geist 
 |---|---|---|---|
 | **Buyer** | Portal Comercial | Cabecera horizontal de marketplace + lienzo ancho `max-w-7xl` aireado (`py-10`) + pie comercial + pestañas inferiores en móvil. Sin sidebar. | Acento jade; nav activa en píldora tintada |
 | **Seller** | Estudio del Vendedor | Sidebar persistente `w-64` con ancla de panel + grupos mono-caps (`Catálogo`, `Ventas`); lienzo completo para rejillas de catálogo. | Acento violeta; secciones mono-caps |
-| **Admin** | Centro de Mando | **Sin sidebar en escritorio:** pestañas horizontales de gobernanza con subrayado de acento; drawer móvil que se desmonta cerrado (sin duplicar navegación). | Acento índigo; subrayado `border-b-2` |
+| **Admin** | Centro de Mando | Sidebar persistente `w-64` con ancla de panel + grupos mono-caps (`GOBERNANZA`, `INFRAESTRUCTURA`, `FINANZAS & POSTVENTA`); lienzo fluido de ancho completo (`w-full max-w-none`) para consolas de control y tablas. | Acento índigo; secciones mono-caps |
 | **Logistics** | Tablero de Colas | Cabecera compacta `h-14` + franja de colas en `Geist Mono` mayúsculas con tracking ancho; densidad `p-4` para máximo de filas visibles. Sin sidebar. | Acento cian; ADN de terminal |
 | **Supervisor** | Sala de Libros | Índice forense estrecho `w-56` con grupos mono-caps (`Fiscalización`, `Libro Mayor`, `Inventario`) + contenido enmarcado como hoja continua de libro mayor (`max-w-[1440px]`, hairline único), para lectura de expedientes. | Acento fucsia; documento en vez de tarjetas |
 

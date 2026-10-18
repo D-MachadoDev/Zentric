@@ -11,6 +11,10 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  productName?: string;
+  sku?: string;
+  imageUrl?: string;
+  vendorName?: string;
 }
 
 /**
@@ -28,6 +32,8 @@ export interface Order {
   items: OrderItem[];
   /** ISO-8601 (DateTime). */
   createdAt: string;
+  /** ISO-8601 (DateTime) que marca el fin de la ventana atómica de 15 minutos (PED-01). */
+  expiresAt?: string;
 }
 
 /**
@@ -44,6 +50,8 @@ export interface OrderListItem {
   buyerId: string | null;
   /** ISO-8601 (DateTime). */
   createdAt: string;
+  /** ISO-8601 (DateTime) de expiración de reserva atómica. */
+  expiresAt?: string;
 }
 
 /**

@@ -22,19 +22,12 @@ body,
   flex-direction: column;
 }
 
-/* Retícula arquitectónica suave adaptable a tema y acento de rol.
-   Las líneas toman el color del borde y el resplandor focal el acento --brand
-   del scope [data-role], por eso usa color-mix en vez de rgba fijos. */
+/* Superficie base con tipografía Geist y tokens runtime */
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
   margin: 0;
-  }
-
-.dark .bg-swiss-grid {
-  background-image:
-    none;
 }
 
 /* Elevación de tarjeta comercial: hairline + sombra susurrada en claro,

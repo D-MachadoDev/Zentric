@@ -28,6 +28,8 @@ import type {
   ReturnRequest,
   SellerOrderView,
   User,
+  UserProfile,
+  UpdateUserProfileInput,
   Warehouse,
 } from '../models';
 import type { FulfillmentStatus, OrderStatus, ReturnStatus, UserRole } from '../enums';
@@ -58,6 +60,8 @@ export interface ZentricApiPort {
   getUser(id: string): Promise<User>;
   blockUser(id: string): Promise<void>;
   activateUser(id: string): Promise<void>;
+  getUserProfile(): Promise<UserProfile>;
+  updateUserProfile(input: UpdateUserProfileInput): Promise<UserProfile>;
 
   // ── Módulo 2: Bodegas Físicas (/api/warehouses) ─────────────────────────
   createWarehouse(input: CreateWarehouseInput): Promise<string>;

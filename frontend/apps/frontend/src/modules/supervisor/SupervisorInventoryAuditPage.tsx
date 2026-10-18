@@ -104,7 +104,7 @@ export function SupervisorInventoryAuditPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-7 h-96 rounded-2xl bg-surface" />
@@ -127,7 +127,7 @@ export function SupervisorInventoryAuditPage() {
         <Button
           onClick={() => refetch()}
           variant="outline"
-          className="border-border text-foreground hover:bg-border"
+          className="border-border text-foreground hover:bg-border transition-all active:scale-[0.98]"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
         </Button>
@@ -136,7 +136,7 @@ export function SupervisorInventoryAuditPage() {
   }
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -161,7 +161,7 @@ export function SupervisorInventoryAuditPage() {
           size="sm"
           onClick={() => refetch()}
           disabled={isFetching}
-          className="border-border text-foreground-muted hover:text-foreground"
+          className="border-border text-foreground-muted hover:text-foreground transition-all active:scale-[0.98]"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
           Refrescar
@@ -189,7 +189,7 @@ export function SupervisorInventoryAuditPage() {
             <form onSubmit={handleAdjustSubmit} className="space-y-5">
               {/* Posición de Inventario */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-border">
+                <label className="text-xs font-semibold text-foreground-muted">
                   Posición de Inventario Auditada (ID de Registro)
                 </label>
                 <Input
@@ -232,7 +232,7 @@ export function SupervisorInventoryAuditPage() {
 
               {/* Cantidad Física Contada */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-border">
+                <label className="text-xs font-semibold text-foreground-muted">
                   Cantidad Física Verificada en Bodega (Mayor o igual a 0)
                 </label>
                 <Input
@@ -251,7 +251,7 @@ export function SupervisorInventoryAuditPage() {
 
               {/* Motivo Obligatorio */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-border">
+                <label className="text-xs font-semibold text-foreground-muted">
                   Motivo Obligatorio del Conteo Físico
                 </label>
                 <Input
@@ -271,7 +271,7 @@ export function SupervisorInventoryAuditPage() {
               <Button
                 type="submit"
                 disabled={adjustMutation.isPending}
-                className="w-full bg-warning text-primary-foreground hover:bg-warning/90 font-semibold text-xs"
+                className="w-full bg-warning text-primary-foreground hover:bg-warning/90 font-semibold text-xs transition-all active:scale-[0.98]"
               >
                 {adjustMutation.isPending ? (
                   <>

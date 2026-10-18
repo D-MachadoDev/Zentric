@@ -13,6 +13,7 @@ namespace Zentric.Domain.Products
         public ProductType Type { get; private set; }
         public ProductStatus Status { get; private set; }
         public string? ImageUrl { get; private set; }
+        public string? Category { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
         public DateTime? DeletedAt { get; private set; }
@@ -57,7 +58,8 @@ namespace Zentric.Domain.Products
             Guid vendorId,
             ProductType type,
             IEnumerable<(string Sku, IEnumerable<VariantAttribute> Attributes)>? variants = null,
-            string? imageUrl = null)
+            string? imageUrl = null,
+            string? category = null)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -99,6 +101,7 @@ namespace Zentric.Domain.Products
             Type = type;
             Status = ProductStatus.Published;
             ImageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
+            Category = string.IsNullOrWhiteSpace(category) ? null : category.Trim();
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = CreatedAt;
             DeletedAt = null;
@@ -168,7 +171,7 @@ namespace Zentric.Domain.Products
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void Update(string name, string description, Money price, string? imageUrl = null)
+        public void Update(string name, string description, Money price, string? imageUrl = null, string? category = null)
         {
             if (IsDeleted)
             {
@@ -194,6 +197,21 @@ namespace Zentric.Domain.Products
             {
                 ImageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
             }
+            if (category != null)
+            {
+                Category = string.IsNullOrWhiteSpace(category) ? null : category.Trim();
+            }
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void UpdateCategory(string? category)
+        {
+            if (IsDeleted)
+            {
+                throw new InvalidOperationException("Cannot update category of a deleted product.");
+            }
+
+            Category = string.IsNullOrWhiteSpace(category) ? null : category.Trim();
             UpdatedAt = DateTime.UtcNow;
         }
 

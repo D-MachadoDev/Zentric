@@ -108,7 +108,7 @@ export function SupervisorDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-10 w-72 bg-surface" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
@@ -148,7 +148,7 @@ export function SupervisorDashboardPage() {
   const isHealthy = health?.status === 'healthy';
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado Principal ────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -172,7 +172,7 @@ export function SupervisorDashboardPage() {
           variant="outline"
           size="sm"
           onClick={handleRefreshAll}
-          className="border-border text-foreground-muted hover:text-foreground"
+          className="border-border text-foreground-muted hover:text-foreground transition-all active:scale-[0.98]"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Actualizar Telemetría
         </Button>
@@ -336,7 +336,7 @@ export function SupervisorDashboardPage() {
                           <Link
                             to="/supervisor/orders/$orderId"
                             params={{ orderId: ord.id }}
-                            className="inline-flex items-center gap-1 text-xs font-mono text-border hover:text-brand"
+                            className="inline-flex items-center gap-1 text-xs font-mono text-foreground-muted hover:text-brand"
                           >
                             <Eye className="h-3.5 w-3.5" />
                             Auditar 360°

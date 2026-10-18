@@ -18,6 +18,7 @@ export const queryKeys = {
     all: ['users'] as const,
     list: (filters?: { role?: UserRole }) => ['users', 'list', filters ?? {}] as const,
     detail: (id: string) => ['users', 'detail', id] as const,
+    profile: () => ['users', 'profile'] as const,
   },
   warehouses: {
     all: ['warehouses'] as const,
@@ -32,7 +33,7 @@ export const queryKeys = {
   products: {
     all: ['products'] as const,
     list: (filters?: { vendorId?: string }) => ['products', 'list', filters ?? {}] as const,
-    paged: (params?: { page?: number; size?: number; vendorId?: string }) =>
+    paged: (params?: { page?: number; size?: number; vendorId?: string; category?: string }) =>
       ['products', 'paged', params ?? {}] as const,
     detail: (id: string) => ['products', 'detail', id] as const,
   },

@@ -26,7 +26,6 @@ import {
   Truck,
   FileText,
   RotateCcw,
-  Package,
   AlertCircle,
   ShieldCheck,
 } from 'lucide-react';
@@ -57,7 +56,7 @@ export function BuyerOrderDetailPage() {
 
   if (isLoadingOrder) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-8 w-48 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
@@ -71,7 +70,7 @@ export function BuyerOrderDetailPage() {
     return (
       <div className="p-6 sm:p-10 max-w-4xl mx-auto w-full space-y-4">
         <Link to="/buyer/orders">
-          <Button variant="outline" size="sm" className="border-border text-foreground-muted">
+          <Button variant="outline" size="sm" className="border-border text-foreground-muted transition-all active:scale-[0.98]">
             <ArrowLeft className="h-4 w-4 mr-1.5" /> Volver a Mis Pedidos
           </Button>
         </Link>
@@ -92,13 +91,13 @@ export function BuyerOrderDetailPage() {
   const isDelivered = order.status === OrderStatus.Delivered;
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Navegación y Encabezado ────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Link to="/buyer/orders">
-              <Button variant="outline" size="sm" className="border-border text-foreground-muted hover:text-foreground mr-2">
+              <Button variant="outline" size="sm" className="border-border text-foreground-muted hover:text-foreground mr-2 transition-all active:scale-[0.98]">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
@@ -140,42 +139,65 @@ export function BuyerOrderDetailPage() {
             </div>
 
             <div className="divide-y divide-border">
-              {order.items.map((item: OrderItem) => (
-                <div key={item.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-brand" />
-                      <span className="text-xs font-mono font-bold text-foreground">
-                        SKU Variante: {item.variantId.slice(0, 8)}
-                      </span>
-                    </div>
-                    <p className="text-xs font-mono text-foreground-muted">
-                      ID de Variante: {item.variantId}
-                    </p>
-                  </div>
+              {order.items.map((item: OrderItem) => {
+                const productName = item.productName || `Artículo #${item.variantId.slice(0, 8)}`;
+                const sku = item.sku || item.variantId.slice(0, 8);
+                const imageUrl = item.imageUrl || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=300&q=80';
+                const vendorName = item.vendorName;
 
-                  <div className="flex items-center gap-6 text-right">
-                    <div>
-                      <span className="text-[10px] uppercase font-mono text-foreground-muted block">Cantidad</span>
-                      <span className="text-xs font-mono font-bold text-foreground tabular-nums">
-                        {item.quantity} ud(s)
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] uppercase font-mono text-foreground-muted block">Precio Unitario</span>
-                      <div className="text-xs font-mono text-foreground-muted tabular-nums">
-                        <MoneyAmount amount={item.unitPrice} currency={order.currency} />
+                return (
+                  <div key={item.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <img
+                        src={imageUrl}
+                        alt={productName}
+                        className="h-14 w-14 rounded-xl object-cover bg-surface-muted border border-border shrink-0"
+                        loading="lazy"
+                      />
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="text-sm font-semibold text-foreground truncate">
+                            {productName}
+                          </h4>
+                          {vendorName && (
+                            <Badge variant="outline" className="text-[10px] font-mono border-border text-foreground-muted px-1.5 py-0">
+                              Vendedor: {vendorName}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-foreground-muted">
+                          <Badge variant="outline" className="text-[10px] font-mono border-brand/30 text-brand px-1.5 py-0">
+                            SKU: {sku}
+                          </Badge>
+                          <span>•</span>
+                          <span className="text-[11px] text-foreground-muted">ID: {item.variantId}</span>
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <span className="text-[10px] uppercase font-mono text-foreground-muted block">Importe</span>
-                      <div className="text-sm font-mono font-bold text-foreground tabular-nums">
-                        <MoneyAmount amount={item.totalPrice} currency={order.currency} />
+
+                    <div className="flex items-center gap-6 text-right shrink-0">
+                      <div>
+                        <span className="text-[10px] uppercase font-mono text-foreground-muted block">Cantidad</span>
+                        <span className="text-xs font-mono font-bold text-foreground tabular-nums">
+                          {item.quantity} ud(s)
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] uppercase font-mono text-foreground-muted block">Precio Unitario</span>
+                        <div className="text-xs font-mono text-foreground-muted tabular-nums">
+                          <MoneyAmount amount={item.unitPrice} currency={order.currency} />
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-[10px] uppercase font-mono text-foreground-muted block">Importe</span>
+                        <div className="text-sm font-mono font-bold text-foreground tabular-nums">
+                          <MoneyAmount amount={item.totalPrice} currency={order.currency} />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

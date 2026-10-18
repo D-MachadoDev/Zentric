@@ -62,7 +62,7 @@ export function SupervisorOrdersPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
@@ -85,7 +85,7 @@ export function SupervisorOrdersPage() {
         <Button
           onClick={() => refetch()}
           variant="outline"
-          className="border-border text-foreground hover:bg-border"
+          className="border-border text-foreground hover:bg-border transition-all active:scale-[0.98]"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
         </Button>
@@ -94,7 +94,7 @@ export function SupervisorOrdersPage() {
   }
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -119,7 +119,7 @@ export function SupervisorOrdersPage() {
           size="sm"
           onClick={() => refetch()}
           disabled={isFetching}
-          className="border-border text-foreground-muted hover:text-foreground"
+          className="border-border text-foreground-muted hover:text-foreground transition-all active:scale-[0.98]"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
           Refrescar
@@ -200,7 +200,7 @@ export function SupervisorOrdersPage() {
                           <td className="py-4 px-4">
                             <Badge
                               variant="outline"
-                              className="border-border text-border text-[11px] font-mono"
+                              className="border-border text-foreground-muted text-[11px] font-mono"
                             >
                               {ord.status}
                             </Badge>

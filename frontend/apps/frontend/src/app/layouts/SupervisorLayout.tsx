@@ -57,7 +57,7 @@ export function SupervisorLayout({ children }: SupervisorLayoutProps) {
           onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
         />
 
-        <main className="flex-1 overflow-y-auto bg-swiss-grid p-4 sm:p-6">
+        <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6">
           {/* Hoja de libro mayor: el contenido vive en un documento continuo
               delimitado por hairline, no en tarjetas dispersas (§9.6). */}
           <div className="mx-auto max-w-[1440px] rounded-lg border border-border bg-surface shadow-xs">

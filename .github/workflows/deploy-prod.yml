@@ -1,0 +1,204 @@
+name: Deploy Production (zentric.me)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  quality-gate-backend:
+    name: Backend Quality Gate (.NET 10 + Coverlet >=90%)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Zentric.slnx
+
+      - name: Build backend with strict warning zero-tolerance (-warnaserror)
+        run: dotnet build Zentric.slnx --no-restore -warnaserror -nodeReuse:false
+
+      - name: Execute Test Suite with Code Coverage Gate (>=90%)
+        timeout-minutes: 10
+        run: >-
+          dotnet test Zentric.slnx --no-build --verbosity normal
+          --settings Coverlet.runsettings --collect:"XPlat Code Coverage"
+          --blame-hang-timeout 5m --blame-hang-dump-type none
+
+      - name: Shutdown build servers
+        if: always()
+        run: dotnet build-server shutdown
+
+  quality-gate-frontend:
+    name: Frontend Quality Gate (pnpm + turbo + Vitest >=90%)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.5
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Verify frozen lockfile exists
+        run: test -f pnpm-lock.yaml || (echo "::error::Falta frontend/pnpm-lock.yaml" && exit 1)
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript typecheck
+        run: pnpm typecheck
+
+      - name: Build production bundle
+        run: pnpm build
+
+      - name: Vitest Coverage Gate (@zentric/ui >=90%)
+        working-directory: frontend/packages/ui
+        run: pnpm exec vitest run --coverage
+
+      - name: Vitest Coverage Gate (@zentric/frontend >=90%)
+        working-directory: frontend/apps/frontend
+        run: pnpm exec vitest run --coverage
+
+  build-production-images:
+    name: Build & Validate Multi-Stage Production Images
+    runs-on: ubuntu-latest
+    needs: [quality-gate-backend, quality-gate-frontend]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Multi-Stage Backend Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: false
+          tags: zentric-api:prod
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Multi-Stage Frontend Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: frontend/Dockerfile
+          push: false
+          tags: zentric-frontend:prod
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-production:
+    name: Production Rollout & Migration Gate (zentric.me)
+    runs-on: ubuntu-latest
+    needs: [build-production-images]
+    environment:
+      name: production
+      url: https://zentric.me
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Execute Production Deployment & Migration Gate via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_SSH_PORT || 22 }}
+          timeout: 600s
+          script_stop: true
+          script: |
+            echo "======================================================="
+            echo " Invocando Despliegue en Producción (zentric.me)"
+            echo "======================================================="
+            DEPLOY_DIR="${PROD_DEPLOY_DIR:-/opt/zentric}"
+            mkdir -p "$DEPLOY_DIR"
+            cd "$DEPLOY_DIR"
+
+            # 1. Sincronizar repositorio con rama main
+            echo "--- Paso 1: Sincronizando código desde origin/main ---"
+            if [ -d .git ]; then
+              git fetch origin main
+              git checkout main
+              git reset --hard origin/main
+            else
+              git clone -b main https://github.com/zentric/zentric.git .
+            fi
+
+            # 2. Validar presencia y completitud de variables críticas en .env
+            echo "--- Paso 2: Validando variables de entorno en .env ---"
+            if [ ! -f .env ]; then
+              echo "::error::Archivo .env no encontrado en $DEPLOY_DIR. Abortando despliegue para evitar inconsistencias."
+              exit 1
+            fi
+
+            # Validar que secretos obligatorios no estén vacíos
+            grep -E '^POSTGRES_PASSWORD=' .env | grep -qv 'POSTGRES_PASSWORD=$' || (echo "::error::POSTGRES_PASSWORD no configurado en .env" && exit 1)
+            grep -E '^Jwt__SigningKey=' .env | grep -qv 'Jwt__SigningKey=$' || (echo "::error::Jwt__SigningKey no configurado en .env" && exit 1)
+            grep -E '^Cors__AllowedOrigins=' .env | grep -qv 'Cors__AllowedOrigins=$' || (echo "::error::Cors__AllowedOrigins no configurado en .env" && exit 1)
+
+            # 3. Compuerta de Migración de Base de Datos (Migration Gate)
+            echo "--- Paso 3: Ejecutando Compuerta de Migración de Base de Datos ---"
+            docker compose -f docker-compose.prod.yml --profile migrate run --rm migrator
+
+            # 4. Despliegue Atómico de Contenedores de Producción
+            echo "--- Paso 4: Desplegando Contenedores de Producción ---"
+            docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+
+            # 5. Verificación de Salud en Producción (Health Check Probe)
+            echo "--- Paso 5: Ejecutando Sondeo de Disponibilidad y Salud ---"
+            MAX_ATTEMPTS=15
+            ATTEMPT=1
+            LOCAL_HEALTH_URL="http://127.0.0.1:5076/health"
+            SUCCESS=0
+
+            while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+              echo "Intento $ATTEMPT/$MAX_ATTEMPTS: Sondeando $LOCAL_HEALTH_URL..."
+              RESPONSE=$(curl -s -f "$LOCAL_HEALTH_URL" || true)
+              if echo "$RESPONSE" | grep -q '"status":"healthy"' && echo "$RESPONSE" | grep -q '"database":"up"'; then
+                echo "✓ Backend API y PostgreSQL saludables."
+                SUCCESS=1
+                break
+              fi
+              sleep 5
+              ATTEMPT=$((ATTEMPT + 1))
+            done
+
+            if [ $SUCCESS -ne 1 ]; then
+              echo "::error::La API de producción no superó el sondeo de salud. Revisando bitácoras..."
+              docker compose -f docker-compose.prod.yml logs --tail=100
+              exit 1
+            fi
+
+            echo "======================================================="
+            echo " Despliegue en Producción (zentric.me) COMPLETADO CON ÉXITO"
+            echo "======================================================="

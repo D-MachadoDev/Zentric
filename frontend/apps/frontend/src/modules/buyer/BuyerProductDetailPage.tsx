@@ -128,7 +128,7 @@ export function BuyerProductDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 p-4 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-6 w-full max-w-full">
         <Skeleton className="h-8 w-48 bg-surface-muted" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-7 h-96 rounded-2xl bg-surface-muted" />
@@ -142,7 +142,7 @@ export function BuyerProductDetailPage() {
     return (
       <div className="p-4 sm:p-8 lg:p-10 max-w-4xl mx-auto w-full space-y-4">
         <Link to="/buyer/catalog">
-          <Button variant="outline" size="sm" className="border-border text-foreground-muted hover:text-foreground">
+          <Button variant="outline" size="sm" className="border-border text-foreground-muted hover:text-foreground transition-all active:scale-[0.98]">
             <ArrowLeft className="h-4 w-4 mr-1.5" />
             Volver al Catálogo
           </Button>
@@ -162,11 +162,11 @@ export function BuyerProductDetailPage() {
   const totalPrice = unitPrice * quantity;
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full transition-colors duration-200">
+    <div className="space-y-6 w-full max-w-full transition-colors duration-200">
       {/* ── Navegación y Breadcrumb Comercial ── */}
       <div className="flex items-center justify-between pb-2 border-b border-border">
         <Link to="/buyer/catalog">
-          <Button variant="outline" size="sm" className="border-border text-foreground-muted hover:text-foreground">
+          <Button variant="outline" size="sm" className="border-border text-foreground-muted hover:text-foreground transition-all active:scale-[0.98]">
             <ArrowLeft className="h-4 w-4 mr-1.5" />
             Volver al Catálogo
           </Button>
@@ -242,7 +242,8 @@ export function BuyerProductDetailPage() {
               <img
                 src={getProductImageUrl(product)}
                 alt={product.name}
-                className="h-full w-full object-cover object-center"
+                className="h-full w-full object-cover object-center ring-1 ring-inset ring-black/10 dark:ring-white/10"
+                loading="lazy"
               />
             </div>
 
@@ -429,7 +430,7 @@ export function BuyerProductDetailPage() {
                 type="button"
                 onClick={handleAddToCart}
                 disabled={isSoldOut || isExceedingStock || addCartItemMutation.isPending || createCartMutation.isPending}
-                className="w-full h-12 bg-brand hover:bg-brand-strong text-primary-foreground font-bold text-base shadow-lg shadow-brand/20 disabled:opacity-50 disabled:pointer-events-none transition-all rounded-xl"
+                className="w-full h-12 bg-brand hover:bg-brand-strong text-primary-foreground font-bold text-base shadow-lg shadow-brand/20 disabled:opacity-50 disabled:pointer-events-none transition-all active:scale-[0.98] rounded-xl"
               >
                 {addCartItemMutation.isPending || createCartMutation.isPending ? (
                   <span className="flex items-center gap-2">

@@ -1,0 +1,177 @@
+name: Deploy Development (dev.zentric.me)
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  test-backend:
+    name: Backend Test Suite (.NET 10)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Zentric.slnx
+
+      - name: Build backend (-warnaserror)
+        run: dotnet build Zentric.slnx --no-restore -warnaserror -nodeReuse:false
+
+      - name: Run unit & architecture tests
+        run: dotnet test Zentric.slnx --no-build --filter "FullyQualifiedName!~E2E" --verbosity normal
+
+      - name: Shutdown build servers
+        if: always()
+        run: dotnet build-server shutdown
+
+  test-frontend:
+    name: Frontend Test Suite (pnpm + Vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.5
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Run TypeScript typecheck
+        run: pnpm typecheck
+
+      - name: Run Vitest test suites
+        run: pnpm test:run
+
+      - name: Build frontend static bundle
+        run: pnpm build
+
+  build-dev-containers:
+    name: Build & Validate Dev Docker Images
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Backend Docker Image (Validation)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: false
+          tags: zentric-api:dev-preview
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Frontend Docker Image (Validation)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: frontend/Dockerfile
+          push: false
+          tags: zentric-frontend:dev-preview
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-staging:
+    name: Deploy to Staging (dev.zentric.me)
+    runs-on: ubuntu-latest
+    needs: [build-dev-containers]
+    environment:
+      name: staging
+      url: https://dev.zentric.me
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Execute Remote Staging Deployment via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT || 22 }}
+          timeout: 300s
+          script_stop: true
+          script: |
+            echo "=== Iniciando despliegue en dev.zentric.me ==="
+            DEPLOY_DIR="${STAGING_DEPLOY_DIR:-/opt/zentric-dev}"
+            mkdir -p "$DEPLOY_DIR"
+            cd "$DEPLOY_DIR"
+
+            # Sincronizar repositorio con rama develop
+            if [ -d .git ]; then
+              git fetch origin develop
+              git checkout develop
+              git reset --hard origin/develop
+            else
+              git clone -b develop https://github.com/zentric/zentric.git .
+            fi
+
+            # Verificar presencia de archivo .env
+            if [ ! -f .env ]; then
+              echo "ADVERTENCIA: .env no encontrado, copiando .env.example"
+              cp .env.example .env
+            fi
+
+            # Reconstruir y levantar servicios en segundo plano con hot-reload/dev containers
+            echo "=== Levantando servicios de desarrollo ==="
+            docker compose down --remove-orphans
+            docker compose up -d --build
+
+            # Verificación de salud (Health Check Probe)
+            echo "=== Verificando disponibilidad del backend API ==="
+            MAX_ATTEMPTS=12
+            ATTEMPT=1
+            HEALTH_URL="http://127.0.0.1:5076/health"
+            SUCCESS=0
+
+            while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+              echo "Intento $ATTEMPT/$MAX_ATTEMPTS: Comprobando $HEALTH_URL..."
+              if curl -s -f "$HEALTH_URL" | grep -q '"status":"healthy"'; then
+                echo "✓ Backend API saludable y conectado a base de datos."
+                SUCCESS=1
+                break
+              fi
+              sleep 5
+              ATTEMPT=$((ATTEMPT + 1))
+            done
+
+            if [ $SUCCESS -ne 1 ]; then
+              echo "::error::Fallo en la prueba de salud tras despliegue en dev.zentric.me"
+              docker compose logs --tail=50
+              exit 1
+            fi
+
+            echo "=== Despliegue en dev.zentric.me finalizado con éxito ==="

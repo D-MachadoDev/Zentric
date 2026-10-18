@@ -32,3 +32,46 @@ export interface CreateUserInput {
   password: string;
   role: UserRole;
 }
+
+/**
+ * Dirección física de despacho del comprador (`AddressDto`).
+ */
+export interface UserAddress {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country?: string;
+}
+
+export type AddressDto = UserAddress;
+
+/**
+ * Perfil persistente del usuario / comprador (`UserProfileDto`).
+ * Origen: GET /api/users/profile
+ */
+export interface UserProfile {
+  id: string;
+  email: string;
+  fullName: string;
+  documentNumber?: string;
+  role: string;
+  phone?: string | null;
+  address?: UserAddress | null;
+}
+
+export type UserProfileDto = UserProfile;
+
+/**
+ * Entrada para actualizar el perfil del usuario (`UpdateUserProfileRequest`).
+ * Origen: PUT /api/users/profile
+ */
+export interface UpdateUserProfileInput {
+  fullName: string;
+  phone?: string | null;
+  documentNumber?: string | null;
+  address?: UserAddress | null;
+}
+
+export type UpdateUserProfileRequest = UpdateUserProfileInput;
+

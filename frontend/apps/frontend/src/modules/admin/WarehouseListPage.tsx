@@ -335,7 +335,7 @@ export function WarehouseListPage() {
                               ID: {w.id}
                             </div>
                           </td>
-                          <td className="py-4 px-4 text-foreground-muted font-sans">
+                          <td className="py-4 px-4 text-foreground-muted font-mono text-xs">
                             <div className="flex items-center gap-1.5">
                               <MapPin className="h-3.5 w-3.5 text-foreground-muted" />
                               {w.location}
@@ -396,7 +396,7 @@ export function WarehouseListPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleStartEdit(w)}
-                              className="border-border hover:border-brand text-border hover:text-brand text-xs h-7 px-2.5 transition-colors"
+                              className="border-border hover:border-brand text-foreground-muted hover:text-brand text-xs h-7 px-2.5 transition-colors active:scale-[0.98]"
                             >
                               <Edit2 className="h-3 w-3 mr-1" /> Editar
                             </Button>
@@ -600,7 +600,7 @@ export function WarehouseListPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-border font-semibold">Ubicación</label>
+                <label className="text-foreground-muted font-semibold">Ubicación</label>
                 <Input
                   type="text"
                   value={editFormData.location}
@@ -615,7 +615,7 @@ export function WarehouseListPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-border font-semibold">Capacidad de Almacenamiento (m³)</label>
+                <label className="text-foreground-muted font-semibold">Capacidad de Almacenamiento (m³)</label>
                 <Input
                   type="number"
                   min={0}
@@ -635,7 +635,7 @@ export function WarehouseListPage() {
 
               <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface-muted border border-border">
                 <div>
-                  <div className="text-xs font-semibold text-border">Estado Operativo</div>
+                  <div className="text-xs font-semibold text-foreground-muted">Estado Operativo</div>
                   <div className="text-[11px] text-foreground-muted">
                     {editFormData.isActive
                       ? 'Bodega activa para recepción de stock y despachos'

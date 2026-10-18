@@ -42,8 +42,12 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             return dbModel == null ? null : ProductMapper.ToDomain(dbModel);
         }
 
-        public async Task<IReadOnlyList<Product>> GetAllAsync(
+        public Task<IReadOnlyList<Product>> GetAllAsync(
             Guid? vendorId = null, ProductStatus? status = null, CancellationToken cancellationToken = default)
+            => GetAllAsync(vendorId, status, null, cancellationToken);
+
+        public async Task<IReadOnlyList<Product>> GetAllAsync(
+            Guid? vendorId, ProductStatus? status, string? category, CancellationToken cancellationToken = default)
         {
             var query = _dbContext.Products
                 .Include(p => p.Variants)
@@ -64,12 +68,22 @@ namespace Zentric.Infrastructure.Persistence.Repositories
                 query = query.Where(p => p.Status == status.Value);
             }
 
+            if (!string.IsNullOrWhiteSpace(category) && !string.Equals(category, "all", StringComparison.OrdinalIgnoreCase))
+            {
+                var catLower = category.Trim().ToLower();
+                query = query.Where(p => p.Category != null && p.Category.ToLower() == catLower);
+            }
+
             var list = await query.ToListAsync(cancellationToken);
             return list.Select(ProductMapper.ToDomain).ToList();
         }
 
-        public async Task<(IReadOnlyList<Product> Items, int TotalItems)> GetPagedAsync(
+        public Task<(IReadOnlyList<Product> Items, int TotalItems)> GetPagedAsync(
             Guid? vendorId, ProductStatus? status, int skip, int take, CancellationToken cancellationToken = default)
+            => GetPagedAsync(vendorId, status, skip, take, null, cancellationToken);
+
+        public async Task<(IReadOnlyList<Product> Items, int TotalItems)> GetPagedAsync(
+            Guid? vendorId, ProductStatus? status, int skip, int take, string? category, CancellationToken cancellationToken = default)
         {
             var query = _dbContext.Products
                 .Include(p => p.Variants)
@@ -87,6 +101,12 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             if (status.HasValue)
             {
                 query = query.Where(p => p.Status == status.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(category) && !string.Equals(category, "all", StringComparison.OrdinalIgnoreCase))
+            {
+                var catLower = category.Trim().ToLower();
+                query = query.Where(p => p.Category != null && p.Category.ToLower() == catLower);
             }
 
             // El total se cuenta antes de aplicar Skip/Take: es lo que permite

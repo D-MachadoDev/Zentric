@@ -14,6 +14,7 @@ import type {
   InspectReturnInput,
   LoginInput,
   RequestReturnInput,
+  UpdateUserProfileInput,
 } from '../../domain';
 
 /**
@@ -167,3 +168,22 @@ export const InspectReturnSchema: z.ZodType<InspectReturnInput, InspectReturnInp
 export const AnnulInvoiceSchema: z.ZodType<AnnulInvoiceInput, AnnulInvoiceInput> = z.object({
   reason: z.string().trim().min(1, 'El motivo de anulación es obligatorio'),
 });
+
+// ── 13. UpdateUserProfileSchema ─────────────────────────────────────────────
+export const UpdateUserProfileSchema: z.ZodType<UpdateUserProfileInput, UpdateUserProfileInput> = z.object({
+  fullName: z.string().trim().min(1, 'El nombre completo es obligatorio'),
+  phone: z.string().trim().nullable().optional(),
+  documentNumber: z.string().trim().nullable().optional(),
+  address: z
+    .object({
+      street: z.string().trim().min(1, 'La dirección es obligatoria'),
+      city: z.string().trim().min(1, 'La ciudad es obligatoria'),
+      state: z.string().trim().min(1, 'El departamento es obligatorio'),
+      zipCode: z.string().trim().min(1, 'El código postal es obligatorio'),
+      country: z.string().trim().optional(),
+    })
+    .nullable()
+    .optional(),
+});
+export const ActualizarPerfilUsuarioSchema = UpdateUserProfileSchema;
+

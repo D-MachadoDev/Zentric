@@ -121,11 +121,15 @@ namespace Zentric.Api.Controllers
         /// <c>publish</c>.
         /// </remarks>
         /// <param name="vendorId">Filtro opcional por identificador único del vendedor.</param>
+        /// <param name="category">Filtro opcional por categoría del producto.</param>
         /// <response code="200">Lista de productos obtenida exitosamente.</response>
         [HttpGet("products")]
+        [HttpGet("/api/products")]
         [Authorize(Policy = AuthorizationPolicies.AnyAuthenticatedUser)]
         [ProducesResponseType(typeof(IReadOnlyList<ProductDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetProducts([FromQuery] Guid? vendorId = null)
+        public async Task<IActionResult> GetProducts(
+            [FromQuery] Guid? vendorId = null,
+            [FromQuery] string? category = null)
         {
             // Q-27 (Q22=B): la identidad viene del token y decide qué se ve. Pedir el
             // propio vendorId es la vista de gestión del dueno; cualquier otro filtro
@@ -133,7 +137,7 @@ namespace Zentric.Api.Controllers
             var userId = _currentUser.UserId;
             if (userId is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
-            var result = await _mediator.Send(new GetProductsQuery(vendorId, userId.Value));
+            var result = await _mediator.Send(new GetProductsQuery(vendorId, userId.Value, category));
             return Ok(result.Value);
         }
 
@@ -149,19 +153,22 @@ namespace Zentric.Api.Controllers
         /// <param name="vendorId">Filtro opcional por identificador único del vendedor.</param>
         /// <param name="page">Página basada en cero (primera página = 0).</param>
         /// <param name="size">Tamaño de página (1..100, por defecto 20).</param>
+        /// <param name="category">Filtro opcional por categoría del producto.</param>
         /// <response code="200">Página de productos con metadatos de paginación.</response>
         [HttpGet("products/paged")]
+        [HttpGet("/api/products/paged")]
         [Authorize(Policy = AuthorizationPolicies.AnyAuthenticatedUser)]
         [ProducesResponseType(typeof(PagedResult<ProductDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetProductsPaged(
             [FromQuery] Guid? vendorId = null,
             [FromQuery] int page = 0,
-            [FromQuery] int size = PageRequest.DefaultPageSize)
+            [FromQuery] int size = PageRequest.DefaultPageSize,
+            [FromQuery] string? category = null)
         {
             var userId = _currentUser.UserId;
             if (userId is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
-            var result = await _mediator.Send(new GetProductsPagedQuery(vendorId, userId.Value, page, size));
+            var result = await _mediator.Send(new GetProductsPagedQuery(vendorId, userId.Value, page, size, category));
             return Ok(result.Value);
         }
         /// <summary>

@@ -87,7 +87,7 @@ export function LogisticsReturnsInspectPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
@@ -110,7 +110,7 @@ export function LogisticsReturnsInspectPage() {
         <Button
           onClick={() => refetch()}
           variant="outline"
-          className="border-border text-foreground hover:bg-border"
+          className="border-border text-foreground hover:bg-border transition-all active:scale-[0.98]"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
         </Button>
@@ -119,7 +119,7 @@ export function LogisticsReturnsInspectPage() {
   }
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -233,7 +233,7 @@ export function LogisticsReturnsInspectPage() {
                           <td className="py-4 px-4 font-mono font-semibold text-foreground">
                             #{ret.id.substring(0, 8)}
                           </td>
-                          <td className="py-4 px-4 font-mono text-border">
+                          <td className="py-4 px-4 font-mono text-foreground-muted">
                             #{ret.customerOrderId.substring(0, 8)}
                           </td>
                           <td className="py-4 px-4 text-right font-mono font-semibold text-foreground tabular-nums">
@@ -302,7 +302,7 @@ export function LogisticsReturnsInspectPage() {
 
               {/* Formulario de Dictamen */}
               <form onSubmit={handleInspectSubmit} className="space-y-4 pt-2 border-t border-border">
-                <label className="text-xs font-semibold text-border block">
+                <label className="text-xs font-semibold text-foreground-muted block">
                   Dictamen Físico de Recepción en Bodega
                 </label>
 
@@ -310,7 +310,7 @@ export function LogisticsReturnsInspectPage() {
                   <button
                     type="button"
                     onClick={() => setIsGoodCondition(true)}
-                    className={`p-3 rounded-xl border text-xs font-semibold flex flex-col items-center gap-1.5 transition-colors ${
+                    className={`p-3 rounded-xl border text-xs font-semibold flex flex-col items-center gap-1.5 transition-all active:scale-[0.98] ${
                       isGoodCondition
                         ? 'border-brand bg-brand/10 text-brand'
                         : 'border-border bg-surface-muted/40 text-foreground-muted hover:border-foreground-muted'
@@ -323,7 +323,7 @@ export function LogisticsReturnsInspectPage() {
                   <button
                     type="button"
                     onClick={() => setIsGoodCondition(false)}
-                    className={`p-3 rounded-xl border text-xs font-semibold flex flex-col items-center gap-1.5 transition-colors ${
+                    className={`p-3 rounded-xl border text-xs font-semibold flex flex-col items-center gap-1.5 transition-all active:scale-[0.98] ${
                       !isGoodCondition
                         ? 'border-red-500 bg-red-950/40 text-red-400'
                         : 'border-border bg-surface-muted/40 text-foreground-muted hover:border-foreground-muted'
@@ -337,7 +337,7 @@ export function LogisticsReturnsInspectPage() {
                 <Button
                   type="submit"
                   disabled={inspectMutation.isPending}
-                  className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold text-xs"
+                  className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold text-xs transition-all active:scale-[0.98]"
                 >
                   {inspectMutation.isPending ? 'Registrando...' : 'Emitir Dictamen Físico'}
                 </Button>

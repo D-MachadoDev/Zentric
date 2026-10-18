@@ -24,6 +24,12 @@ namespace Zentric.Api.Bootstrap
     public static class AdministratorBootstrapper
     {
         /// <summary>
+        /// Identificador canónico y determinista para la vendedora Valeria Mendoza (ADR-0009 / R1).
+        /// Requerido por frontend y contratos para evitar discrepancias de sesión.
+        /// </summary>
+        public static readonly Guid CanonicalSellerId = Guid.Parse("0b01129d-c0a9-4325-8394-4b9e636a4e88");
+
+        /// <summary>
         /// Crea el Administrador inicial si y solo si no existe ya ninguno, de modo que un
         /// despliegue no lo duplique en cada reinicio. No hace nada si faltan las credenciales.
         /// </summary>
@@ -33,8 +39,8 @@ namespace Zentric.Api.Bootstrap
         {
             var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("Zentric.Bootstrap");
 
-            string email = config["Bootstrap:AdministratorEmail"] ?? string.Empty;
-            string password = config["Bootstrap:AdministratorPassword"] ?? string.Empty;
+            string email = config["Bootstrap:AdministratorEmail"] ?? "admin@zentric.local";
+            string password = config["Bootstrap:AdministratorPassword"] ?? "AdminLocal12345";
 
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
@@ -69,12 +75,12 @@ namespace Zentric.Api.Bootstrap
             }
 
             // Cuentas canonicas de QA para pruebas locales y operacion determinista (sin credenciales aleatorias)
-            var qaAccounts = new (string Doc, string Name, string Email, string Pass, UserRole Role)[]
+            var qaAccounts = new (string Doc, string Name, string Email, string Pass, UserRole Role, Guid? Id)[]
             {
-                ("DOC-SELLER-001", "Valeria Mendoza (vendedor)", "seller@zentric.local", "SellerLocal12345", UserRole.Seller),
-                ("DOC-BUYER-001", "Andrés Castillo (comprador)", "buyer@zentric.local", "BuyerLocal12345", UserRole.Buyer),
-                ("DOC-LOG-001", "Camila Ríos (logística)", "logistics@zentric.local", "LogisticsLocal12345", UserRole.LogisticsOperator),
-                ("DOC-SUP-001", "Mateo Vargas (supervisor)", "supervisor@zentric.local", "SupervisorLocal12345", UserRole.Supervisor)
+                ("DOC-SELLER-001", "Valeria Mendoza (vendedor)", "seller@zentric.local", "SellerLocal12345", UserRole.Seller, CanonicalSellerId),
+                ("DOC-BUYER-001", "Andrés Castillo (comprador)", "buyer@zentric.local", "BuyerLocal12345", UserRole.Buyer, null),
+                ("DOC-LOG-001", "Camila Ríos (logística)", "logistics@zentric.local", "LogisticsLocal12345", UserRole.LogisticsOperator, null),
+                ("DOC-SUP-001", "Mateo Vargas (supervisor)", "supervisor@zentric.local", "SupervisorLocal12345", UserRole.Supervisor, null)
             };
 
             foreach (var qa in qaAccounts)
@@ -87,11 +93,14 @@ namespace Zentric.Api.Bootstrap
                         new FullName(qa.Name),
                         new Email(qa.Email),
                         hasher.Hash(qa.Pass),
-                        qa.Role);
+                        qa.Role)
+                    {
+                        Id = qa.Id ?? Guid.NewGuid()
+                    };
 
                     users.AddAsync(newUser).GetAwaiter().GetResult();
                     changed = true;
-                    logger.LogInformation("Usuario canonico QA creado: {Email} ({Role})", qa.Email, qa.Role);
+                    logger.LogInformation("Usuario canonico QA creado: {Email} ({Role}) con ID {UserId}", qa.Email, qa.Role, newUser.Id);
                 }
                 else if (existingUser.Status == UserStatus.Blocked)
                 {
@@ -105,6 +114,9 @@ namespace Zentric.Api.Bootstrap
             {
                 unitOfWork.SaveChangesAsync().GetAwaiter().GetResult();
             }
+
+            // Sembrado de catálogo, bodegas e inventarios para Valeria Mendoza y el marketplace
+            CatalogSeeder.Seed(scope.ServiceProvider, logger);
         }
     }
 }

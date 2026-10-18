@@ -87,7 +87,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
               <Truck className="h-3.5 w-3.5" />
               Despacho particionado desde bodegas físicas certificadas
             </span>
-            <span className="hidden sm:inline text-border">|</span>
+            <span className="hidden sm:inline text-foreground-subtle" aria-hidden="true">|</span>
             <span className="hidden sm:flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5 text-amber-500" />
               Reserva atómica de 15 minutos en checkout

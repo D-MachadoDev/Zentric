@@ -86,7 +86,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
   };
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-4xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -150,7 +150,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* ID de Despacho */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-border">
+              <label className="text-xs font-semibold text-foreground-muted">
                 ID de la Orden de Despacho (UUID)
               </label>
               <Input
@@ -167,7 +167,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
 
             {/* Variante */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-border">
+              <label className="text-xs font-semibold text-foreground-muted">
                 ID de la Variante con Quiebre Físico (UUID)
               </label>
               <Input
@@ -184,7 +184,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
 
             {/* Bodega */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-border">
+              <label className="text-xs font-semibold text-foreground-muted">
                 ID de la Bodega Física del Quiebre (UUID)
               </label>
               <Input
@@ -201,7 +201,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
 
             {/* Cantidad */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-border">
+              <label className="text-xs font-semibold text-foreground-muted">
                 Cantidad Faltante a Cancelar
               </label>
               <Input
@@ -221,7 +221,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
             <Button
               type="submit"
               disabled={cancelGhostMutation.isPending}
-              className="w-full bg-red-600 hover:bg-red-700 text-foreground font-semibold text-xs mt-2"
+              className="w-full bg-red-600 hover:bg-red-700 text-foreground font-semibold text-xs mt-2 transition-all active:scale-[0.98]"
             >
               {cancelGhostMutation.isPending ? (
                 <>

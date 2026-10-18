@@ -55,6 +55,8 @@ namespace Zentric.Tests.Presentation
                 // Supervisor no participa: es perfil de consulta, no de escritura.
                 ["UsersController.BlockUser"] = AuthorizationPolicies.UserAdministration,
                 ["UsersController.ActivateUser"] = AuthorizationPolicies.UserAdministration,
+                ["UsersController.GetProfile"] = AuthorizationPolicies.AnyAuthenticatedUser,
+                ["UsersController.UpdateProfile"] = AuthorizationPolicies.AnyAuthenticatedUser,
 
                 // 2. Bodegas. Alta y edicion (WarehouseManagement).
                 ["WarehousesController.CreateWarehouse"] = AuthorizationPolicies.WarehouseManagement,
@@ -82,6 +84,7 @@ namespace Zentric.Tests.Presentation
                 ["OrdersController.Checkout"] = AuthorizationPolicies.Checkout,
                 ["OrdersController.Pay"] = AuthorizationPolicies.Checkout,
                 ["OrdersController.GetOrders"] = AuthorizationPolicies.OrderRead,
+                ["OrdersController.GetBuyerOrders"] = AuthorizationPolicies.OrderRead,
                 ["OrdersController.GetOrderById"] = AuthorizationPolicies.OrderRead,
 
                 // 6. Logistica (ADDENDUM Dominio 8).

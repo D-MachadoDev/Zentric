@@ -18,6 +18,10 @@ namespace Zentric.Domain.Products.Ports
         Task<IReadOnlyList<Product>> GetAllAsync(
             Guid? vendorId = null, ProductStatus? status = null, CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyList<Product>> GetAllAsync(
+            Guid? vendorId, ProductStatus? status, string? category, CancellationToken cancellationToken = default)
+            => GetAllAsync(vendorId, status, cancellationToken);
+
         /// <summary>
         /// Version paginada del listado, con el total de coincidencias.
         ///
@@ -27,6 +31,11 @@ namespace Zentric.Domain.Products.Ports
         /// </summary>
         Task<(IReadOnlyList<Product> Items, int TotalItems)> GetPagedAsync(
             Guid? vendorId, ProductStatus? status, int skip, int take, CancellationToken cancellationToken = default);
+
+        Task<(IReadOnlyList<Product> Items, int TotalItems)> GetPagedAsync(
+            Guid? vendorId, ProductStatus? status, int skip, int take, string? category, CancellationToken cancellationToken = default)
+            => GetPagedAsync(vendorId, status, skip, take, cancellationToken);
+
         Task AddAsync(Product product, CancellationToken cancellationToken = default);
         Task UpdateAsync(Product product, CancellationToken cancellationToken = default);
     }

@@ -66,7 +66,7 @@ export function BuyerOrdersPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-8 w-48 bg-surface" />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <Skeleton className="h-28 rounded-2xl bg-surface" />
@@ -91,7 +91,7 @@ export function BuyerOrdersPage() {
           variant="outline"
           size="sm"
           onClick={() => refetch()}
-          className="border-border text-foreground-muted"
+          className="border-border text-foreground-muted transition-all active:scale-[0.98]"
         >
           <RefreshCw className="h-4 w-4 mr-1.5" /> Reintentar
         </Button>
@@ -100,7 +100,7 @@ export function BuyerOrdersPage() {
   }
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -269,9 +269,12 @@ export function BuyerOrdersPage() {
                       const matchedVariant = matchedProduct?.variants?.find(
                         (v) => v.id === item.variantId
                       );
-                      const imageUrl = matchedProduct
+                      const productName = item.productName || matchedProduct?.name || 'Artículo de compra';
+                      const sku = item.sku || matchedVariant?.sku;
+                      const imageUrl = item.imageUrl || (matchedProduct
                         ? getProductImageUrl(matchedProduct)
-                        : 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=300&q=80';
+                        : 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=300&q=80');
+                      const vendorName = item.vendorName;
 
                       return (
                         <div
@@ -281,18 +284,25 @@ export function BuyerOrdersPage() {
                           <div className="flex items-center gap-3 min-w-0">
                             <img
                               src={imageUrl}
-                              alt={matchedProduct?.name ?? 'Producto'}
+                              alt={productName}
                               className="h-12 w-12 rounded-xl object-cover bg-surface-muted border border-border shrink-0"
                               loading="lazy"
                             />
                             <div className="min-w-0 space-y-0.5">
-                              <h4 className="text-sm font-semibold text-foreground truncate">
-                                {matchedProduct?.name ?? 'Artículo de compra'}
-                              </h4>
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-sm font-semibold text-foreground truncate">
+                                  {productName}
+                                </h4>
+                                {vendorName && (
+                                  <Badge variant="outline" className="text-[10px] font-mono border-border text-foreground-muted px-1.5 py-0 shrink-0">
+                                    {vendorName}
+                                  </Badge>
+                                )}
+                              </div>
                               <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-foreground-muted">
-                                {matchedVariant?.sku && (
+                                {sku && (
                                   <span className="text-[11px] text-brand">
-                                    SKU: {matchedVariant.sku}
+                                    SKU: {sku}
                                   </span>
                                 )}
                                 <span>•</span>

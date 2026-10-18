@@ -34,8 +34,15 @@ export function BuyerOrderPaymentPage() {
   const { data: orderData, isLoading, isError, error } = useOrderQuery(orderId ?? '');
   const payOrderMutation = usePayOrderMutation();
 
-  // Reloj regresivo de 15 minutos (900 segundos)
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(900);
+  // Reloj regresivo de 15 minutos vinculado a server order.expiresAt
+  const calculateRemainingSeconds = () => {
+    const expiresAt = (orderData as Order | undefined)?.expiresAt;
+    if (!expiresAt) return 900;
+    const diff = Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000);
+    return Math.max(0, diff);
+  };
+
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(() => calculateRemainingSeconds());
   const [isExpired, setIsExpired] = useState<boolean>(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
@@ -46,23 +53,35 @@ export function BuyerOrderPaymentPage() {
   const [cvv, setCvv] = useState('742');
 
   useEffect(() => {
-    if (secondsRemaining <= 0) {
+    const initialSeconds = calculateRemainingSeconds();
+    setSecondsRemaining(initialSeconds);
+    if (initialSeconds <= 0) {
       setIsExpired(true);
       return;
     }
+    setIsExpired(false);
 
+    const expiresAt = (orderData as Order | undefined)?.expiresAt;
     const interval = setInterval(() => {
       setSecondsRemaining((prev) => {
-        if (prev <= 1) {
+        let next: number;
+        if (expiresAt) {
+          const serverDiff = Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000);
+          next = Math.min(prev - 1, serverDiff);
+        } else {
+          next = prev - 1;
+        }
+
+        if (next <= 0) {
           setIsExpired(true);
           return 0;
         }
-        return prev - 1;
+        return next;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [secondsRemaining]);
+  }, [(orderData as Order | undefined)?.expiresAt]);
 
   const minutes = Math.floor(secondsRemaining / 60);
   const seconds = secondsRemaining % 60;
@@ -299,7 +318,7 @@ export function BuyerOrderPaymentPage() {
         <Button
           onClick={handlePay}
           disabled={isExpired || payOrderMutation.isPending}
-          className="w-full h-14 bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-base shadow-xl shadow-brand/20 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full h-14 bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-base shadow-xl shadow-brand/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
         >
           {payOrderMutation.isPending ? (
             <span className="flex items-center gap-2">

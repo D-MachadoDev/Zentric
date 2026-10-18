@@ -74,7 +74,7 @@ export function BuyerCatalogPage() {
 
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  // Consulta paginada del backend
+  // Consulta paginada del backend con filtro de categoría en backend (Slice 4)
   const {
     data: pagedData,
     isLoading,
@@ -85,6 +85,7 @@ export function BuyerCatalogPage() {
   } = useProductsPagedQuery({
     page,
     size: pageSize,
+    category: selectedCategory !== 'all' ? selectedCategory : undefined,
   });
 
   const products: Product[] = pagedData?.items ?? [];
@@ -100,7 +101,7 @@ export function BuyerCatalogPage() {
     return products.length > 2 ? products.slice(0, 6) : [];
   }, [products]);
 
-  // Filtrado reactivo en cliente sobre la página activa
+  // Filtrado reactivo en cliente sobre la página activa (categoría delegada al backend)
   const filteredProducts = useMemo(() => {
     return products
       .filter((p) => {
@@ -115,16 +116,6 @@ export function BuyerCatalogPage() {
           const matchName = p.name.toLowerCase().includes(term);
           const matchDesc = p.description?.toLowerCase().includes(term) ?? false;
           if (!matchName && !matchDesc) return false;
-        }
-
-        // Filtro por categoría taxonómica
-        if (selectedCategory !== 'all') {
-          const categoryDef = MARKETPLACE_CATEGORIES.find((c) => c.id === selectedCategory);
-          if (categoryDef && categoryDef.keywords.length > 0) {
-            const textToMatch = `${p.name} ${p.description || ''}`.toLowerCase();
-            const matchesCat = categoryDef.keywords.some((kw) => textToMatch.includes(kw));
-            if (!matchesCat) return false;
-          }
         }
 
         // Filtro solo productos en stock
@@ -142,7 +133,7 @@ export function BuyerCatalogPage() {
         if (priceSort === 'price-desc') return b.price - a.price;
         return 0;
       });
-  }, [products, typeFilter, searchTerm, selectedCategory, onlyInStock, priceSort]);
+  }, [products, typeFilter, searchTerm, onlyInStock, priceSort]);
 
   const handleClearFilters = () => {
     setSearchTerm('');
@@ -150,6 +141,7 @@ export function BuyerCatalogPage() {
     setSelectedCategory('all');
     setOnlyInStock(false);
     setPriceSort('relevance');
+    setPage(1);
   };
 
   const scrollCarousel = (direction: 'left' | 'right') => {
@@ -508,7 +500,10 @@ export function BuyerCatalogPage() {
                   <button
                     key={cat.id}
                     type="button"
-                    onClick={() => setSelectedCategory(cat.id)}
+                    onClick={() => {
+                      setSelectedCategory(cat.id);
+                      setPage(1);
+                    }}
                     className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
                       selectedCategory === cat.id
                         ? 'bg-brand/10 text-brand font-semibold border border-brand/30'

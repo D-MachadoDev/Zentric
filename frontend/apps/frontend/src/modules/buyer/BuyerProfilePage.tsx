@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '../../app/providers/authContext';
 import { useOrdersQuery } from '../../application/services/orders';
+import { useUserProfile, useUpdateUserProfile } from '../../application/services/identity';
 import {
   Button,
   Input,
@@ -31,55 +32,70 @@ import {
  * Pantalla de Perfil del Comprador.
  * Permite al comprador consultar y actualizar sus datos personales,
  * información de envío para despacho particionado y preferencias de compra.
+ * Persiste los datos en PostgreSQL vía GET/PUT /api/users/profile (Slice 3).
  */
 export function BuyerProfilePage() {
   const { user } = useAuth();
   const { data: orders = [] } = useOrdersQuery();
+  const { data: profile } = useUserProfile();
+  const updateProfileMutation = useUpdateUserProfile();
 
-  const [fullName, setFullName] = useState(
-    () => localStorage.getItem('zentric_buyer_fullName') || user?.fullName || ''
-  );
-  const email = user?.email ?? '';
-  const [phone, setPhone] = useState(
-    () => localStorage.getItem('zentric_buyer_phone') || ''
-  );
-  const [documentId, setDocumentId] = useState(
-    () => localStorage.getItem('zentric_buyer_doc') || ''
-  );
-  const [address, setAddress] = useState(
-    () => localStorage.getItem('zentric_buyer_address') || ''
-  );
-  const [city, setCity] = useState(
-    () => localStorage.getItem('zentric_buyer_city') || ''
-  );
-  const [department, setDepartment] = useState(
-    () => localStorage.getItem('zentric_buyer_department') || ''
-  );
-  const [postalCode, setPostalCode] = useState(
-    () => localStorage.getItem('zentric_buyer_postalCode') || ''
-  );
+  const [fullName, setFullName] = useState(user?.fullName || '');
+  const [phone, setPhone] = useState('');
+  const [documentId, setDocumentId] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [department, setDepartment] = useState('');
+  const [postalCode, setPostalCode] = useState('');
   const [notifyEmail, setNotifyEmail] = useState(true);
   const [notifySms, setNotifySms] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const email = profile?.email || user?.email || '';
+
+  // Sincronizar formulario cuando los datos del perfil se cargan desde el backend
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.fullName || user?.fullName || '');
+      setPhone(profile.phone || '');
+      setDocumentId(profile.documentNumber || '');
+      if (profile.address) {
+        setAddress(profile.address.street || '');
+        setCity(profile.address.city || '');
+        setDepartment(profile.address.state || '');
+        setPostalCode(profile.address.zipCode || '');
+      }
+    } else if (user) {
+      setFullName(user.fullName || '');
+    }
+  }, [profile, user]);
 
   const completedOrders = orders.filter((o) => o.status === 'Delivered').length;
   const inProgressOrders = orders.filter((o) => o.status !== 'Delivered' && o.status !== 'Cancelled').length;
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setSaveError(null);
     try {
-      localStorage.setItem('zentric_buyer_fullName', fullName);
-      localStorage.setItem('zentric_buyer_phone', phone);
-      localStorage.setItem('zentric_buyer_doc', documentId);
-      localStorage.setItem('zentric_buyer_address', address);
-      localStorage.setItem('zentric_buyer_city', city);
-      localStorage.setItem('zentric_buyer_department', department);
-      localStorage.setItem('zentric_buyer_postalCode', postalCode);
-    } catch {
-      // Ignorar fallos de almacenamiento local
+      await updateProfileMutation.mutateAsync({
+        fullName,
+        phone,
+        documentNumber: documentId,
+        address: {
+          street: address,
+          city,
+          state: department,
+          zipCode: postalCode,
+          country: 'Colombia',
+        },
+      });
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 4000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al guardar el perfil en el servidor.';
+      setSaveError(msg);
     }
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 4000);
   };
 
   return (
@@ -129,6 +145,14 @@ export function BuyerProfilePage() {
           <CheckCircle2 className="h-4 w-4" />
           <AlertDescription className="font-medium">
             Tus datos de perfil y preferencias de despacho fueron actualizados correctamente.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {saveError && (
+        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
+          <AlertDescription className="font-medium">
+            {saveError}
           </AlertDescription>
         </Alert>
       )}
@@ -353,9 +377,13 @@ export function BuyerProfilePage() {
             </div>
 
             {/* Botón Guardar */}
-            <Button type="submit" className="w-full font-medium gap-2">
+            <Button
+              type="submit"
+              disabled={updateProfileMutation.isPending}
+              className="w-full font-medium gap-2"
+            >
               <Save className="h-4 w-4" />
-              Guardar Cambios de Perfil
+              {updateProfileMutation.isPending ? 'Guardando...' : 'Guardar Cambios de Perfil'}
             </Button>
           </div>
         </div>

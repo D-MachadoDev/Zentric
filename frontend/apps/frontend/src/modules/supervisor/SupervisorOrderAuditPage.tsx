@@ -81,7 +81,7 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
 
   if (isLoading) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-10 w-72 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
@@ -106,7 +106,7 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
         <Button
           onClick={handleRetry}
           variant="outline"
-          className="border-border text-foreground hover:bg-border"
+          className="border-border text-foreground hover:bg-border transition-all active:scale-[0.98]"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
         </Button>
@@ -160,7 +160,7 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
     orderInvoices.length > 0 && Math.abs(masterTotal - (commissionTotal + vendorNetTotal)) < 0.01;
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -191,7 +191,7 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
           variant="outline"
           size="sm"
           onClick={handleRetry}
-          className="border-border text-foreground-muted hover:text-foreground"
+          className="border-border text-foreground-muted hover:text-foreground transition-all active:scale-[0.98]"
         >
           <RefreshCw className="h-4 w-4 mr-2" /> Sincronizar Expediente
         </Button>
@@ -241,7 +241,7 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
                         <td className="py-3 px-3 text-right font-mono text-foreground tabular-nums">
                           {item.quantity}
                         </td>
-                        <td className="py-3 px-3 text-right font-mono text-border tabular-nums">
+                        <td className="py-3 px-3 text-right font-mono text-foreground-muted tabular-nums">
                           ${item.unitPrice.toLocaleString('es-CO')}
                         </td>
                         <td className="py-3 px-3 text-right font-mono font-bold text-foreground tabular-nums">
@@ -303,7 +303,7 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
                         {ful.shipments.map((ship) => (
                           <div
                             key={ship.id}
-                            className="flex justify-between font-mono text-[11px] text-border"
+                            className="flex justify-between font-mono text-[11px] text-foreground-muted"
                           >
                             <span>Bodega: #{ship.warehouseId.substring(0, 8)}</span>
                             <span className="text-brand">Guía: {ship.trackingNumber}</span>

@@ -62,7 +62,7 @@ export function SellerDashboardPage() {
 
   if (isLoadingProducts || isLoadingOrders) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-8 w-48 bg-surface" />
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
           <Skeleton className="h-28 rounded-2xl bg-surface" />
@@ -79,7 +79,7 @@ export function SellerDashboardPage() {
   }
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado de la Consola del Vendedor ─────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">

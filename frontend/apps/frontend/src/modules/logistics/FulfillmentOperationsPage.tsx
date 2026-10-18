@@ -92,7 +92,7 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
 
   if (isLoading) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-7 h-96 rounded-2xl bg-surface" />
@@ -128,7 +128,7 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
   const isCancelled = fulfillment.status === FulfillmentStatus.Cancelled;
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -276,7 +276,7 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
                 <Button
                   onClick={handlePack}
                   disabled={packMutation.isPending}
-                  className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold text-xs"
+                  className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold text-xs transition-all active:scale-[0.98]"
                 >
                   <Package className="h-4 w-4 mr-2" />
                   {packMutation.isPending ? 'Empacando...' : 'Registrar Empaque (Packed)'}
@@ -293,7 +293,7 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
                 <Button
                   onClick={handleDispatch}
                   disabled={dispatchMutation.isPending}
-                  className="w-full bg-warning text-primary-foreground hover:bg-warning/90 font-semibold text-xs"
+                  className="w-full bg-warning text-primary-foreground hover:bg-warning/90 font-semibold text-xs transition-all active:scale-[0.98]"
                 >
                   <Send className="h-4 w-4 mr-2" />
                   {dispatchMutation.isPending ? 'Despachando...' : 'Despachar Paquete (Dispatched)'}
@@ -310,7 +310,7 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
                 <Button
                   onClick={handleDeliver}
                   disabled={deliverMutation.isPending}
-                  className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-bold text-xs"
+                  className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-bold text-xs transition-all active:scale-[0.98]"
                 >
                   <CheckCheck className="h-4 w-4 mr-2" />
                   {deliverMutation.isPending ? 'Certificando...' : 'Certificar Entrega al Comprador (Delivered)'}

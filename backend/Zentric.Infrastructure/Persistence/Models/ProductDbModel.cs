@@ -14,6 +14,7 @@ namespace Zentric.Infrastructure.Persistence.Models
         public ProductType Type { get; set; }
         public ProductStatus Status { get; set; }
         public string? ImageUrl { get; set; }
+        public string? Category { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public DateTime? DeletedAt { get; set; }

@@ -14,6 +14,8 @@ namespace Zentric.Infrastructure.Persistence.Models
         /// </summary>
         public AddressDbModel MainAddress { get; set; } = null!;
 
+        public string? Phone { get; set; }
+
         public bool IsActiveForCommerce { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }

@@ -33,6 +33,11 @@ namespace Zentric.Domain.Buyers
         private readonly List<Address> _additionalAddresses = new();
 
         /// <summary>
+        /// Teléfono de contacto del comprador para entregas y notificaciones logísticas.
+        /// </summary>
+        public string? Phone { get; private set; }
+
+        /// <summary>
         /// Indica si el comprador está habilitado para realizar transacciones comerciales.
         /// </summary>
         public bool IsActiveForCommerce { get; private set; }
@@ -53,7 +58,8 @@ namespace Zentric.Domain.Buyers
         /// </summary>
         /// <param name="userId">Identificador de usuario previamente autenticado.</param>
         /// <param name="mainAddress">Dirección física principal de entrega obligatoria.</param>
-        public Buyer(Guid userId, Address mainAddress)
+        /// <param name="phone">Teléfono de contacto opcional del comprador.</param>
+        public Buyer(Guid userId, Address mainAddress, string? phone = null)
         {
             if (mainAddress is null)
             {
@@ -68,6 +74,7 @@ namespace Zentric.Domain.Buyers
             // ZENTRIC.md Dominio 2: Vinculación 1:1 con la cuenta de usuario
             UserId = userId;
             MainAddress = mainAddress;
+            Phone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim();
             
             // ZENTRIC.md Dominio 2: El comprador nace habilitado inmediatamente para operar
             IsActiveForCommerce = true;
@@ -85,8 +92,18 @@ namespace Zentric.Domain.Buyers
             string city,
             string state,
             string zipCode,
-            string country)
-            => new(userId, new Address(street, city, state, zipCode, country));
+            string country,
+            string? phone = null)
+            => new(userId, new Address(street, city, state, zipCode, country), phone);
+
+        /// <summary>
+        /// Actualiza el teléfono de contacto del comprador.
+        /// </summary>
+        public void UpdatePhone(string? phone)
+        {
+            Phone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim();
+            UpdatedAt = DateTime.UtcNow;
+        }
 
         /// <summary>
         /// Registra domicilios alternativos de entrega permitidos por ZENTRIC.md Dominio 2.

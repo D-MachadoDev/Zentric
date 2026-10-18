@@ -22,6 +22,7 @@ namespace Zentric.Infrastructure.Persistence.Mappers
             typeof(Product).GetProperty("Type")?.SetValue(prod, dbModel.Type);
             typeof(Product).GetProperty("Status")?.SetValue(prod, dbModel.Status);
             typeof(Product).GetProperty("ImageUrl")?.SetValue(prod, dbModel.ImageUrl);
+            typeof(Product).GetProperty("Category")?.SetValue(prod, dbModel.Category);
             typeof(Product).GetProperty("CreatedAt")?.SetValue(prod, dbModel.CreatedAt);
             typeof(Product).GetProperty("UpdatedAt")?.SetValue(prod, dbModel.UpdatedAt);
             typeof(Product).GetProperty("DeletedAt")?.SetValue(prod, dbModel.DeletedAt);
@@ -73,6 +74,7 @@ namespace Zentric.Infrastructure.Persistence.Mappers
                 Type = domain.Type,
                 Status = domain.Status,
                 ImageUrl = domain.ImageUrl,
+                Category = domain.Category,
                 CreatedAt = domain.CreatedAt,
                 UpdatedAt = domain.UpdatedAt,
                 DeletedAt = domain.DeletedAt

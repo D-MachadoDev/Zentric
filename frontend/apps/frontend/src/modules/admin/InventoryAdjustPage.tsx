@@ -96,7 +96,7 @@ export function InventoryAdjustPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+      <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-10 w-64 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-7 h-96 rounded-2xl bg-surface" />
@@ -128,7 +128,7 @@ export function InventoryAdjustPage() {
   }
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -178,7 +178,7 @@ export function InventoryAdjustPage() {
             <form onSubmit={handleAdjustSubmit} className="space-y-5">
               {/* Posición de Inventario */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-border">
+                <label className="text-xs font-semibold text-foreground-muted">
                   Posición de Inventario (ID de Registro)
                 </label>
                 <Input
@@ -221,7 +221,7 @@ export function InventoryAdjustPage() {
 
               {/* Cantidad Física Contada */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-border">
+                <label className="text-xs font-semibold text-foreground-muted">
                   Cantidad Física Contada en Bodega (Mayor o igual a 0)
                 </label>
                 <Input
@@ -241,7 +241,7 @@ export function InventoryAdjustPage() {
 
               {/* Motivo Obligatorio */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-border">
+                <label className="text-xs font-semibold text-foreground-muted">
                   Motivo Justificado del Ajuste (Auditoría)
                 </label>
                 <Input

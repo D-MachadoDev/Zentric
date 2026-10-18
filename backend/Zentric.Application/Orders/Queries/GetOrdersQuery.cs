@@ -1,9 +1,15 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Zentric.Application.Common.Messaging;
 using Zentric.Application.Common.Models;
 using Zentric.Domain.Orders.Ports;
 using Zentric.Domain.Orders.Enums;
 using Zentric.Domain.Users.Enums;
+using Zentric.Domain.Products.Ports;
+using Zentric.Domain.Users.Ports;
 
 namespace Zentric.Application.Orders.Queries
 {
@@ -25,7 +31,8 @@ namespace Zentric.Application.Orders.Queries
         IReadOnlyList<OrderItemDto> Items,
         int ItemCount,
         Guid? BuyerId,
-        DateTime CreatedAt);
+        DateTime CreatedAt,
+        DateTime? ExpiresAt = null);
 
     /// <summary>
     /// Listado de pedidos.
@@ -39,8 +46,23 @@ namespace Zentric.Application.Orders.Queries
     public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, Result<IReadOnlyList<OrderListItemDto>>>
     {
         private readonly ICustomerOrderRepository _orderRepository;
+        private readonly IProductRepository? _productRepository;
+        private readonly IUserRepository? _userRepository;
 
-        public GetOrdersQueryHandler(ICustomerOrderRepository orderRepository) => _orderRepository = orderRepository;
+        public GetOrdersQueryHandler(
+            ICustomerOrderRepository orderRepository,
+            IProductRepository? productRepository = null,
+            IUserRepository? userRepository = null)
+        {
+            _orderRepository = orderRepository;
+            _productRepository = productRepository;
+            _userRepository = userRepository;
+        }
+
+        public GetOrdersQueryHandler(ICustomerOrderRepository orderRepository)
+            : this(orderRepository, null, null)
+        {
+        }
 
         public async Task<Result<IReadOnlyList<OrderListItemDto>>> Handle(
             GetOrdersQuery request, CancellationToken cancellationToken)
@@ -67,30 +89,81 @@ namespace Zentric.Application.Orders.Queries
 
             var orders = await _orderRepository.GetListAsync(buyerId, vendorId, request.Status, cancellationToken);
 
-            var items = orders
-                .Select(order =>
-                {
-                    // El Vendedor solo ve SUS lineas en el listado, igual que en el detalle: el
-                    // mismo criterio en los dos, o el listado le(filter)aria informacion que al
-                    // abrir el pedido se le negaria.
-                    var visible = request.CallerRole == UserRole.Seller
-                        ? order.Items.Where(i => i.VendorId == request.CallerId).ToList()
-                        : order.Items.ToList();
+            var productCache = new Dictionary<Guid, (string Name, string? Sku, string? ImageUrl)>();
+            var vendorCache = new Dictionary<Guid, string?>();
 
-                    return new OrderListItemDto(
-                        order.Id,
-                        order.Status.ToString(),
-                        order.TotalAmount.Currency,
-                        request.CallerRole == UserRole.Seller ? visible.Sum(i => i.TotalPrice.Amount) : order.TotalAmount.Amount,
-                        visible
-                            .Select(i => new OrderItemDto(
-                                i.Id, i.VariantId, i.Quantity, i.UnitPrice.Amount, i.TotalPrice.Amount))
-                            .ToList(),
-                        visible.Count,
-                        request.CallerRole == UserRole.Seller ? (Guid?)null : order.BuyerId,
-                        order.CreatedAt);
-                })
-                .ToList();
+            var items = new List<OrderListItemDto>();
+            foreach (var order in orders)
+            {
+                // El Vendedor solo ve SUS lineas en el listado, igual que en el detalle: el
+                // mismo criterio en los dos, o el listado le(filter)aria informacion que al
+                // abrir el pedido se le negaria.
+                var visible = request.CallerRole == UserRole.Seller
+                    ? order.Items.Where(i => i.VendorId == request.CallerId).ToList()
+                    : order.Items.ToList();
+
+                var orderItemDtos = new List<OrderItemDto>();
+                foreach (var i in visible)
+                {
+                    string? productName = null;
+                    string? sku = null;
+                    string? imageUrl = null;
+                    string? vendorName = null;
+
+                    if (_productRepository != null)
+                    {
+                        if (!productCache.TryGetValue(i.VariantId, out var prodInfo))
+                        {
+                            var prod = await _productRepository.GetByVariantIdAsync(i.VariantId, cancellationToken);
+                            if (prod != null)
+                            {
+                                var v = prod.Variants.FirstOrDefault(x => x.Id == i.VariantId);
+                                prodInfo = (prod.Name, v?.Sku, prod.ImageUrl);
+                            }
+                            else
+                            {
+                                prodInfo = ("Producto", null, null);
+                            }
+                            productCache[i.VariantId] = prodInfo;
+                        }
+                        productName = prodInfo.Name;
+                        sku = prodInfo.Sku;
+                        imageUrl = prodInfo.ImageUrl;
+                    }
+
+                    if (_userRepository != null && i.VendorId != Guid.Empty)
+                    {
+                        if (!vendorCache.TryGetValue(i.VendorId, out vendorName))
+                        {
+                            var vendor = await _userRepository.GetByIdAsync(i.VendorId);
+                            vendorName = vendor?.FullName?.Value;
+                            vendorCache[i.VendorId] = vendorName;
+                        }
+                    }
+
+                    orderItemDtos.Add(new OrderItemDto(
+                        i.Id,
+                        i.VariantId,
+                        i.Quantity,
+                        i.UnitPrice.Amount,
+                        i.TotalPrice.Amount,
+                        productName,
+                        sku,
+                        imageUrl,
+                        vendorName));
+                }
+
+                items.Add(new OrderListItemDto(
+                    order.Id,
+                    order.Status.ToString(),
+                    order.TotalAmount.Currency,
+                    request.CallerRole == UserRole.Seller ? visible.Sum(i => i.TotalPrice.Amount) : order.TotalAmount.Amount,
+                    orderItemDtos,
+                    visible.Count,
+                    request.CallerRole == UserRole.Seller ? (Guid?)null : order.BuyerId,
+                    order.CreatedAt,
+                    order.CreatedAt.AddMinutes(15)));
+            }
 
             return Result<IReadOnlyList<OrderListItemDto>>.Success(items);
         }

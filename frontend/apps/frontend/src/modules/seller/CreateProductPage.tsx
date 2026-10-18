@@ -115,7 +115,7 @@ export function CreateProductPage() {
   };
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 w-full max-w-full">
       {/* ── Encabezado y Retorno ────────────────────────────────────────── */}
       <div className="flex items-center justify-between pb-6 border-b border-border">
         <div className="space-y-1">
@@ -279,7 +279,7 @@ export function CreateProductPage() {
 
               <div className="space-y-3">
                 {variants.map((variant, index) => (
-                  <div key={index} className="p-4 rounded-xl border border-border bg-surface-muted/50 space-y-3">
+                  <div key={index} className="p-4 rounded-xl border border-border bg-surface-muted/40 hover:border-brand/40 focus-within:border-brand/60 focus-within:bg-surface-muted/60 transition-all shadow-xs space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono font-bold text-foreground">
                         Variante #{index + 1}
@@ -340,7 +340,7 @@ export function CreateProductPage() {
             <Button
               type="submit"
               disabled={createProductMutation.isPending}
-              className="w-full h-12 bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-sm shadow-lg shadow-brand/20 disabled:opacity-50"
+              className="w-full h-12 bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-sm shadow-lg shadow-brand/20 disabled:opacity-50 transition-all active:scale-[0.98]"
             >
               {createProductMutation.isPending ? (
                 <span className="flex items-center gap-2">

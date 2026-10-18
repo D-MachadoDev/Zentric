@@ -11,8 +11,10 @@ import {
   BuyerOrderDetailPage,
   BuyerOrderPaymentPage,
   RequestReturnPage,
+  BuyerProfilePage,
 } from '../index';
 import { appServices } from '../../../app/providers/appServices';
+import { AuthContext, type AuthValue } from '../../../app/providers/authContext';
 import {
   OrderStatus,
   ProductType,
@@ -20,11 +22,13 @@ import {
   InvoiceType,
   FulfillmentStatus,
   WarehouseType,
+  UserRole,
   type Product,
   type Order,
   type OrderListItem,
   type Invoice,
   type FulfillmentOrder,
+  type UserProfile,
 } from '../../../domain';
 
 // Mock de TanStack Router
@@ -43,7 +47,24 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }));
 
-function renderWithClient(ui: React.ReactElement) {
+const defaultAuthValue: AuthValue = {
+  session: appServices.session,
+  api: appServices.api,
+  user: {
+    userId: 'buyer-1',
+    email: 'comprador@zentric.co',
+    fullName: 'Comprador Demo',
+    role: UserRole.Buyer,
+  },
+  accessToken: 'mock-token',
+  role: UserRole.Buyer,
+  expiredNotice: null,
+  login: vi.fn(),
+  logout: vi.fn(),
+  clearExpiredNotice: vi.fn(),
+};
+
+function renderWithClient(ui: React.ReactElement, authOverride?: Partial<AuthValue>) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -51,7 +72,13 @@ function renderWithClient(ui: React.ReactElement) {
     },
   });
 
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <AuthContext.Provider value={{ ...defaultAuthValue, ...authOverride }}>
+        {ui}
+      </AuthContext.Provider>
+    </QueryClientProvider>
+  );
 }
 
 const mockPhysicalProduct: Product = {
@@ -139,6 +166,41 @@ const mockPendingPaymentOrder: OrderListItem = {
   createdAt: new Date().toISOString(),
 };
 
+const mockSnapshotOrder: Order = {
+  id: 'order-snap-100',
+  buyerId: 'buyer-1',
+  status: OrderStatus.PendingPayment,
+  totalAmount: 450000,
+  currency: 'COP',
+  expiresAt: new Date(Date.now() + 300 * 1000).toISOString(),
+  items: [
+    {
+      id: 'item-snap-1',
+      variantId: 'var-snap-1111',
+      quantity: 1,
+      unitPrice: 450000,
+      totalPrice: 450000,
+      productName: 'Monitor Gamer 27" Curvo 165Hz',
+      sku: 'MON-GM-27-165',
+      imageUrl: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500',
+      vendorName: 'TechStore Colombia',
+    },
+  ],
+  createdAt: new Date().toISOString(),
+};
+
+const mockSnapshotOrderListItem: OrderListItem = {
+  id: 'order-snap-100',
+  buyerId: 'buyer-1',
+  status: OrderStatus.PendingPayment,
+  totalAmount: 450000,
+  currency: 'COP',
+  itemCount: 1,
+  expiresAt: new Date(Date.now() + 300 * 1000).toISOString(),
+  items: mockSnapshotOrder.items,
+  createdAt: new Date().toISOString(),
+};
+
 describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -154,6 +216,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
     expect(BuyerExports.BuyerOrderDetailPage).toBeDefined();
     expect(BuyerExports.BuyerOrderPaymentPage).toBeDefined();
     expect(BuyerExports.RequestReturnPage).toBeDefined();
+    expect(BuyerExports.BuyerProfilePage).toBeDefined();
   });
 
   // ==========================================================================
@@ -280,6 +343,36 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       const prevBtn = await screen.findByRole('button', { name: /Anterior/i });
       expect(prevBtn).toBeEnabled();
       fireEvent.click(prevBtn);
+    });
+
+    it('filtra productos por categoría pasando el parámetro category al backend (Slice 4)', async () => {
+      const listSpy = vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValue({
+        items: [mockPhysicalProduct],
+        page: 1,
+        size: 12,
+        totalItems: 1,
+        totalPages: 1,
+      });
+
+      renderWithClient(<BuyerCatalogPage />);
+      expect(await screen.findByText('Teclado Mecánico Ergonómico')).toBeInTheDocument();
+      expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ category: undefined }));
+
+      // Seleccionar categoría 'Periféricos & Teclados'
+      const catButton = screen.getByRole('button', { name: 'Periféricos & Teclados' });
+      fireEvent.click(catButton);
+
+      await waitFor(() => {
+        expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ category: 'perifericos', page: 1 }));
+      });
+
+      // Volver a 'Todas las Categorías'
+      const allCatButton = screen.getByRole('button', { name: 'Todas las Categorías' });
+      fireEvent.click(allCatButton);
+
+      await waitFor(() => {
+        expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ category: undefined, page: 1 }));
+      });
     });
   });
 
@@ -562,6 +655,21 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       listSpy.mockResolvedValueOnce([mockPendingPaymentOrder]);
       fireEvent.click(screen.getByRole('button', { name: /Reintentar/i }));
     });
+
+    it('renderiza metadatos de snapshot (nombre real, SKU, miniatura y vendedor) en las líneas del pedido (Slice 1)', async () => {
+      vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([mockSnapshotOrderListItem]);
+
+      renderWithClient(<BuyerOrdersPage />);
+
+      expect(await screen.findByText('Mis Pedidos')).toBeInTheDocument();
+      expect(screen.getByText('Monitor Gamer 27" Curvo 165Hz')).toBeInTheDocument();
+      expect(screen.getByText(/SKU: MON-GM-27-165/i)).toBeInTheDocument();
+      expect(screen.getByText('TechStore Colombia')).toBeInTheDocument();
+
+      const img = screen.getByAltText('Monitor Gamer 27" Curvo 165Hz');
+      expect(img).toBeInTheDocument();
+      expect(img).toHaveAttribute('src', 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500');
+    });
   });
 
   // ==========================================================================
@@ -636,6 +744,23 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       renderWithClient(<BuyerOrderDetailPage />);
 
       expect(await screen.findByText('Error al cargar el pedido')).toBeInTheDocument();
+    });
+
+    it('renderiza metadatos de snapshot enriquecidos (nombre, SKU badge, vendedor badge y miniatura) en el expediente (Slice 1)', async () => {
+      mockParams = { orderId: mockSnapshotOrder.id };
+      vi.spyOn(appServices.api, 'getOrderById').mockResolvedValue(mockSnapshotOrder);
+      vi.spyOn(appServices.api, 'listFulfillments').mockResolvedValue([]);
+      vi.spyOn(appServices.api, 'getInvoicesByOrder').mockResolvedValue([]);
+
+      renderWithClient(<BuyerOrderDetailPage />);
+
+      expect(await screen.findByText('Monitor Gamer 27" Curvo 165Hz')).toBeInTheDocument();
+      expect(screen.getByText('SKU: MON-GM-27-165')).toBeInTheDocument();
+      expect(screen.getByText('Vendedor: TechStore Colombia')).toBeInTheDocument();
+
+      const img = screen.getByAltText('Monitor Gamer 27" Curvo 165Hz');
+      expect(img).toBeInTheDocument();
+      expect(img).toHaveAttribute('src', 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500');
     });
   });
 
@@ -770,6 +895,38 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
         setIntervalSpy.mockRestore();
       }
     });
+
+    it('sincroniza el temporizador de cuenta regresiva dinámicamente con order.expiresAt del servidor (Slice 2)', async () => {
+      mockParams = { orderId: mockSnapshotOrder.id };
+      // expiresAt configurado exactamente a 300 segundos en el futuro
+      const futureOrder: Order = {
+        ...mockSnapshotOrder,
+        expiresAt: new Date(Date.now() + 300 * 1000).toISOString(),
+      };
+      vi.spyOn(appServices.api, 'getOrderById').mockResolvedValue(futureOrder);
+
+      renderWithClient(<BuyerOrderPaymentPage />);
+
+      expect(await screen.findByText('Pasarela de Pago')).toBeInTheDocument();
+      // Debe mostrar ~05:00 o 04:59, nunca el valor hardcodeado por defecto de 15:00
+      expect(screen.getByText(/0[45]:[0-5][0-9]/)).toBeInTheDocument();
+      expect(screen.queryByText('15:00')).not.toBeInTheDocument();
+    });
+
+    it('informa inmediatamente que la reserva expiró si order.expiresAt está en el pasado (Slice 2)', async () => {
+      mockParams = { orderId: mockSnapshotOrder.id };
+      const expiredOrder: Order = {
+        ...mockSnapshotOrder,
+        expiresAt: new Date(Date.now() - 60 * 1000).toISOString(),
+      };
+      vi.spyOn(appServices.api, 'getOrderById').mockResolvedValue(expiredOrder);
+
+      renderWithClient(<BuyerOrderPaymentPage />);
+
+      expect(await screen.findByText('Pasarela de Pago')).toBeInTheDocument();
+      expect(screen.getByText('Reserva Expirada')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Tiempo de reserva agotado/i })).toBeDisabled();
+    });
   });
 
   // ==========================================================================
@@ -887,5 +1044,119 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       ).toBeInTheDocument();
     });
   });
+
+  // ==========================================================================
+  // 8. BuyerProfilePage (Slice 3: Perfil Persistente de Comprador)
+  // ==========================================================================
+  describe('BuyerProfilePage (Slice 3: Perfil Persistente)', () => {
+    const mockProfileData: UserProfile = {
+      id: 'usr-buyer-001',
+      email: 'comprador@zentric.co',
+      fullName: 'Carlos Comprador SDD',
+      documentNumber: '1098765432',
+      role: 'Buyer',
+      phone: '+57 300 123 4567',
+      address: {
+        street: 'Carrera 7 # 71-21, Oficina 802',
+        city: 'Bogotá D.C.',
+        state: 'Cundinamarca',
+        zipCode: '110221',
+        country: 'Colombia',
+      },
+    };
+
+    it('carga y renderiza los datos del perfil desde la API (GET /api/users/profile) sin usar localStorage', async () => {
+      const getSpy = vi.spyOn(appServices.api, 'getUserProfile').mockResolvedValue(mockProfileData);
+      vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([]);
+      const localGetSpy = vi.spyOn(Storage.prototype, 'getItem');
+
+      renderWithClient(<BuyerProfilePage />);
+
+      expect(await screen.findByDisplayValue('Carlos Comprador SDD')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('comprador@zentric.co')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('+57 300 123 4567')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('1098765432')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Carrera 7 # 71-21, Oficina 802')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Bogotá D.C.')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Cundinamarca')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('110221')).toBeInTheDocument();
+
+      expect(getSpy).toHaveBeenCalled();
+      // Invariante de diseño: Prohibido usar localStorage para el perfil del comprador
+      expect(localGetSpy).not.toHaveBeenCalledWith('zentric_buyer_profile');
+      expect(localGetSpy).not.toHaveBeenCalledWith('buyer_profile');
+    });
+
+    it('actualiza el perfil invocando PUT /api/users/profile y muestra confirmación de éxito', async () => {
+      vi.spyOn(appServices.api, 'getUserProfile').mockResolvedValue(mockProfileData);
+      vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([]);
+      const updateSpy = vi.spyOn(appServices.api, 'updateUserProfile').mockResolvedValue({
+        ...mockProfileData,
+        fullName: 'Carlos Actualizado',
+        phone: '+57 311 999 8888',
+      });
+      const localSetSpy = vi.spyOn(Storage.prototype, 'setItem');
+
+      renderWithClient(<BuyerProfilePage />);
+
+      expect(await screen.findByDisplayValue('Carlos Comprador SDD')).toBeInTheDocument();
+
+      // Modificar datos en el formulario
+      fireEvent.change(screen.getByDisplayValue('Carlos Comprador SDD'), {
+        target: { value: 'Carlos Actualizado' },
+      });
+      fireEvent.change(screen.getByDisplayValue('+57 300 123 4567'), {
+        target: { value: '+57 311 999 8888' },
+      });
+
+      // Enviar formulario
+      const submitBtn = screen.getByRole('button', { name: /Guardar Cambios de Perfil/i });
+      fireEvent.click(submitBtn);
+
+      await waitFor(() => {
+        expect(updateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            fullName: 'Carlos Actualizado',
+            phone: '+57 311 999 8888',
+            documentNumber: '1098765432',
+            address: expect.objectContaining({
+              street: 'Carrera 7 # 71-21, Oficina 802',
+              city: 'Bogotá D.C.',
+              state: 'Cundinamarca',
+              zipCode: '110221',
+              country: 'Colombia',
+            }),
+          })
+        );
+      });
+
+      expect(
+        await screen.findByText(/Tus datos de perfil y preferencias de despacho fueron actualizados correctamente/i)
+      ).toBeInTheDocument();
+
+      // Cero escritura a localStorage
+      expect(localSetSpy).not.toHaveBeenCalledWith('zentric_buyer_profile', expect.anything());
+    });
+
+    it('muestra alerta descriptiva cuando la actualización del perfil falla en la API', async () => {
+      vi.spyOn(appServices.api, 'getUserProfile').mockResolvedValue(mockProfileData);
+      vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([]);
+      vi.spyOn(appServices.api, 'updateUserProfile').mockRejectedValue(
+        new Error('Dirección de despacho no válida para la zona de cobertura')
+      );
+
+      renderWithClient(<BuyerProfilePage />);
+
+      expect(await screen.findByDisplayValue('Carlos Comprador SDD')).toBeInTheDocument();
+
+      const submitBtn = screen.getByRole('button', { name: /Guardar Cambios de Perfil/i });
+      fireEvent.click(submitBtn);
+
+      expect(
+        await screen.findByText(/Dirección de despacho no válida para la zona de cobertura/i)
+      ).toBeInTheDocument();
+    });
+  });
 });
+
 

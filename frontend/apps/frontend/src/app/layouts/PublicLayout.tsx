@@ -10,9 +10,8 @@ interface PublicLayoutProps {
  * Shell para pantallas públicas y de autenticación (C4-4-Codigo-React.md §2: AuthShell).
  *
  * Aplica (Frontend-Design-System §9):
- * - Lienzo porcelana en claro / grafito-tinta en oscuro con la retícula
- *   arquitectónica `bg-swiss-grid`, cuyo resplandor focal usa el jade de
- *   marca vía color-mix (ya no un rgba fijo del v1).
+ * - Lienzo porcelana en claro / grafito-tinta en oscuro (#0B0F19 / #111827),
+ *   con superficies limpias de alta legibilidad y tokens semánticos.
  * - Logotipo central y pie de página con enlace a telemetría de salud.
  */
 export function PublicLayout({ children }: PublicLayoutProps) {

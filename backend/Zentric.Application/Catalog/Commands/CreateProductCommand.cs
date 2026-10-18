@@ -39,7 +39,8 @@ namespace Zentric.Application.Catalog.Commands
         Guid VendorId,
         ProductType Type,
         List<CreateProductVariantDto>? Variants = null,
-        string? ImageUrl = null) : IRequest<Result<CreatedProductDto>>;
+        string? ImageUrl = null,
+        string? Category = null) : IRequest<Result<CreatedProductDto>>;
 
     public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand, Result<CreatedProductDto>>
     {
@@ -67,7 +68,8 @@ namespace Zentric.Application.Catalog.Commands
                 request.VendorId,
                 request.Type,
                 variants,
-                request.ImageUrl
+                request.ImageUrl,
+                request.Category
             );
 
             await _repository.AddAsync(product, cancellationToken);
