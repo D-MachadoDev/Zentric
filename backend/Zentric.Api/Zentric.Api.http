@@ -1,6 +1,6 @@
-@Zentric.Api_HostAddress = http://localhost:5076
+@Zentric.Api_HostAddress = http://localhost:15433
 
-GET {{Zentric.Api_HostAddress}}/weatherforecast/
+GET {{Zentric.Api_HostAddress}}/health
 Accept: application/json
 
 ###

@@ -5,9 +5,10 @@
   "type": "module",
   "description": "Consola operativa Zentric (Vite + React 19 + TanStack Router)",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 15434",
+    "dev:docker": "vite --host 0.0.0.0 --port 15435",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
-    "preview": "vite preview",
+    "preview": "vite preview --port 15435",
     "test": "vitest run",
     "test:run": "vitest run",
     "test:watch": "vitest",

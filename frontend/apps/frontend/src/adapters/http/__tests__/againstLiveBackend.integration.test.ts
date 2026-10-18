@@ -13,7 +13,7 @@ import { createApiClient } from '../../index';
  * Se omite automáticamente si la API no responde en `VITE_API_BASE_URL`, así que
  * `pnpm test` sigue funcionando sin infraestructura levantada.
  */
-const BASE_URL = 'http://localhost:5076';
+const BASE_URL = 'http://localhost:15433';
 
 const { session, api } = createApiClient({ baseUrl: BASE_URL });
 

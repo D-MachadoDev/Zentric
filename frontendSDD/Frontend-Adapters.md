@@ -11,7 +11,7 @@ En cumplimiento de la Arquitectura Hexagonal, `apps/frontend/src/adapters/http/H
 
 | Parámetro de Transporte | Especificación Contractual | Procedencia y Justificación |
 |---|---|---|
-| **Resolución de URL Base** | `window.__ZENTRIC_API_BASE_URL__ ?? import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5076'` | Soporta inyección en tiempo de arranque en contenedor Nginx (`env-config.js`) y desarrollo local en Vite (`Program.cs:218-231`). |
+| **Resolución de URL Base** | `window.__ZENTRIC_API_BASE_URL__ ?? import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:15433'` | Soporta inyección en tiempo de arranque en contenedor Nginx (`env-config.js`) y desarrollo local en Vite (`Program.cs:218-231`). |
 | **Cabeceras Estándar** | `Accept: application/json, application/problem+json`<br>`Content-Type: application/json` (cuando existe cuerpo) | Cumplimiento estricto del contrato JSON y RFC 7807 ([ADR-0015](../backendSDD/Adr/0015-contrato-de-error-http-problem-json.md)). |
 | **Inyección de Identidad** | `Authorization: Bearer <token>` leído síncronamente desde `SessionPort.getAccessToken()` | Satisface la política de reserva `FallbackPolicy` de [`Program.cs:126-128`](../backend/Zentric.Api/Program.cs#L126-L128) ([ADR-0009](../backendSDD/Adr/0009-autenticacion-jwt-rg01.md)). |
 | **Erradicación de Cabeceras Forjables** | Prohibido adjuntar `X-Buyer-Id`, `X-User-Id` o `X-Role` | La identidad y el rol se extraen exclusivamente de los claims firmados `sub` y `role` en el servidor ([`ClaimsUserAccessor.cs`](../backend/Zentric.Api/Security/ClaimsUserAccessor.cs)). |

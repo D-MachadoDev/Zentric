@@ -32,7 +32,7 @@ namespace Zentric.Tests.Security
 
             var originsSection = configuration.GetSection("Cors:AllowedOrigins").Value;
             var allowedOrigins = string.IsNullOrWhiteSpace(originsSection)
-                ? new[] { "http://localhost:5173" }
+                ? new[] { "http://localhost:15434", "http://localhost:15435" }
                 : originsSection.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
             services.AddCors(options =>
@@ -56,7 +56,8 @@ namespace Zentric.Tests.Security
             var policy = BuildCorsPolicy(null);
 
             Assert.NotNull(policy);
-            Assert.Contains("http://localhost:5173", policy.Origins);
+            Assert.Contains("http://localhost:15434", policy.Origins);
+            Assert.Contains("http://localhost:15435", policy.Origins);
             Assert.DoesNotContain("*", policy.Origins);
             Assert.False(policy.SupportsCredentials, "AllowCredentials debe ser false según Backend-Cors-Security.md sección 2");
         }
@@ -64,12 +65,12 @@ namespace Zentric.Tests.Security
         [Fact]
         public void CorsPolicy_WhenConfiguredWithMultipleOrigins_ParsesAndTrimsAllOrigins()
         {
-            var policy = BuildCorsPolicy("https://zentric.me, http://localhost:5173, https://app.zentric.me ");
+            var policy = BuildCorsPolicy("https://zentric.me, http://localhost:15434, https://app.zentric.me ");
 
             Assert.NotNull(policy);
             Assert.Equal(3, policy.Origins.Count);
             Assert.Contains("https://zentric.me", policy.Origins);
-            Assert.Contains("http://localhost:5173", policy.Origins);
+            Assert.Contains("http://localhost:15434", policy.Origins);
             Assert.Contains("https://app.zentric.me", policy.Origins);
             Assert.DoesNotContain("*", policy.Origins);
         }

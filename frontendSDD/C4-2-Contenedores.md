@@ -61,9 +61,9 @@ Para cumplir con el principio **Build Once, Deploy Anywhere**, el contenedor gen
 
 | Variable de Configuración | Valor en Desarrollo Local | Propósito Operativo |
 |---|---|---|
-| `VITE_API_BASE_URL` | `http://localhost:5000` (o puerto expuesto por `Zentric.Api`) | URL base utilizada por `httpClient.ts` para invocar `/health` y `/api/*`. |
+| `VITE_API_BASE_URL` | `http://localhost:15433` (o puerto expuesto por `Zentric.Api`) | URL base utilizada por `httpClient.ts` para invocar `/health` y `/api/*`. |
 | `VITE_ENABLE_MOCKS` | `'false'` (por defecto contra backend real) / `'true'` (modo aislado) | Conmuta en `apps/frontend/src/adapters/api/index.ts` entre `httpZentricApiAdapter` y `mockZentricApiAdapter`. |
 | `VITE_APP_ENV` | `'development' \| 'staging' \| 'production'` | Identificador de entorno visible en el diagnóstico `/health` y telemetría de errores. |
 
 ### 3.3 Alineación con la Política CORS del Backend (`Program.cs:218-231`)
-En `backend/Zentric.Api/Program.cs:218-231`, la política CORS `"FrontendPolicy"` lee `AllowedOrigins` desde configuración (con fallback a `http://localhost:5173` y `http://localhost:3000`) y habilita `AllowAnyHeader()` y `AllowAnyMethod()`. El contenedor frontend debe ejecutarse en un origen incluido en `AllowedOrigins` para permitir el envío de la cabecera `Authorization: Bearer <token>`.
+En `backend/Zentric.Api/Program.cs:218-231`, la política CORS `"FrontendPolicy"` lee `AllowedOrigins` desde configuración (con fallback a `http://localhost:15434` y `http://localhost:15435`) y habilita `AllowAnyHeader()` y `AllowAnyMethod()`. El contenedor frontend debe ejecutarse en un origen incluido en `AllowedOrigins` para permitir el envío de la cabecera `Authorization: Bearer <token>`.

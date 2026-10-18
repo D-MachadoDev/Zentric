@@ -55,8 +55,8 @@ frontend/
 # Instalar dependencias (desde frontend/)
 pnpm install
 
-# Servidor de desarrollo de la app (puerto 5173)
-pnpm dev
+# Servidor de desarrollo de la app (puerto 15434)
+pnpm --filter @zentric/frontend dev
 
 # Pipeline completo, delegado en turbo
 pnpm typecheck
@@ -92,10 +92,10 @@ pnpm --filter @zentric/ui test
 
 | Variable | Defecto | Descripción |
 | --- | --- | --- |
-| `VITE_API_BASE_URL` | `http://localhost:5076` | URL base de la API Zentric |
+| `VITE_API_BASE_URL` | `http://localhost:15433` | URL base de la API Zentric |
 
 > El puerto `8080` corresponde al **contenedor** de la API. Desde el host, Docker Compose
-> publica el `5076`. En producción la URL se inyecta en tiempo de ejecución vía
+> publica el `15433`. En producción la URL se inyecta en tiempo de ejecución vía
 > `window.__ZENTRIC_API_BASE_URL__` (nginx), así que la misma imagen sirve a cualquier entorno.
 
 ---
@@ -106,7 +106,7 @@ pnpm --filter @zentric/ui test
 **sin CORS** mientras el backend no lo habilite:
 
 ```text
-Navegador  ->  http://localhost:5173/api/...  ->  proxy  ->  http://localhost:5076/api/...
+Navegador  ->  http://localhost:15434/api/...  ->  proxy  ->  http://localhost:15433/api/...
 ```
 
 En cuanto el backend registre una política CORS, el proxy puede retirarse. Ver

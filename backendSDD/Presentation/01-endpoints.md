@@ -188,5 +188,5 @@ Las consultas con gran volumen de registros soportan parámetros de paginación 
 
 ## 5. Disponibilidad y Consumo de la Especificación
 
-- **Swagger UI Interactivo:** Disponible en entorno de desarrollo en `http://localhost:5076/swagger`.
-- **Manifiesto OpenAPI JSON:** Exportable directamente desde `http://localhost:5076/swagger/v1/swagger.json` para generación automatizada de clientes HTTP y pruebas de contrato.
+- **Swagger UI Interactivo:** Disponible en entorno de desarrollo en `http://localhost:15433/swagger`.
+- **Manifiesto OpenAPI JSON:** Exportable directamente desde `http://localhost:15433/swagger/v1/swagger.json` para generación automatizada de clientes HTTP y pruebas de contrato.

@@ -95,7 +95,7 @@ El orquestador define la relación funcional entre tres servicios interconectado
   - `ConnectionStrings__DefaultConnection`: Cadena de conexión hacia el host de servicio `db` en su puerto interno `5432`.
   - `Jwt__Issuer` y `Jwt__Audience`: Identificadores canónicos de emisor y audiencia para la validación de tokens de seguridad.
   - `Jwt__SigningKey`: Clave criptográfica para la firma simétrica de credenciales. La aplicación valida obligatoriamente su presencia en el arranque y detiene la ejecución si se encuentra vacía o ausente.
-  - `Cors__AllowedOrigins`: Lista explícita y delimitada por comas de orígenes permitidos para consumo web (ej. `http://localhost:5173`, `http://localhost:5180`), prohibiendo el uso de comodines abiertos para salvaguardar la seguridad de los tokens de autenticación.
+  - `Cors__AllowedOrigins`: Lista explícita y delimitada por comas de orígenes permitidos para consumo web (ej. `http://localhost:15434`, `http://localhost:15435`), prohibiendo el uso de comodines abiertos para salvaguardar la seguridad de los tokens de autenticación.
   - `Bootstrap__AdministratorEmail` y `Bootstrap__AdministratorPassword`: Credenciales parametrizadas para la inicialización controlada del primer administrador del sistema.
 - **Sondeo de salud (`healthcheck`):** Sondeo del endpoint HTTP `/health` mediante `curl` cada 15 segundos con tiempo de espera de 10 segundos y tolerancia de 5 reintentos.
 

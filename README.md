@@ -45,7 +45,7 @@ cd Zentric
 docker compose up -d --build
 
 # 3. Acceder a la documentación interactiva OpenAPI en el navegador:
-# http://localhost:5076/swagger
+# http://localhost:15433/swagger
 ```
 
 Para compilar y ejecutar la suite de pruebas automatizadas en local (.NET 10 SDK):
@@ -333,9 +333,9 @@ La API implementa respuestas estandarizadas bajo **RFC 7807 (Problem Details)** 
 ```bash
 docker compose up -d --build
 ```
-- **API REST & Swagger UI:** `http://localhost:5076/swagger`
+- **API REST & Swagger UI:** `http://localhost:15433/swagger`
 - **Base de Datos PostgreSQL:** Puerto host `15432` (`localhost:15432`, BD: `ZentricDb`)
-- **Frontend Web:** `http://localhost:5180`
+- **Frontend Web:** `http://localhost:15435`
 
 Para detener el entorno conservando datos:
 ```bash
@@ -358,6 +358,10 @@ dotnet build backend/Zentric.slnx -warnaserror
 # 3. Ejecutar la API
 dotnet run --project backend/Zentric.Api/Zentric.Api.csproj
 ```
+API disponible en: `http://localhost:15433/swagger`
+Health check: `http://localhost:15433/health`
+
+---
 
 ---
 

@@ -41,7 +41,7 @@ import type {
 } from '../../domain';
 import { toApiError } from './problemDetails';
 
-const DEFAULT_BASE_URL = 'http://localhost:5076';
+const DEFAULT_BASE_URL = 'http://localhost:15433';
 const TIMEOUT_MS = 15_000;
 
 export interface HttpClientOptions {

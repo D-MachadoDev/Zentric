@@ -228,7 +228,7 @@ builder.Services.AddScoped<Zentric.Domain.Payments.Ports.IPaymentGatewayService,
 // asi que los origenes deben quedar declarados de forma explicita.
 var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Value;
 var allowedOrigins = string.IsNullOrWhiteSpace(configuredOrigins)
-    ? new[] { "http://localhost:5173" }
+    ? new[] { "http://localhost:15434", "http://localhost:15435" }
     : configuredOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 builder.Services.AddCors(options =>

@@ -6,7 +6,7 @@
 #
 # Como se ejecuta (la API y PostgreSQL deben estar arriba: `docker compose up -d`):
 #   pwsh -File backend/scripts/authorization-smoke.ps1
-#   pwsh -File backend/scripts/authorization-smoke.ps1 -BaseUrl http://localhost:5076
+#   pwsh -File backend/scripts/authorization-smoke.ps1 -BaseUrl http://localhost:15433
 #
 # Cero secrets en el repo (AGENTS.md seccion 2.5): la clave del smoke se lee de variables de
 # entorno. Los defaults son los de DESARROLLO que ya estan publicados en docker-compose.yml, no
@@ -17,7 +17,7 @@
 # Q-21b: un recurso ausente o ajeno responde 404 en lecturas Y en escrituras (dictamen del Owner);
 # un 400 aqui significa que el recurso existe pero incumple una regla de negocio.
 param(
-    [string] $BaseUrl = 'http://localhost:5076',
+    [string] $BaseUrl = 'http://localhost:15433',
     [string] $AdminEmail = $env:BOOTSTRAP_ADMIN_EMAIL,
     [string] $AdminPassword = $env:BOOTSTRAP_ADMIN_PASSWORD
 )
