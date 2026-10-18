@@ -28,7 +28,10 @@ import {
   RotateCcw,
   AlertCircle,
   ShieldCheck,
+  Copy,
+  Check,
 } from 'lucide-react';
+import { useState } from 'react';
 
 /**
  * Detalle del Pedido para el Comprador (Frontend-Role-Modules §2.4).
@@ -37,6 +40,18 @@ import {
  */
 export function BuyerOrderDetailPage() {
   const { orderId } = useParams({ strict: false }) as { orderId?: string };
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    if (!orderId) return;
+    try {
+      navigator.clipboard?.writeText(orderId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Fallback
+    }
+  };
 
   const { data: orderData, isLoading: isLoadingOrder, isError: isErrorOrder, error: orderError } =
     useOrderQuery(orderId ?? '');
@@ -101,15 +116,36 @@ export function BuyerOrderDetailPage() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
-              Pedido #{order.id.slice(0, 8)}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
+                Pedido #{order.id.slice(0, 8).toUpperCase()}
+              </h1>
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-mono text-foreground-muted hover:bg-surface-muted hover:text-foreground transition-colors border border-border"
+                title="Copiar ID completo del pedido"
+                aria-label="Copiar ID del pedido"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-brand" />
+                    <span className="text-brand font-semibold">¡Copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5" />
+                    <span>Copiar ID</span>
+                  </>
+                )}
+              </button>
+            </div>
             <StatusBadge tone={TONOS_DE_ESTADO_DE_PEDIDO[order.status]}>
               {NOMBRES_DE_ESTADO_DE_PEDIDO[order.status]}
             </StatusBadge>
           </div>
-          <p className="text-sm font-mono text-foreground-muted">
-            Creado el {new Date(order.createdAt).toLocaleString('es-CO')} • ID Completo: {order.id}
+          <p className="text-xs font-mono text-foreground-muted">
+            Creado el {new Date(order.createdAt).toLocaleDateString('es-CO')} • ID: {order.id}
           </p>
         </div>
 

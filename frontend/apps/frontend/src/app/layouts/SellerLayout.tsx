@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { LayoutHeader } from './LayoutHeader';
 import { LayoutSidebar, type NavGroup, type NavItem } from './LayoutSidebar';
+import { OperationalFooter } from '../components/OperationalFooter';
 
 const sellerAnchor: NavItem[] = [
   { href: '/seller', label: 'Panel del Vendedor', icon: LayoutDashboard },
@@ -68,6 +69,8 @@ export function SellerLayout({ children }: SellerLayoutProps) {
         <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
           {children}
         </main>
+
+        <OperationalFooter roleLabel="Estudio del Vendedor & Catálogo" />
       </div>
     </div>
   );

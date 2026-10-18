@@ -3,6 +3,7 @@ import { Truck, CheckSquare, LayoutDashboard } from 'lucide-react';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { LayoutHeader } from './LayoutHeader';
 import { LayoutSidebar, type NavItem } from './LayoutSidebar';
+import { OperationalFooter } from '../components/OperationalFooter';
 
 const logisticsNavItems: NavItem[] = [
   { href: '/logistics', label: 'Panel Logístico', icon: LayoutDashboard },
@@ -79,6 +80,8 @@ export function LogisticsLayout({ children }: LogisticsLayoutProps) {
       <main className="flex-1 overflow-y-auto bg-background p-4 lg:p-6">
         {children}
       </main>
+
+      <OperationalFooter roleLabel="Fulfillment & Logística de Bodegas" />
     </div>
   );
 }

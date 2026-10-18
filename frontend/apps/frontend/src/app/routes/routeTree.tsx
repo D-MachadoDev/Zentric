@@ -1,4 +1,4 @@
-import { createRootRouteWithContext, createRoute, Outlet, redirect } from '@tanstack/react-router';
+import { createRootRouteWithContext, createRoute, Link, Outlet, redirect } from '@tanstack/react-router';
 import { RootLayout } from '../../layouts/RootLayout';
 import { UserRole } from '../../domain';
 import { type RouterContext, parseLoginSearch } from './routerContext';
@@ -159,6 +159,11 @@ export const indexRoute = createRoute({
           <main className="p-8">
             <h1 className="text-2xl font-bold">Panel general</h1>
             <p className="text-sm text-foreground-muted">Consola de administración</p>
+            <div className="mt-4">
+              <Link to="/admin" className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-brand/90 transition-colors">
+                Ir a la Consola de Administración →
+              </Link>
+            </div>
           </main>
         );
       case UserRole.Seller:
@@ -166,6 +171,11 @@ export const indexRoute = createRoute({
           <main className="p-8">
             <h1 className="text-2xl font-bold">Mis productos</h1>
             <p className="text-sm text-foreground-muted">Gestión de catálogo e inventario</p>
+            <div className="mt-4">
+              <Link to="/seller" className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-brand/90 transition-colors">
+                Ir al Panel del Vendedor →
+              </Link>
+            </div>
           </main>
         );
       case UserRole.Buyer:
@@ -173,6 +183,11 @@ export const indexRoute = createRoute({
           <main className="p-8">
             <h1 className="text-2xl font-bold">Panel del Comprador</h1>
             <p className="text-sm text-foreground-muted">Mis pedidos y compras</p>
+            <div className="mt-4">
+              <Link to="/buyer" className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-brand/90 transition-colors">
+                Explorar Catálogo de Productos →
+              </Link>
+            </div>
           </main>
         );
       case UserRole.LogisticsOperator:
@@ -180,6 +195,23 @@ export const indexRoute = createRoute({
           <main className="p-8">
             <h1 className="text-2xl font-bold">Panel Logístico</h1>
             <p className="text-sm text-foreground-muted">Despachos y fulfillment</p>
+            <div className="mt-4">
+              <Link to="/logistics" className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-brand/90 transition-colors">
+                Ir al Panel de Despachos →
+              </Link>
+            </div>
+          </main>
+        );
+      case UserRole.Supervisor:
+        return (
+          <main className="p-8">
+            <h1 className="text-2xl font-bold">Panel de Supervisión</h1>
+            <p className="text-sm text-foreground-muted">Panel en preparación</p>
+            <div className="mt-4">
+              <Link to="/supervisor" className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-brand/90 transition-colors">
+                Ir al Panel de Supervisión →
+              </Link>
+            </div>
           </main>
         );
       default:

@@ -20,6 +20,7 @@ import {
   Package,
   AlertCircle,
   RefreshCw,
+  Truck,
 } from 'lucide-react';
 
 /**
@@ -154,16 +155,35 @@ export function BuyerCartPage() {
                     key={item.id}
                     className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-surface-muted/30 transition-colors"
                   >
-                    <div className="space-y-1.5 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4 text-brand" />
-                        <span className="text-xs font-mono text-brand font-bold">
-                          Variante SKU: {item.variantId.slice(0, 8)}
-                        </span>
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.productName || 'Producto Zentric'}
+                          className="h-16 w-16 rounded-xl object-cover bg-surface-muted border border-border shrink-0"
+                        />
+                      ) : (
+                        <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-surface-muted border border-border text-brand shrink-0">
+                          <Package className="h-7 w-7" />
+                        </div>
+                      )}
+
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <h3 className="text-sm font-semibold text-foreground truncate">
+                          {item.productName || 'Producto Oficial Zentric'}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-foreground-muted">
+                          <span className="text-brand font-medium">
+                            Variante SKU: {item.sku || item.variantId.slice(0, 8)}
+                          </span>
+                          {item.vendorName && (
+                            <>
+                              <span>·</span>
+                              <span>Vendido por: {item.vendorName}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-xs font-mono text-foreground-muted">
-                        Identificador de variante: {item.variantId}
-                      </p>
                     </div>
 
                     <div className="flex items-center justify-between sm:justify-end gap-6 text-right">
@@ -222,12 +242,12 @@ export function BuyerCartPage() {
               <Button
                 onClick={handleCheckout}
                 disabled={checkoutMutation.isPending}
-                className="w-full h-12 bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-sm shadow-lg shadow-brand/20 disabled:opacity-50 transition-all active:scale-[0.98]"
+                className="w-full h-12 bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-sm shadow-lg shadow-brand/20 disabled:opacity-50 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
               >
                 {checkoutMutation.isPending ? (
                   <span className="flex items-center gap-2">
                     <Clock className="h-4 w-4 animate-spin" />
-                    Iniciando reserva 15 min...
+                    Iniciando compra protegida...
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
@@ -239,16 +259,16 @@ export function BuyerCartPage() {
 
               {/* Aviso de Reserva */}
               <div className="rounded-xl border border-border bg-surface-muted/50 p-4 space-y-2 text-xs">
-                <div className="flex items-center gap-2 text-brand font-mono font-semibold">
-                  <Clock className="h-4 w-4" />
-                  Garantía de Checkout
+                <div className="flex items-center gap-2 text-brand font-semibold">
+                  <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                  <span>Compra 100% Protegida</span>
                 </div>
                 <p className="text-foreground-muted leading-relaxed">
-                  Al pulsar el botón de checkout, el sistema reserva las unidades en bodega y activa un reloj de 15 minutos en el que nadie más podrá comprar este stock.
+                  Al proceder al pago, reservamos tus unidades en bodega física durante 15 minutos para que completes tu compra sin riesgo de que se agote.
                 </p>
-                <div className="flex items-center gap-2 text-foreground-muted pt-1">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  <span>Cero existencias negativas garantizadas.</span>
+                <div className="flex items-center gap-2 text-foreground-muted pt-1 text-[11px]">
+                  <Truck className="h-3.5 w-3.5 text-brand" />
+                  <span>Despacho directo desde red de bodegas oficiales.</span>
                 </div>
               </div>
             </div>

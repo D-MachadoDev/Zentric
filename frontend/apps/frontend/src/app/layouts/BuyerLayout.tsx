@@ -16,6 +16,7 @@ import { useAuth } from '../providers/authContext';
 import { useOrdersQuery } from '../../application/services/orders';
 import { Button, Logo } from '@zentric/ui';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { BuyerFooter } from '../components/BuyerFooter';
 
 interface BuyerLayoutProps {
   children?: ReactNode;
@@ -79,25 +80,25 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
 
   return (
     <div data-role="buyer" className="flex min-h-screen flex-col bg-background text-foreground">
-      {/* ── 1. Barra Superior de Anuncios y Garantías de Marketplace ── */}
+      {/* ── 1. Barra Superior de Confianza y Garantías Comerciales ── */}
       <div className="border-b border-border/60 bg-surface px-4 py-1.5 text-xs text-foreground-muted">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-4 text-[11px]">
             <span className="flex items-center gap-1.5 text-brand font-medium">
               <Truck className="h-3.5 w-3.5" />
-              Despacho particionado desde bodegas físicas certificadas
+              Envíos rápidos y asegurados a todo el país
             </span>
             <span className="hidden sm:inline text-foreground-subtle" aria-hidden="true">|</span>
             <span className="hidden sm:flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5 text-amber-500" />
-              Reserva atómica de 15 minutos en checkout
+              Compra protegida — 15 minutos de reserva garantizada
             </span>
           </div>
 
-          <div className="hidden md:flex items-center gap-3 text-[11px] font-mono">
-            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+          <div className="hidden md:flex items-center gap-3 text-[11px]">
+            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
               <ShieldCheck className="h-3.5 w-3.5" />
-              Inspección técnica Zentric
+              Garantía oficial Zentric y soporte directo
             </span>
           </div>
         </div>
@@ -278,25 +279,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
       </main>
 
       {/* ── 6. Footer Comercial Zentric Marketplace ── */}
-      <footer className="border-t border-border bg-surface px-4 py-8 text-xs text-foreground-muted sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold tracking-tight text-foreground font-sans">
-              Zentric Marketplace
-            </span>
-            <span>·</span>
-            <span>Comercio Transaccional con Reserva Atómica</span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono">
-            <span>Red de Bodegas Físicas</span>
-            <span>·</span>
-            <span>Despacho Particionado</span>
-            <span>·</span>
-            <span>Inspección Técnica Certificada</span>
-          </div>
-        </div>
-      </footer>
+      <BuyerFooter />
     </div>
   );
 }

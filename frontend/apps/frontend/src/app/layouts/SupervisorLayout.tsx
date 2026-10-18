@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Eye, ShoppingBag, Truck, RotateCcw, Receipt, Sliders } from 'lucide-react';
 import { LayoutHeader } from './LayoutHeader';
 import { LayoutSidebar, type NavGroup } from './LayoutSidebar';
+import { OperationalFooter } from '../components/OperationalFooter';
 
 const supervisorGroups: NavGroup[] = [
   {
@@ -64,6 +65,8 @@ export function SupervisorLayout({ children }: SupervisorLayoutProps) {
             {children}
           </div>
         </main>
+
+        <OperationalFooter roleLabel="Auditoría, Fiscalización & Cumplimiento" />
       </div>
     </div>
   );

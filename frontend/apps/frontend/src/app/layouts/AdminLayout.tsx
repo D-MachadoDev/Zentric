@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { LayoutDashboard, Users, Boxes, Sliders, RotateCcw, Receipt } from 'lucide-react';
 import { LayoutHeader } from './LayoutHeader';
 import { LayoutSidebar, type NavGroup, type NavItem } from './LayoutSidebar';
+import { OperationalFooter } from '../components/OperationalFooter';
 
 const adminAnchor: NavItem[] = [
   { href: '/admin', label: 'Panel General', icon: LayoutDashboard },
@@ -66,6 +67,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 w-full max-w-none">
           {children}
         </main>
+
+        <OperationalFooter roleLabel="Gobernanza & Administración Central" />
       </div>
     </div>
   );

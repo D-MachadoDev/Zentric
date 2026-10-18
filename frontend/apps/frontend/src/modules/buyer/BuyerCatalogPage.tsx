@@ -1,5 +1,5 @@
-import { useState, useMemo, useRef } from 'react';
-import { Link } from '@tanstack/react-router';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { Link, useSearch } from '@tanstack/react-router';
 import { useProductsPagedQuery } from '../../application/services/catalog';
 import { ProductType, type Product } from '../../domain';
 import {
@@ -64,15 +64,37 @@ const MARKETPLACE_CATEGORIES: CategoryDef[] = [
  * - Filtros avanzados y escalables con preservación total del contrato de tests.
  */
 export function BuyerCatalogPage() {
+  const search = useSearch({ strict: false }) as {
+    cat?: string;
+    q?: string;
+    filter?: string;
+  };
+
   const [page, setPage] = useState(1);
   const [pageSize] = useState(12);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(search?.q ?? '');
   const [typeFilter, setTypeFilter] = useState<'All' | ProductType>('All');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [onlyInStock, setOnlyInStock] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>(search?.cat ?? 'all');
+  const [onlyInStock, setOnlyInStock] = useState(search?.filter === 'ofertas');
   const [priceSort, setPriceSort] = useState<'relevance' | 'price-asc' | 'price-desc'>('relevance');
 
   const carouselRef = useRef<HTMLDivElement>(null);
+
+  // Sincronizar parámetros de URL de navegación comercial (shortcuts del header o búsqueda)
+  useEffect(() => {
+    if (search?.cat !== undefined) {
+      setSelectedCategory(search.cat);
+      setPage(1);
+    }
+    if (search?.q !== undefined) {
+      setSearchTerm(search.q);
+      setPage(1);
+    }
+    if (search?.filter === 'ofertas') {
+      setOnlyInStock(true);
+      setPage(1);
+    }
+  }, [search?.cat, search?.q, search?.filter]);
 
   // Consulta paginada del backend con filtro de categoría en backend (Slice 4)
   const {
@@ -169,12 +191,11 @@ export function BuyerCatalogPage() {
             </div>
 
             <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl leading-tight">
-              Hardware & Licencias con <span className="text-brand">Reserva Atómica</span>
+              Hardware & Licencias con <span className="text-brand">Garantía Certificada</span>
             </h2>
 
             <p className="max-w-xl text-sm sm:text-base text-foreground-muted leading-relaxed">
-              Envíos particionados directamente desde nuestras bodegas físicas certificadas.
-              Bloqueo instantáneo de stock por 15 minutos en tu checkout, con cero riesgo de sobreventa.
+              Equipos de alto rendimiento, periféricos profesionales y software con despacho asegurado directo desde bodegas oficiales. Reserva tu inventario exclusivo en checkout y compra con total tranquilidad.
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -215,8 +236,8 @@ export function BuyerCatalogPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4 rounded-xl border border-border/80 bg-surface/90 backdrop-blur-md p-3 text-xs flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-foreground">Bodegas Certificadas Zentric</p>
-                  <p className="text-[11px] text-foreground-muted font-mono">Stock validado por el backend</p>
+                  <p className="font-semibold text-foreground">Envíos Directos Asegurados</p>
+                  <p className="text-[11px] text-foreground-muted font-mono">Stock 100% verificado en bodega</p>
                 </div>
                 <span className="rounded-md bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                   En Stock
@@ -238,7 +259,7 @@ export function BuyerCatalogPage() {
           </div>
           <div>
             <h3 className="text-xs font-bold text-foreground">Reserva de 15 Minutos</h3>
-            <p className="text-[11px] text-foreground-muted">Sin sobreventa en checkout</p>
+            <p className="text-[11px] text-foreground-muted">Stock asegurado en checkout</p>
           </div>
         </div>
 
@@ -247,8 +268,8 @@ export function BuyerCatalogPage() {
             <Truck className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-foreground">Despacho Particionado</h3>
-            <p className="text-[11px] text-foreground-muted">Desde bodegas físicas</p>
+            <h3 className="text-xs font-bold text-foreground">Envíos Asegurados</h3>
+            <p className="text-[11px] text-foreground-muted">Despacho directo y rastreable</p>
           </div>
         </div>
 
@@ -257,8 +278,8 @@ export function BuyerCatalogPage() {
             <ShieldCheck className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-foreground">Inspección Técnica</h3>
-            <p className="text-[11px] text-foreground-muted">Devoluciones verificadas</p>
+            <h3 className="text-xs font-bold text-foreground">Garantía Oficial</h3>
+            <p className="text-[11px] text-foreground-muted">Soporte directo y original</p>
           </div>
         </div>
 
@@ -267,8 +288,8 @@ export function BuyerCatalogPage() {
             <RotateCcw className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-foreground">Facturación Split</h3>
-            <p className="text-[11px] text-foreground-muted">Desglose transparente 95/5</p>
+            <h3 className="text-xs font-bold text-foreground">Devolución Segura</h3>
+            <p className="text-[11px] text-foreground-muted">Reembolso ágil y transparente</p>
           </div>
         </div>
       </section>
@@ -332,7 +353,7 @@ export function BuyerCatalogPage() {
                     <div className="absolute top-2.5 left-2.5">
                       <span className="inline-flex items-center gap-1 rounded-md bg-surface/90 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-brand border border-border shadow-xs">
                         <CheckCircle2 className="h-3 w-3" />
-                        Zentric Full
+                        Envío Asegurado
                       </span>
                     </div>
                     {hasLowStock && (
@@ -428,7 +449,7 @@ export function BuyerCatalogPage() {
               Catálogo de Productos
             </h1>
             <p className="text-xs sm:text-sm text-foreground-muted">
-              Explora hardware de alta especificación, accesorios y software con reserva atómica.
+              Explora hardware de alta especificación, accesorios y software con garantía oficial y disponibilidad inmediata.
             </p>
           </div>
 

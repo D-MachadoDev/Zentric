@@ -10,7 +10,6 @@ import {
   Alert,
   AlertTitle,
   AlertDescription,
-  Badge,
   Logo,
 } from '@zentric/ui';
 import {
@@ -135,27 +134,26 @@ export function LoginPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-5">
             <div className="flex items-center gap-3">
               <Logo />
-              <Badge variant="outline" className="border-border font-mono text-xs text-brand">
-                v1.1.0
-              </Badge>
+              <span className="rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 text-[10px] font-semibold text-brand tracking-wide uppercase">
+                Marketplace Oficial
+              </span>
             </div>
-            <span className="kicker-spike">ARQUITECTURA HEXAGONAL · DDD</span>
+            <span className="font-mono text-xs text-foreground-muted">ZENTRIC COMMERCE</span>
           </div>
 
           <div className="max-w-xl space-y-4">
             <div className="font-mono text-xs font-semibold tracking-[0.14em] text-brand uppercase">
-              01 // PLATAFORMA MULTI-VENDEDOR
+              COMERCIO DIGITAL & HARDWARE EMPRESARIAL
             </div>
             <h1 className="font-sans text-3xl leading-[1.08] font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.65rem]">
               Control centralizado y transaccionalidad sin fricción.
             </h1>
-            <p className="text-base leading-relaxed text-foreground-muted">
-              Marketplace multi-vendedor con inventarios distribuidos por bodega física, checkout
-              atómico con reserva de 15 minutos, liquidación fiscal split y auditoría 360°.
+            <p className="text-sm sm:text-base leading-relaxed text-foreground-muted">
+              Marketplace transaccional para empresas y profesionales. Inventario verificado en red de bodegas físicas, compra protegida y facturación transparente.
             </p>
           </div>
 
-          {/* Pilares normativos en retícula ortogonal suiza */}
+          {/* Pilares comerciales y normativos */}
           <div className="grid max-w-xl grid-cols-1 gap-3.5 pt-2 sm:grid-cols-2">
             <div className="surface-hairline space-y-2 rounded-xl p-4">
               <div className="flex items-center justify-between text-brand">
@@ -166,7 +164,7 @@ export function LoginPage() {
                 <span className="font-mono text-[11px] font-bold text-warning tabular-nums">15:00m</span>
               </div>
               <p className="text-xs leading-relaxed text-foreground-muted">
-                Reserva exclusiva de existencias por 15 minutos que previene el sobregiro de stock.
+                Reserva exclusiva de existencias por 15 minutos en checkout que previene sobreventas.
               </p>
             </div>
 
@@ -179,7 +177,7 @@ export function LoginPage() {
                 <span className="font-mono text-[11px] font-bold text-brand tabular-nums">21 RBAC</span>
               </div>
               <p className="text-xs leading-relaxed text-foreground-muted">
-                Sesión persistente en localStorage validada por JWT, rol único y 21 políticas de autorización.
+                Sesión segura validada por JWT, rol único verificado y garantía de respaldo técnico oficial.
               </p>
             </div>
 
@@ -189,10 +187,10 @@ export function LoginPage() {
                   <Layers className="h-3.5 w-3.5" />
                   Facturación Split
                 </span>
-                <span className="font-mono text-[11px] font-bold text-foreground tabular-nums">95% / 5%</span>
+                <span className="font-mono text-[11px] font-bold text-foreground tabular-nums">DIAN / Split</span>
               </div>
               <p className="text-xs leading-relaxed text-foreground-muted">
-                Factura Maestra para el comprador y liquidación individual confidencial por vendedor.
+                Factura Maestra para compradores y liquidación automática de comisiones para vendedores.
               </p>
             </div>
 
@@ -200,12 +198,12 @@ export function LoginPage() {
               <div className="flex items-center justify-between text-brand">
                 <span className="flex items-center gap-2 font-mono text-xs font-semibold tracking-wider uppercase">
                   <Activity className="h-3.5 w-3.5" />
-                  Logística Real
+                  Envíos Seguros
                 </span>
-                <span className="font-mono text-[11px] font-bold text-foreground tabular-nums">14 DbSets</span>
+                <span className="font-mono text-[11px] font-bold text-foreground tabular-nums">Nacional</span>
               </div>
               <p className="text-xs leading-relaxed text-foreground-muted">
-                Inspección técnica en bodega y certificación de entrega con cadena de custodia.
+                Despacho directo desde bodegas físicas certificadas con número de guía en tiempo real.
               </p>
             </div>
           </div>
@@ -215,13 +213,13 @@ export function LoginPage() {
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-t border-border/80 pt-6">
           <div className="inline-flex items-center gap-2.5 rounded-full border border-border bg-surface px-3.5 py-1.5 font-mono text-xs text-foreground-muted">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-brand" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
             </span>
-            <span className="tabular-nums">RED CENTRAL EN LÍNEA · POSTGRESQL 16</span>
+            <span className="tabular-nums">PLATAFORMA EN LÍNEA · ZENTRIC.ME</span>
           </div>
           <span className="font-mono text-[11px] text-foreground-subtle tabular-nums">
-            PORT 5076 · JWT HS256
+            CONEXIÓN SEGURA TLS
           </span>
         </div>
       </div>
@@ -230,12 +228,14 @@ export function LoginPage() {
       <div className="flex flex-1 items-center justify-center bg-surface p-6 sm:p-10 lg:p-12">
         <div className="w-full max-w-md space-y-6">
           <div className="space-y-1.5">
-            <span className="kicker-spike">ACCESO IDENTIFICADO · RG-01</span>
+            <span className="font-mono text-xs font-semibold text-brand tracking-wider uppercase">
+              PORTAL DE ACCESO · RG-01
+            </span>
             <h2 className="font-sans text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               Entrar a la consola
             </h2>
             <p className="text-sm text-foreground-muted">
-              Ingrese sus credenciales o seleccione un perfil operativo de prueba abajo.
+              Ingresa tus credenciales para acceder a tu cuenta o utiliza los perfiles de prueba.
             </p>
           </div>
 

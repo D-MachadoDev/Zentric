@@ -29,6 +29,8 @@ import {
   Truck,
   RotateCcw,
   Package,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { getProductImageUrl } from './productImages';
 
@@ -38,8 +40,19 @@ import { getProductImageUrl } from './productImages';
  */
 export function BuyerOrdersPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
+  const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
   const { data: orders, isLoading, isError, error, refetch, isFetching } = useOrdersQuery();
   const { data: products } = useProductsQuery();
+
+  const handleCopyOrderId = (id: string) => {
+    try {
+      navigator.clipboard?.writeText(id);
+      setCopiedOrderId(id);
+      setTimeout(() => setCopiedOrderId(null), 2500);
+    } catch {
+      // Fallback silencioso si el portapapeles no está disponible
+    }
+  };
 
   const allOrders = orders ?? [];
 
@@ -230,9 +243,30 @@ export function BuyerOrdersPage() {
                 {/* ── Cabecera del Pedido ── */}
                 <div className="border-b border-border/70 bg-surface-muted/40 p-4 sm:px-6 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-sm font-mono font-bold text-foreground">
-                      Pedido #{order.id.slice(0, 8)}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-mono font-bold text-foreground">
+                        Pedido #{order.id.slice(0, 8).toUpperCase()}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyOrderId(order.id)}
+                        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-mono text-foreground-muted hover:bg-surface-muted hover:text-foreground transition-colors border border-border/70"
+                        title="Copiar ID completo del pedido"
+                        aria-label="Copiar ID del pedido"
+                      >
+                        {copiedOrderId === order.id ? (
+                          <>
+                            <Check className="h-3 w-3 text-brand" />
+                            <span className="text-[10px] text-brand font-semibold">¡Copiado!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span className="text-[10px]">Copiar ID</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                     <StatusBadge tone={TONOS_DE_ESTADO_DE_PEDIDO[order.status]}>
                       {NOMBRES_DE_ESTADO_DE_PEDIDO[order.status]}
                     </StatusBadge>

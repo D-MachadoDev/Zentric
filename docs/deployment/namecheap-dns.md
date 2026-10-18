@@ -52,14 +52,14 @@ zentric-frontend:prod    zentric-api:prod           zentric-frontend:dev     zen
 
 Agregue los siguientes registros en la sección **Host Records** de Namecheap:
 
-| Type | Host | Value / Target | TTL | Propósito |
-|---|---|---|---|---|
-| **A Record** | `@` | `<PROD_SERVER_PUBLIC_IP>` *(ej. `203.0.113.10`)* | 30 min *(o Automatic)* | Enruta el dominio raíz `zentric.me` hacia el servidor de producción. |
-| **CNAME Record** | `www` | `zentric.me.` *(incluir punto final)* | 30 min *(o Automatic)* | Alias canónico de `www.zentric.me` hacia la raíz de producción. |
-| **A Record** | `dev` | `<DEV_SERVER_PUBLIC_IP>` *(ej. `198.51.100.25`)* | 30 min *(o Automatic)* | Enruta el subdominio de staging `dev.zentric.me` a la máquina de pruebas. |
-| **CAA Record** | `@` | `0 issue "letsencrypt.org"` | 30 min | Autoriza exclusivamente a Let's Encrypt para emitir certificados SSL para `zentric.me`. |
-| **CAA Record** | `@` | `0 iodef "mailto:security@zentric.me"` | 30 min | Notificación de intentos de emisión no autorizados. |
-| **TXT Record** | `@` | `v=spf1 -all` | 30 min | Política estricta de seguridad SPF para prevenir suplantación (spoofing) de correo. |
+| Type             | Host  | Value / Target                                   | TTL                    | Propósito                                                                               |
+| ---------------- | ----- | ------------------------------------------------ | ---------------------- | --------------------------------------------------------------------------------------- |
+| **A Record**     | `@`   | `<PROD_SERVER_PUBLIC_IP>` *(ej. `203.0.113.10`)* | 30 min *(o Automatic)* | Enruta el dominio raíz `zentric.me` hacia el servidor de producción.                    |
+| **CNAME Record** | `www` | `zentric.me.` *(incluir punto final)*            | 30 min *(o Automatic)* | Alias canónico de `www.zentric.me` hacia la raíz de producción.                         |
+| **A Record**     | `dev` | `<DEV_SERVER_PUBLIC_IP>` *(ej. `198.51.100.25`)* | 30 min *(o Automatic)* | Enruta el subdominio de staging `dev.zentric.me` a la máquina de pruebas.               |
+| **CAA Record**   | `@`   | `0 issue "letsencrypt.org"`                      | 30 min                 | Autoriza exclusivamente a Let's Encrypt para emitir certificados SSL para `zentric.me`. |
+| **CAA Record**   | `@`   | `0 iodef "mailto:security@zentric.me"`           | 30 min                 | Notificación de intentos de emisión no autorizados.                                     |
+| **TXT Record**   | `@`   | `v=spf1 -all`                                    | 30 min                 | Política estricta de seguridad SPF para prevenir suplantación (spoofing) de correo.     |
 
 > **Nota sobre despliegue en un solo servidor:** Si Producción y Staging residen en el mismo host físico o VPS mediante contenedores diferenciados en puertos aislados, `<PROD_SERVER_PUBLIC_IP>` y `<DEV_SERVER_PUBLIC_IP>` tendrán la misma dirección IP pública. El reverse proxy Nginx discriminara el tráfico mediante el bloque `server_name`.
 
