@@ -1,34 +1,98 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import {
-  Users,
-  Warehouse as WarehouseIcon,
-  ShoppingBag,
-  FileText,
   Activity,
   AlertCircle,
-  RefreshCw,
   ArrowUpRight,
-  ShieldCheck,
+  RefreshCw,
+  ReceiptText as ReceiptIcon,
   RotateCcw,
+  ShoppingBag,
   Sliders,
+  Store,
+  Users,
+  Warehouse as WarehouseIcon,
+  type LucideIcon,
 } from 'lucide-react';
 import {
-  Button,
-  Badge,
-  Skeleton,
   Alert,
-  AlertTitle,
   AlertDescription,
+  AlertTitle,
+  Button,
+  MoneyAmount,
+  Skeleton,
+  StatCard,
+  StatusBadge,
 } from '@zentric/ui';
 import {
+  useHealthQuery,
+  useInvoicesQuery,
+  useOrdersQuery,
   useUsersQuery,
   useWarehousesQuery,
-  useOrdersQuery,
-  useInvoicesQuery,
-  useHealthQuery,
 } from '../../application/services';
-import type { Invoice, OrderListItem, User } from '../../domain';
-import { InvoiceType, OrderStatus } from '../../domain';
+import type { Invoice, OrderListItem, User, Warehouse } from '../../domain';
+import { InvoiceType, OrderStatus, UserRole } from '../../domain';
+import {
+  NOMBRES_DE_ESTADO_DE_PEDIDO,
+  TONOS_DE_ESTADO_DE_PEDIDO,
+} from '../../components/domainLabels';
+
+/**
+ * Centro de Mando del Administrador (Frontend-Role-Modules §2.2).
+ *
+ * Composición: Hero KPI Strip —el GMV facturado domina la banda y tres
+ * contadores compactos lo acompañan en línea (Frontend-Design-System §2.1:
+ * prohibida la cuadrícula de tarjetas clonadas)— y debajo Split-Frame 65/35:
+ * actividad reciente de pedidos a la izquierda; salud operativa y accesos de
+ * gestión a la derecha.
+ *
+ * [ADDENDUM - DICTADO POR OWNER, 2026-10-18]: cero telemetría técnica de
+ * servidor (motor, versiones, DbSets, matriz de políticas); ese detalle vive
+ * en la página pública `/health`. Aquí sólo se habla el negocio del
+ * marketplace.
+ */
+
+/** Accesos de gestión: a dónde va el Administrador a operar el negocio. */
+const ACCESOS_DE_GESTION: ReadonlyArray<{
+  to: '/admin/users' | '/admin/warehouses' | '/admin/inventory-adjustments' | '/admin/returns' | '/admin/invoices';
+  label: string;
+  icon: LucideIcon;
+}> = [
+  { to: '/admin/users', label: 'Usuarios', icon: Users },
+  { to: '/admin/warehouses', label: 'Bodegas', icon: WarehouseIcon },
+  { to: '/admin/inventory-adjustments', label: 'Ajustes de Inventario', icon: Sliders },
+  { to: '/admin/returns', label: 'Devoluciones', icon: RotateCcw },
+  { to: '/admin/invoices', label: 'Facturación', icon: ReceiptIcon },
+];
+
+/** Fecha corta legible (Voz 3: telemetría). El dato crudo lo dicta el servidor. */
+function fechaCorta(iso: string): string {
+  const fecha = new Date(iso);
+  return Number.isNaN(fecha.getTime())
+    ? '—'
+    : fecha.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+/** Hora de la última verificación de salud (Voz 3). */
+function horaCorta(iso: string): string {
+  const fecha = new Date(iso);
+  return Number.isNaN(fecha.getTime()) ? '—' : fecha.toLocaleTimeString('es-CO');
+}
+
+/**
+ * Vendedor visible del pedido en lenguaje de negocio: el nombre del vendedor
+ * cuando todas las líneas son del mismo, o "Multi-vendedor" cuando el pedido
+ * particiona entre varios (ZENTRIC.md Dominio 6: despacho multi-vendedor).
+ */
+function vendedorDelPedido(order: OrderListItem): string {
+  const nombres = Array.from(
+    new Set(order.items.map((item) => item.vendorName).filter((name): name is string => Boolean(name)))
+  );
+  if (nombres.length === 0) return '—';
+  if (nombres.length === 1) return nombres[0] ?? '—';
+  return 'Multi-vendedor';
+}
 
 export function AdminDashboardPage() {
   const {
@@ -42,24 +106,29 @@ export function AdminDashboardPage() {
     data: warehouses = [],
     isLoading: isLoadingWarehouses,
     isError: isErrorWarehouses,
+    refetch: refetchWarehouses,
   } = useWarehousesQuery();
 
   const {
     data: orders = [],
     isLoading: isLoadingOrders,
     isError: isErrorOrders,
+    refetch: refetchOrders,
   } = useOrdersQuery();
 
   const {
     data: invoices = [],
     isLoading: isLoadingInvoices,
     isError: isErrorInvoices,
+    refetch: refetchInvoices,
   } = useInvoicesQuery();
 
   const {
     data: health,
     isLoading: isLoadingHealth,
     isError: isErrorHealth,
+    isFetching: isFetchingHealth,
+    refetch: refetchHealth,
   } = useHealthQuery();
 
   const isLoading =
@@ -69,199 +138,245 @@ export function AdminDashboardPage() {
     isLoadingInvoices ||
     isLoadingHealth;
 
+  // Latencia de la sonda /health medida en el cliente: ida y vuelta de cada
+  // sondeo (inicial, botón Actualizar y la automática cada 30 s). El contrato
+  // del backend no la expone; es telemetría de presentación, no un dato de
+  // negocio (Frontend-Design-System §2.1, capa 3).
+  const [apiLatencyMs, setApiLatencyMs] = useState<number | null>(null);
+  const sondeoIniciadoEn = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (isFetchingHealth) {
+      sondeoIniciadoEn.current = performance.now();
+    } else if (sondeoIniciadoEn.current !== null) {
+      setApiLatencyMs(Math.max(1, Math.round(performance.now() - sondeoIniciadoEn.current)));
+      sondeoIniciadoEn.current = null;
+    }
+  }, [isFetchingHealth]);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        refetchUsers(),
+        refetchWarehouses(),
+        refetchOrders(),
+        refetchInvoices(),
+        refetchHealth(),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // ── Métricas de negocio ────────────────────────────────────────────────
+  // GMV Facturado: monto total de las facturas del comprador (ZENTRIC.md
+  // Dominio 9: la Factura Maestra consolida el 100% del pedido).
+  const facturasComprador = invoices.filter((inv: Invoice) => inv.type === InvoiceType.Master);
+  const gmvFacturado = facturasComprador.reduce((acc, inv) => acc + inv.totalAmount, 0);
+  const gmvCurrency = facturasComprador[0]?.currency ?? 'COP';
+
+  const vendedoresRegistrados = users.filter((u: User) => u.role === UserRole.Seller);
+  const vendedoresActivos = vendedoresRegistrados.filter((u: User) => u.isActive).length;
+
+  const bodegasOperativas = warehouses.filter((w: Warehouse) => w.isActive).length;
+
+  // Pedido "en proceso": vive en la operación (pago, empaque o despacho).
+  // Carrito no es pedido; Entregado/Cancelado ya salió del circuito.
+  const pedidosEnProceso = orders.filter(
+    (o: OrderListItem) =>
+      o.status === OrderStatus.PendingPayment ||
+      o.status === OrderStatus.Paid ||
+      o.status === OrderStatus.Dispatched
+  ).length;
+
+  const actividadReciente = [...orders]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 6);
+
+  const plataformaOperativa = !isErrorHealth && health?.status === 'healthy';
+  const baseDeDatosEnLinea = health?.database === 'up';
+
   if (isLoading) {
     return (
       <div className="space-y-8 w-full max-w-full">
-        <Skeleton className="h-10 w-64 bg-surface" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-28 rounded-2xl bg-surface" />
-          ))}
+        <div className="space-y-2.5 pb-6 border-b border-border">
+          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-8 w-72" />
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <Skeleton className="lg:col-span-6 h-44 rounded-2xl" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:col-span-6">
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+          </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-8 h-80 rounded-2xl bg-surface" />
-          <Skeleton className="lg:col-span-4 h-80 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-8 h-80 rounded-2xl" />
+          <div className="lg:col-span-4 space-y-6">
+            <Skeleton className="h-44 rounded-2xl" />
+            <Skeleton className="h-72 rounded-2xl" />
+          </div>
         </div>
       </div>
     );
   }
 
-  // Cálculos de métricas
-  const masterInvoices = invoices.filter((inv: Invoice) => inv.type === InvoiceType.Master);
-  const totalFacturado = masterInvoices.reduce((acc, inv) => acc + inv.totalAmount, 0);
-
-  const activeUsersCount = users.filter((u: User) => u.isActive).length;
-  const activeWarehousesCount = warehouses.filter((w) => w.isActive).length;
-  const pendingOrdersCount = orders.filter(
-    (o: OrderListItem) => o.status === OrderStatus.PendingPayment || o.status === OrderStatus.Paid
-  ).length;
-
-  const isHealthy = health?.status === 'healthy';
-
   return (
     <div className="space-y-8 w-full max-w-full">
-      {/* ── Encabezado Principal ────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
-        <div className="space-y-1.5">
-          <span className="kicker-spike">GOBERNANZA CENTRAL · MATRIZ 21 POLÍTICAS</span>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
-              Consola de Administración Central
-            </h1>
-            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
-              Root RBAC
-            </Badge>
-          </div>
+      {/* ── Encabezado del Centro de Mando ─────────────────────────────────── */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
+        <div className="space-y-2">
+          <span className="kicker-spike">Gobernanza del marketplace</span>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
+            Centro de Mando
+          </h1>
           <p className="text-sm text-foreground-muted">
-            Supervisión integral de usuarios, infraestructura de bodegas, facturación split y reconciliación operativa.
+            Panorama del marketplace en vivo: ventas facturadas, vendedores, bodegas y pedidos en curso.
           </p>
         </div>
 
         <Button
           variant="outline"
           size="sm"
-          onClick={() => refetchUsers()}
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          aria-busy={isRefreshing}
           className="border-border text-foreground-muted hover:text-foreground"
         >
-          <RefreshCw className="h-4 w-4 mr-2" /> Actualizar Datos
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+          Actualizar
         </Button>
-      </div>
+      </header>
 
-      {/* ── Alertas si algún servicio falla ─────────────────────────────── */}
+      {/* ── Aviso cuando alguna fuente no responde ─────────────────────────── */}
       {(isErrorUsers || isErrorWarehouses || isErrorOrders || isErrorInvoices) && (
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-4 w-4 text-red-400" />
-          <AlertTitle>Fallo parcial en telemetría administrativa</AlertTitle>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" aria-hidden="true" />
+          <AlertTitle>Datos parcialmente no disponibles</AlertTitle>
           <AlertDescription>
-            Uno o más servicios reportaron latencia o fallos de red. Las métricas pueden mostrar datos en caché.
+            Una o varias fuentes del marketplace no respondieron; algunas cifras pueden estar
+            desactualizadas.
           </AlertDescription>
         </Alert>
       )}
 
-      {/* ── Hero KPI Strip ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1: Volumen Facturado Dominante */}
-        <div className="rounded-2xl border border-border bg-surface p-5 flex flex-col justify-between relative overflow-hidden">
-          <div className="flex items-center justify-between text-foreground-muted mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider font-sans">
-              Volumen Facturado
-            </span>
-            <FileText className="h-4 w-4 text-brand" />
-          </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-bold text-foreground font-mono tabular-nums tracking-tight">
-              ${totalFacturado.toLocaleString('es-CO')}
-            </div>
-            <div className="text-xs text-brand mt-1 font-mono">
-              {masterInvoices.length} facturas maestras emitidas
-            </div>
-          </div>
+      {/* ── Hero KPI Strip: GMV dominante + contadores compactos (§2.1) ────── */}
+      <section
+        aria-label="Indicadores principales del marketplace"
+        className="grid grid-cols-1 gap-4 lg:grid-cols-12"
+      >
+        <StatCard
+          variant="hero"
+          className="lg:col-span-6"
+          title="GMV Facturado"
+          value={<MoneyAmount amount={gmvFacturado} currency={gmvCurrency} />}
+          subtitle={`${facturasComprador.length} ${
+            facturasComprador.length === 1 ? 'pedido facturado' : 'pedidos facturados'
+          } en la plataforma`}
+          icon={ReceiptIcon}
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:col-span-6">
+          <StatCard
+            variant="compact"
+            title="Vendedores activos"
+            value={vendedoresActivos}
+            subtitle={`de ${vendedoresRegistrados.length} registrados`}
+            icon={Store}
+          />
+          <StatCard
+            variant="compact"
+            title="Bodegas operativas"
+            value={bodegasOperativas}
+            subtitle={`de ${warehouses.length} en la red logística`}
+            icon={WarehouseIcon}
+          />
+          <StatCard
+            variant="compact"
+            title="Pedidos en proceso"
+            value={pedidosEnProceso}
+            subtitle="en pago, empaque o despacho"
+            icon={ShoppingBag}
+          />
         </div>
+      </section>
 
-        {/* KPI 2: Usuarios Activos */}
-        <div className="rounded-2xl border border-border bg-surface p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-foreground-muted mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider font-sans">
-              Usuarios Activos
-            </span>
-            <Users className="h-4 w-4 text-foreground-muted" />
-          </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-bold text-foreground font-mono tabular-nums">
-              {activeUsersCount}
-            </div>
-            <div className="text-xs text-foreground-muted mt-1">
-              De {users.length} usuarios registrados en la red
-            </div>
-          </div>
-        </div>
-
-        {/* KPI 3: Red de Bodegas */}
-        <div className="rounded-2xl border border-border bg-surface p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-foreground-muted mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider font-sans">
-              Bodegas Físicas
-            </span>
-            <WarehouseIcon className="h-4 w-4 text-foreground-muted" />
-          </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-bold text-foreground font-mono tabular-nums">
-              {activeWarehousesCount}
-            </div>
-            <div className="text-xs text-foreground-muted mt-1">
-              Capacidad total activa en la red
-            </div>
-          </div>
-        </div>
-
-        {/* KPI 4: Pedidos en Trámite */}
-        <div className="rounded-2xl border border-border bg-surface p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-foreground-muted mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider font-sans">
-              Pedidos Pendientes
-            </span>
-            <ShoppingBag className="h-4 w-4 text-warning" />
-          </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-bold text-warning font-mono tabular-nums">
-              {pendingOrdersCount}
-            </div>
-            <div className="text-xs text-foreground-muted mt-1">
-              Requieren pago o procesamiento
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Composición Asimétrica Split-Frame (65% / 35%) ────────────── */}
+      {/* ── Split-Frame 65/35 (Frontend-Design-System §2.1) ────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Lado Izquierdo (65%): Actividad Reciente de Pedidos y Facturas */}
-        <section className="lg:col-span-8 space-y-6">
-          <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-border pb-4">
-              <h2 className="text-base font-semibold text-foreground font-sans flex items-center gap-2">
-                <Activity className="h-4 w-4 text-brand" />
-                Pedidos Recientes de la Plataforma
+        {/* Izquierda (65%): Actividad Reciente de la Plataforma ─────────── */}
+        <section className="lg:col-span-8" aria-labelledby="actividad-reciente">
+          <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+            <div className="flex items-center justify-between border-b border-border bg-surface-muted/40 px-5 py-4">
+              <h2
+                id="actividad-reciente"
+                className="text-sm font-semibold text-foreground flex items-center gap-2 font-sans"
+              >
+                <Activity className="h-4 w-4 text-brand" aria-hidden="true" />
+                Actividad Reciente de la Plataforma
               </h2>
-              <span className="text-xs font-mono text-foreground-muted">
-                {orders.length} pedidos totales
+              <span className="font-mono text-xs text-foreground-muted tabular-nums">
+                {orders.length} {orders.length === 1 ? 'pedido' : 'pedidos'}
               </span>
             </div>
 
-            {orders.length === 0 ? (
-              <p className="text-xs text-foreground-muted py-8 text-center">
+            {actividadReciente.length === 0 ? (
+              <p className="px-5 py-12 text-center text-sm text-foreground-muted">
                 Sin pedidos registrados en la plataforma.
               </p>
             ) : (
-              <div className="divide-y divide-border/60 overflow-x-auto">
+              <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="text-foreground-muted uppercase tracking-wider border-b border-border">
-                      <th className="py-2.5 px-3">ID Pedido</th>
-                      <th className="py-2.5 px-3">Estado</th>
-                      <th className="py-2.5 px-3 text-right">Líneas</th>
-                      <th className="py-2.5 px-3 text-right">Total</th>
+                    <tr className="border-b border-border text-foreground-muted">
+                      <th scope="col" className="px-5 py-2.5 font-medium uppercase tracking-wider">
+                        Pedido
+                      </th>
+                      <th scope="col" className="px-5 py-2.5 font-medium uppercase tracking-wider">
+                        Estado
+                      </th>
+                      <th scope="col" className="px-5 py-2.5 font-medium uppercase tracking-wider">
+                        Vendedor
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-5 py-2.5 font-medium uppercase tracking-wider text-right"
+                      >
+                        Total
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-5 py-2.5 font-medium uppercase tracking-wider text-right"
+                      >
+                        Fecha
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/40">
-                    {orders.slice(0, 6).map((ord: OrderListItem) => (
-                      <tr key={ord.id} className="hover:bg-surface-muted/40 transition-colors">
-                        <td className="py-3 px-3 font-mono text-foreground">
-                          #{ord.id.substring(0, 8)}
+                  <tbody className="divide-y divide-border/60">
+                    {actividadReciente.map((order: OrderListItem) => (
+                      <tr key={order.id} className="transition-colors hover:bg-surface-muted/40">
+                        <td className="px-5 py-3 font-mono font-semibold text-foreground">
+                          #{order.id.slice(0, 8)}
                         </td>
-                        <td className="py-3 px-3">
-                          <Badge
-                            variant="outline"
-                            className="text-[11px] border-border text-foreground-muted"
-                          >
-                            {ord.status}
-                          </Badge>
+                        <td className="px-5 py-3">
+                          <StatusBadge tone={TONOS_DE_ESTADO_DE_PEDIDO[order.status]}>
+                            {NOMBRES_DE_ESTADO_DE_PEDIDO[order.status]}
+                          </StatusBadge>
                         </td>
-                        <td className="py-3 px-3 text-right font-mono text-foreground-muted">
-                          {ord.itemCount}
+                        <td className="px-5 py-3 text-foreground-muted max-w-40 truncate">
+                          {vendedorDelPedido(order)}
                         </td>
-                        <td className="py-3 px-3 text-right font-mono font-semibold text-brand">
-                          ${ord.totalAmount.toLocaleString('es-CO')}
+                        <td className="px-5 py-3 text-right">
+                          <MoneyAmount
+                            amount={order.totalAmount}
+                            currency={order.currency}
+                            className="font-semibold text-foreground"
+                          />
+                        </td>
+                        <td className="px-5 py-3 text-right font-mono text-foreground-muted tabular-nums">
+                          {fechaCorta(order.createdAt)}
                         </td>
                       </tr>
                     ))}
@@ -272,106 +387,81 @@ export function AdminDashboardPage() {
           </div>
         </section>
 
-        {/* Lado Derecho (35%): Panel de Salud y Accesos de Gestión ───────── */}
-        <section className="lg:col-span-4 space-y-6">
-          {/* Telemetría de Salud */}
-          <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-foreground-muted uppercase tracking-wider">
-                Estado del Servidor
+        {/* Derecha (35%): Salud Operativa + Accesos de Gestión ──────────── */}
+        <aside className="lg:col-span-4 space-y-6">
+          {/* Salud Operativa: indicadores simples, sin telemetría de servidor */}
+          <div className="rounded-2xl border border-border bg-surface p-5 space-y-4">
+            <h3 className="text-sm font-semibold text-foreground font-sans">Salud Operativa</h3>
+
+            <div className="flex items-center gap-2.5" role="status" aria-live="polite">
+              <span
+                aria-hidden="true"
+                className={`size-2 rounded-full ${
+                  plataformaOperativa ? 'bg-success' : 'bg-danger animate-pulse'
+                }`}
+              />
+              <span
+                className={`text-sm font-medium ${plataformaOperativa ? 'text-foreground' : 'text-danger'}`}
+              >
+                {plataformaOperativa ? 'Plataforma operativa' : 'Plataforma degradada'}
               </span>
-              <div className="flex items-center gap-1.5">
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    isHealthy && !isErrorHealth ? 'bg-brand' : 'bg-red-400 animate-pulse'
-                  }`}
-                />
-                <span className="text-xs font-mono text-foreground">
-                  {isHealthy && !isErrorHealth ? 'Operativo' : 'Degradado'}
-                </span>
-              </div>
             </div>
 
-            <div className="text-[11px] text-foreground-muted space-y-1 font-mono">
-              <div className="flex justify-between">
-                <span>Motor:</span>
-                <span className="text-foreground">ASP.NET Core (.NET 10)</span>
+            <dl className="space-y-2 border-t border-border-subtle pt-3 font-mono text-xs tabular-nums">
+              <div className="flex items-center justify-between">
+                <dt className="text-foreground-muted">Latencia API</dt>
+                <dd className="text-foreground">
+                  {apiLatencyMs !== null ? `${apiLatencyMs} ms` : '—'}
+                </dd>
               </div>
-              <div className="flex justify-between">
-                <span>Base de Datos:</span>
-                <span className="text-foreground">PostgreSQL 16 Alpine</span>
+              <div className="flex items-center justify-between">
+                <dt className="text-foreground-muted">PostgreSQL</dt>
+                <dd className="flex items-center gap-1.5 text-foreground">
+                  <span
+                    aria-hidden="true"
+                    className={`size-1.5 rounded-full ${
+                      health
+                        ? baseDeDatosEnLinea
+                          ? 'bg-success'
+                          : 'bg-danger'
+                        : 'bg-foreground-subtle'
+                    }`}
+                  />
+                  {health ? (baseDeDatosEnLinea ? 'En línea' : 'Caída') : 'Sin señal'}
+                </dd>
               </div>
-              <div className="flex justify-between">
-                <span>Persistencia:</span>
-                <span className="text-foreground">14 DbSets Auditados</span>
+              <div className="flex items-center justify-between">
+                <dt className="text-foreground-muted">Última verificación</dt>
+                <dd className="text-foreground">
+                  {health?.timestamp ? horaCorta(health.timestamp) : '—'}
+                </dd>
               </div>
-            </div>
+            </dl>
           </div>
 
-          {/* Accesos Rápidos de Administración */}
+          {/* Accesos de Gestión: las cinco estaciones de operación */}
           <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
-            <h3 className="text-xs font-semibold text-foreground-muted uppercase tracking-wider">
-              Acciones Administrativas
-            </h3>
-
-            <div className="space-y-2">
-              <Link
-                to="/admin/users"
-                className="flex items-center justify-between p-3 rounded-xl bg-surface-muted/60 hover:bg-surface-muted border border-border transition-colors group"
-              >
-                <div className="flex items-center gap-2.5 text-xs text-foreground">
-                  <ShieldCheck className="h-4 w-4 text-brand" />
-                  <span>Directorio de Usuarios</span>
-                </div>
-                <ArrowUpRight className="h-3.5 w-3.5 text-foreground-muted group-hover:text-foreground transition-colors" />
-              </Link>
-
-              <Link
-                to="/admin/warehouses"
-                className="flex items-center justify-between p-3 rounded-xl bg-surface-muted/60 hover:bg-surface-muted border border-border transition-colors group"
-              >
-                <div className="flex items-center gap-2.5 text-xs text-foreground">
-                  <WarehouseIcon className="h-4 w-4 text-brand" />
-                  <span>Gestión de Bodegas</span>
-                </div>
-                <ArrowUpRight className="h-3.5 w-3.5 text-foreground-muted group-hover:text-foreground transition-colors" />
-              </Link>
-
-              <Link
-                to="/admin/inventory-adjustments"
-                className="flex items-center justify-between p-3 rounded-xl bg-surface-muted/60 hover:bg-surface-muted border border-border transition-colors group"
-              >
-                <div className="flex items-center gap-2.5 text-xs text-foreground">
-                  <Sliders className="h-4 w-4 text-warning" />
-                  <span>Ajustes por Conteo Físico</span>
-                </div>
-                <ArrowUpRight className="h-3.5 w-3.5 text-foreground-muted group-hover:text-foreground transition-colors" />
-              </Link>
-
-              <Link
-                to="/admin/returns"
-                className="flex items-center justify-between p-3 rounded-xl bg-surface-muted/60 hover:bg-surface-muted border border-border transition-colors group"
-              >
-                <div className="flex items-center gap-2.5 text-xs text-foreground">
-                  <RotateCcw className="h-4 w-4 text-red-400" />
-                  <span>Reembolsos de Devoluciones</span>
-                </div>
-                <ArrowUpRight className="h-3.5 w-3.5 text-foreground-muted group-hover:text-foreground transition-colors" />
-              </Link>
-
-              <Link
-                to="/admin/invoices"
-                className="flex items-center justify-between p-3 rounded-xl bg-surface-muted/60 hover:bg-surface-muted border border-border transition-colors group"
-              >
-                <div className="flex items-center gap-2.5 text-xs text-foreground">
-                  <FileText className="h-4 w-4 text-brand" />
-                  <span>Facturación Split y Comisiones</span>
-                </div>
-                <ArrowUpRight className="h-3.5 w-3.5 text-foreground-muted group-hover:text-foreground transition-colors" />
-              </Link>
-            </div>
+            <h3 className="text-sm font-semibold text-foreground font-sans">Accesos de Gestión</h3>
+            <nav aria-label="Accesos de gestión" className="space-y-1.5">
+              {ACCESOS_DE_GESTION.map((acceso) => (
+                <Link
+                  key={acceso.to}
+                  to={acceso.to}
+                  className="group flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-muted/40 px-3.5 py-2.5 transition-colors hover:border-brand/40 hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                >
+                  <span className="flex items-center gap-2.5 text-xs font-medium text-foreground">
+                    <acceso.icon className="h-4 w-4 text-brand" aria-hidden="true" />
+                    {acceso.label}
+                  </span>
+                  <ArrowUpRight
+                    className="h-3.5 w-3.5 text-foreground-subtle transition-colors group-hover:text-brand"
+                    aria-hidden="true"
+                  />
+                </Link>
+              ))}
+            </nav>
           </div>
-        </section>
+        </aside>
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ import {
   WarehouseType,
 } from '../../domain';
 import {
+  NOMBRES_DE_COMPROBANTE,
   NOMBRES_DE_ESTADO_DE_DESPACHO,
   NOMBRES_DE_ESTADO_DE_DEVOLUCION,
   NOMBRES_DE_ESTADO_DE_PEDIDO,
@@ -18,6 +19,7 @@ import {
   NOMBRES_DE_TIPO_DE_BODEGA,
   NOMBRES_DE_TIPO_DE_FACTURA,
   NOMBRES_DE_TIPO_DE_PRODUCTO,
+  TONOS_DE_COMPROBANTE,
   TONOS_DE_ESTADO_DE_DESPACHO,
   TONOS_DE_ESTADO_DE_DEVOLUCION,
   TONOS_DE_ESTADO_DE_PEDIDO,
@@ -66,6 +68,23 @@ describe('domainLabels (§3)', () => {
     expect(NOMBRES_DE_TIPO_DE_BODEGA[WarehouseType.Marketplace]).toBe('Marketplace');
     expect(NOMBRES_DE_TIPO_DE_BODEGA[WarehouseType.Vendor]).toBe('Vendedor');
     expect(NOMBRES_DE_TIPO_DE_FACTURA[InvoiceType.Master]).toBe('Factura Maestra');
+    expect(NOMBRES_DE_TIPO_DE_FACTURA[InvoiceType.VendorDetail]).toBe('Factura de Vendedor');
+  });
+
+  it('rotula los comprobantes en lenguaje de negocio para la Consola de Facturación [ADDENDUM Owner 2026-10-18]', () => {
+    expect(NOMBRES_DE_COMPROBANTE).toEqual({
+      [InvoiceType.Master]: 'Factura Comprador',
+      [InvoiceType.ZentricDetail]: 'Comisión Plataforma (5%)',
+      [InvoiceType.VendorDetail]: 'Liquidación Vendedor (95%)',
+    });
+    expect(TONOS_DE_COMPROBANTE).toEqual({
+      [InvoiceType.Master]: 'success',
+      [InvoiceType.ZentricDetail]: 'info',
+      [InvoiceType.VendorDetail]: 'neutral',
+    });
+    // El mapa canónico NOMBRES_DE_TIPO_DE_FACTURA se conserva para vistas de auditoría/supervisor
+    expect(NOMBRES_DE_TIPO_DE_FACTURA[InvoiceType.Master]).toBe('Factura Maestra');
+    expect(NOMBRES_DE_TIPO_DE_FACTURA[InvoiceType.ZentricDetail]).toBe('Detalle Zentric');
     expect(NOMBRES_DE_TIPO_DE_FACTURA[InvoiceType.VendorDetail]).toBe('Factura de Vendedor');
   });
 

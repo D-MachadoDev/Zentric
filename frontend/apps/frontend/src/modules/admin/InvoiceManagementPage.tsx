@@ -1,42 +1,102 @@
 import { useState } from 'react';
 import {
-  Search,
-  RefreshCw,
   AlertCircle,
+  Ban,
   CheckCircle,
   FileCheck,
-  Ban,
   Receipt,
-  Layers,
+  RefreshCw,
+  Search,
 } from 'lucide-react';
 import {
-  Button,
-  Badge,
-  Input,
-  Skeleton,
   Alert,
-  AlertTitle,
   AlertDescription,
+  AlertTitle,
+  Badge,
+  Button,
+  Input,
+  MoneyAmount,
+  Skeleton,
+  StatusBadge,
 } from '@zentric/ui';
 import {
-  useInvoicesQuery,
-  useGenerateInvoicesMutation,
   useAnnulInvoicesMutation,
+  useGenerateInvoicesMutation,
+  useInvoicesQuery,
+  useOrdersQuery,
 } from '../../application/services';
-import type { Invoice } from '../../domain';
-import { InvoiceType } from '../../domain';
+import type { Invoice, OrderListItem } from '../../domain';
+import { InvoiceType, OrderStatus } from '../../domain';
+import {
+  NOMBRES_DE_COMPROBANTE,
+  NOMBRES_DE_ESTADO_DE_PEDIDO,
+  TONOS_DE_COMPROBANTE,
+  TONOS_DE_ESTADO_DE_PEDIDO,
+} from '../../components/domainLabels';
+
+/**
+ * Consola de Facturación Operativa (Frontend-Role-Modules §2.2).
+ *
+ * Split-Frame 65/35: tabla de "Comprobantes Emitidos" en lenguaje de negocio
+ * a la izquierda; a la derecha dos estaciones de acción —emitir facturación y
+ * anular la factura del comprador—.
+ *
+ * [ADDENDUM - DICTADO POR OWNER, 2026-10-18]: el Administrador opera con
+ * "Número de pedido" (formato corto #XXXXXXXX), no con UUIDs, y el
+ * vocabulario es de negocio: Factura Comprador, Comisión Plataforma (5%) y
+ * Liquidación Vendedor (95%). El párrafo técnico del invariante de split se
+ * retiró: la documentación de desarrollo no es UI.
+ */
+
+/** Opciones del filtro por tipo de comprobante (rótulos de negocio cortos). */
+const OPCIONES_DE_TIPO: ReadonlyArray<{ valor: string; etiqueta: string }> = [
+  { valor: 'All', etiqueta: 'Todos los comprobantes' },
+  { valor: InvoiceType.Master, etiqueta: 'Factura Comprador' },
+  { valor: InvoiceType.ZentricDetail, etiqueta: 'Comisión Plataforma' },
+  { valor: InvoiceType.VendorDetail, etiqueta: 'Liquidación Vendedor' },
+];
+
+/** Fecha corta legible (Voz 3: telemetría). El dato crudo lo dicta el servidor. */
+function fechaCorta(iso: string): string {
+  const fecha = new Date(iso);
+  return Number.isNaN(fecha.getTime())
+    ? '—'
+    : fecha.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+/**
+ * Resuelve el "Número de pedido" que escribe el Administrador (formato corto
+ * #XXXXXXXX o el identificador completo) contra los pedidos vivos de la
+ * plataforma. El admin opera números de negocio, no UUIDs.
+ */
+function resolverPedido(input: string, orders: OrderListItem[]): OrderListItem | null {
+  const numero = input.trim().replace(/^#/, '').toLowerCase();
+  if (!numero) return null;
+  return (
+    orders.find((o) => o.id.toLowerCase() === numero) ??
+    orders.find((o) => o.id.toLowerCase().startsWith(numero)) ??
+    null
+  );
+}
+
+/** Estados que ya tienen pago confirmado: requisito para emitir facturación. */
+const ESTADOS_PAGADOS: ReadonlyArray<OrderStatus> = [
+  OrderStatus.Paid,
+  OrderStatus.Dispatched,
+  OrderStatus.Delivered,
+];
 
 export function InvoiceManagementPage() {
-  const [typeFilter, setTypeFilter] = useState<string>('All');
+  const [typeFilter, setTypeFilter] = useState<'All' | InvoiceType>('All');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Formulario de emisión
-  const [generateOrderId, setGenerateOrderId] = useState('');
+  // Estación de emisión
+  const [numeroDeEmision, setNumeroDeEmision] = useState('');
   const [generateSuccess, setGenerateSuccess] = useState<string | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
 
-  // Formulario de anulación
-  const [annulOrderId, setAnnulOrderId] = useState('');
+  // Estación de anulación
+  const [numeroDeAnulacion, setNumeroDeAnulacion] = useState('');
   const [annulReason, setAnnulReason] = useState('');
   const [annulSuccess, setAnnulSuccess] = useState<string | null>(null);
   const [annulError, setAnnulError] = useState<string | null>(null);
@@ -50,8 +110,18 @@ export function InvoiceManagementPage() {
     isFetching,
   } = useInvoicesQuery();
 
+  // Pedidos vivos: permiten resolver el número amigable y validar el estado
+  // antes de emitir. El servidor sigue siendo la autoridad financiera.
+  const {
+    data: orders = [],
+    isError: isErrorOrders,
+  } = useOrdersQuery();
+
   const generateMutation = useGenerateInvoicesMutation();
   const annulMutation = useAnnulInvoicesMutation();
+
+  const pedidoDeEmision = resolverPedido(numeroDeEmision, orders);
+  const pedidoDeAnulacion = resolverPedido(numeroDeAnulacion, orders);
 
   const filteredInvoices = invoices.filter((inv: Invoice) => {
     const matchesSearch =
@@ -70,18 +140,25 @@ export function InvoiceManagementPage() {
     setGenerateError(null);
     setGenerateSuccess(null);
 
-    if (!generateOrderId.trim()) {
-      setGenerateError('Debe ingresar el ID del pedido para emitir facturación.');
+    if (!numeroDeEmision.trim()) {
+      setGenerateError('Ingrese el número del pedido pagado a facturar.');
+      return;
+    }
+
+    if (!pedidoDeEmision) {
+      setGenerateError('No encontramos ningún pedido con ese número. Verifíquelo e intente de nuevo.');
       return;
     }
 
     try {
-      await generateMutation.mutateAsync(generateOrderId.trim());
-      setGenerateSuccess(`Facturación split generada exitosamente para pedido #${generateOrderId.substring(0, 8)}...`);
-      setGenerateOrderId('');
+      await generateMutation.mutateAsync(pedidoDeEmision.id);
+      setGenerateSuccess(
+        `Facturación emitida para el pedido #${pedidoDeEmision.id.slice(0, 8)}: factura del comprador, comisión de la plataforma (5%) y liquidación al vendedor (95%).`
+      );
+      setNumeroDeEmision('');
     } catch (err) {
       setGenerateError(
-        err instanceof Error ? err.message : 'Error al emitir facturación split.'
+        err instanceof Error ? err.message : 'No fue posible emitir la facturación del pedido.'
       );
     }
   };
@@ -91,27 +168,34 @@ export function InvoiceManagementPage() {
     setAnnulError(null);
     setAnnulSuccess(null);
 
-    if (!annulOrderId.trim()) {
-      setAnnulError('Debe ingresar el ID del pedido a anular.');
+    if (!numeroDeAnulacion.trim()) {
+      setAnnulError('Ingrese el número del pedido cuya facturación desea anular.');
+      return;
+    }
+
+    if (!pedidoDeAnulacion) {
+      setAnnulError('No encontramos ningún pedido con ese número. Verifíquelo e intente de nuevo.');
       return;
     }
 
     if (!annulReason.trim()) {
-      setAnnulError('Debe especificar el motivo obligatorio de anulación.');
+      setAnnulError('El motivo legal es obligatorio para anular la facturación.');
       return;
     }
 
     try {
       await annulMutation.mutateAsync({
-        orderId: annulOrderId.trim(),
+        orderId: pedidoDeAnulacion.id,
         input: { reason: annulReason.trim() },
       });
-      setAnnulSuccess(`Facturas anuladas exitosamente para pedido #${annulOrderId.substring(0, 8)}...`);
-      setAnnulOrderId('');
+      setAnnulSuccess(
+        `Facturación del pedido #${pedidoDeAnulacion.id.slice(0, 8)} anulada. El motivo legal quedó registrado.`
+      );
+      setNumeroDeAnulacion('');
       setAnnulReason('');
     } catch (err) {
       setAnnulError(
-        err instanceof Error ? err.message : 'Error al anular facturas.'
+        err instanceof Error ? err.message : 'No fue posible anular la facturación del pedido.'
       );
     }
   };
@@ -119,10 +203,13 @@ export function InvoiceManagementPage() {
   if (isLoading) {
     return (
       <div className="space-y-8 w-full max-w-full">
-        <Skeleton className="h-10 w-64 bg-surface" />
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
-          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-surface" />
+        <Skeleton className="h-8 w-80" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <Skeleton className="lg:col-span-8 h-96 rounded-2xl" />
+          <div className="lg:col-span-4 space-y-6">
+            <Skeleton className="h-64 rounded-2xl" />
+            <Skeleton className="h-72 rounded-2xl" />
+          </div>
         </div>
       </div>
     );
@@ -131,19 +218,21 @@ export function InvoiceManagementPage() {
   if (isError) {
     return (
       <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
-          <AlertTitle>Error al cargar facturas</AlertTitle>
+        <Alert variant="destructive">
+          <AlertCircle className="h-5 w-5" aria-hidden="true" />
+          <AlertTitle>No fue posible cargar la facturación</AlertTitle>
           <AlertDescription>
-            {error instanceof Error ? error.message : 'Ocurrió un error inesperado.'}
+            {error instanceof Error
+              ? error.message
+              : 'Ocurrió un error inesperado al consultar los comprobantes.'}
           </AlertDescription>
         </Alert>
         <Button
           onClick={() => refetch()}
           variant="outline"
-          className="border-border text-foreground hover:bg-border"
+          className="border-border text-foreground-muted hover:text-foreground"
         >
-          <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
+          <RefreshCw className="h-4 w-4" aria-hidden="true" /> Reintentar
         </Button>
       </div>
     );
@@ -151,19 +240,24 @@ export function InvoiceManagementPage() {
 
   return (
     <div className="space-y-8 w-full max-w-full">
-      {/* ── Encabezado ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
+      {/* ── Encabezado de la Consola de Facturación ───────────────────────── */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
+        <div className="space-y-2">
+          <span className="kicker-spike">Operación financiera del marketplace</span>
+          <div className="flex items-center gap-2.5">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
-              Facturación Split y Libro Tributario
+              Facturación y Comisiones
             </h1>
-            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
-              {invoices.length} Comprobantes
+            <Badge
+              variant="outline"
+              className="border-border font-mono text-xs text-foreground-muted tabular-nums"
+            >
+              {invoices.length} {invoices.length === 1 ? 'comprobante' : 'comprobantes'}
             </Badge>
           </div>
           <p className="text-sm text-foreground-muted">
-            Emisión atómica split (Factura Maestra, Detalle Zentric y Detalle Vendedor) y anulación legal de comprobantes.
+            Emisión de comprobantes de pedidos pagados, comisión de la plataforma y liquidación a
+            vendedores.
           </p>
         </div>
 
@@ -172,230 +266,320 @@ export function InvoiceManagementPage() {
           size="sm"
           onClick={() => refetch()}
           disabled={isFetching}
+          aria-busy={isFetching}
           className="border-border text-foreground-muted hover:text-foreground"
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} aria-hidden="true" />
           Refrescar
         </Button>
-      </div>
+      </header>
 
-      {/* ── Split-Frame (65% / 35%) ─────────────────────────────────────── */}
+      {isErrorOrders && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" aria-hidden="true" />
+          <AlertTitle>Pedidos no disponibles</AlertTitle>
+          <AlertDescription>
+            No fue posible consultar los pedidos; el número de pedido no podrá validarse hasta
+            restablecer la conexión.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* ── Split-Frame 65/35 (Frontend-Design-System §2.1) ────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Lado Izquierdo (65%): Tabla de Facturas ──────────────────────── */}
-        <section className="lg:col-span-8 space-y-6">
-          {/* Controles de Búsqueda y Filtro de Tipo */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
-              <Input
-                type="text"
-                placeholder="Buscar por ID factura, pedido o vendedor..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-surface border-border text-foreground placeholder:text-foreground-muted focus:border-brand"
-              />
+        {/* Izquierda (65%): Comprobantes Emitidos ────────────────────────── */}
+        <section className="lg:col-span-8" aria-labelledby="comprobantes-emitidos">
+          <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+            <div className="flex items-center justify-between border-b border-border bg-surface-muted/40 px-5 py-4">
+              <h2
+                id="comprobantes-emitidos"
+                className="text-sm font-semibold text-foreground font-sans"
+              >
+                Comprobantes Emitidos
+              </h2>
+              <span className="font-mono text-xs text-foreground-muted tabular-nums">
+                {filteredInvoices.length} de {invoices.length}
+              </span>
             </div>
 
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              aria-label="Filtrar por tipo de factura"
-              className="bg-surface border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
-            >
-              <option value="All">Todos los Comprobantes</option>
-              <option value={InvoiceType.Master}>Factura Maestra (Comprador)</option>
-              <option value={InvoiceType.ZentricDetail}>Detalle Comisión Zentric</option>
-              <option value={InvoiceType.VendorDetail}>Detalle Liquidación Vendedor</option>
-            </select>
-          </div>
+            {/* Búsqueda y filtro por tipo de comprobante */}
+            <div className="flex flex-col sm:flex-row gap-3 border-b border-border px-5 py-4">
+              <div className="relative flex-1">
+                <Search
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted"
+                  aria-hidden="true"
+                />
+                <Input
+                  type="text"
+                  aria-label="Buscar comprobantes"
+                  placeholder="Buscar por comprobante, pedido o vendedor…"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-surface text-foreground placeholder:text-foreground-muted"
+                />
+              </div>
 
-          {filteredInvoices.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-surface p-12 text-center">
-              <Receipt className="h-10 w-10 text-foreground-muted mx-auto mb-3" />
-              <h3 className="text-sm font-semibold text-foreground">No se encontraron facturas</h3>
-              <p className="text-xs text-foreground-muted mt-1">
-                Genere la facturación split para pedidos pagados o ajuste los filtros.
-              </p>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value as 'All' | InvoiceType)}
+                aria-label="Filtrar por tipo de comprobante"
+                className="h-9 rounded-md border border-border bg-surface px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                {OPCIONES_DE_TIPO.map((opcion) => (
+                  <option key={opcion.valor} value={opcion.valor}>
+                    {opcion.etiqueta}
+                  </option>
+                ))}
+              </select>
             </div>
-          ) : (
-            <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+
+            {filteredInvoices.length === 0 ? (
+              <div className="px-5 py-12 text-center">
+                <Receipt className="h-8 w-8 text-foreground-subtle mx-auto mb-3" aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-foreground">Sin comprobantes que coincidan</h3>
+                <p className="text-xs text-foreground-muted mt-1">
+                  Ajuste la búsqueda o el tipo, o emita la facturación de un pedido pagado.
+                </p>
+              </div>
+            ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-border text-foreground-muted uppercase tracking-wider font-sans bg-surface-muted/40">
-                      <th className="py-3 px-4">Comprobante</th>
-                      <th className="py-3 px-4">Pedido Original</th>
-                      <th className="py-3 px-4">Tipo</th>
-                      <th className="py-3 px-4 text-right">Importe</th>
-                      <th className="py-3 px-4">Emisión</th>
+                    <tr className="border-b border-border text-foreground-muted">
+                      <th scope="col" className="px-5 py-2.5 font-medium uppercase tracking-wider">
+                        Comprobante
+                      </th>
+                      <th scope="col" className="px-5 py-2.5 font-medium uppercase tracking-wider">
+                        Pedido
+                      </th>
+                      <th scope="col" className="px-5 py-2.5 font-medium uppercase tracking-wider">
+                        Tipo
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-5 py-2.5 font-medium uppercase tracking-wider text-right"
+                      >
+                        Importe
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-5 py-2.5 font-medium uppercase tracking-wider text-right"
+                      >
+                        Emisión
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
                     {filteredInvoices.map((inv: Invoice) => (
-                      <tr key={inv.id} className="hover:bg-surface-muted/40 transition-colors">
-                        <td className="py-4 px-4 font-mono font-semibold text-foreground">
-                          #{inv.id.substring(0, 8)}
+                      <tr key={inv.id} className="transition-colors hover:bg-surface-muted/40">
+                        <td className="px-5 py-3.5 font-mono font-semibold text-foreground">
+                          #{inv.id.slice(0, 8)}
                         </td>
-                        <td className="py-4 px-4 font-mono text-foreground-muted">
-                          #{inv.customerOrderId.substring(0, 8)}
+                        <td className="px-5 py-3.5 font-mono text-foreground-muted">
+                          #{inv.customerOrderId.slice(0, 8)}
                         </td>
-                        <td className="py-4 px-4">
-                          {inv.type === InvoiceType.Master ? (
-                            <Badge
-                              variant="outline"
-                              className="border-brand/40 text-brand text-[10px] font-mono"
-                            >
-                              Maestra
-                            </Badge>
-                          ) : inv.type === InvoiceType.ZentricDetail ? (
-                            <Badge
-                              variant="outline"
-                              className="border-warning/40 text-warning text-[10px] font-mono"
-                            >
-                              Comisión 5%
-                            </Badge>
-                          ) : (
-                            <div className="space-y-0.5">
-                              <Badge
-                                variant="outline"
-                                className="border-foreground-muted/40 text-foreground-muted text-[10px] font-mono"
-                              >
-                                Vendedor 95%
-                              </Badge>
-                              {inv.vendorId && (
-                                <div className="text-[10px] font-mono text-foreground-muted">
-                                  Vend: #{inv.vendorId.substring(0, 6)}
-                                </div>
-                              )}
+                        <td className="px-5 py-3.5">
+                          <StatusBadge tone={TONOS_DE_COMPROBANTE[inv.type]}>
+                            {NOMBRES_DE_COMPROBANTE[inv.type]}
+                          </StatusBadge>
+                          {inv.type === InvoiceType.VendorDetail && inv.vendorId && (
+                            <div className="mt-1 font-mono text-[10px] text-foreground-muted">
+                              Vendedor #{inv.vendorId.slice(0, 8)}
                             </div>
                           )}
                         </td>
-                        <td className="py-4 px-4 text-right font-mono font-bold text-foreground tabular-nums">
-                          ${inv.totalAmount.toLocaleString('es-CO')}{' '}
-                          <span className="text-[10px] text-foreground-muted">{inv.currency}</span>
+                        <td className="px-5 py-3.5 text-right">
+                          <MoneyAmount
+                            amount={inv.totalAmount}
+                            currency={inv.currency}
+                            className="font-semibold text-foreground"
+                          />
                         </td>
-                        <td className="py-4 px-4 font-mono text-[11px] text-foreground-muted">
-                          {inv.issuedAt ? inv.issuedAt.substring(0, 10) : '—'}
+                        <td className="px-5 py-3.5 text-right font-mono text-foreground-muted tabular-nums">
+                          {inv.issuedAt ? fechaCorta(inv.issuedAt) : '—'}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </section>
 
-        {/* Lado Derecho (35%): Estaciones de Emisión y Anulación ────────── */}
-        <section className="lg:col-span-4 space-y-6">
-          {/* Estación 1: Emitir Facturación Split */}
-          <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground font-sans flex items-center gap-2">
-              <FileCheck className="h-4 w-4 text-brand" />
-              Emitir Facturación Split
-            </h3>
+        {/* Derecha (35%): Estaciones de acción ───────────────────────────── */}
+        <aside className="lg:col-span-4 space-y-6" aria-label="Acciones de facturación">
+          {/* Estación 1: Emitir Facturación (acción primaria, índigo de mando) */}
+          <div className="rounded-2xl border border-border bg-surface p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <FileCheck className="h-4 w-4 text-brand" aria-hidden="true" />
+              <h3 className="text-sm font-semibold text-foreground font-sans">Emitir Facturación</h3>
+            </div>
+            <p className="text-xs text-foreground-muted leading-relaxed">
+              Para un pedido pagado se emiten la factura del comprador, la comisión de la plataforma
+              (5%) y la liquidación al vendedor (95%).
+            </p>
 
             {generateSuccess && (
-              <Alert className="border-brand/40 bg-brand/10 text-brand">
-                <CheckCircle className="h-4 w-4 text-brand" />
+              <Alert variant="success" role="status">
+                <CheckCircle className="h-4 w-4" aria-hidden="true" />
                 <AlertDescription className="text-xs">{generateSuccess}</AlertDescription>
               </Alert>
             )}
 
             {generateError && (
-              <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-                <AlertCircle className="h-4 w-4 text-red-400" />
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" aria-hidden="true" />
                 <AlertDescription className="text-xs">{generateError}</AlertDescription>
               </Alert>
             )}
 
-            <form onSubmit={handleGenerate} className="space-y-3 text-xs">
-              <div>
-                <label className="text-foreground-muted block mb-1">ID del Pedido Pagado (UUID)</label>
+            <form onSubmit={handleGenerate} className="space-y-3" noValidate>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="numero-de-emision"
+                  className="text-xs font-medium text-foreground-muted"
+                >
+                  Número de pedido
+                </label>
                 <Input
+                  id="numero-de-emision"
                   type="text"
-                  placeholder="UUID del pedido a facturar"
-                  value={generateOrderId}
-                  onChange={(e) => setGenerateOrderId(e.target.value)}
-                  className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-brand"
+                  placeholder="Ej. #A1B2C3D4"
+                  value={numeroDeEmision}
+                  onChange={(e) => setNumeroDeEmision(e.target.value)}
+                  aria-invalid={Boolean(generateError)}
+                  className="border-border bg-surface-muted/60 font-mono text-xs"
                 />
               </div>
 
+              {pedidoDeEmision && (
+                <div
+                  role="status"
+                  className="flex items-center justify-between gap-2 rounded-lg border border-border bg-surface-muted/50 px-3 py-2"
+                >
+                  <span className="font-mono text-xs text-foreground">
+                    #{pedidoDeEmision.id.slice(0, 8)}
+                  </span>
+                  <StatusBadge tone={TONOS_DE_ESTADO_DE_PEDIDO[pedidoDeEmision.status]}>
+                    {NOMBRES_DE_ESTADO_DE_PEDIDO[pedidoDeEmision.status]}
+                  </StatusBadge>
+                  <MoneyAmount
+                    amount={pedidoDeEmision.totalAmount}
+                    currency={pedidoDeEmision.currency}
+                    className="text-xs font-semibold"
+                  />
+                </div>
+              )}
+
+              {pedidoDeEmision && !ESTADOS_PAGADOS.includes(pedidoDeEmision.status) && (
+                <p className="text-xs text-warning">
+                  Este pedido aún no tiene pago confirmado; la facturación se emite sólo para
+                  pedidos pagados.
+                </p>
+              )}
+
               <Button
                 type="submit"
-                disabled={generateMutation.isPending}
-                className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold text-xs"
+                className="w-full font-semibold"
+                isLoading={generateMutation.isPending}
               >
-                {generateMutation.isPending ? 'Generando...' : 'Emitir Facturación Split'}
+                Emitir Facturación
               </Button>
             </form>
           </div>
 
-          {/* Estación 2: Anulación Legal */}
-          <div className="rounded-2xl border border-red-900/40 bg-surface p-6 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-red-400 font-sans flex items-center gap-2">
-              <Ban className="h-4 w-4" />
-              Anulación Legal de Facturas
-            </h3>
+          {/* Estación 2: Anular Factura Comprador (acción destructiva) */}
+          <div className="rounded-2xl border border-destructive/30 bg-surface p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Ban className="h-4 w-4 text-destructive" aria-hidden="true" />
+              <h3 className="text-sm font-semibold text-foreground font-sans">
+                Anular Factura Comprador
+              </h3>
+            </div>
+            <p className="text-xs text-foreground-muted leading-relaxed">
+              Revierte los comprobantes emitidos de un pedido; el motivo legal queda registrado en el
+              libro de comprobantes.
+            </p>
 
             {annulSuccess && (
-              <Alert className="border-brand/40 bg-brand/10 text-brand">
-                <CheckCircle className="h-4 w-4 text-brand" />
+              <Alert variant="success" role="status">
+                <CheckCircle className="h-4 w-4" aria-hidden="true" />
                 <AlertDescription className="text-xs">{annulSuccess}</AlertDescription>
               </Alert>
             )}
 
             {annulError && (
-              <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-                <AlertCircle className="h-4 w-4 text-red-400" />
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" aria-hidden="true" />
                 <AlertDescription className="text-xs">{annulError}</AlertDescription>
               </Alert>
             )}
 
-            <form onSubmit={handleAnnul} className="space-y-3 text-xs">
-              <div>
-                <label className="text-foreground-muted block mb-1">ID del Pedido a Anular (UUID)</label>
+            <form onSubmit={handleAnnul} className="space-y-3" noValidate>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="numero-de-anulacion"
+                  className="text-xs font-medium text-foreground-muted"
+                >
+                  Número de pedido
+                </label>
                 <Input
+                  id="numero-de-anulacion"
                   type="text"
-                  placeholder="UUID del pedido facturado"
-                  value={annulOrderId}
-                  onChange={(e) => setAnnulOrderId(e.target.value)}
-                  className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-red-500"
+                  placeholder="Ej. #A1B2C3D4"
+                  value={numeroDeAnulacion}
+                  onChange={(e) => setNumeroDeAnulacion(e.target.value)}
+                  aria-invalid={Boolean(annulError)}
+                  className="border-border bg-surface-muted/60 font-mono text-xs"
                 />
               </div>
 
-              <div>
-                <label className="text-foreground-muted block mb-1">Motivo Legal de Anulación</label>
+              <div className="space-y-1.5">
+                <label htmlFor="motivo-legal" className="text-xs font-medium text-foreground-muted">
+                  Motivo legal (obligatorio)
+                </label>
                 <Input
+                  id="motivo-legal"
                   type="text"
-                  placeholder="Ej. Devolución total del pedido"
+                  placeholder="Ej. Devolución total acreditada al comprador"
                   value={annulReason}
                   onChange={(e) => setAnnulReason(e.target.value)}
-                  className="bg-surface-muted border-border text-foreground text-xs focus:border-red-500"
+                  aria-invalid={Boolean(annulError)}
+                  className="border-border bg-surface-muted/60 text-xs"
                 />
               </div>
+
+              {pedidoDeAnulacion && (
+                <div
+                  role="status"
+                  className="flex items-center justify-between gap-2 rounded-lg border border-border bg-surface-muted/50 px-3 py-2"
+                >
+                  <span className="font-mono text-xs text-foreground">
+                    #{pedidoDeAnulacion.id.slice(0, 8)}
+                  </span>
+                  <StatusBadge tone={TONOS_DE_ESTADO_DE_PEDIDO[pedidoDeAnulacion.status]}>
+                    {NOMBRES_DE_ESTADO_DE_PEDIDO[pedidoDeAnulacion.status]}
+                  </StatusBadge>
+                  <MoneyAmount
+                    amount={pedidoDeAnulacion.totalAmount}
+                    currency={pedidoDeAnulacion.currency}
+                    className="text-xs font-semibold"
+                  />
+                </div>
+              )}
 
               <Button
                 type="submit"
-                variant="outline"
-                disabled={annulMutation.isPending}
-                className="w-full border-red-900/60 text-red-400 hover:bg-red-950/40 hover:text-red-300 font-semibold text-xs"
+                variant="destructive"
+                className="w-full font-semibold"
+                isLoading={annulMutation.isPending}
               >
-                {annulMutation.isPending ? 'Anulando...' : 'Anular Facturas del Pedido'}
+                Anular Facturación
               </Button>
             </form>
           </div>
-
-          <div className="rounded-2xl border border-border bg-surface p-5 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-brand">
-              <Layers className="h-4 w-4" />
-              <span>Invariante de Split de Facturación</span>
-            </div>
-            <p className="text-[11px] text-foreground-muted leading-relaxed">
-              Zentric desglosa automáticamente cada pedido en una Factura Maestra hacia el comprador, una Factura de Comisión del 5% para la plataforma, y las Facturas de Detalle hacia los respectivos vendedores participantes (95%).
-            </p>
-          </div>
-        </section>
+        </aside>
       </div>
     </div>
   );

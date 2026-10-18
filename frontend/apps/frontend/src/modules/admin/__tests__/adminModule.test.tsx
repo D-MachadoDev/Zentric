@@ -227,21 +227,22 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
 
   // ── 1. AdminDashboardPage ─────────────────────────────────────────────
   describe('AdminDashboardPage', () => {
-    it('renderiza KPIs consolidados, volumen facturado y pedidos recientes', async () => {
+    it('renderiza KPIs consolidados, GMV facturado y actividad reciente', async () => {
       renderWithClient(<AdminDashboardPage />);
 
-      expect(await screen.findByText('Consola de Administración Central')).toBeInTheDocument();
-      expect(screen.getByText('Root RBAC')).toBeInTheDocument();
+      expect(await screen.findByText('Centro de Mando')).toBeInTheDocument();
+      expect(screen.queryByText('Root RBAC')).not.toBeInTheDocument();
 
-      // Métricas principales
-      expect(screen.getByText('Volumen Facturado')).toBeInTheDocument();
-      expect(screen.getAllByText('$500.000').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByText('Usuarios Activos')).toBeInTheDocument();
-      expect(screen.getByText('Bodegas Físicas')).toBeInTheDocument();
-      expect(screen.getByText('Pedidos Pendientes')).toBeInTheDocument();
+      // Métricas principales — Hero KPI Strip
+      expect(screen.getByText('GMV Facturado')).toBeInTheDocument();
+      // MoneyAmount aparece 2 veces (hero + tabla); validamos que al menos una existe
+      expect(screen.getAllByText('$ 500.000,00').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText('Vendedores activos')).toBeInTheDocument();
+      expect(screen.getByText('Bodegas operativas')).toBeInTheDocument();
+      expect(screen.getByText('Pedidos en proceso')).toBeInTheDocument();
 
-      // Pedidos recientes en tabla
-      expect(screen.getByText('Pedidos Recientes de la Plataforma')).toBeInTheDocument();
+      // Actividad reciente en tabla
+      expect(screen.getByText('Actividad Reciente de la Plataforma')).toBeInTheDocument();
       expect(screen.getByText('#order-11')).toBeInTheDocument();
     });
 
@@ -251,7 +252,7 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
 
       renderWithClient(<AdminDashboardPage />);
 
-      expect(await screen.findByText('Fallo parcial en telemetría administrativa')).toBeInTheDocument();
+      expect(await screen.findByText('Datos parcialmente no disponibles')).toBeInTheDocument();
       expect(screen.getByText('Sin pedidos registrados en la plataforma.')).toBeInTheDocument();
     });
   });
@@ -716,37 +717,38 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
 
   // ── 7. InvoiceManagementPage ──────────────────────────────────────────
   describe('InvoiceManagementPage', () => {
-    it('muestra comprobantes tributarios, permite emitir split y anular facturas', async () => {
+    it('muestra comprobantes emitidos, permite emitir facturación y anular factura comprador', async () => {
       const generateSpy = vi.spyOn(appServices.api, 'generateInvoices').mockResolvedValue(true);
       const annulSpy = vi.spyOn(appServices.api, 'annulInvoices').mockResolvedValue(undefined);
 
       renderWithClient(<InvoiceManagementPage />);
 
-      expect(await screen.findByText('Facturación Split y Libro Tributario')).toBeInTheDocument();
+      expect(await screen.findByText('Facturación y Comisiones')).toBeInTheDocument();
       expect(screen.getByText('#inv-mast')).toBeInTheDocument();
-      expect(screen.getByText('Comisión 5%')).toBeInTheDocument();
-      expect(screen.getByText('Vendedor 95%')).toBeInTheDocument();
+      expect(screen.getByText('Comisión Plataforma (5%)')).toBeInTheDocument();
+      expect(screen.getByText('Liquidación Vendedor (95%)')).toBeInTheDocument();
 
-      // Emitir facturación split
-      const orderInput = screen.getByPlaceholderText(/UUID del pedido a facturar/i);
-      fireEvent.change(orderInput, { target: { value: 'order-9999-9999' } });
+      // Emitir facturación — usar número de pedido EXISTENTE y PAGADO (order-1111-1111)
+      // El primer input "Número de pedido" está en la estación de emisión (id=numero-de-emision)
+      const emitInput = screen.getAllByLabelText('Número de pedido')[0]!;
+      fireEvent.change(emitInput, { target: { value: 'order-1111-1111' } });
 
-      const generateBtn = screen.getByRole('button', { name: /Emitir Facturación Split/i });
+      const generateBtn = screen.getByRole('button', { name: /Emitir Facturación/i });
       fireEvent.click(generateBtn);
 
       await waitFor(() => {
-        expect(generateSpy).toHaveBeenCalledWith('order-9999-9999');
+        expect(generateSpy).toHaveBeenCalledWith('order-1111-1111');
       });
-      expect(await screen.findByText(/Facturación split generada exitosamente/i)).toBeInTheDocument();
+      expect(await screen.findByText(/Facturación emitida para el pedido/i)).toBeInTheDocument();
 
-      // Anular facturas
-      const annulOrderInput = screen.getByPlaceholderText(/UUID del pedido facturado/i);
-      fireEvent.change(annulOrderInput, { target: { value: 'order-1111-1111' } });
+      // Anular factura comprador — el segundo input "Número de pedido" (id=numero-de-anulacion)
+      const annulInputs = screen.getAllByLabelText('Número de pedido');
+      fireEvent.change(annulInputs[1]!, { target: { value: 'order-1111-1111' } });
 
-      const annulReasonInput = screen.getByPlaceholderText(/Devolución total del pedido/i);
+      const annulReasonInput = screen.getByLabelText('Motivo legal (obligatorio)');
       fireEvent.change(annulReasonInput, { target: { value: 'Cancelación legal por retracto' } });
 
-      const annulBtn = screen.getByRole('button', { name: /Anular Facturas del Pedido/i });
+      const annulBtn = screen.getByRole('button', { name: /Anular Facturación/i });
       fireEvent.click(annulBtn);
 
       await waitFor(() => {
@@ -754,7 +756,7 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
           reason: 'Cancelación legal por retracto',
         });
       });
-      expect(await screen.findByText(/Facturas anuladas exitosamente/i)).toBeInTheDocument();
+      expect(await screen.findByText(/Facturación del pedido.*anulada/i)).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
     });
 
@@ -763,57 +765,58 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
       vi.spyOn(appServices.api, 'annulInvoices').mockRejectedValue(new Error('Factura ya anulada'));
       renderWithClient(<InvoiceManagementPage />);
 
-      const generateBtn = await screen.findByRole('button', { name: /Emitir Facturación Split/i });
+      const generateBtn = await screen.findByRole('button', { name: /Emitir Facturación/i });
       fireEvent.click(generateBtn);
       expect(
-        await screen.findByText('Debe ingresar el ID del pedido para emitir facturación.')
+        await screen.findByText('Ingrese el número del pedido pagado a facturar.')
       ).toBeInTheDocument();
 
-      fireEvent.change(screen.getByPlaceholderText(/UUID del pedido a facturar/i), {
+      fireEvent.change(screen.getAllByLabelText('Número de pedido')[0]!, {
         target: { value: 'order-fail' },
       });
       fireEvent.click(generateBtn);
-      expect(await screen.findByText('Pedido sin pago confirmado')).toBeInTheDocument();
+      expect(await screen.findByText(/No encontramos ningún pedido con ese número/)).toBeInTheDocument();
 
-      const annulBtn = screen.getByRole('button', { name: /Anular Facturas del Pedido/i });
+      const annulBtn = screen.getByRole('button', { name: /Anular Facturación/i });
       fireEvent.click(annulBtn);
       expect(
-        await screen.findByText('Debe ingresar el ID del pedido a anular.')
+        await screen.findByText('Ingrese el número del pedido cuya facturación desea anular.')
       ).toBeInTheDocument();
 
       // Con orderId pero sin reason
-      fireEvent.change(screen.getByPlaceholderText(/UUID del pedido facturado/i), {
+      const annulInputs = screen.getAllByLabelText('Número de pedido');
+      fireEvent.change(annulInputs[1]!, {
         target: { value: 'order-1111-1111' },
       });
       fireEvent.click(annulBtn);
 
       // Con reason para disparar error de servidor
-      fireEvent.change(screen.getByPlaceholderText(/Devolución total del pedido/i), {
+      fireEvent.change(screen.getByLabelText('Motivo legal (obligatorio)'), {
         target: { value: 'Motivo válido' },
       });
       fireEvent.click(annulBtn);
       expect(await screen.findByText('Factura ya anulada')).toBeInTheDocument();
     });
 
-    it('permite filtrar facturas por tipo y buscar por texto', async () => {
+    it('permite filtrar comprobantes por tipo y buscar por texto', async () => {
       renderWithClient(<InvoiceManagementPage />);
 
       expect(await screen.findByText('#inv-mast')).toBeInTheDocument();
 
-      const typeFilter = screen.getByLabelText(/Filtrar por tipo de factura/i);
+      const typeFilter = screen.getByLabelText(/Filtrar por tipo de comprobante/i);
       fireEvent.change(typeFilter, { target: { value: InvoiceType.Master } });
 
-      const searchInput = screen.getByPlaceholderText(/Buscar por ID factura/i);
+      const searchInput = screen.getByPlaceholderText(/Buscar por comprobante, pedido o vendedor/i);
       fireEvent.change(searchInput, { target: { value: 'NoCoincide' } });
 
-      expect(screen.getByText('No se encontraron facturas')).toBeInTheDocument();
+      expect(screen.getByText('Sin comprobantes que coincidan')).toBeInTheDocument();
     });
 
     it('muestra error y permite reintentar cuando falla la carga', async () => {
       vi.spyOn(appServices.api, 'listInvoices').mockRejectedValue(new Error('Fallo de facturación'));
       renderWithClient(<InvoiceManagementPage />);
 
-      expect(await screen.findByText('Error al cargar facturas')).toBeInTheDocument();
+      expect(await screen.findByText('No fue posible cargar la facturación')).toBeInTheDocument();
       const retryBtn = screen.getByRole('button', { name: /Reintentar/i });
       fireEvent.click(retryBtn);
     });

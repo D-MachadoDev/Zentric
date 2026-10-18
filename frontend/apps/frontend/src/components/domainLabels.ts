@@ -83,6 +83,36 @@ export const NOMBRES_DE_TIPO_DE_FACTURA: Record<InvoiceType, string> = {
   [InvoiceType.VendorDetail]: 'Factura de Vendedor',
 };
 
+/**
+ * Rótulos de negocio del comprobante para la Consola de Facturación.
+ *
+ * [ADDENDUM - DICTADO POR OWNER, 2026-10-18]: el Administrador opera en
+ * lenguaje de negocio —qué recibe el comprador, qué retiene la plataforma,
+ * qué se liquida al vendedor—, no en el vocabulario tributario interno
+ * (`Factura Maestra` / `Detalle Zentric`). Los porcentajes 5%/95% son la
+ * regla de split de `ZENTRIC.md` Dominio 9. El mapa canónico de arriba se
+ * conserva para las vistas de auditoría.
+ */
+export const NOMBRES_DE_COMPROBANTE: Record<InvoiceType, string> = {
+  [InvoiceType.Master]: 'Factura Comprador',
+  [InvoiceType.ZentricDetail]: 'Comisión Plataforma (5%)',
+  [InvoiceType.VendorDetail]: 'Liquidación Vendedor (95%)',
+};
+
+/**
+ * Tono de la insignia por tipo de comprobante.
+ *
+ * Sigue la matriz canónica de Frontend-Design-System §6: el comprobante del
+ * comprador es el documento confirmado (`success`), la comisión de la
+ * plataforma es informativa (`info`) y la liquidación del vendedor es
+ * registro (`neutral`).
+ */
+export const TONOS_DE_COMPROBANTE: Record<InvoiceType, TonoDeEstado> = {
+  [InvoiceType.Master]: 'success',
+  [InvoiceType.ZentricDetail]: 'info',
+  [InvoiceType.VendorDetail]: 'neutral',
+};
+
 /** Estados de un pedido de compra. Origen: `ZENTRIC.md` Dominio 6 / OrderStatus.cs */
 export const NOMBRES_DE_ESTADO_DE_PEDIDO: Record<OrderStatus, string> = {
   [OrderStatus.Cart]: 'Carrito',
