@@ -479,6 +479,29 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     order.totalAmount += 100 * input.quantity;
   }
 
+  async removeCartItem(orderId: string, variantId: string): Promise<void> {
+    const order = this.orders.find((o) => o.id === orderId);
+    if (!order) throw new ProblemDetailsError({ status: 404, detail: 'Pedido no encontrado' });
+    const itemIndex = order.items.findIndex((item) => item.variantId === variantId);
+    if (itemIndex === -1) throw new ProblemDetailsError({ status: 404, detail: 'Ítem no encontrado en el carrito' });
+    const item = order.items[itemIndex];
+    if (!item) throw new ProblemDetailsError({ status: 404, detail: 'Ítem no encontrado en el carrito' });
+    order.totalAmount -= item.totalPrice;
+    order.items.splice(itemIndex, 1);
+  }
+
+  async updateCartItemQuantity(orderId: string, variantId: string, quantity: number): Promise<void> {
+    const order = this.orders.find((o) => o.id === orderId);
+    if (!order) throw new ProblemDetailsError({ status: 404, detail: 'Pedido no encontrado' });
+    const item = order.items.find((item) => item.variantId === variantId);
+    if (!item) throw new ProblemDetailsError({ status: 404, detail: 'Ítem no encontrado en el carrito' });
+    if (quantity < 1) throw new ProblemDetailsError({ status: 400, detail: 'Quantity must be at least 1' });
+    order.totalAmount -= item.totalPrice;
+    item.quantity = quantity;
+    item.totalPrice = item.unitPrice * quantity;
+    order.totalAmount += item.totalPrice;
+  }
+
   async checkoutOrder(orderId: string): Promise<void> {
     const order = this.orders.find((o) => o.id === orderId);
     if (!order) throw new ProblemDetailsError({ status: 404, detail: 'Pedido no encontrado' });

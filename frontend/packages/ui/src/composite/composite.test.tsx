@@ -4,11 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
-  DataTable,
+  ZentricDataTable as DataTable,
   type DataTableColumn,
   type DataTableFilter,
   type DataTablePagination,
-} from './DataTable';
+} from './ZentricDataTable';
 import { ResponsiveDrawer } from './ResponsiveDrawer';
 import { ModalDialog } from './ModalDialog';
 import { StatCard } from './StatCard';

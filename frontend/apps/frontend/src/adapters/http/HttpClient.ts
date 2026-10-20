@@ -192,6 +192,14 @@ export class HttpClient implements ZentricApiPort {
     return body === undefined ? { method: 'PUT' } : { method: 'PUT', body: JSON.stringify(body) };
   }
 
+  #patch(body?: unknown): RequestInit {
+    return body === undefined ? { method: 'PATCH' } : { method: 'PATCH', body: JSON.stringify(body) };
+  }
+
+  #delete(): RequestInit {
+    return { method: 'DELETE' };
+  }
+
   // ── Módulo 9: Sonda de Disponibilidad (/health) ─────────────────────────
 
   getHealth(): Promise<HealthStatus> {
@@ -341,6 +349,20 @@ export class HttpClient implements ZentricApiPort {
 
   addCartItem(input: AddCartItemInput): Promise<void> {
     return this.#json<void>('/api/Orders/cart/items', this.#post(input));
+  }
+
+  removeCartItem(orderId: string, variantId: string): Promise<void> {
+    return this.#json<void>(
+      `/api/Orders/${encodeURIComponent(orderId)}/items/${encodeURIComponent(variantId)}`,
+      this.#delete(),
+    );
+  }
+
+  updateCartItemQuantity(orderId: string, variantId: string, quantity: number): Promise<void> {
+    return this.#json<void>(
+      `/api/Orders/${encodeURIComponent(orderId)}/items/${encodeURIComponent(variantId)}/quantity`,
+      this.#patch({ quantity }),
+    );
   }
 
   checkoutOrder(orderId: string): Promise<void> {

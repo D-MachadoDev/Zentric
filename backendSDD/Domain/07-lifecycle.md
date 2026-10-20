@@ -35,6 +35,8 @@ stateDiagram-v2
 | Estado Origen | Estado Destino | Actor / Disparador | Precondición y Regla de Negocio | Efecto Secundario en el Sistema |
 | :--- | :--- | :--- | :--- | :--- |
 | — | **`Cart`** | Comprador | Creación de carrito con comprador válido y dirección principal. | Emite orden en memoria lista para agregar ítems. |
+| **`Cart`** | **`Cart`** (Operación Interna) | Comprador | **Remover ítem del carrito**: `OrderId` válido y titularidad del comprador (`BuyerId`); orden en estado `Cart`; `VariantId` existe en las líneas del carrito. | Elimina `OrderItem` de la colección `_items`; recalcula `TotalAmount`; si el carrito queda vacío, permanece en `Cart` (no se auto-cancela). |
+| **`Cart`** | **`Cart`** (Operación Compuesta) | Comprador | **Flujo "Buy Now" (Comprar Ahora)**: `BuyerId` válido con dirección principal; variante en estado `Published` (`CanBeSold`); stock disponible ≥ 1. | Composición atómica en frontend: `CreateCartCommand` → `AddOrderItemCommand(Quantity=1)` → navegación a `/buyer/cart`. No emite eventos de dominio hasta el checkout. |
 | **`Cart`** | **`PendingPayment`** | Comprador | Contiene al menos un ítem; vendedor activo (`CanAuthenticate`). | Reserva existencias mediante `InventoryReservationService`; genera las órdenes de despacho `FulfillmentOrder` por vendedor; emite `OrderCreatedDomainEvent`. |
 | **`Cart`** | **`Cancelled`** | Worker de Fondo | 15 minutos transcurridos sin avanzar a checkout. | Anula el intento de orden sin impacto en existencias físicas. |
 | **`PendingPayment`** | **`Paid`** | Pasarela de Pagos / Comprador | Comprobante de pago en estado aprobado (`PaymentStatus.Approved`). | Entrega instantánea de líneas digitales (`DigitalDeliveryRecord`); emite `OrderPaidDomainEvent`; habilita empaque logístico. |

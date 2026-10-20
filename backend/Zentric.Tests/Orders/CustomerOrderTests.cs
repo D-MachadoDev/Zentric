@@ -158,6 +158,163 @@ namespace Zentric.Tests.Orders
             Assert.Throws<InvalidOperationException>(() => order.Checkout());
             Assert.Throws<InvalidOperationException>(() => order.MarkAsPaid());
         }
+
+        [Fact]
+        public void RemoveItem_Valid_RemovesItemAndUpdatesTimestamp()
+        {
+            var order = new CustomerOrder(Guid.NewGuid());
+            var variantId = Guid.NewGuid();
+            var vendorId = Guid.NewGuid();
+            var initialUpdatedAt = order.UpdatedAt;
+
+            order.AddItem(variantId, vendorId, 2, new Money(100, "COP"));
+            var updatedAtAfterAdd = order.UpdatedAt;
+
+            order.RemoveItem(variantId);
+
+            Assert.Empty(order.Items);
+            Assert.Equal(new Money(0, "COP"), order.TotalAmount);
+            Assert.True(order.UpdatedAt > updatedAtAfterAdd);
+        }
+
+        [Fact]
+        public void RemoveItem_NotInCartStatus_ThrowsInvalidOperationException()
+        {
+            var order = new CustomerOrder(Guid.NewGuid());
+            var variantId = Guid.NewGuid();
+            order.AddItem(Guid.NewGuid(), variantId, 1, new Money(10, "COP"));
+            order.Checkout(); // Status is now PendingPayment
+
+            Assert.Throws<InvalidOperationException>(() => order.RemoveItem(variantId));
+        }
+
+        [Fact]
+        public void RemoveItem_NonExistentVariant_ThrowsInvalidOperationException()
+        {
+            var order = new CustomerOrder(Guid.NewGuid());
+            var existingVariantId = Guid.NewGuid();
+            var vendorId = Guid.NewGuid();
+            order.AddItem(existingVariantId, vendorId, 1, new Money(10, "COP"));
+
+            var nonExistentVariantId = Guid.NewGuid();
+            Assert.Throws<InvalidOperationException>(() => order.RemoveItem(nonExistentVariantId));
+        }
+
+        [Fact]
+        public void RemoveItem_LeavesEmptyCartInCartStatus()
+        {
+            var order = new CustomerOrder(Guid.NewGuid());
+            var variantId = Guid.NewGuid();
+            var vendorId = Guid.NewGuid();
+            order.AddItem(variantId, vendorId, 1, new Money(10, "COP"));
+
+            order.RemoveItem(variantId);
+
+            Assert.Empty(order.Items);
+            Assert.Equal(OrderStatus.Cart, order.Status); // Per decision P2: empty cart remains in Cart status
+        }
+
+        [Fact]
+        public void Checkout_SetsCheckoutStartedAt_AndValidatesTimeoutFromCheckout()
+        {
+            var order = new CustomerOrder(Guid.NewGuid());
+            var variantId = Guid.NewGuid();
+            var vendorId = Guid.NewGuid();
+            order.AddItem(variantId, vendorId, 1, new Money(10, "COP"));
+
+            // Before checkout, CheckoutStartedAt should be null
+            Assert.Null(order.CheckoutStartedAt);
+
+            order.Checkout();
+
+            // After checkout, CheckoutStartedAt should be set
+            Assert.NotNull(order.CheckoutStartedAt);
+            Assert.True(order.CheckoutStartedAt.Value <= DateTime.UtcNow);
+            Assert.True(order.CheckoutStartedAt.Value >= order.CreatedAt);
+
+            // Timeout should be validated from CheckoutStartedAt, not CreatedAt
+            // Simulate time passing by creating a new order with old CreatedAt
+            var oldOrder = new CustomerOrder(Guid.NewGuid());
+            oldOrder.AddItem(Guid.NewGuid(), Guid.NewGuid(), 1, new Money(10, "COP"));
+            
+            // Manually set CreatedAt to 20 minutes ago (simulating old cart)
+            var createdAtField = typeof(CustomerOrder).GetField("CreatedAt", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            createdAtField?.SetValue(oldOrder, DateTime.UtcNow.AddMinutes(-20));
+            
+            // This should succeed because CheckoutStartedAt is set to now, not CreatedAt
+            oldOrder.Checkout();
+            Assert.Equal(OrderStatus.PendingPayment, oldOrder.Status);
+        }
+
+        [Fact]
+        public void Checkout_WhenCreatedAtOldButCheckoutRecent_Succeeds()
+        {
+            // Test that demonstrates the fix: cart created 30 min ago, checkout now = OK
+            var order = new CustomerOrder(Guid.NewGuid());
+            order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 1, new Money(10, "COP"));
+            
+            // Simulate cart created 30 minutes ago
+            var createdAtField = typeof(CustomerOrder).GetField("CreatedAt", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            createdAtField?.SetValue(order, DateTime.UtcNow.AddMinutes(-30));
+            
+            // Checkout now should succeed (15 min window starts at checkout)
+            order.Checkout();
+            Assert.Equal(OrderStatus.PendingPayment, order.Status);
+            Assert.NotNull(order.CheckoutStartedAt);
+        }
+
+        [Fact]
+        public void UpdateItemQuantity_Valid_UpdatesQuantityAndTimestamp()
+        {
+            var order = new CustomerOrder(Guid.NewGuid());
+            var variantId = Guid.NewGuid();
+            var vendorId = Guid.NewGuid();
+            order.AddItem(variantId, vendorId, 2, new Money(100, "COP"));
+            var initialUpdatedAt = order.UpdatedAt;
+
+            order.UpdateItemQuantity(variantId, 5);
+
+            var item = order.Items.First();
+            Assert.Equal(5, item.Quantity);
+            Assert.Equal(new Money(500, "COP"), item.TotalPrice);
+            Assert.True(order.UpdatedAt > initialUpdatedAt);
+        }
+
+        [Fact]
+        public void UpdateItemQuantity_QuantityLessThanOne_ThrowsInvalidOperationException()
+        {
+            var order = new CustomerOrder(Guid.NewGuid());
+            var variantId = Guid.NewGuid();
+            var vendorId = Guid.NewGuid();
+            order.AddItem(variantId, vendorId, 2, new Money(100, "COP"));
+
+            Assert.Throws<InvalidOperationException>(() => order.UpdateItemQuantity(variantId, 0));
+            Assert.Throws<InvalidOperationException>(() => order.UpdateItemQuantity(variantId, -1));
+        }
+
+        [Fact]
+        public void UpdateItemQuantity_NotInCartStatus_ThrowsInvalidOperationException()
+        {
+            var order = new CustomerOrder(Guid.NewGuid());
+            var variantId = Guid.NewGuid();
+            var vendorId = Guid.NewGuid();
+            order.AddItem(variantId, vendorId, 2, new Money(100, "COP"));
+            order.Checkout(); // Status is now PendingPayment
+
+            Assert.Throws<InvalidOperationException>(() => order.UpdateItemQuantity(variantId, 5));
+        }
+
+        [Fact]
+        public void UpdateItemQuantity_NonExistentVariant_ThrowsInvalidOperationException()
+        {
+            var order = new CustomerOrder(Guid.NewGuid());
+            var existingVariantId = Guid.NewGuid();
+            var vendorId = Guid.NewGuid();
+            order.AddItem(existingVariantId, vendorId, 2, new Money(100, "COP"));
+
+            var nonExistentVariantId = Guid.NewGuid();
+            Assert.Throws<InvalidOperationException>(() => order.UpdateItemQuantity(nonExistentVariantId, 5));
+        }
     }
 }
 

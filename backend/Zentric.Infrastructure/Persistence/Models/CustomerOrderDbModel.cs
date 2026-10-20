@@ -11,6 +11,7 @@ namespace Zentric.Infrastructure.Persistence.Models
         public OrderStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public DateTime? CheckoutStartedAt { get; set; }
         public ICollection<OrderItemDbModel> Items { get; set; } = new List<OrderItemDbModel>();
         public ICollection<DigitalDeliveryRecordDbModel> DigitalDeliveries { get; set; } = new List<DigitalDeliveryRecordDbModel>();
     }

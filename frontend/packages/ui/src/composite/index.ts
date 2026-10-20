@@ -14,3 +14,4 @@ export * from './OrderTimeline';
 export * from './ModalDialog';
 export * from './ResponsiveDrawer';
 export * from './ZentricDataTable';
+export * from './SearchInput';

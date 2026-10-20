@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useOrdersQuery, useCheckoutOrderMutation } from '../../application/services/orders';
-import type { OrderItem, OrderListItem } from '../../domain';
+import { useOrdersQuery, useCheckoutOrderMutation, useRemoveCartItemMutation, useUpdateCartItemQuantityMutation } from '../../application/services/orders';
+import type { OrderItem, OrderListItem, UpdateCartItemQuantityInput } from '../../domain';
 import {
   Button,
   Badge,
@@ -21,6 +21,9 @@ import {
   AlertCircle,
   RefreshCw,
   Truck,
+  Trash2,
+  Plus,
+  Minus,
 } from 'lucide-react';
 
 /**
@@ -32,7 +35,28 @@ export function BuyerCartPage() {
   const navigate = useNavigate();
   const { data: cartOrders, isLoading, isError, error, refetch } = useOrdersQuery('Cart');
   const checkoutMutation = useCheckoutOrderMutation();
+  const removeCartItemMutation = useRemoveCartItemMutation();
+  const updateQuantityMutation = useUpdateCartItemQuantityMutation();
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{ orderId: string; variantId: string; productName: string } | null>(null);
+  const [deleteFeedback, setDeleteFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [quantityFeedback, setQuantityFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const handleUpdateQuantity = useCallback(
+    async (orderId: string, variantId: string, quantity: number) => {
+      if (quantity < 1) return;
+      try {
+        await updateQuantityMutation.mutateAsync({ orderId, variantId, quantity });
+        setQuantityFeedback({ type: 'success', message: 'Cantidad actualizada' });
+        setTimeout(() => setQuantityFeedback(null), 3000);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Error al actualizar cantidad';
+        setQuantityFeedback({ type: 'error', message: msg });
+        setTimeout(() => setQuantityFeedback(null), 5000);
+      }
+    },
+    [updateQuantityMutation]
+  );
 
   // El carrito activo es el primer pedido en estado 'Cart'
   const activeCart: OrderListItem | undefined = cartOrders?.[0];
@@ -189,9 +213,47 @@ export function BuyerCartPage() {
                     <div className="flex items-center justify-between sm:justify-end gap-6 text-right">
                       <div>
                         <span className="text-[10px] uppercase font-mono text-foreground-muted block">Cantidad</span>
-                        <span className="text-sm font-mono font-bold text-foreground tabular-nums">
-                          {item.quantity} ud(s)
-                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleUpdateQuantity(activeCart!.id, item.variantId, item.quantity - 1)}
+                            disabled={updateQuantityMutation.isPending || item.quantity <= 1}
+                            aria-label={`Disminuir cantidad de ${item.productName || 'producto'}`}
+                            className="h-8 w-8 p-0 text-foreground-muted hover:bg-brand/10 hover:text-brand disabled:opacity-50"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const newQty = parseInt(e.target.value, 10);
+                              if (!isNaN(newQty) && newQty >= 1) {
+                                handleUpdateQuantity(activeCart!.id, item.variantId, newQty);
+                              }
+                            }}
+                            onBlur={(e) => {
+                              const newQty = parseInt(e.target.value, 10);
+                              if (!isNaN(newQty) && newQty >= 1) {
+                                handleUpdateQuantity(activeCart!.id, item.variantId, newQty);
+                              }
+                            }}
+                            min={1}
+                            className="w-16 text-center text-sm font-mono font-bold text-foreground border border-border rounded bg-surface px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand"
+                            aria-label={`Cantidad de ${item.productName || 'producto'}`}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleUpdateQuantity(activeCart!.id, item.variantId, item.quantity + 1)}
+                            disabled={updateQuantityMutation.isPending}
+                            aria-label={`Aumentar cantidad de ${item.productName || 'producto'}`}
+                            className="h-8 w-8 p-0 text-foreground-muted hover:bg-brand/10 hover:text-brand"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
 
                       <div>
@@ -207,6 +269,18 @@ export function BuyerCartPage() {
                           <MoneyAmount amount={item.totalPrice} currency={activeCart?.currency ?? 'COP'} />
                         </div>
                       </div>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setItemToDelete({ orderId: activeCart!.id, variantId: item.variantId, productName: item.productName || 'Producto Oficial Zentric' })}
+                        aria-label={`Eliminar ${item.productName || 'Producto Oficial Zentric'}`}
+                        className="text-foreground-muted hover:bg-destructive/10 hover:text-destructive p-1.5"
+                        title="Eliminar del carrito"
+                        disabled={removeCartItemMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -275,6 +349,87 @@ export function BuyerCartPage() {
           </div>
         </div>
       )}
+
+      {/* Confirmación de Eliminación */}
+      {itemToDelete && (
+        <Alert variant="destructive" className="border-destructive/40 bg-destructive/10 text-destructive fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="w-full max-w-md bg-surface rounded-2xl border border-destructive/40 p-6 shadow-xl animate-in fade-in zoom-in-95">
+            <AlertTitle className="text-lg">¿Eliminar del carrito?</AlertTitle>
+            <AlertDescription className="mt-2">
+              Se eliminará "{itemToDelete.productName}" permanentemente.
+            </AlertDescription>
+            <div className="flex gap-2 mt-6 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setItemToDelete(null)}
+                disabled={removeCartItemMutation.isPending}
+                className="border-border text-foreground-muted transition-all active:scale-[0.98]"
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  if (!itemToDelete) return;
+                  try {
+                    await removeCartItemMutation.mutateAsync({ orderId: itemToDelete.orderId, variantId: itemToDelete.variantId });
+                    setItemToDelete(null);
+                    setDeleteFeedback({ type: 'success', message: 'Ítem eliminado del carrito' });
+                    setTimeout(() => setDeleteFeedback(null), 3000);
+                  } catch (err) {
+                    setItemToDelete(null);
+                    const msg = err instanceof Error ? err.message : 'Error al eliminar el ítem';
+                    setDeleteFeedback({ type: 'error', message: msg });
+                    setTimeout(() => setDeleteFeedback(null), 5000);
+                  }
+                }}
+                disabled={removeCartItemMutation.isPending}
+              >
+                {removeCartItemMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+              </Button>
+            </div>
+          </div>
+        </Alert>
+      )}
+
+      {/* Feedback visual éxito/error */}
+      {deleteFeedback && (
+        <Alert
+          variant={deleteFeedback.type === 'success' ? 'success' : 'destructive'}
+          className="fixed bottom-4 right-4 z-50 w-full max-w-sm shadow-xl animate-in slide-in-from-right"
+          role="alert"
+        >
+          <AlertTitle className="flex items-center gap-2">
+            {deleteFeedback.type === 'success' ? (
+              <ShieldCheck className="h-4 w-4 text-emerald-500" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-red-400" />
+            )}
+            {deleteFeedback.type === 'success' ? 'Éxito' : 'Error'}
+          </AlertTitle>
+          <AlertDescription>{deleteFeedback.message}</AlertDescription>
+        </Alert>
+      )}
+
+      {quantityFeedback && (
+        <Alert
+          variant={quantityFeedback.type === 'success' ? 'success' : 'destructive'}
+          className="fixed bottom-4 right-4 z-50 w-full max-w-sm shadow-xl animate-in slide-in-from-right"
+          role="alert"
+          style={{ bottom: deleteFeedback ? '5.5rem' : '1rem' }}
+        >
+          <AlertTitle className="flex items-center gap-2">
+            {quantityFeedback.type === 'success' ? (
+              <ShieldCheck className="h-4 w-4 text-emerald-500" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-red-400" />
+            )}
+            {quantityFeedback.type === 'success' ? 'Éxito' : 'Error'}
+          </AlertTitle>
+          <AlertDescription>{quantityFeedback.message}</AlertDescription>
+        </Alert>
+      )}
+
     </div>
   );
 }

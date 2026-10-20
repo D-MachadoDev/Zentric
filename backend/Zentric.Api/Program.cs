@@ -192,8 +192,8 @@ builder.Services.AddScoped<Zentric.Domain.Billing.Ports.IInvoiceRepository, Invo
 builder.Services.AddScoped<Zentric.Domain.Payments.Ports.IPaymentReceiptRepository, PaymentReceiptRepository>();
 builder.Services.AddScoped<Zentric.Domain.Returns.Ports.IRefundAuditRepository, RefundAuditRepository>();
 
-// Register Background Services
-builder.Services.AddHostedService<Zentric.Infrastructure.BackgroundServices.CheckoutTimeoutService>();
+  // Register Background Services
+  // builder.Services.AddHostedService<Zentric.Infrastructure.BackgroundServices.CheckoutTimeoutService>();
 
 // Registro de la capa Application: dispatcher propio, validacion de entrada
 // (FluentValidation) y handlers. Q-14: sustituye a AddMediatR.
@@ -335,3 +335,12 @@ app.Run();
 // visible desde fuera del ensamblado. No cambia el comportamiento: solo abre la puerta a las
 // pruebas E2E HTTP, que levantan la API real contra un PostgreSQL efimero (Testcontainers).
 public partial class Program { }
+
+
+
+
+
+
+
+
+

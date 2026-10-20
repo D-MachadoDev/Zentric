@@ -12,6 +12,11 @@ using Zentric.Domain.Orders.Enums;
 namespace Zentric.Api.Controllers
 {
     /// <summary>
+    /// Request body para actualizar cantidad de ítem en carrito.
+    /// </summary>
+    public sealed record UpdateCartItemQuantityRequest(int Quantity);
+
+    /// <summary>
     /// Gestión integral del ciclo de pedidos: carrito de compras, adición de ítems con validación de stock, checkout con reserva temporal y confirmación de pago.
     /// </summary>
     [ApiController]
@@ -209,6 +214,69 @@ namespace Zentric.Api.Controllers
             var result = await _mediator.Send(new CheckoutOrderCommand(orderId, userId.Value));
             if (result.IsFailure) return result.ToProblem();
             return Ok();
+        }
+
+        /// <summary>
+        /// Remueve una línea del carrito de compras del comprador autenticado.
+        /// </summary>
+        /// <remarks>
+        /// Elimina un ítem del carrito identificado por <paramref name="orderId"/> y <paramref name="variantId"/>.
+        /// Solo el comprador dueño del carrito puede remover ítems (política Checkout).
+        /// El carrito debe estar en estado Cart; si ya avanzó a PendingPayment o Paid, la operación se rechaza con 400.
+        /// Si el carrito no existe o no pertenece al comprador autenticado, responde 404.
+        /// </remarks>
+        /// <param name="orderId">Identificador único del carrito (CustomerOrder).</param>
+        /// <param name="variantId">Identificador único de la variante (ProductVariant) a remover.</param>
+        /// <response code="204">Ítem removido satisfactoriamente.</response>
+        /// <response code="400">El carrito no está en estado Cart (RFC 7807 ProblemDetails).</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        /// <response code="404">Carrito no encontrado o ajeno al comprador (RFC 7807 ProblemDetails).</response>
+        [HttpDelete("{orderId}/items/{variantId}")]
+        [Authorize(Policy = AuthorizationPolicies.Checkout)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RemoveOrderItem(Guid orderId, Guid variantId)
+        {
+            var userId = _currentUser.UserId;
+            if (userId is null) return MissingIdentity();
+
+            var result = await _mediator.Send(new RemoveOrderItemCommand(orderId, variantId, userId.Value));
+            if (result.IsFailure) return result.ToProblem();
+            return NoContent();
+        }
+
+        /// <summary>
+        /// Actualiza la cantidad de una línea del carrito.
+        /// </summary>
+        /// <remarks>
+        /// Permite incrementar o decrementar la cantidad de una variante en el carrito.
+        /// La cantidad mínima es 1; para remover la línea completa use DELETE.
+        /// Solo el comprador dueño del carrito puede modificar sus líneas.
+        /// El carrito debe estar en estado Cart.
+        /// </remarks>
+        /// <param name="orderId">Identificador único del carrito (CustomerOrder).</param>
+        /// <param name="variantId">Identificador único de la variante (ProductVariant) a actualizar.</param>
+        /// <param name="body">Cuerpo con la nueva cantidad: { quantity: int }.</param>
+        /// <response code="204">Cantidad actualizada satisfactoriamente.</response>
+        /// <response code="400">Cantidad inválida (menor a 1), carrito no en estado Cart, o variante sin stock (RFC 7807 ProblemDetails).</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        /// <response code="404">Carrito no encontrado, ajeno al comprador, o variante no existe en el carrito (RFC 7807 ProblemDetails).</response>
+        [HttpPatch("{orderId}/items/{variantId}/quantity")]
+        [Authorize(Policy = AuthorizationPolicies.Checkout)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateCartItemQuantity(Guid orderId, Guid variantId, [FromBody] UpdateCartItemQuantityRequest body)
+        {
+            var userId = _currentUser.UserId;
+            if (userId is null) return MissingIdentity();
+
+            var result = await _mediator.Send(new UpdateCartItemQuantityCommand(orderId, variantId, body.Quantity, userId.Value));
+            if (result.IsFailure) return result.ToProblem();
+            return NoContent();
         }
 
         /// <summary>

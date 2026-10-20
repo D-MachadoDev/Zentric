@@ -20,6 +20,7 @@ namespace Zentric.Infrastructure.Persistence.Mappers
             typeof(CustomerOrder).GetProperty("Status")?.SetValue(order, dbModel.Status);
             typeof(CustomerOrder).GetProperty("CreatedAt")?.SetValue(order, dbModel.CreatedAt);
             typeof(CustomerOrder).GetProperty("UpdatedAt")?.SetValue(order, dbModel.UpdatedAt);
+            typeof(CustomerOrder).GetProperty("CheckoutStartedAt")?.SetValue(order, dbModel.CheckoutStartedAt);
 
             var itemsField = typeof(CustomerOrder).GetField("_items", BindingFlags.NonPublic | BindingFlags.Instance);
             var itemsList = new System.Collections.Generic.List<OrderItem>();
@@ -72,7 +73,8 @@ namespace Zentric.Infrastructure.Persistence.Mappers
                 BuyerId = domain.BuyerId,
                 Status = domain.Status,
                 CreatedAt = domain.CreatedAt,
-                UpdatedAt = domain.UpdatedAt
+                UpdatedAt = domain.UpdatedAt,
+                CheckoutStartedAt = domain.CheckoutStartedAt
             };
 
             foreach (var item in domain.Items)

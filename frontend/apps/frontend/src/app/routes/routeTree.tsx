@@ -12,7 +12,8 @@ import {
   LogisticsLayout,
   SupervisorLayout,
 } from '../layouts';
-import { LoginPage, RegisterBuyerPage, HealthStatusPage } from '../../modules/auth';
+import { LoginPage, RegisterBuyerPage, HealthStatusPage } from '../../modules/auth'
+import { TermsPage, PrivacyPage, CookiesPage, LegalPage } from '../../modules/buyer';
 import {
   BuyerCatalogPage,
   BuyerProductDetailPage,
@@ -135,6 +136,50 @@ export const healthRoute = createRoute({
   component: () => (
     <PublicLayout>
       <HealthStatusPage />
+    </PublicLayout>
+  ),
+});
+
+/**
+ * Rutas legales públicas (Aviso Legal, Términos, Privacidad, Cookies).
+ * Accesibles sin autenticación, usando PublicLayout.
+ */
+export const termsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/terms',
+  component: () => (
+    <PublicLayout>
+      <TermsPage />
+    </PublicLayout>
+  ),
+});
+
+export const privacyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/privacy',
+  component: () => (
+    <PublicLayout>
+      <PrivacyPage />
+    </PublicLayout>
+  ),
+});
+
+export const cookiesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/cookies',
+  component: () => (
+    <PublicLayout>
+      <CookiesPage />
+    </PublicLayout>
+  ),
+});
+
+export const legalRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/legal',
+  component: () => (
+    <PublicLayout>
+      <LegalPage />
     </PublicLayout>
   ),
 });
@@ -528,6 +573,10 @@ export const routeTree = rootRoute.addChildren([
   entrarRoute,
   registerRoute,
   healthRoute,
+  termsRoute,
+  privacyRoute,
+  cookiesRoute,
+  legalRoute,
   adminLayoutRoute.addChildren([
     adminIndexRoute,
     adminUsersRoute,

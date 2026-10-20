@@ -5,6 +5,7 @@ import type {
   OrderListItem,
   OrderStatus,
   SellerOrderView,
+  UpdateCartItemQuantityInput,
   ZentricApiPort,
 } from '../../domain';
 import { queryKeys } from './queryKeys';
@@ -54,6 +55,40 @@ export function useAddCartItemMutation(api?: ZentricApiPort) {
 
   return useMutation({
     mutationFn: (input: AddCartItemInput) => resolveApi(api).addCartItem(input),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para eliminar una línea del carrito.
+ * Invalida ['orders', 'detail', orderId] y ['orders', 'all'].
+ */
+export function useRemoveCartItemMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ orderId, variantId }: { orderId: string; variantId: string }) =>
+      resolveApi(api).removeCartItem(orderId, variantId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para actualizar la cantidad de una línea del carrito.
+ * Invalida ['orders', 'detail', orderId] y ['orders', 'all'].
+ */
+export function useUpdateCartItemQuantityMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: UpdateCartItemQuantityInput) =>
+      resolveApi(api).updateCartItemQuantity(input.orderId, input.variantId, input.quantity),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(variables.orderId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });

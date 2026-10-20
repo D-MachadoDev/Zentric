@@ -97,8 +97,34 @@ Los comandos representan intenciones de mutación de estado. Retornan un objeto 
 | :--- | :--- | :--- | :--- | :--- |
 | **`CreateCartCommand`** | `BuyerId` | `CreateCartCommandValidator` | Consulta comprador y su dirección principal obligatoria; inicializa `CustomerOrder` en estado `Cart`. | `Result<Guid>` |
 | **`AddOrderItemCommand`** | `OrderId`, `VariantId`, `Quantity`, `BuyerId` | `AddOrderItemCommandValidator` | Valida propiedad del carrito; consulta precio unitario congelado del catálogo (`Product.Price`); invoca `CustomerOrder.AddOrderItem()`. | `Result` |
+| **`RemoveOrderItemCommand`** | `OrderId`, `VariantId`, `BuyerId` | `RemoveOrderItemCommandValidator` | Valida propiedad del carrito; estado `Cart` obligatorio; ítem existe en la orden; invoca `CustomerOrder.RemoveItem()`. | `Result` |
 | **`CheckoutOrderCommand`** | `OrderId`, `BuyerId` | `CheckoutOrderCommandValidator` | Valida vigencia (≤15 min) y estado de vendedores (`CanAuthenticate`); reserva existencias atómicamente con `InventoryReservationService`; genera `FulfillmentOrder` por vendedor; mueve orden a `PendingPayment`. | `Result` |
 | **`PayOrderCommand`** | `OrderId`, `BuyerId` | `PayOrderCommandValidator` | Solicita cobro a `IPaymentGatewayService`; emite `PaymentReceipt`; si aprueba, transiciona orden a `Paid`; entrega digitales (`DigitalDeliveryRecord`); emite `OrderPaidDomainEvent`. | `Result` |
+
+---
+
+> **Nota de Decisiones Owner (Confirmadas AAA):**
+> - **P2:** Carrito vacío permanece en estado `Cart` (navegable, no se autodestruye).
+> - **P3:** No se emite evento de dominio al remover ítem del carrito.
+
+---
+
+### 2.5.1. Flujo "Buy Now" (Comprar Ahora) — Composición de Comandos Existentes
+
+> **Nota de Especificación:** El flujo "Buy Now" **no es un comando dedicado nuevo**, sino una **composición orquestada en el frontend** de comandos ya existentes. Se documenta aquí para trazabilidad SDD y alineación con la implementación actual en `BuyerProductDetailPage.handleBuyNow` (frontend).
+
+| Paso | Comando / Acción | Descripción | Validaciones Clave |
+| :--- | :--- | :--- | :--- |
+| 1 | `CreateCartCommand` | Crea carrito nuevo (`CustomerOrder` en estado `Cart`) con el `BuyerId` del usuario autenticado. | Comprador válido con dirección principal obligatoria. |
+| 2 | `AddOrderItemCommand` | Agrega la variante seleccionada al carrito recién creado con `Quantity = 1`. Congela precio (`Product.Price`) y `VendorId` del catálogo. | Variante existe; producto en estado `Published` (`CanBeSold`); stock disponible ≥ 1; carrito en estado `Cart`. |
+| 3 | Navegación | Redirige a `/buyer/cart` (vista `BuyerCartPage`) para que el comprador revise y confirme checkout. | El carrito contiene al menos 1 ítem; comprador es titular del carrito. |
+
+**Contrato de Frontend (Ref. `Frontend-Domain-Services.md`):**
+- Hooks involucrados: `useCreateCartMutation` + `useAddCartItemMutation`
+- Invalidación de caché: `queryKeys.orders.all` tras ambas mutaciones
+- Navegación: `navigate({ to: '/buyer/cart' })` tras éxito de `AddOrderItemCommand`
+
+**Regla de Negocio:** El flujo "Buy Now" omite la pantalla de confirmación intermedia ("Agregado al carrito") y lleva al comprador directamente al carrito para proceder al checkout atómico de 15 minutos. Esto reduce fricción para compras de un solo ítem de alta intención.
 
 ---
 

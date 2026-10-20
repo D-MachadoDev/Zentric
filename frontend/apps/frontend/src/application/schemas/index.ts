@@ -13,6 +13,7 @@ import type {
   UpdateWarehouseInput,
   InspectReturnInput,
   LoginInput,
+  RemoveCartItemInput,
   RequestReturnInput,
   UpdateUserProfileInput,
 } from '../../domain';
@@ -134,14 +135,21 @@ export const AddCartItemSchema: z.ZodType<AddCartItemInput, AddCartItemInput> = 
 });
 export const AgregarAlCarritoSchema = AddCartItemSchema;
 
-// ── 8. CreateFulfillmentSchema ──────────────────────────────────────────────
+// ── 8. RemoveCartItemSchema ──────────────────────────────────────────────────
+export const RemoveCartItemSchema: z.ZodType<RemoveCartItemInput, RemoveCartItemInput> = z.object({
+  orderId: z.string().min(1, 'El identificador de pedido es obligatorio'),
+  variantId: z.string().min(1, 'El identificador de variante es obligatorio'),
+});
+export const EliminarDelCarritoSchema = RemoveCartItemSchema;
+
+// ── 9. CreateFulfillmentSchema ──────────────────────────────────────────────
 export const CreateFulfillmentSchema: z.ZodType<CreateFulfillmentInput, CreateFulfillmentInput> = z.object({
   customerOrderId: z.string().min(1, 'El identificador de pedido es obligatorio'),
   vendorId: z.string().min(1, 'El identificador de vendedor es obligatorio'),
 });
 export const CrearDespachoSchema = CreateFulfillmentSchema;
 
-// ── 9. CancelGhostStockSchema ───────────────────────────────────────────────
+// ── 10. CancelGhostStockSchema ───────────────────────────────────────────────
 export const CancelGhostStockSchema: z.ZodType<CancelGhostStockInput, CancelGhostStockInput> = z.object({
   fulfillmentOrderId: z.string().min(1, 'El identificador de despacho es obligatorio'),
   variantId: z.string().min(1, 'El identificador de variante es obligatorio'),
@@ -149,7 +157,7 @@ export const CancelGhostStockSchema: z.ZodType<CancelGhostStockInput, CancelGhos
   quantityToCancel: z.number().int().positive('La cantidad a cancelar debe ser mayor a cero'),
 });
 
-// ── 10. RequestReturnSchema ─────────────────────────────────────────────────
+// ── 11. RequestReturnSchema ─────────────────────────────────────────────────
 export const RequestReturnSchema: z.ZodType<RequestReturnInput, RequestReturnInput> = z.object({
   customerOrderId: z.string().min(1, 'El identificador de pedido es obligatorio'),
   variantId: z.string().min(1, 'El identificador de variante es obligatorio'),
@@ -158,18 +166,18 @@ export const RequestReturnSchema: z.ZodType<RequestReturnInput, RequestReturnInp
 });
 export const SolicitarDevolucionSchema = RequestReturnSchema;
 
-// ── 11. InspectReturnSchema ─────────────────────────────────────────────────
+// ── 12. InspectReturnSchema ─────────────────────────────────────────────────
 export const InspectReturnSchema: z.ZodType<InspectReturnInput, InspectReturnInput> = z.object({
   isGoodCondition: z.boolean(),
 });
 
 
-// ── 12. AnnulInvoiceSchema ──────────────────────────────────────────────────
+// ── 13. AnnulInvoiceSchema ──────────────────────────────────────────────────
 export const AnnulInvoiceSchema: z.ZodType<AnnulInvoiceInput, AnnulInvoiceInput> = z.object({
   reason: z.string().trim().min(1, 'El motivo de anulación es obligatorio'),
 });
 
-// ── 13. UpdateUserProfileSchema ─────────────────────────────────────────────
+// ── 14. UpdateUserProfileSchema ─────────────────────────────────────────────
 export const UpdateUserProfileSchema: z.ZodType<UpdateUserProfileInput, UpdateUserProfileInput> = z.object({
   fullName: z.string().trim().min(1, 'El nombre completo es obligatorio'),
   phone: z.string().trim().nullable().optional(),

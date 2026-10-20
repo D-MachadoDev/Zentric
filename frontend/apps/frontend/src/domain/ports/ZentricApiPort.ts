@@ -88,6 +88,8 @@ export interface ZentricApiPort {
   // ── Módulo 5: Carrito y Pedidos (/api/orders) ───────────────────────────
   createCart(): Promise<string>;
   addCartItem(input: AddCartItemInput): Promise<void>;
+  removeCartItem(orderId: string, variantId: string): Promise<void>;
+  updateCartItemQuantity(orderId: string, variantId: string, quantity: number): Promise<void>;
   checkoutOrder(orderId: string): Promise<void>;
   payOrder(orderId: string): Promise<void>;
   listOrders(status?: OrderStatus | string): Promise<OrderListItem[]>;

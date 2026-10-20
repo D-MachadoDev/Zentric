@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Zentric.Domain.Common.Ports;
 using Zentric.Domain.Orders.Ports;
-using Zentric.Domain.Orders.Events;
 using Zentric.Domain.Inventories.Events;
 using Zentric.Domain.Inventories.Ports;
 using Zentric.Application.Common.Ports;
@@ -15,12 +14,15 @@ using Zentric.Infrastructure.Persistence;
 
 namespace Zentric.Infrastructure.BackgroundServices
 {
-    public class CheckoutTimeoutService : BackgroundService
+    public sealed class CheckoutTimeoutService : IHostedService, IDisposable
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<CheckoutTimeoutService> _logger;
         private readonly IClock _clock;
         private readonly IDomainEventDispatcher? _domainEventDispatcher;
+        private PeriodicTimer? _timer;
+        private Task? _executionTask;
+        private readonly CancellationTokenSource _cancellationTokenSource = new();
 
         [ActivatorUtilitiesConstructor]
         public CheckoutTimeoutService(IServiceProvider serviceProvider, ILogger<CheckoutTimeoutService> logger, IClock clock)
@@ -50,6 +52,7 @@ namespace Zentric.Infrastructure.BackgroundServices
 
             // T-004 (H-06/R-06): el umbral sale del reloj inyectado, no de
             // DateTime.UtcNow, para que el barrido sea determinista en pruebas.
+            // FIX: El timeout de 15 minutos empieza en CheckoutStartedAt, no en CreatedAt.
             var threshold = _clock.UtcNow.AddMinutes(-15).UtcDateTime;
             var expiredOrders = await orderRepo.GetExpiredOrdersAsync(threshold, stoppingToken);
 
@@ -116,21 +119,56 @@ namespace Zentric.Infrastructure.BackgroundServices
             return processedCount;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        public Task StartAsync(CancellationToken cancellationToken)
         {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                try
-                {
-                    await ProcessExpiredOrdersAsync(stoppingToken);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error occurred executing CheckoutTimeoutService.");
-                }
+            _logger.LogInformation("CheckoutTimeoutService starting.");
+            _timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
+            _executionTask = ExecuteAsync(_cancellationTokenSource.Token);
+            return Task.CompletedTask;
+        }
 
-                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("CheckoutTimeoutService stopping.");
+            _cancellationTokenSource.Cancel();
+            _timer?.Dispose();
+            if (_executionTask != null)
+            {
+                await Task.WhenAny(_executionTask, Task.Delay(TimeSpan.FromSeconds(10), cancellationToken));
             }
+            _logger.LogInformation("CheckoutTimeoutService stopped.");
+        }
+
+        private async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            try
+            {
+                while (await _timer!.WaitForNextTickAsync(stoppingToken))
+                {
+                    try
+                    {
+                        await ProcessExpiredOrdersAsync(stoppingToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error occurred executing CheckoutTimeoutService iteration.");
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation("CheckoutTimeoutService loop cancelled.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "CheckoutTimeoutService loop terminated unexpectedly.");
+            }
+        }
+
+        public void Dispose()
+        {
+            _cancellationTokenSource.Dispose();
+            _timer?.Dispose();
         }
     }
 }

@@ -79,3 +79,22 @@ export interface AddCartItemInput {
   variantId: string;
   quantity: number;
 }
+
+/**
+ * Eliminar una línea del carrito.
+ * Coincide con el endpoint DELETE /api/orders/{orderId}/items/{variantId}.
+ */
+export interface RemoveCartItemInput {
+  orderId: string;
+  variantId: string;
+}
+
+/**
+ * Actualizar cantidad de una línea del carrito.
+ * Coincide con el endpoint PATCH /api/orders/{orderId}/items/{variantId}/quantity.
+ */
+export interface UpdateCartItemQuantityInput {
+  orderId: string;
+  variantId: string;
+  quantity: number;
+}

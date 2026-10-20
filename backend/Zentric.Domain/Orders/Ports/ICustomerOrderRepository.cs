@@ -25,9 +25,9 @@ namespace Zentric.Domain.Orders.Ports
             Guid id, Guid vendorId, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Pedidos de carrito o con pago pendiente cuya ultima actividad es
+        /// Pedidos de carrito o con pago pendiente cuyo CheckoutStartedAt es
         /// anterior al umbral. T-004 (H-06/R-06): el umbral llega como
-        /// <see cref="DateTime"/> porque la columna <c>UpdatedAt</c> es sin zona
+        /// <see cref="DateTime"/> porque la columna <c>CheckoutStartedAt</c> es sin zona
         /// horaria en PostgreSQL; el llamante lo calcula desde
         /// <see cref="Common.Ports.IClock"/> y esta firma no fija el reloj.
         /// </summary>

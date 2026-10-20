@@ -1,9 +1,12 @@
+import { useEffect } from 'react';
 import { useState, type ReactNode } from 'react';
 import { Truck, CheckSquare, LayoutDashboard } from 'lucide-react';
-import { Link, useRouterState } from '@tanstack/react-router';
+import { Link, useRouterState, useNavigate } from '@tanstack/react-router';
 import { LayoutHeader } from './LayoutHeader';
 import { LayoutSidebar, type NavItem } from './LayoutSidebar';
 import { OperationalFooter } from '../components/OperationalFooter';
+import { useAuth } from '../providers/authContext';
+import { UserRole } from '../../domain';
 
 const logisticsNavItems: NavItem[] = [
   { href: '/logistics', label: 'Panel Logístico', icon: LayoutDashboard },
@@ -27,6 +30,33 @@ export function LogisticsLayout({ children }: LogisticsLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
+  const { session } = useAuth();
+  const navigate = useNavigate();
+
+  // Defensa en profundidad: verificar sesión al montar y al restaurar de bfcache.
+  // Los guardas beforeLoad del router no se ejecutan al restaurar de back-forward cache.
+  useEffect(() => {
+    const token = session.getAccessToken();
+    const userRole = session.getRole();
+    if (token === null || userRole === null || (userRole !== UserRole.LogisticsOperator && userRole !== UserRole.Administrator)) {
+      navigate({ to: '/login', search: { aviso: 'sin-sesion' } as never });
+    }
+  }, [session, navigate]);
+
+  // También escuchar el evento pageshow que dispara al restaurar de bfcache
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        const token = session.getAccessToken();
+        const userRole = session.getRole();
+        if (token === null || userRole === null || (userRole !== UserRole.LogisticsOperator && userRole !== UserRole.Administrator)) {
+          navigate({ to: '/login', search: { aviso: 'sin-sesion' } as never });
+        }
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, [session, navigate]);
 
   return (
     <div data-role="logistics" className="flex min-h-screen flex-col bg-background text-foreground">

@@ -19,6 +19,13 @@ namespace Zentric.Domain.Orders
         public OrderStatus Status { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
+        
+        /// <summary>
+        /// Momento en que se inició el checkout (transición Cart → PendingPayment).
+        /// Null hasta que se llama a <see cref="Checkout()"/>.
+        /// La ventana de 15 minutos (PED-01) se computa desde este instante, no desde <see cref="CreatedAt"/>.
+        /// </summary>
+        public DateTime? CheckoutStartedAt { get; private set; }
 
         /// <summary>
         /// Por que quedo cancelado el pedido (ADR-0022 decision 2). Antes de este
@@ -87,15 +94,77 @@ namespace Zentric.Domain.Orders
             }
 
             var existingItem = _items.SingleOrDefault(i => i.VariantId == variantId);
+
             if (existingItem != null)
             {
                 existingItem.AddQuantity(quantity);
+                UpdatedAt = DateTime.UtcNow;
+                return;
             }
-            else
+
+            _items.Add(new OrderItem(Id, variantId, vendorId, quantity, unitPrice));
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Removes an item from the cart by its variant ID.
+        /// </summary>
+        /// <param name="variantId">The variant ID of the item to remove.</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the order is not in Cart status, or when the item does not exist in the cart.
+        /// </exception>
+        public void RemoveItem(Guid variantId)
+        {
+            EnsureNotDelivered();
+
+            if (Status != OrderStatus.Cart)
             {
-                _items.Add(new OrderItem(Id, variantId, vendorId, quantity, unitPrice));
+                throw new InvalidOperationException("Can only remove items while the order is in the Cart status.");
             }
-            
+
+            var itemToRemove = _items.SingleOrDefault(i => i.VariantId == variantId);
+            if (itemToRemove == null)
+            {
+                throw new InvalidOperationException("Item not found in cart");
+            }
+
+            _items.Remove(itemToRemove);
+            UpdatedAt = DateTime.UtcNow;
+
+            // Per decision P2: empty cart remains in Cart status (navigable)
+            // Per decision P3: no domain event emitted on item removal
+        }
+
+        /// <summary>
+        /// Actualiza la cantidad de una línea del carrito.
+        /// </summary>
+        /// <param name="variantId">El VariantId de la línea a actualizar.</param>
+        /// <param name="quantity">La nueva cantidad (debe ser >= 1).</param>
+        /// <exception cref="InvalidOperationException">
+        /// Se lanza si el pedido no está en estado Cart, si la línea no existe,
+        /// o si la cantidad es menor a 1.
+        /// </exception>
+        public void UpdateItemQuantity(Guid variantId, int quantity)
+        {
+            EnsureNotDelivered();
+
+            if (Status != OrderStatus.Cart)
+            {
+                throw new InvalidOperationException("Can only update item quantities while the order is in the Cart status.");
+            }
+
+            if (quantity < 1)
+            {
+                throw new InvalidOperationException("Quantity must be at least 1. Use RemoveItem to remove the line entirely.");
+            }
+
+            var item = _items.SingleOrDefault(i => i.VariantId == variantId);
+            if (item == null)
+            {
+                throw new InvalidOperationException("Item not found in cart");
+            }
+
+            item.UpdateQuantity(quantity);
             UpdatedAt = DateTime.UtcNow;
         }
 
@@ -114,25 +183,6 @@ namespace Zentric.Domain.Orders
             }
 
             _digitalDeliveries.Add(record);
-            UpdatedAt = DateTime.UtcNow;
-        }
-
-        public void RemoveItem(Guid variantId)
-        {
-            EnsureNotDelivered();
-
-            if (Status != OrderStatus.Cart)
-            {
-                throw new InvalidOperationException("Can only remove items while the order is in the Cart status.");
-            }
-
-            var existingItem = _items.SingleOrDefault(i => i.VariantId == variantId);
-            if (existingItem == null)
-            {
-                throw new InvalidOperationException("Item not found in cart.");
-            }
-
-            _items.Remove(existingItem);
             UpdatedAt = DateTime.UtcNow;
         }
 
@@ -157,7 +207,12 @@ namespace Zentric.Domain.Orders
             // instante que el propio agregado conoce. Asi la caducidad se
             // comprueba moviendo el reloj, no la suite. Ver
             // backendSDD/Domain/services/checkout-timeout-service.md.
-            if (DateTime.UtcNow - CreatedAt > TimeSpan.FromMinutes(15))
+            //
+            // FIX: El timeout de 15 minutos empieza en el momento del checkout,
+            // no en la creación del carrito (CreatedAt).
+            CheckoutStartedAt = DateTime.UtcNow;
+
+            if (DateTime.UtcNow - CheckoutStartedAt.Value > TimeSpan.FromMinutes(15))
             {
                 throw new InvalidOperationException("Cart reservation has expired (15-minute timeout).");
             }

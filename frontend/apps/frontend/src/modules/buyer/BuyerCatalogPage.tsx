@@ -4,7 +4,6 @@ import { useProductsPagedQuery } from '../../application/services/catalog';
 import { ProductType, type Product } from '../../domain';
 import {
   Button,
-  Input,
   Skeleton,
   Alert,
   AlertTitle,
@@ -75,10 +74,18 @@ export function BuyerCatalogPage() {
   const [searchTerm, setSearchTerm] = useState(search?.q ?? '');
   const [typeFilter, setTypeFilter] = useState<'All' | ProductType>('All');
   const [selectedCategory, setSelectedCategory] = useState<string>(search?.cat ?? 'all');
-  const [onlyInStock, setOnlyInStock] = useState(search?.filter === 'ofertas');
+  const [onlyInStock, setOnlyInStock] = useState(false);
   const [priceSort, setPriceSort] = useState<'relevance' | 'price-asc' | 'price-desc'>('relevance');
 
   const carouselRef = useRef<HTMLDivElement>(null);
+
+  // Scroll suave a la cuadrícula de productos
+  const scrollToProductGrid = useCallback(() => {
+    const grid = document.getElementById('product-grid');
+    if (grid) {
+      grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
 
   // Sincronizar parámetros de URL de navegación comercial (shortcuts del header o búsqueda)
   useEffect(() => {
@@ -90,11 +97,7 @@ export function BuyerCatalogPage() {
       setSearchTerm(search.q);
       setPage(1);
     }
-    if (search?.filter === 'ofertas') {
-      setOnlyInStock(true);
-      setPage(1);
-    }
-  }, [search?.cat, search?.q, search?.filter]);
+  }, [search?.cat, search?.q]);
 
   // Consulta paginada del backend con filtro de categoría en backend (Slice 4)
   const {
@@ -176,6 +179,52 @@ export function BuyerCatalogPage() {
     }
   };
 
+  // Estado del carrusel
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+
+  // Auto-play del carrusel
+  useEffect(() => {
+    if (!isAutoPlaying || popularProducts.length <= 1) return;
+    const interval = setInterval(() => {
+      if (carouselRef.current) {
+        const maxIndex = popularProducts.length - 1;
+        const nextIndex = carouselIndex >= maxIndex ? 0 : carouselIndex + 1;
+        setCarouselIndex(nextIndex);
+        carouselRef.current.scrollBy({
+          left: 320,
+          behavior: 'smooth',
+        });
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [carouselIndex, isAutoPlaying]);
+
+  // Navegación por teclado
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (carouselRef.current && carouselIndex > 0) {
+          setCarouselIndex(carouselIndex - 1);
+          carouselRef.current.scrollBy({ left: -320, behavior: 'smooth' });
+        }
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        if (carouselRef.current && carouselIndex < popularProducts.length - 1) {
+          setCarouselIndex(carouselIndex + 1);
+          carouselRef.current.scrollBy({ left: 320, behavior: 'smooth' });
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [carouselIndex]);
+
+  // Pausar auto-play al hacer hover
+  const handleMouseEnter = () => setIsAutoPlaying(false);
+  const handleMouseLeave = () => setIsAutoPlaying(true);
+
   return (
     <div className="space-y-10 py-2 sm:py-4">
       {/* ── 1. Hero Comercial de Alto Impacto (Anti-IA Genérica) ── */}
@@ -187,41 +236,25 @@ export function BuyerCatalogPage() {
           <div className="space-y-4 lg:col-span-7">
             <div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>Garantía Oficial Zentric Marketplace</span>
+              <span>Marketplace Zentric — Garantía Oficial</span>
             </div>
 
             <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl leading-tight">
-              Hardware & Licencias con <span className="text-brand">Garantía Certificada</span>
+              <span className="text-brand">Marketplace Zentric</span> — Todo lo que buscas, con garantía
             </h2>
 
             <p className="max-w-xl text-sm sm:text-base text-foreground-muted leading-relaxed">
-              Equipos de alto rendimiento, periféricos profesionales y software con despacho asegurado directo desde bodegas oficiales. Reserva tu inventario exclusivo en checkout y compra con total tranquilidad.
+              Tecnología, moda, hogar, deporte y más. Miles de productos de vendedores verificados con despacho asegurado, reserva de 15 minutos y devolución segura. Compra con confianza.
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <a
-                href="#catalogo"
+              <Link
+                to="/buyer/catalog"
                 className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-xs font-bold text-background transition-all hover:bg-brand/90 hover:shadow-md hover:shadow-brand/20"
               >
                 Explorar Catálogo Completo
                 <ArrowRight className="h-4 w-4" />
-              </a>
-              <button
-                type="button"
-                onClick={() => setTypeFilter(ProductType.Physical)}
-                className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-surface-muted transition-colors"
-              >
-                <Package className="h-4 w-4 text-brand" />
-                Equipos Físicos
-              </button>
-              <button
-                type="button"
-                onClick={() => setTypeFilter(ProductType.Digital)}
-                className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-surface-muted transition-colors"
-              >
-                <FileCode className="h-4 w-4 text-blue-400" />
-                Licencias Cloud
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -230,7 +263,7 @@ export function BuyerCatalogPage() {
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border shadow-2xl">
               <img
                 src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1000&q=80"
-                alt="Tecnología Zentric de Alto Rendimiento"
+                alt="Marketplace Zentric — Todo en un solo lugar"
                 className="h-full w-full object-cover object-center"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
@@ -248,7 +281,7 @@ export function BuyerCatalogPage() {
         </div>
       </section>
 
-      {/* ── 2. Barra de Confianza y Garantías de Marketplace ── */}
+      {/* ── 2. Barra de Confianza y Garantías de Marketplace (SIN duplicados con Hero) ── */}
       <section
         aria-label="Garantías del comprador"
         className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4"
@@ -328,9 +361,11 @@ export function BuyerCatalogPage() {
 
           <div
             ref={carouselRef}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
             className="flex gap-4 overflow-x-auto pb-4 scrollbar-none scroll-smooth"
           >
-            {popularProducts.map((product) => {
+            {popularProducts.map((product, index) => {
               const imageUrl = getProductImageUrl(product);
               const firstVariant = product.variants?.[0];
               const availableStock = firstVariant?.availableStock ?? 0;
@@ -401,6 +436,34 @@ export function BuyerCatalogPage() {
               );
             })}
           </div>
+        </div>
+          </div>
+
+          {/* Dots indicators */}
+          <div className="flex items-center justify-center gap-1.5 mt-4" role="tablist" aria-label="Navegación del carrusel">
+            {popularProducts.map((_, index) => (
+              <button
+                key={index}
+                role="tab"
+                aria-selected={index === carouselIndex}
+                aria-label={`Ir a producto ${index + 1}`}
+                onClick={() => {
+                  setCarouselIndex(index);
+                  if (carouselRef.current) {
+                    carouselRef.current.scrollTo({
+                      left: index * 320,
+                      behavior: 'smooth',
+                    });
+                  }
+                }}
+                className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                  index === carouselIndex
+                    ? 'bg-brand w-6'
+                    : 'bg-foreground-muted/40 hover:bg-foreground-muted/60'
+                }`}
+              />
+            ))}
+          </div>
         </section>
       )}
 
@@ -467,23 +530,27 @@ export function BuyerCatalogPage() {
           </div>
         </div>
 
-        {/* ── 6. Barra de Filtros Principales (Búsqueda, Tipo y Clasificación) ── */}
+        {/* ── 6. Barra de Filtros Principales (Tipo, Categoría, Stock y Orden) ── */}
         <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-4 shadow-xs">
+          {/* Fila 1: Búsqueda local + Tipo de Producto + Categoría */}
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            {/* Input de Búsqueda — Requisito de tests: placeholder matches /Buscar por nombre/i */}
-            <div className="relative flex-1">
-              <Input
+            {/* Búsqueda local — Requisito de tests: placeholder matches /Buscar por nombre/i */}
+            <div className="relative flex-1 min-w-0 lg:max-w-xs">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted pointer-events-none"
+                aria-hidden="true"
+              />
+              <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Buscar por nombre o especificación técnica..."
-                className="pl-9 text-xs"
+                className="w-full rounded-lg border border-border bg-background/80 py-2 pl-9 pr-3 text-xs text-foreground placeholder:text-foreground-muted focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand transition-colors"
               />
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-foreground-muted pointer-events-none" />
             </div>
 
             {/* Selector de Tipo de Producto — Requisito de tests: botones con nombres 'Todos', 'Físicos', 'Digitales' */}
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
               <Button
                 variant={typeFilter === 'All' ? 'default' : 'outline'}
                 size="sm"
@@ -509,13 +576,10 @@ export function BuyerCatalogPage() {
                 Digitales
               </Button>
             </div>
-          </div>
 
-          {/* ── 7. Filtros Secundarios y Taxonomía de Categorías Escalable ── */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3 text-xs">
-            {/* Selector de Categorías */}
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-              <span className="text-foreground-muted font-medium shrink-0">Categoría:</span>
+            {/* Selector de Categorías — Compacto y escalable */}
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none shrink-0 lg:flex-1 lg:justify-end">
+              <span className="text-foreground-muted font-medium shrink-0 hidden sm:inline">Categoría:</span>
               <div className="flex items-center gap-1.5 shrink-0">
                 {MARKETPLACE_CATEGORIES.map((cat) => (
                   <button
@@ -524,8 +588,9 @@ export function BuyerCatalogPage() {
                     onClick={() => {
                       setSelectedCategory(cat.id);
                       setPage(1);
+                      scrollToProductGrid();
                     }}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap ${
                       selectedCategory === cat.id
                         ? 'bg-brand/10 text-brand font-semibold border border-brand/30'
                         : 'text-foreground-muted hover:bg-surface-muted hover:text-foreground'
@@ -536,19 +601,24 @@ export function BuyerCatalogPage() {
                 ))}
               </div>
             </div>
+          </div>
 
-            {/* Ordenamiento y Disponibilidad */}
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-1.5 cursor-pointer text-foreground-muted hover:text-foreground">
-                <input
-                  type="checkbox"
-                  checked={onlyInStock}
-                  onChange={(e) => setOnlyInStock(e.target.checked)}
-                  className="rounded border-border text-brand focus:ring-brand"
-                />
-                <span className="text-xs">Solo en stock</span>
-              </label>
+          {/* Fila 2: Disponibilidad y Ordenamiento */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3 text-xs">
+            {/* Solo en stock */}
+            <label className="flex items-center gap-1.5 cursor-pointer text-foreground-muted hover:text-foreground">
+              <input
+                type="checkbox"
+                checked={onlyInStock}
+                onChange={(e) => setOnlyInStock(e.target.checked)}
+                className="rounded border-border text-brand focus:ring-brand"
+              />
+              <span className="text-xs">Solo en stock</span>
+            </label>
 
+            {/* Ordenamiento */}
+            <div className="flex items-center gap-2">
+              <span className="text-foreground-muted font-medium shrink-0 hidden sm:inline">Ordenar:</span>
               <select
                 value={priceSort}
                 onChange={(e) => setPriceSort(e.target.value as any)}
@@ -559,6 +629,18 @@ export function BuyerCatalogPage() {
                 <option value="price-desc">Mayor precio</option>
               </select>
             </div>
+
+            {/* Botón limpiar filtros (visible solo si hay filtros activos) */}
+            {(typeFilter !== 'All' || selectedCategory !== 'all' || onlyInStock) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearFilters}
+                className="text-xs text-foreground-muted hover:text-danger"
+              >
+                Limpiar filtros
+              </Button>
+            )}
           </div>
         </div>
 
@@ -606,7 +688,7 @@ export function BuyerCatalogPage() {
           />
         ) : (
           /* ── 11. Cuadrícula de Tarjetas Comerciales Enriquecidas ── */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div id="product-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product: Product) => {
               const imageUrl = getProductImageUrl(product);
               const firstVariant = product.variants?.[0];

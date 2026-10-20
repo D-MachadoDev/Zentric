@@ -111,7 +111,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
                 .AsNoTracking()
                 .Include(o => o.Items)
                 .Include(o => o.DigitalDeliveries)
-                .Where(o => (o.Status == OrderStatus.Cart || o.Status == OrderStatus.PendingPayment) && o.UpdatedAt < threshold)
+                .Where(o => (o.Status == OrderStatus.Cart || o.Status == OrderStatus.PendingPayment) && o.CheckoutStartedAt.HasValue && o.CheckoutStartedAt.Value < threshold)
                 .ToListAsync(cancellationToken);
 
             return list.Select(CustomerOrderMapper.ToDomain).ToList();

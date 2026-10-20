@@ -81,6 +81,7 @@ namespace Zentric.Tests.Presentation
                 // 5. Pedidos. Escribirlos es del Comprador (seccion 6.1 paso 5).
                 ["OrdersController.CreateCart"] = AuthorizationPolicies.Checkout,
                 ["OrdersController.AddOrderItem"] = AuthorizationPolicies.Checkout,
+                ["OrdersController.RemoveOrderItem"] = AuthorizationPolicies.Checkout,
                 ["OrdersController.Checkout"] = AuthorizationPolicies.Checkout,
                 ["OrdersController.Pay"] = AuthorizationPolicies.Checkout,
                 ["OrdersController.GetOrders"] = AuthorizationPolicies.OrderRead,

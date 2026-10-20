@@ -1,11 +1,11 @@
-import { useState, type ReactNode, type FormEvent } from 'react';
+import { useEffect } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useRouterState, useNavigate } from '@tanstack/react-router';
 import {
   ShoppingBag,
   ShoppingCart,
   Package,
   User,
-  Search,
   LogOut,
   ShieldCheck,
   Truck,
@@ -14,9 +14,10 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../providers/authContext';
 import { useOrdersQuery } from '../../application/services/orders';
-import { Button, Logo } from '@zentric/ui';
+import { Button, Logo, SearchInput } from '@zentric/ui';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { BuyerFooter } from '../components/BuyerFooter';
+import { UserRole } from '../../domain';
 
 interface BuyerLayoutProps {
   children?: ReactNode;
@@ -36,7 +37,6 @@ const categoryShortcuts = [
   { label: 'Audio & Monitores', href: '/buyer?cat=audio' },
   { label: 'Software & Licencias', href: '/buyer?cat=software' },
   { label: 'Componentes & Hardware', href: '/buyer?cat=hardware' },
-  { label: 'Ofertas Flash', href: '/buyer?filter=ofertas' },
 ];
 
 /**
@@ -49,22 +49,46 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, session } = useAuth();
 
   const [headerSearch, setHeaderSearch] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Defensa en profundidad: verificar sesión al montar y al restaurar de bfcache.
+  // Los guardas beforeLoad del router no se ejecutan al restaurar de back-forward cache.
+  useEffect(() => {
+    const token = session.getAccessToken();
+    const userRole = session.getRole();
+    if (token === null || userRole === null || userRole !== UserRole.Buyer) {
+      navigate({ to: '/login', search: { aviso: 'sin-sesion' } as never });
+    }
+  }, [session, navigate]);
+
+  // También escuchar el evento pageshow que dispara al restaurar de bfcache
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        const token = session.getAccessToken();
+        const userRole = session.getRole();
+        if (token === null || userRole === null || userRole !== UserRole.Buyer) {
+          navigate({ to: '/login', search: { aviso: 'sin-sesion' } as never });
+        }
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, [session, navigate]);
 
   // Consulta de carrito activo para insignia de ítems en vivo
   const { data: cartOrders = [] } = useOrdersQuery('Cart');
   const activeCart = cartOrders.find((order) => order.status === 'Cart');
   const cartItemCount = activeCart?.itemCount ?? activeCart?.items?.length ?? 0;
 
-  const handleHeaderSearch = (e: FormEvent) => {
-    e.preventDefault();
-    if (!headerSearch.trim()) return;
+  const handleHeaderSearch = (value: string) => {
+    if (!value.trim()) return;
     navigate({
       to: '/buyer/catalog' as never,
-      search: { q: headerSearch.trim() } as never,
+      search: { q: value.trim() } as never,
     });
   };
 
@@ -118,27 +142,18 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
           </div>
 
           {/* Barra de Búsqueda de Marketplace */}
-          <form
-            onSubmit={handleHeaderSearch}
-            className="hidden md:flex flex-1 max-w-xl items-center relative"
-          >
-            <div className="relative w-full">
-              <input
-                type="text"
-                value={headerSearch}
-                onChange={(e) => setHeaderSearch(e.target.value)}
-                placeholder="Buscar productos, hardware, periféricos, licencias cloud..."
-                className="w-full rounded-full border border-border bg-background/80 py-2 pl-10 pr-24 text-xs text-foreground placeholder:text-foreground-muted focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand shadow-xs transition-colors"
-              />
-              <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-foreground-muted pointer-events-none" />
-              <button
-                type="submit"
-                className="absolute right-1.5 top-1 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-background hover:bg-brand/90 transition-colors"
-              >
-                Buscar
-              </button>
-            </div>
-          </form>
+          <div className="hidden md:flex flex-1 max-w-xl items-center relative">
+            <SearchInput
+              value={headerSearch}
+              onChange={setHeaderSearch}
+              onSearch={handleHeaderSearch}
+              placeholder="Buscar productos, hardware, periféricos, licencias cloud..."
+              showRecentSearches
+              maxRecentSearches={5}
+              aria-label="Buscar en todo el marketplace"
+              className="w-full"
+            />
+          </div>
 
           {/* Acciones del Comprador */}
           <div className="flex items-center gap-1 sm:gap-2">

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useState, type ReactNode } from 'react';
 import {
   LayoutDashboard,
@@ -11,6 +12,9 @@ import {
 import { LayoutHeader } from './LayoutHeader';
 import { LayoutSidebar, type NavGroup, type NavItem } from './LayoutSidebar';
 import { OperationalFooter } from '../components/OperationalFooter';
+import { useAuth } from '../providers/authContext';
+import { useNavigate } from '@tanstack/react-router';
+import { UserRole } from '../../domain';
 
 const sellerAnchor: NavItem[] = [
   { href: '/seller', label: 'Panel del Vendedor', icon: LayoutDashboard },
@@ -49,6 +53,33 @@ interface SellerLayoutProps {
  */
 export function SellerLayout({ children }: SellerLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { session } = useAuth();
+  const navigate = useNavigate();
+
+  // Defensa en profundidad: verificar sesión al montar y al restaurar de bfcache.
+  // Los guardas beforeLoad del router no se ejecutan al restaurar de back-forward cache.
+  useEffect(() => {
+    const token = session.getAccessToken();
+    const userRole = session.getRole();
+    if (token === null || userRole === null || (userRole !== UserRole.Seller && userRole !== UserRole.Administrator)) {
+      navigate({ to: '/login', search: { aviso: 'sin-sesion' } as never });
+    }
+  }, [session, navigate]);
+
+  // También escuchar el evento pageshow que dispara al restaurar de bfcache
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        const token = session.getAccessToken();
+        const userRole = session.getRole();
+        if (token === null || userRole === null || (userRole !== UserRole.Seller && userRole !== UserRole.Administrator)) {
+          navigate({ to: '/login', search: { aviso: 'sin-sesion' } as never });
+        }
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, [session, navigate]);
 
   return (
     <div data-role="seller" className="flex min-h-screen bg-background text-foreground">
