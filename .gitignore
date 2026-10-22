@@ -471,3 +471,6 @@ ORIGINAL_REQUEST.md
 AUDITORIA_SDD_*.md
 skills-lock.json
 
+
+# Salida de Lighthouse CI (runs locales/CI); solo el config lighthouserc.json va versionado.
+.lighthouseci/
