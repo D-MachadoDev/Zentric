@@ -61,7 +61,13 @@ function volatileMask(page: Page) {
     // dependa de lo que sirva ese CDN en ese momento no es una senal de
     // regresion: es ruido de red. Lo que el snapshot debe vigilar es la
     // COMPOSICION (maquetacion, tipografia, color, ritmo vertical).
-    page.locator('#product-grid img').first(),
+    //
+    // Solo las de la grilla: el carrusel NO se enmascara imagen por imagen.
+    // Su pista tiene desplazamiento horizontal, y la caja de una imagen
+    // desplazada sale del recorte del contenedor: la mascara se pintaba
+    // fuera de la pagina y el diff aparecia en el margen, sin que nada del
+    // diseno hubiera cambiado. La seccion completa ya queda tapada.
+    page.locator('#product-grid img'),
   ];
 }
 
@@ -83,12 +89,107 @@ async function waitForImages(page: Page) {
       // Si alguna imagen no carga (red lenta), se sigue: el snapshot sera
       // distinto, pero la prueba no debe bloquear el pipeline por una foto.
     });
+  await waitForCatalogContent(page);
   await page.waitForTimeout(300);
 }
 
+/**
+ * Espera a que la grilla del catalogo tenga su CONTENIDO, no su esqueleto.
+ *
+ * Sin esto, la foto podia capturar el estado de carga: la grilla con ocho
+ * esqueletos es mas corta que la grilla con los once productos, y la
+ * diferencia de alto (miles de pixeles) hacia fallar el snapshot sin que
+ * hubiera cambiado nada del diseno. La banda de catalogo solo aparece
+ * cuando la consulta termino.
+ */
+async function waitForCatalogContent(page: Page) {
+  const grid = page.locator('#product-grid');
+  if ((await grid.count()) === 0) return;
+
+  await page
+    .waitForFunction(
+      () => {
+        const node = document.querySelector('#product-grid');
+        if (!node) return false;
+        const vacio = document.querySelector('[role="status"]');
+        return node.querySelectorAll('h3').length > 0 || vacio !== null;
+      },
+      undefined,
+      { timeout: 15_000 },
+    )
+    .catch(() => {
+      // Si la grilla no llega a poblar, la prueba debe fallar por el diff
+      // y no quedarse colgada esperando.
+    });
+}
+
+/**
+ * Imagen 1x1 PNG en base64.
+ *
+ * Sirve las fotos de producto que vienen de un CDN externo. Un baseline de
+ * pixel no puede depender de lo que sirva ese CDN en ese momento: la primera
+ * corrida tras un arranque frio tarda mas en cargar, el contenido puede
+ * variar y el diff aparece sin que haya cambiado el diseno. Servir un
+ * placeholder local hace el snapshot REPRODUCIBLE y ademas mas rapido
+ * (ninguna peticion de imagen sale a internet).
+ */
+const PLACEHOLDER_PNG =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
 test.describe('Snapshots visuales', () => {
+  test.beforeEach(async ({ page }) => {
+    // El carrusel de "Productos populares" auto-avanza cada 5 s, de modo que la
+    // posicion del scroll (y por tanto los bordes de las tarjetas visibles)
+    // dependen del instante de la captura. El componente respeta
+    // `prefers-reduced-motion`, asi que reducir el movimiento lo congela: es
+    // el mismo mecanismo que usa un usuario con esa preferencia del sistema.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+
+    // `global.css` declara `scroll-behavior: smooth`. La captura de pagina
+    // completa de Playwright desplaza el documento para abarcarlo entero, y
+    // con el scroll suave ese desplazamiento es una ANIMACION: la foto
+    // salia a medio recorrer y devolvia una pagina en blanco. Aqui el scroll
+    // es instantaneo, que es lo que una captura necesita.
+    //
+    // Se inyecta con `addInitScript` (y no con `addStyleTag`) porque cada
+    // prueba navega despues: una etiqueta de estilo suelta se pierde con la
+    // navegacion, y un script de inicializacion sobrevive a todas.
+    await page.addInitScript(() => {
+      const apply = () => {
+        const style = document.createElement('style');
+        style.textContent = 'html, body, #root { scroll-behavior: auto !important; }';
+        document.head.appendChild(style);
+      };
+      if (document.head) {
+        apply();
+      } else {
+        document.addEventListener('DOMContentLoaded', apply);
+      }
+    });
+
+    await page.route(
+      /https?:\/\/(?!localhost|127\.0\.0\.1)[^/]+\/.*\.(png|jpe?g|webp|avif|gif|svg)(\?|$)/i,
+      (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: 'image/png',
+          body: Buffer.from(PLACEHOLDER_PNG, 'base64'),
+        }),
+    );
+  });
+
   for (const vp of VIEWPORTS) {
-    test(`catalogo - ${vp.name}`, async ({ page }) => {
+    test(`catalogo - ${vp.name}`, async ({ page }, testInfo) => {
+      // Un proyecto de dispositivo MOVIL no se fotografia a 1440 px: el
+      // perfil de iPhone con factor de escala 3 y una ventana de escritorio
+      // produce capturas de pagina completa que webkit no estabiliza (la
+      // referencia sale en blanco). Cada motor mide el ancho para el que
+      // esta disenado.
+      const esMovil = testInfo.project.name.startsWith('mobile');
+      if (esMovil && vp.name === 'desktop') {
+        test.skip(true, 'El proyecto movil ya mide su propio ancho de pantalla.');
+      }
+
       await loginAsBuyer(page);
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto('/buyer/catalog');
@@ -105,7 +206,13 @@ test.describe('Snapshots visuales', () => {
   }
 
   for (const route of ROUTE_SNAPSHOTS) {
-    test(`${route.name} - desktop`, async ({ page }) => {
+    test(`${route.name} - desktop`, async ({ page }, testInfo) => {
+      // Mismo motivo que en el catalogo: un perfil de dispositivo movil no
+      // se fotografía a 1440 px.
+      if (testInfo.project.name.startsWith('mobile')) {
+        test.skip(true, 'El proyecto movil ya mide su propio ancho de pantalla.');
+      }
+
       if (route.name !== 'login') await loginAsBuyer(page);
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(route.path);
@@ -121,16 +228,42 @@ test.describe('Snapshots visuales', () => {
     });
   }
 
-  test('el catalogo en modo oscuro mantiene la identidad de rol', async ({ page }) => {
+  test('el catalogo en modo oscuro mantiene la identidad de rol', async ({ page }, testInfo) => {
+    // Mismo motivo que en el catalogo: un perfil de dispositivo movil no
+    // se fotografia a 1440 px.
+    if (testInfo.project.name.startsWith('mobile')) {
+      test.skip(true, 'El proyecto movil ya mide su propio ancho de pantalla.');
+    }
+
     await loginAsBuyer(page);
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/buyer/catalog');
 
-    // Fuerza el modo oscuro del sistema antes de cargar.
-    await page.emulateMedia({ colorScheme: 'dark' });
-    await page.reload();
+    // El tema de la aplicacion NO lo decide el sistema: lo decide
+    // `localStorage['zentric.theme']` (ThemeProvider). Emular
+    // `prefers-color-scheme: dark` no cambiaba nada, de modo que esta
+    // prueba fotografiaba el modo claro y lo llamaba "oscuro": el tema
+    // "Boveda Grafito" no tenia cobertura visual ninguna.
+    await page.addInitScript(() => {
+      window.localStorage.setItem('zentric.theme', 'dark');
+    });
+
+    await page.goto('/buyer/catalog');
     await page.waitForLoadState('networkidle');
     await waitForImages(page);
+
+    // El modo oscuro tiene que estar REALMENTE aplicado: si el proveedor
+    // dejara de leer la preferencia, la foto seria la del modo claro y la
+    // prueba volveria a pasar sin comprobar nada.
+    await expect(page.locator('html.dark')).toBeAttached();
+
+    // La identidad de rol se mantiene: el acento del comprador es jade en
+    // los dos modos, no el cian del modo oscuro por defecto.
+    const brand = await page.evaluate(() =>
+      getComputedStyle(document.querySelector('[data-role="buyer"]') ?? document.documentElement)
+        .getPropertyValue('--brand')
+        .trim(),
+    );
+    expect(brand.toUpperCase()).toBe('#2DD4BF');
 
     await expect(page).toHaveScreenshot('catalogo-oscuro-desktop.png', {
       fullPage: true,

@@ -1,7 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { Logo, Skeleton } from '@zentric/ui';
 import { useCategoriesQuery } from '../../application/services/catalog';
-import { CatalogTrustStrip } from '../../modules/buyer/components/CatalogTrustStrip';
 import {
   ShieldCheck,
   CreditCard,
@@ -19,14 +18,7 @@ export function BuyerFooter() {
 
   return (
     <footer className="border-t border-border bg-surface text-foreground transition-colors duration-200">
-      {/* ── 1. Franja de garantías (banda editorial compartida con el catálogo) ── */}
-      <div className="border-b border-border/60 bg-surface-muted/40 px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <CatalogTrustStrip />
-        </div>
-      </div>
-
-      {/* ── 2. Columnas Principales de Enlaces y Recursos ── */}
+      {/* ── 1. Columnas Principales de Enlaces y Recursos ── */}
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Columna de Marca (2 slots en lg) */}
