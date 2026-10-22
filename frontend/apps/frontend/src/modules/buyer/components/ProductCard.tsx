@@ -1,11 +1,12 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, CheckCircle2, FileCode, Flame, Package, XCircle, Zap } from 'lucide-react';
 import { Badge, MoneyAmount } from '@zentric/ui';
-import type { Product } from '../../../domain';
+import { ProductType, type Product } from '../../../domain';
 import { getProductImageUrl } from '../productImages';
 import {
   formatProductType,
   formatVariantCount,
+  resolvePrimarySku,
   resolveProductAvailability,
   type ProductAvailability,
 } from './productPresentation';
@@ -40,7 +41,7 @@ const AVAILABILITY: Record<
   },
   'out-of-stock': {
     label: 'Agotado',
-    className: 'border-transparent bg-danger/90 text-white',
+    className: 'border-transparent bg-danger/90 text-background',
     variant: 'danger',
     Icon: XCircle,
   },
@@ -51,15 +52,19 @@ interface ProductCardProps {
 }
 
 /**
- * Tarjeta comercial de la grilla "Todos los productos".
+ * Tarjeta comercial de la grilla "Todos los productos" (§8-A4).
  *
- * Toda la tarjeta es clicable, el precio viaja siempre en Geist Mono con cifras
- * tabulares y la jerarquia se ordena tipo -> nombre -> descripcion -> precio.
+ * Jerarquia de tres niveles, no cuatro cajas identicas: (1) fotografia 16:10
+ * con zoom en hover, (2) identidad del producto —tipo, variantes y SKU en
+ * Geist Mono—, (3) precio en moneda local. La pildora de disponibilidad flota
+ * sobre la foto porque es el dato que decide la compra.
  */
 export function ProductCard({ product }: ProductCardProps) {
   const availability = resolveProductAvailability(product);
   const variantCount = product.variants?.length ?? 1;
+  const sku = resolvePrimarySku(product);
   const availabilityBadge = availability === 'digital' ? null : AVAILABILITY[availability];
+  const TypeIcon = product.type === ProductType.Digital ? FileCode : Package;
 
   return (
     <Link
@@ -82,8 +87,8 @@ export function ProductCard({ product }: ProductCardProps) {
               {availabilityBadge.label}
             </Badge>
           ) : (
-            /* El color de este icono pertenece al bloque S6: sin cambios aqui. */
-            <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/90 px-2 py-0.5 text-[10px] font-semibold text-white shadow-xs">
+            /* Texto sobre relleno de acento: token `--primary-foreground` (§9.5-5). */
+            <span className="inline-flex items-center gap-1 rounded-md bg-brand/90 px-2 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-xs">
               <Zap className="h-3 w-3" aria-hidden="true" />
               Entrega Inmediata
             </span>
@@ -93,20 +98,22 @@ export function ProductCard({ product }: ProductCardProps) {
 
       <div className="flex flex-1 flex-col justify-between gap-3 p-5">
         <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 text-[11px] font-mono text-foreground-muted">
-            {availability === 'digital' ? (
-              <span className="inline-flex items-center gap-1 font-medium text-brand">
-                <FileCode className="h-3 w-3" aria-hidden="true" />
-                {formatProductType(product.type)}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 font-medium text-brand">
-                <Package className="h-3 w-3" aria-hidden="true" />
-                {formatProductType(product.type)}
-              </span>
-            )}
+          {/* Identidad: tipo + variantes en prosa, SKU en codigo (Voz 3). */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-foreground-muted">
+            <span className="inline-flex items-center gap-1 font-medium text-brand">
+              <TypeIcon className="h-3 w-3" aria-hidden="true" />
+              {formatProductType(product.type)}
+            </span>
             <span aria-hidden="true">·</span>
             <span>{formatVariantCount(variantCount)}</span>
+            {sku && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="font-mono text-[10px] tracking-tight text-foreground-subtle">
+                  {sku}
+                </span>
+              </>
+            )}
           </div>
 
           <h3 className="line-clamp-2 text-base leading-snug font-semibold text-foreground transition-colors group-hover:text-brand">
@@ -128,7 +135,8 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           </div>
 
-          <span className="inline-flex items-center gap-1 rounded-lg bg-surface-muted px-3 py-1.5 text-xs font-semibold text-brand transition-colors group-hover:bg-brand group-hover:text-background">
+          {/* Accion comercial con micro-interaccion de flecha (§8-A4). */}
+          <span className="inline-flex items-center gap-1 rounded-lg bg-surface-muted px-3 py-1.5 text-xs font-semibold text-brand transition-colors group-hover:bg-brand group-hover:text-primary-foreground">
             Ver
             <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </span>

@@ -3,11 +3,9 @@ import type {
   CreateProductInput,
   CreatedProduct,
   ListProductsPagedParams,
-  Product,
   ZentricApiPort,
 } from '../../domain';
 
-import type { ProductoRegistrado } from '../dto';
 import { queryKeys } from './queryKeys';
 import { resolveApi } from './apiContext';
 
@@ -29,6 +27,33 @@ export function useProductsPagedQuery(params?: ListProductsPagedParams, api?: Ze
   return useQuery({
     queryKey: queryKeys.products.paged(params),
     queryFn: () => resolveApi(api).listProductsPaged(params),
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Hook de consulta de las categorías reales del marketplace (S1).
+ *
+ * Fuente única de categorías: el backend sólo devuelve las que tienen >= 1
+ * producto publicado, así que la UI no debe filtrar ni inventar categorías.
+ */
+export function useCategoriesQuery(api?: ZentricApiPort) {
+  return useQuery({
+    queryKey: queryKeys.categories.list(),
+    queryFn: () => resolveApi(api).listCategories(),
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Hook de consulta de los productos destacados del hero (S2).
+ *
+ * El hero se compone con productos reales; `count` por defecto 6.
+ */
+export function useHeroProductsQuery(count = 6, api?: ZentricApiPort) {
+  return useQuery({
+    queryKey: queryKeys.heroProducts.list(count),
+    queryFn: () => resolveApi(api).listHeroProducts(count),
     staleTime: 60_000,
   });
 }
@@ -86,58 +111,4 @@ export function useSuspendProductMutation(api?: ZentricApiPort) {
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
     },
   });
-}
-
-// ── Clases de servicio heredadas ──────────────────────────────────────────
-
-export class ConsultarCatalogoService {
-  constructor(private readonly api: ZentricApiPort) {}
-
-  ejecutar(vendorId?: string): Promise<Product[]> {
-    return this.api.listProducts(vendorId);
-  }
-}
-
-export class ConsultarProductoService {
-  constructor(private readonly api: ZentricApiPort) {}
-
-  ejecutar(id: string): Promise<Product> {
-    return this.api.getProductById(id);
-  }
-}
-
-export class RegistrarProductoService {
-  constructor(private readonly api: ZentricApiPort) {}
-
-  async ejecutar(input: CreateProductInput): Promise<ProductoRegistrado> {
-    const created = await this.api.createProduct(input);
-    const variantId = created.variantIds[0] ?? null;
-
-    if (variantId === null) {
-      return { productId: created.productId, variantId: null, sku: null };
-    }
-
-    const product = this.api.getProductById
-      ? await this.api.getProductById(created.productId)
-      : await this.api.getProduct(created.productId);
-    const variant = product.variants.find((candidate) => candidate.id === variantId);
-
-    return { productId: created.productId, variantId, sku: variant?.sku ?? null };
-  }
-}
-
-export class PublicarProductoService {
-  constructor(private readonly api: ZentricApiPort) {}
-
-  ejecutar(productId: string): Promise<void> {
-    return this.api.publishProduct(productId);
-  }
-}
-
-export class SuspenderProductoService {
-  constructor(private readonly api: ZentricApiPort) {}
-
-  ejecutar(productId: string): Promise<void> {
-    return this.api.suspendProduct(productId);
-  }
 }

@@ -1,4 +1,4 @@
-import { ShieldCheck, FileText, Cookie, Scale, Truck, RotateCcw, Gavel, Mail, Lock, Eye, AlertTriangle, Globe, UserCheck } from 'lucide-react';
+import { ShieldCheck, Cookie, Scale, Lock, Eye, AlertTriangle, Globe, UserCheck } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -85,7 +85,7 @@ export function PrivacyPage() {
               <CardDescription>Acceso, rectificación, supresión, portabilidad, oposición.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-foreground-muted leading-relaxed">
-              <p>Puedes ejercer tus derechos contactando a privacy@zentric.com. Responderemos en un plazo máximo de 30 días según la normativa aplicable.
+              <p>Puedes ejercer tus derechos contactando a privacy@zentric.com. Responderemos en un plazo máximo de 30 días según la normativa aplicable.</p>
             </CardContent>
           </Card>
 
@@ -112,6 +112,7 @@ export function PrivacyPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-foreground-muted leading-relaxed">
               <p>Zentric Marketplace no está dirigido a menores de 18 años. No recopilamos intencionalmente datos de menores. Si detectamos que un menor nos ha proporcionado datos, los eliminaremos.
+              </p>
             </CardContent>
           </Card>
 

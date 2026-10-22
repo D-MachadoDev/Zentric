@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useOrdersQuery, useCheckoutOrderMutation, useRemoveCartItemMutation, useUpdateCartItemQuantityMutation } from '../../application/services/orders';
-import type { OrderItem, OrderListItem, UpdateCartItemQuantityInput } from '../../domain';
+import type { OrderItem, OrderListItem } from '../../domain';
 import {
   Button,
   Badge,
@@ -96,8 +96,8 @@ export function BuyerCartPage() {
   if (isError) {
     return (
       <div className="p-6 sm:p-10 max-w-4xl mx-auto w-full space-y-4">
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-danger/30 bg-danger/10 text-danger">
+          <AlertCircle className="h-5 w-5 text-danger" />
           <AlertTitle>Error al cargar el carrito</AlertTitle>
           <AlertDescription>
             {error instanceof Error ? error.message : 'No fue posible consultar su carrito activo.'}
@@ -141,8 +141,8 @@ export function BuyerCartPage() {
       </div>
 
       {checkoutError && (
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-danger/30 bg-danger/10 text-danger">
+          <AlertCircle className="h-5 w-5 text-danger" />
           <AlertTitle>Error en el checkout</AlertTitle>
           <AlertDescription className="text-xs font-mono">{checkoutError}</AlertDescription>
         </Alert>
@@ -334,7 +334,7 @@ export function BuyerCartPage() {
               {/* Aviso de Reserva */}
               <div className="rounded-xl border border-border bg-surface-muted/50 p-4 space-y-2 text-xs">
                 <div className="flex items-center gap-2 text-brand font-semibold">
-                  <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                  <ShieldCheck className="h-4 w-4 text-success" />
                   <span>Compra 100% Protegida</span>
                 </div>
                 <p className="text-foreground-muted leading-relaxed">
@@ -401,9 +401,9 @@ export function BuyerCartPage() {
         >
           <AlertTitle className="flex items-center gap-2">
             {deleteFeedback.type === 'success' ? (
-              <ShieldCheck className="h-4 w-4 text-emerald-500" />
+              <ShieldCheck className="h-4 w-4 text-success" />
             ) : (
-              <AlertCircle className="h-4 w-4 text-red-400" />
+              <AlertCircle className="h-4 w-4 text-danger" />
             )}
             {deleteFeedback.type === 'success' ? 'Éxito' : 'Error'}
           </AlertTitle>
@@ -420,9 +420,9 @@ export function BuyerCartPage() {
         >
           <AlertTitle className="flex items-center gap-2">
             {quantityFeedback.type === 'success' ? (
-              <ShieldCheck className="h-4 w-4 text-emerald-500" />
+              <ShieldCheck className="h-4 w-4 text-success" />
             ) : (
-              <AlertCircle className="h-4 w-4 text-red-400" />
+              <AlertCircle className="h-4 w-4 text-danger" />
             )}
             {quantityFeedback.type === 'success' ? 'Éxito' : 'Error'}
           </AlertTitle>

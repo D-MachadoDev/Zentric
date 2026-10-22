@@ -135,13 +135,13 @@ export function RequestReturnPage() {
           className={
             feedback.type === 'success'
               ? 'border-brand/40 bg-brand/10 text-brand'
-              : 'border-red-900 bg-red-950/40 text-red-200'
+              : 'border-danger/30 bg-danger/10 text-danger'
           }
         >
           {feedback.type === 'success' ? (
             <CheckCircle2 className="h-5 w-5 text-brand" />
           ) : (
-            <AlertCircle className="h-5 w-5 text-red-400" />
+            <AlertCircle className="h-5 w-5 text-danger" />
           )}
           <AlertTitle>{feedback.type === 'success' ? 'Solicitud Enviada' : 'Error de Validación'}</AlertTitle>
           <AlertDescription className="text-xs font-mono mt-1">{feedback.message}</AlertDescription>
@@ -279,7 +279,7 @@ export function RequestReturnPage() {
         </div>
 
         {/* Advertencia Legal / Dominio */}
-        <div className="rounded-xl border border-amber-900/50 bg-amber-950/20 p-4 space-y-1 text-xs">
+        <div className="rounded-xl border border-warning/30 bg-warning/10 p-4 space-y-1 text-xs">
           <div className="flex items-center gap-2 text-warning font-mono font-bold">
             <ShieldAlert className="h-4 w-4" />
             Condiciones de Devolución (ZENTRIC.md Dominio 10 y 11)

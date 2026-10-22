@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useAuth } from '../../app/providers/authContext';
 import { useOrdersQuery } from '../../application/services/orders';
 import { useUserProfile, useUpdateUserProfile } from '../../application/services/identity';
@@ -54,8 +54,16 @@ export function BuyerProfilePage() {
 
   const email = profile?.email || user?.email || '';
 
-  // Sincronizar formulario cuando los datos del perfil se cargan desde el backend
-  useEffect(() => {
+  // El formulario se siembra cuando LLEGA el perfil del backend. Se ajusta
+  // DURANTE el render y no dentro de un efecto: llamar a setState de forma
+  // sincrona en un efecto provoca renders en cascada (regla de React,
+  // "adjusting state when props change").
+  const profileSeed = profile ? `p:${profile.id}` : user ? `u:${user.userId}` : null;
+  const [seenProfileSeed, setSeenProfileSeed] = useState<string | null>(null);
+
+  if (seenProfileSeed !== profileSeed) {
+    setSeenProfileSeed(profileSeed);
+
     if (profile) {
       setFullName(profile.fullName || user?.fullName || '');
       setPhone(profile.phone || '');
@@ -69,7 +77,7 @@ export function BuyerProfilePage() {
     } else if (user) {
       setFullName(user.fullName || '');
     }
-  }, [profile, user]);
+  }
 
   const completedOrders = orders.filter((o) => o.status === 'Delivered').length;
   const inProgressOrders = orders.filter((o) => o.status !== 'Delivered' && o.status !== 'Cancelled').length;
@@ -132,7 +140,7 @@ export function BuyerProfilePage() {
             <span className="text-[11px] text-foreground-muted">En Curso</span>
           </div>
           <div className="rounded-xl border border-border bg-surface px-4 py-2 text-center shadow-xs">
-            <span className="block font-mono text-lg font-bold text-emerald-500 tabular-nums">
+            <span className="block font-mono text-lg font-bold text-success tabular-nums">
               {completedOrders}
             </span>
             <span className="text-[11px] text-foreground-muted">Entregados</span>
@@ -141,7 +149,7 @@ export function BuyerProfilePage() {
       </div>
 
       {savedSuccess && (
-        <Alert className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+        <Alert className="border-success/30 bg-success/10 text-success">
           <CheckCircle2 className="h-4 w-4" />
           <AlertDescription className="font-medium">
             Tus datos de perfil y preferencias de despacho fueron actualizados correctamente.
@@ -150,7 +158,7 @@ export function BuyerProfilePage() {
       )}
 
       {saveError && (
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
+        <Alert variant="destructive" className="border-danger/30 bg-danger/10 text-danger">
           <AlertDescription className="font-medium">
             {saveError}
           </AlertDescription>

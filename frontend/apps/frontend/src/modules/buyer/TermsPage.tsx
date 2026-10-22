@@ -1,7 +1,5 @@
-import { Link } from '@tanstack/react-router';
-import { ShieldCheck, FileText, Cookie, Scale, Truck, RotateCcw, Gavel, Mail } from 'lucide-react';
+import { ShieldCheck, FileText, Cookie, Scale, Truck, Gavel, Mail } from 'lucide-react';
 import {
-  Button,
   Card,
   CardContent,
   CardHeader,
@@ -104,6 +102,7 @@ export function TermsPage() {
             <CardContent className="space-y-4 text-foreground-muted leading-relaxed">
               <p>Todo el contenido de Zentric Marketplace (textos, imágenes, logos, software, diseño) es propiedad de Zentric o de sus licenciantes y está protegido por leyes de propiedad intelectual.</p>
               <p>Queda prohibida la reproducción, distribución o modificación sin autorización expresa por escrito.
+              </p>
             </CardContent>
           </Card>
 
@@ -123,6 +122,7 @@ export function TermsPage() {
                 <li>Daños indirectos, incidentales o consecuentes</li>
               </ul>
               <p>Nuestra responsabilidad total se limita al monto de la transacción en cuestión.
+              </p>
             </CardContent>
           </Card>
 
@@ -137,6 +137,7 @@ export function TermsPage() {
             <CardContent className="space-y-4 text-foreground-muted leading-relaxed">
               <p>Podemos modificar estos términos en cualquier momento. Los cambios entrarán en vigor tras su publicación en esta página.</p>
               <p>Podemos suspender o terminar tu acceso a la plataforma por violación de estos términos, fraude o inactividad prolongada.
+              </p>
             </CardContent>
           </Card>
 

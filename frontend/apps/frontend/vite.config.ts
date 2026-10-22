@@ -7,8 +7,10 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   const apiBaseUrl = env.VITE_API_BASE_URL ?? 'http://localhost:15433';
-  const devPort = Number(env.VITE_PORT) ?? 15434;
-  const previewPort = Number(env.VITE_PREVIEW_PORT) ?? 15435;
+  // `Number(...)` nunca devuelve null/undefined, asi que `??` era codigo muerto:
+  // un puerto vacio ("") producia NaN en lugar del valor por defecto.
+  const devPort = env.VITE_PORT ? Number(env.VITE_PORT) : 15434;
+  const previewPort = env.VITE_PREVIEW_PORT ? Number(env.VITE_PREVIEW_PORT) : 15435;
   const proxyTarget = env.VITE_PROXY_TARGET ?? 'http://localhost:15433';
 
   return {

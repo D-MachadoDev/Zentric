@@ -425,7 +425,7 @@ export function BuyerProductDetailPage() {
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold text-foreground">{variantMeta.title}</span>
                           {vHasStock ? (
-                            <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-mono">
+                            <Badge className="bg-success/15 text-success border-success/30 text-[10px] font-mono">
                               {vStock !== undefined ? `✓ ${vStock} disponibles` : 'Disponible'}
                             </Badge>
                           ) : (
@@ -476,7 +476,7 @@ export function BuyerProductDetailPage() {
                   <AlertCircle className="h-3.5 w-3.5" /> Agotado
                 </span>
               ) : (
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                <span className="text-success font-semibold flex items-center gap-1">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {availableStock !== undefined ? `${availableStock} unidades disponibles` : 'Stock verificado'}
                 </span>
@@ -561,7 +561,7 @@ export function BuyerProductDetailPage() {
                   'Agotado en Bodega'
                 ) : (
                   <span className="flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-amber-300" />
+                    <Zap className="h-5 w-5 text-warning" />
                     Comprar Ahora
                   </span>
                 )}
@@ -593,7 +593,7 @@ export function BuyerProductDetailPage() {
             {/* Garantía Comercial y Confianza */}
             <div className="rounded-2xl border border-border bg-surface-muted/60 p-4 space-y-2 text-xs">
               <div className="flex items-center gap-2 text-brand font-semibold">
-                <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                <ShieldCheck className="h-4 w-4 text-success" />
                 <span>Compra 100% Protegida y Segura</span>
               </div>
               <p className="text-foreground-muted leading-relaxed">

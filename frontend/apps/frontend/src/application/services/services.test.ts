@@ -1,4 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createElement, type ReactNode } from 'react';
 import { ProductType, UserRole } from '../../domain';
 import type { CreateProductInput, SessionPort, UserRole as UserRoleType, ZentricApiPort } from '../../domain';
 import {
@@ -8,14 +11,12 @@ import {
   CancelarPorStockFantasmaService,
   CerrarSesionService,
   ConsultarBodegasService,
-  ConsultarCatalogoService,
   ConsultarDespachoService,
   ConsultarDespachosService,
   ConsultarDevolucionService,
   ConsultarDevolucionesService,
   ConsultarFacturasPorPedidoService,
   ConsultarPedidoService,
-  ConsultarProductoService,
   ConsultarStockPorVarianteService,
   ConsultarUsuariosService,
   CrearDespachoService,
@@ -28,14 +29,11 @@ import {
   InspeccionarDevolucionService,
   ListarPedidosService,
   PagarPedidoService,
-  PublicarProductoService,
   ReembolsarDevolucionService,
   RegistrarBodegaService,
-  RegistrarProductoService,
   RegistrarUsuarioService,
   RestaurarSesionService,
   SolicitarDevolucionService,
-  SuspenderProductoService,
   VerificarEstadoServidorService,
   getDefaultApi,
   getDefaultSession,
@@ -44,7 +42,24 @@ import {
   setDefaultApi,
   setDefaultSession,
 } from './index';
+import { useCreateProductMutation, useProductsQuery } from './catalog';
 import { queryKeys } from './queryKeys';
+
+/** Envoltura de React Query para probar hooks sin montar la app. */
+function wrapperFactory() {
+  return function Wrapper({ children }: { children: ReactNode }) {
+    const client = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    return createElement(QueryClientProvider, { client }, children);
+  };
+}
+
+const queryWrapper = wrapperFactory();
+const mutationWrapper = wrapperFactory();
 
 /** Sesión en memoria real: el access token vive sólo ahí (ADR-0009). */
 function crearSesion(): SessionPort {
@@ -162,35 +177,34 @@ describe('CerrarSesionService (§2.1)', () => {
   });
 });
 
-describe('RegistrarProductoService (§2.2, FR-03)', () => {
-  it('toma el variantId del propio alta en vez de depender del releer', async () => {
-    const getProduct = vi.fn().mockResolvedValue({
-      id: 'p-1',
-      variants: [{ id: 'v-1', sku: 'CAF-01', canBeSold: true }],
-    });
-    const api = crearApi({
-      createProduct: vi.fn().mockResolvedValue({ productId: 'p-1', variantIds: ['v-1', 'v-2'] }),
-      getProduct,
-    });
+describe('Alta de producto (§2.2, FR-03) — camino moderno (hooks)', () => {
+  it('toma los variantId del propio alta en vez de depender del releer', async () => {
+    const createProduct = vi.fn().mockResolvedValue({ productId: 'p-1', variantIds: ['v-1', 'v-2'] });
+    const getProduct = vi.fn();
+    const api = crearApi({ createProduct, getProduct });
 
-    const registrado = await new RegistrarProductoService(api).ejecutar(entradaProducto());
+    const { result } = renderHook(() => useCreateProductMutation(api), { wrapper: mutationWrapper });
 
-    expect(registrado).toEqual({ productId: 'p-1', variantId: 'v-1', sku: 'CAF-01' });
+    const created = await result.current.mutateAsync(entradaProducto());
+
+    // FR-03: los identificadores de variante vienen del alta, no de releer.
+    expect(created).toEqual({ productId: 'p-1', variantIds: ['v-1', 'v-2'] });
+    expect(getProduct).not.toHaveBeenCalled();
   });
 
-  it('un producto Digital sin variantes devuelve nulos sin llegar a releer', async () => {
+  it('un producto Digital sin variantes devuelve la lista vacia sin releer', async () => {
+    const createProduct = vi.fn().mockResolvedValue({ productId: 'p-2', variantIds: [] });
     const getProduct = vi.fn();
-    const api = crearApi({
-      createProduct: vi.fn().mockResolvedValue({ productId: 'p-2', variantIds: [] }),
-      getProduct,
-    });
+    const api = crearApi({ createProduct, getProduct });
 
-    const registrado = await new RegistrarProductoService(api).ejecutar({
+    const { result } = renderHook(() => useCreateProductMutation(api), { wrapper: mutationWrapper });
+
+    const created = await result.current.mutateAsync({
       ...entradaProducto(),
       type: ProductType.Digital,
     });
 
-    expect(registrado).toEqual({ productId: 'p-2', variantId: null, sku: null });
+    expect(created).toEqual({ productId: 'p-2', variantIds: [] });
     expect(getProduct).not.toHaveBeenCalled();
   });
 });
@@ -205,21 +219,27 @@ describe('Casos de uso que no deben llevar identidad (Q-21b)', () => {
   });
 });
 
-describe('ConsultarCatalogoService (§2.2, Q-27)', () => {
+describe('Listado de catalogo (§2.2, Q-27) — camino moderno (hooks)', () => {
   it('con vendorId consulta la vista de gestión del dueño', async () => {
     const listProducts = vi.fn().mockResolvedValue([]);
+    const api = crearApi({ listProducts });
 
-    await new ConsultarCatalogoService(crearApi({ listProducts })).ejecutar('vendedor-1');
+    renderHook(() => useProductsQuery('vendedor-1', api), { wrapper: queryWrapper });
 
-    expect(listProducts).toHaveBeenCalledWith('vendedor-1');
+    await waitFor(() => {
+      expect(listProducts).toHaveBeenCalledWith('vendedor-1');
+    });
   });
 
   it('sin vendorId es el catálogo comercial', async () => {
     const listProducts = vi.fn().mockResolvedValue([]);
+    const api = crearApi({ listProducts });
 
-    await new ConsultarCatalogoService(crearApi({ listProducts })).ejecutar();
+    renderHook(() => useProductsQuery(undefined, api), { wrapper: queryWrapper });
 
-    expect(listProducts).toHaveBeenCalledWith(undefined);
+    await waitFor(() => {
+      expect(listProducts).toHaveBeenCalledWith(undefined);
+    });
   });
 });
 
@@ -335,14 +355,13 @@ describe('Servicios de dominio complementarios y apiContext', () => {
       getHealth: vi.fn().mockResolvedValue({ status: 'healthy', database: 'up', timestamp: 'now' }),
     });
 
-    await expect(new ConsultarProductoService(api).ejecutar('p-1')).resolves.toMatchObject({ id: 'p-1' });
-    await expect(new RegistrarProductoService(api).ejecutar(entradaProducto())).resolves.toEqual({
+    await expect(api.getProductById('p-1')).resolves.toMatchObject({ id: 'p-1' });
+    await expect(api.createProduct(entradaProducto())).resolves.toEqual({
       productId: 'p-1',
-      variantId: 'v-1',
-      sku: 'SKU-1',
+      variantIds: ['v-1'],
     });
-    await expect(new PublicarProductoService(api).ejecutar('p-1')).resolves.toBeUndefined();
-    await expect(new SuspenderProductoService(api).ejecutar('p-1')).resolves.toBeUndefined();
+    await expect(api.publishProduct('p-1')).resolves.toBeUndefined();
+    await expect(api.suspendProduct('p-1')).resolves.toBeUndefined();
 
     await expect(
       new IngresarStockService(api).ejecutar({ variantId: 'v-1', warehouseId: 'w-1', quantity: 5 }),

@@ -21,14 +21,12 @@ import {
   Clock,
   Flame,
   RefreshCw,
-  ShieldCheck,
-  RotateCcw,
-  Truck,
 } from 'lucide-react';
 import { getProductImageUrl, getRecentlyViewedProducts } from './productImages';
 import { CatalogFilters, type CatalogSort, type CatalogTypeFilter } from './components/CatalogFilters';
 import { CatalogHero } from './components/CatalogHero';
 import { CatalogPagination } from './components/CatalogPagination';
+import { CatalogTrustStrip } from './components/CatalogTrustStrip';
 import { ProductCard } from './components/ProductCard';
 import { ProductRailCard } from './components/ProductRailCard';
 
@@ -139,7 +137,10 @@ export function BuyerCatalogPage() {
     type: typeFilter !== 'All' ? typeFilter : undefined,
   });
 
-  const products: Product[] = pagedData?.items ?? [];
+  // `products` se memoriza para que su identidad sea estable entre renders: si
+  // fuera un array nuevo en cada render, los useMemo que dependen de el se
+  // recalcularian siempre (regla react-hooks/exhaustive-deps).
+  const products: Product[] = useMemo(() => pagedData?.items ?? [], [pagedData]);
   const totalItems = pagedData?.totalItems ?? 0;
   const totalPages = pagedData?.totalPages ?? 0;
 
@@ -311,51 +312,8 @@ export function BuyerCatalogPage() {
       {/* ── 1. Primera impresion: mosaico de productos reales (S2) ── */}
       <CatalogHero onExploreAll={scrollToProductGrid} />
 
-      {/* ── 2. Barra de Confianza y Garantías de Marketplace (SIN duplicados con Hero) ── */}
-      <section
-        aria-label="Garantías del comprador"
-        className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4"
-      >
-        <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4 shadow-xs">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
-            <Clock className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-xs font-bold text-foreground">Reserva de 15 Minutos</h3>
-            <p className="text-[11px] text-foreground-muted">Stock asegurado en checkout</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4 shadow-xs">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
-            <Truck className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-xs font-bold text-foreground">Envíos Asegurados</h3>
-            <p className="text-[11px] text-foreground-muted">Despacho directo y rastreable</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4 shadow-xs">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
-            <ShieldCheck className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-xs font-bold text-foreground">Garantía Oficial</h3>
-            <p className="text-[11px] text-foreground-muted">Soporte directo y original</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4 shadow-xs">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
-            <RotateCcw className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-xs font-bold text-foreground">Devolución Segura</h3>
-            <p className="text-[11px] text-foreground-muted">Reembolso ágil y transparente</p>
-          </div>
-        </div>
-      </section>
+      {/* ── 2. Franja de garantías (banda editorial, no 4 tarjetas clonadas) ── */}
+      <CatalogTrustStrip />
 
       {/* ── 3. Carrusel: Productos Populares & Tendencias (Visible con >2 productos) ── */}
       {hasPopularProducts && (
@@ -419,10 +377,14 @@ export function BuyerCatalogPage() {
                 aria-selected={index === carouselIndex}
                 aria-label={`Ir a producto ${index + 1}`}
                 onClick={() => goToCarouselIndex(index)}
-                className={`h-2 rounded-full transition-[width,background-color] duration-200 ${
+                // WCAG 2.2 SC 2.5.8 (Target Size Minimum): el area tactil
+                // medible del boton es de 24x24 CSS px. El punto visible sigue
+                // siendo pequeno (8px) porque lo dibuja el pseudo-elemento
+                // `after`, que no cuenta como area interactiva.
+                className={`relative flex h-6 w-6 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:outline-none after:content-[''] after:h-2 after:w-2 after:rounded-full after:transition-[width,background-color] after:duration-200 ${
                   index === carouselIndex
-                    ? 'w-6 bg-brand'
-                    : 'w-2 bg-foreground-muted/40 hover:bg-foreground-muted/60'
+                    ? 'after:w-6 after:bg-brand'
+                    : 'after:bg-foreground-muted/40 hover:after:bg-foreground-muted/60'
                 }`}
               />
             ))}

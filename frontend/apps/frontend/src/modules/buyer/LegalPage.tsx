@@ -57,7 +57,8 @@ export function LegalPage() {
               <CardDescription>Qué regula este aviso legal.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-foreground-muted leading-relaxed">
-              <p>El presente Aviso Legal regula el acceso y uso de la plataforma Zentric Marketplace (en adelante, \"la Plataforma\"), accesible a través del dominio zentric.com y subdominios asociados.</              <p>El acceso y uso de la Plataforma implica la aceptación plena y sin reservas de todas las disposiciones incluidas en este Aviso Legal, así como en los Términos y Condiciones, Política de Privacidad y Política de Cookies.
+              <p>El presente Aviso Legal regula el acceso y uso de la plataforma Zentric Marketplace (en adelante, \"la Plataforma\"), accesible a través del dominio zentric.com y subdominios asociados.</p>
+              <p>El acceso y uso de la Plataforma implica la aceptación plena y sin reservas de todas las disposiciones incluidas en este Aviso Legal, así como en los Términos y Condiciones, Política de Privacidad y Política de Cookies.</p>
             </CardContent>
           </Card>
 <Card>

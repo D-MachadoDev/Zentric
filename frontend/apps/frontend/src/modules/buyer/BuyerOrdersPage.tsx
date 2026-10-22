@@ -94,7 +94,7 @@ export function BuyerOrdersPage() {
   if (isError) {
     return (
       <div className="p-6 sm:p-10 max-w-4xl mx-auto w-full space-y-4">
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
+        <Alert variant="destructive" className="border-danger/30 bg-danger/10 text-danger">
           <AlertTitle>Error al cargar el historial de pedidos</AlertTitle>
           <AlertDescription>
             {error instanceof Error ? error.message : 'No fue posible consultar sus compras.'}

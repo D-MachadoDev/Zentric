@@ -14,4 +14,8 @@ export * from './BuyerOrderDetailPage';
 export * from './BuyerOrderPaymentPage';
 export * from './RequestReturnPage';
 export * from './BuyerProfilePage';
+export * from './TermsPage';
+export * from './PrivacyPage';
+export * from './CookiesPage';
+export * from './LegalPage';
 export * from './productImages';

@@ -44,6 +44,20 @@ export function BuyerOrderPaymentPage() {
 
   const [secondsRemaining, setSecondsRemaining] = useState<number>(() => calculateRemainingSeconds());
   const [isExpired, setIsExpired] = useState<boolean>(false);
+
+  // El reloj se resincroniza cuando LLEGA el pedido del servidor (o cambia su
+  // `expiresAt`). Se ajusta DURANTE el render, no dentro de un efecto: llamar a
+  // setState de forma sincrona en un efecto provoca renders en cascada (regla
+  // de React, "adjusting state when props change").
+  const expiresAt = (orderData as Order | undefined)?.expiresAt;
+  const [seenExpiresAt, setSeenExpiresAt] = useState<string | undefined>(expiresAt);
+
+  if (seenExpiresAt !== expiresAt) {
+    setSeenExpiresAt(expiresAt);
+    const initialSeconds = calculateRemainingSeconds();
+    setSecondsRemaining(initialSeconds);
+    setIsExpired(initialSeconds <= 0);
+  }
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
   // Campos de tarjeta simulada
@@ -53,15 +67,8 @@ export function BuyerOrderPaymentPage() {
   const [cvv, setCvv] = useState('742');
 
   useEffect(() => {
-    const initialSeconds = calculateRemainingSeconds();
-    setSecondsRemaining(initialSeconds);
-    if (initialSeconds <= 0) {
-      setIsExpired(true);
-      return;
-    }
-    setIsExpired(false);
+    if (isExpired) return;
 
-    const expiresAt = (orderData as Order | undefined)?.expiresAt;
     const interval = setInterval(() => {
       setSecondsRemaining((prev) => {
         let next: number;
@@ -81,7 +88,7 @@ export function BuyerOrderPaymentPage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [(orderData as Order | undefined)?.expiresAt]);
+  }, [expiresAt, isExpired]);
 
   const minutes = Math.floor(secondsRemaining / 60);
   const seconds = secondsRemaining % 60;
@@ -122,8 +129,8 @@ export function BuyerOrderPaymentPage() {
             <ArrowLeft className="h-4 w-4 mr-1.5" /> Volver a Mis Pedidos
           </Button>
         </Link>
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-danger/30 bg-danger/10 text-danger">
+          <AlertCircle className="h-5 w-5 text-danger" />
           <AlertTitle>Error al consultar el pedido para pago</AlertTitle>
           <AlertDescription>
             {error instanceof Error ? error.message : 'No fue posible cargar la información de pago.'}
@@ -185,8 +192,8 @@ export function BuyerOrderPaymentPage() {
       </div>
 
       {paymentError && (
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-danger/30 bg-danger/10 text-danger">
+          <AlertCircle className="h-5 w-5 text-danger" />
           <AlertTitle>Fallo en la transacción</AlertTitle>
           <AlertDescription className="text-xs font-mono">{paymentError}</AlertDescription>
         </Alert>
@@ -196,7 +203,7 @@ export function BuyerOrderPaymentPage() {
       <div
         className={`rounded-2xl border p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
           isExpired
-            ? 'border-red-800 bg-red-950/30'
+            ? 'border-danger/30 bg-danger/10'
             : isUrgent
             ? 'border-warning bg-warning/10 shadow-lg shadow-warning/10 animate-pulse'
             : 'border-border bg-surface'
@@ -206,7 +213,7 @@ export function BuyerOrderPaymentPage() {
           <div
             className={`p-3 rounded-xl border ${
               isExpired
-                ? 'border-red-700 bg-red-900/30 text-red-400'
+                ? 'border-danger/40 bg-danger/10 text-danger'
                 : isUrgent
                 ? 'border-warning bg-warning/20 text-warning'
                 : 'border-border bg-surface-muted text-brand'
@@ -231,7 +238,7 @@ export function BuyerOrderPaymentPage() {
         <div className="text-right sm:text-right">
           <div
             className={`text-3xl sm:text-4xl font-extrabold font-mono tabular-nums tracking-tight ${
-              isExpired ? 'text-red-400' : isUrgent ? 'text-warning' : 'text-foreground'
+              isExpired ? 'text-danger' : isUrgent ? 'text-warning' : 'text-foreground'
             }`}
           >
             {formattedTime}

@@ -2,7 +2,7 @@ import { useParams, Link } from '@tanstack/react-router';
 import { useOrderQuery } from '../../application/services/orders';
 import { useInvoicesByOrderQuery } from '../../application/services/billing';
 import { useFulfillmentsQuery } from '../../application/services/logistics';
-import { OrderStatus, InvoiceType, type OrderItem, type FulfillmentOrder, type Invoice } from '../../domain';
+import { OrderStatus, InvoiceType, type Order, type OrderItem, type FulfillmentOrder, type Invoice } from '../../domain';
 import {
   NOMBRES_DE_ESTADO_DE_PEDIDO,
   TONOS_DE_ESTADO_DE_PEDIDO,
@@ -89,8 +89,8 @@ export function BuyerOrderDetailPage() {
             <ArrowLeft className="h-4 w-4 mr-1.5" /> Volver a Mis Pedidos
           </Button>
         </Link>
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-danger/30 bg-danger/10 text-danger">
+          <AlertCircle className="h-5 w-5 text-danger" />
           <AlertTitle>Error al cargar el pedido</AlertTitle>
           <AlertDescription>
             {orderError instanceof Error ? orderError.message : 'El pedido solicitado no fue encontrado.'}
@@ -101,7 +101,7 @@ export function BuyerOrderDetailPage() {
   }
 
   // orderData es un Order
-  const order = orderData as import('../../domain').Order;
+  const order = orderData as Order;
   const isPendingPayment = order.status === OrderStatus.PendingPayment;
   const isDelivered = order.status === OrderStatus.Delivered;
 

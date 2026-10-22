@@ -6,6 +6,7 @@ import { getProductImageUrl } from '../productImages';
 import {
   formatProductType,
   formatVariantCount,
+  resolvePrimarySku,
   resolveProductAvailability,
 } from './productPresentation';
 
@@ -16,13 +17,14 @@ interface ProductRailCardProps {
 /**
  * Tarjeta compacta del carrusel de populares.
  *
- * La composicion se mantiene (el Owner la aprobo); solo comparte con la grilla
- * las reglas de escasez, la tipografia mono del precio y el respeto por
- * `prefers-reduced-motion`.
+ * La composicion se mantiene (el Owner la aprobo); comparte con la grilla las
+ * reglas de escasez, la tipografia mono del precio y del SKU, y el respeto
+ * por `prefers-reduced-motion`.
  */
 export function ProductRailCard({ product }: ProductRailCardProps) {
   const availability = resolveProductAvailability(product);
   const variantCount = product.variants?.length ?? 1;
+  const sku = resolvePrimarySku(product);
 
   return (
     <Link
@@ -55,10 +57,16 @@ export function ProductRailCard({ product }: ProductRailCardProps) {
 
       <div className="flex flex-1 flex-col justify-between gap-3 p-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-1.5 font-mono text-[11px] text-foreground-muted">
+          <div className="flex flex-wrap items-center gap-x-1.5 font-mono text-[11px] text-foreground-muted">
             <span className="font-semibold text-brand">{formatProductType(product.type)}</span>
             <span aria-hidden="true">·</span>
             <span>{formatVariantCount(variantCount)}</span>
+            {sku && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="text-[10px] tracking-tight text-foreground-subtle">{sku}</span>
+              </>
+            )}
           </div>
           <h3 className="line-clamp-1 text-sm font-semibold text-foreground transition-colors group-hover:text-brand">
             {product.name}

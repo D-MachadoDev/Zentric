@@ -1,77 +1,28 @@
 import { Link } from '@tanstack/react-router';
-import { Logo } from '@zentric/ui';
+import { Logo, Skeleton } from '@zentric/ui';
+import { useCategoriesQuery } from '../../application/services/catalog';
+import { CatalogTrustStrip } from '../../modules/buyer/components/CatalogTrustStrip';
 import {
   ShieldCheck,
-  Truck,
-  RotateCcw,
-  Clock,
   CreditCard,
   Headphones,
   FileText,
   Lock,
+  Clock,
 } from 'lucide-react';
 
 export function BuyerFooter() {
+  // S1: la columna "Comprar" enlaza las categorias reales que expone el
+  // backend, la misma fuente que los chips del catalogo. Sin datos no se
+  // inventa ninguna categoria: se reserva el espacio mientras carga.
+  const { data: categories, isLoading: areCategoriesLoading } = useCategoriesQuery();
+
   return (
     <footer className="border-t border-border bg-surface text-foreground transition-colors duration-200">
-      {/* ── 1. Franja de Confianza y Garantías B2C ── */}
-      <div className="border-b border-border/60 bg-surface-muted/50 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="flex items-start gap-3.5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
-              <Truck className="h-5 w-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-foreground uppercase tracking-wide">
-                Envíos Rápidos & Seguros
-              </h4>
-              <p className="text-xs text-foreground-muted mt-0.5 leading-relaxed">
-                Despacho directo desde bodegas físicas certificadas a todo el país.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3.5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
-              <Clock className="h-5 w-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-foreground uppercase tracking-wide">
-                Reserva de 15 Minutos
-              </h4>
-              <p className="text-xs text-foreground-muted mt-0.5 leading-relaxed">
-                Bloqueo exclusivo de inventario en tu checkout. Cero sobreventa.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3.5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-foreground uppercase tracking-wide">
-                Garantía Oficial Zentric
-              </h4>
-              <p className="text-xs text-foreground-muted mt-0.5 leading-relaxed">
-                Productos 100% originales con respaldo de fábrica y soporte dedicado.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3.5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
-              <RotateCcw className="h-5 w-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-foreground uppercase tracking-wide">
-                Devoluciones Simples
-              </h4>
-              <p className="text-xs text-foreground-muted mt-0.5 leading-relaxed">
-                Inspección técnica transparente y reembolso ágil para tu tranquilidad.
-              </p>
-            </div>
-          </div>
+      {/* ── 1. Franja de garantías (banda editorial compartida con el catálogo) ── */}
+      <div className="border-b border-border/60 bg-surface-muted/40 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <CatalogTrustStrip />
         </div>
       </div>
 
@@ -96,7 +47,7 @@ export function BuyerFooter() {
                 Conexión Segura SSL 256-bit
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-[11px] font-mono text-foreground-muted">
-                <CreditCard className="h-3.5 w-3.5 text-emerald-500" />
+                <CreditCard className="h-3.5 w-3.5 text-success" />
                 Pagos Certificados
               </span>
             </div>
@@ -113,28 +64,29 @@ export function BuyerFooter() {
                   Todo el Catálogo
                 </Link>
               </li>
+              {areCategoriesLoading &&
+                Array.from({ length: 3 }).map((_, index) => (
+                  <li key={`category-skeleton-${index}`} aria-hidden="true">
+                    <Skeleton className="h-3 w-32 rounded" />
+                  </li>
+                ))}
+              {(categories ?? []).map((category) => (
+                <li key={category.id}>
+                  <Link
+                    to="/buyer"
+                    search={{ cat: category.id } as never}
+                    className="hover:text-brand transition-colors"
+                  >
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
               <li>
-                <Link to="/buyer" search={{ cat: 'computacion' }} className="hover:text-brand transition-colors">
-                  Computación & Laptops
-                </Link>
-              </li>
-              <li>
-                <Link to="/buyer" search={{ cat: 'perifericos' }} className="hover:text-brand transition-colors">
-                  Periféricos & Teclados
-                </Link>
-              </li>
-              <li>
-                <Link to="/buyer" search={{ cat: 'audio' }} className="hover:text-brand transition-colors">
-                  Audio & Monitores
-                </Link>
-              </li>
-              <li>
-                <Link to="/buyer" search={{ cat: 'software' }} className="hover:text-brand transition-colors">
-                  Software & Cloud
-                </Link>
-              </li>
-              <li>
-                <Link to="/buyer" search={{ filter: 'ofertas' }} className="text-amber-500 hover:text-amber-400 font-semibold transition-colors">
+                {/* Usa el token `--warning` del tema y no un color crudo de Tailwind:
+                    el ámbar crudo de la paleta por defecto (#F59E0B) no
+                    alcanza el contraste AA sobre el lienzo claro y la
+                    auditoría de accesibilidad lo marca. */}
+                <Link to="/buyer" search={{ filter: 'ofertas' }} className="text-warning hover:text-warning/80 font-semibold transition-colors">
                   Ofertas Destacadas
                 </Link>
               </li>

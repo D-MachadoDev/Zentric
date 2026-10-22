@@ -66,12 +66,23 @@ function tileLayout(index: number): string {
   return '';
 }
 
+/**
+ * Propuestas de valor que el backend sostiene de verdad (§8-A3). Se listan
+ * como Compromisos en linea, no como tarjetas: §2.2 prohibe la cuadricula de
+ * clones y §9.6 pide jerarquia, no simetria.
+ */
+const PROMISES = [
+  'Reserva atomica de 15 minutos',
+  'Despacho multi-bodega rastreable',
+  'Split de facturacion 5/95',
+];
+
 interface CatalogHeroProps {
   onExploreAll: () => void;
 }
 
 /**
- * Primera impresion del catalogos del comprador (S2).
+ * Primera impresion del catalogo del comprador (S2).
  *
  * El hero no depende de un rubro fijo: se compone con productos reales
  * (`GET api/catalog/products/hero`) y es estatico (sin autoplay ni trampas de
@@ -86,39 +97,55 @@ export function CatalogHero({ onExploreAll }: CatalogHeroProps) {
   return (
     <section
       aria-label="Productos destacados"
-      className="relative overflow-hidden rounded-3xl border border-border bg-surface p-5 shadow-sm sm:p-7 lg:p-9"
+      className="surface-hairline relative overflow-hidden rounded-3xl p-5 sm:p-7 lg:p-9"
     >
+      {/* Resplandor focal DERIVADO del acento de rol (§9.3-3): color-mix, no rgba fijo. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-24 -right-16 h-64 w-64 rounded-full bg-brand/5 blur-3xl"
+        className="pointer-events-none absolute -top-24 -right-16 size-64 rounded-full bg-brand/5 blur-3xl"
       />
 
       <div className="relative grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-center lg:gap-8">
         <div className="space-y-4 lg:col-span-5">
-          <p className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-[11px] font-semibold tracking-[0.14em] text-brand uppercase">
+          <p className="kicker-spike">
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
             Marketplace multi-vendedor
           </p>
 
-          <h2 className="text-3xl leading-tight font-bold tracking-tight text-foreground sm:text-4xl">
-            Todo lo que buscas, con <span className="text-brand">vendedores verificados</span>
+          <h2 className="text-3xl leading-[1.15] font-bold tracking-tight text-foreground sm:text-4xl">
+            Cada producto, con el vendedor{' '}
+            <span className="text-brand">y el stock verificados</span>
           </h2>
 
           <p className="max-w-xl text-sm leading-relaxed text-foreground-muted sm:text-base">
-            Explora el catálogo completo, compara precios y compra con reserva de stock de 15
-            minutos, despacho rastreable y devolución segura.
+            El precio lo fija el vendedor y el stock lo bloquea la bodega: comparas en el
+            catalogo y completas la compra sin sobreventa.
           </p>
 
-          <div className="flex flex-wrap items-center gap-3 pt-1">
+          {/* Compromisos en linea: sin cajas, sin iconos de colores en paralelo. */}
+          <ul className="space-y-1.5 pt-1">
+            {PROMISES.map((promise) => (
+              <li key={promise} className="flex items-start gap-2 text-xs text-foreground-muted">
+                <span
+                  aria-hidden="true"
+                  className="mt-1.5 size-1 shrink-0 rounded-full bg-brand"
+                />
+                {promise}
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <Link
               to="/buyer/catalog"
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand px-5 text-sm font-semibold text-background transition-colors hover:bg-brand-strong focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
+              className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-brand-strong focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
             >
-              Explorar catálogo completo
+              Explorar catalogo completo
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
-            <Button variant="outline" size="lg" onClick={onExploreAll}>
-              Ver todos los productos
+            <Button variant="ghost" size="sm" onClick={onExploreAll} className="text-foreground-muted">
+              Ver en la grilla
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
             </Button>
           </div>
         </div>

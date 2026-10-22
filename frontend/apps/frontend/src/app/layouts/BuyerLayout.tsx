@@ -9,12 +9,11 @@ import {
   LogOut,
   ShieldCheck,
   Truck,
-  Clock,
-  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../providers/authContext';
 import { useOrdersQuery } from '../../application/services/orders';
-import { Button, Logo, SearchInput } from '@zentric/ui';
+import { useCategoriesQuery } from '../../application/services/catalog';
+import { Button, Logo, SearchInput, Skeleton } from '@zentric/ui';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { BuyerFooter } from '../components/BuyerFooter';
 import { UserRole } from '../../domain';
@@ -30,14 +29,8 @@ const buyerNavItems = [
   { href: '/buyer/profile', label: 'Mi Perfil', icon: User },
 ];
 
-const categoryShortcuts = [
-  { label: 'Todo el Catálogo', href: '/buyer' },
-  { label: 'Computación & Laptops', href: '/buyer?cat=computacion' },
-  { label: 'Periféricos & Teclados', href: '/buyer?cat=perifericos' },
-  { label: 'Audio & Monitores', href: '/buyer?cat=audio' },
-  { label: 'Software & Licencias', href: '/buyer?cat=software' },
-  { label: 'Componentes & Hardware', href: '/buyer?cat=hardware' },
-];
+/** Cantidad de fichas de categoria que se reservan durante la carga. */
+const CATEGORY_SHORTCUT_SKELETONS = 4;
 
 /**
  * Shell del Comprador — "Portal Comercial Marketplace" (Frontend-Design-System §9.6).
@@ -84,6 +77,13 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
   const activeCart = cartOrders.find((order) => order.status === 'Cart');
   const cartItemCount = activeCart?.itemCount ?? activeCart?.items?.length ?? 0;
 
+  // S1: las categorias del shortcut salen de la misma fuente real que los chips
+  // del catalogo (`GET api/catalog/categories`); mientras cargan no se inventa
+  // ninguna, y si no hay categorias publicadas la fila queda solo con el acceso
+  // al catalogo completo.
+  const { data: categories, isLoading: areCategoriesLoading } = useCategoriesQuery();
+  const activeCategoryId = (routerState.location.search as { cat?: string } | undefined)?.cat;
+
   const handleHeaderSearch = (value: string) => {
     if (!value.trim()) return;
     navigate({
@@ -104,27 +104,23 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
 
   return (
     <div data-role="buyer" className="flex min-h-screen flex-col bg-background text-foreground">
-      {/* ── 1. Barra Superior de Confianza y Garantías Comerciales ── */}
+      {/* ── 1. Franja utilitaria: no repite las garantias del catalogo ni del pie ── */}
       <div className="border-b border-border/60 bg-surface px-4 py-1.5 text-xs text-foreground-muted">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div className="flex items-center gap-4 text-[11px]">
-            <span className="flex items-center gap-1.5 text-brand font-medium">
-              <Truck className="h-3.5 w-3.5" />
-              Envíos rápidos y asegurados a todo el país
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+          <p className="flex items-center gap-1.5 text-[11px]">
+            <Truck className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
+            <span>
+              Envíos desde bodegas certificadas a todo el país · Facturación con split 5/95
             </span>
-            <span className="hidden sm:inline text-foreground-subtle" aria-hidden="true">|</span>
-            <span className="hidden sm:flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 text-amber-500" />
-              Compra protegida — 15 minutos de reserva garantizada
-            </span>
-          </div>
+          </p>
 
-          <div className="hidden md:flex items-center gap-3 text-[11px]">
-            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Garantía oficial Zentric y soporte directo
-            </span>
-          </div>
+          <Link
+            to="/seller"
+            className="hidden shrink-0 items-center gap-1.5 text-[11px] font-medium text-foreground-muted transition-colors hover:text-brand md:flex"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+            Vende en Zentric
+          </Link>
         </div>
       </div>
 
@@ -178,10 +174,21 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
                   ? 'bg-brand/10 text-brand font-semibold'
                   : 'text-foreground-muted hover:bg-surface-muted hover:text-foreground'
               }`}
-              aria-label="Carrito de compras"
+              // SIN `aria-label`: el nombre accesible se calcula del contenido
+              // ("Carrito" + insignia del conteo), de modo que siempre coincide
+              // con el texto visible. Con un `aria-label` explicito, WCAG
+              // 2.5.3 (Label in Name) exige que contenga el texto visible
+              // EXACTO, y aqui el texto visible incluye el salto de linea
+              // que introduce la insignia dentro del flex: la comparacion
+              // fallaba aunque el nombre fuese correcto. Sin etiqueta
+              // explicita la regla no aplica y el nombre es el que se ve.
             >
-              <ShoppingCart className="h-4 w-4" />
-              <span className="hidden lg:inline">Carrito</span>
+              <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+              {/* `sr-only lg:not-sr-only`: la palabra "Carrito" forma parte del
+                  nombre accesible en TODOS los anchos, pero solo se ve a partir
+                  de `lg`. Con `hidden` el nombre en movil se reducia al
+                  numero de la insignia. */}
+              <span className="sr-only lg:not-sr-only">Carrito</span>
               {cartItemCount > 0 && (
                 <span
                   aria-live="polite"
@@ -232,27 +239,43 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
           className="flex items-center gap-2 overflow-x-auto border-t border-border/50 px-4 py-2 sm:px-6 text-xs scrollbar-none"
         >
           <div className="mx-auto flex max-w-7xl w-full items-center gap-2">
-            {categoryShortcuts.map((cat, idx) => {
-              const isMain = idx === 0 && currentPath === '/buyer';
-              const isSpecial = cat.label.includes('Ofertas');
+            <Link
+              to="/buyer"
+              aria-current={currentPath === '/buyer' && !activeCategoryId ? 'page' : undefined}
+              className={`shrink-0 rounded-full px-3 py-1 font-medium transition-colors ${
+                currentPath === '/buyer' && !activeCategoryId
+                  ? 'bg-brand text-background font-semibold'
+                  : 'text-foreground-muted hover:bg-surface-muted hover:text-foreground'
+              }`}
+            >
+              Todo el Catálogo
+            </Link>
 
-              return (
-                <Link
-                  key={cat.label}
-                  to={cat.href as never}
-                  className={`shrink-0 rounded-full px-3 py-1 font-medium transition-colors ${
-                    isSpecial
-                      ? 'border border-amber-500/40 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20'
-                      : isMain
+            {areCategoriesLoading ? (
+              Array.from({ length: CATEGORY_SHORTCUT_SKELETONS }).map((_, index) => (
+                <Skeleton key={index} className="h-6 w-28 shrink-0 rounded-full" />
+              ))
+            ) : (
+              (categories ?? []).map((category) => {
+                const isActive = activeCategoryId === category.id;
+
+                return (
+                  <Link
+                    key={category.id}
+                    to="/buyer"
+                    search={{ cat: category.id } as never}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`shrink-0 rounded-full px-3 py-1 font-medium transition-colors ${
+                      isActive
                         ? 'bg-brand text-background font-semibold'
                         : 'text-foreground-muted hover:bg-surface-muted hover:text-foreground'
-                  }`}
-                >
-                  {isSpecial && <Sparkles className="inline h-3 w-3 mr-1" />}
-                  {cat.label}
-                </Link>
-              );
-            })}
+                    }`}
+                  >
+                    {category.name}
+                  </Link>
+                );
+              })
+            )}
           </div>
         </nav>
       </header>
@@ -289,7 +312,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
       </nav>
 
       {/* ── 5. Lienzo Comercial Principal (Limpio, sin fondos cuadriculados) ── */}
-      <main className="flex-1 bg-background p-4 sm:p-6 lg:p-8 mb-14 sm:mb-0">
+      <main className="flex-1 bg-background px-4 py-8 pb-20 sm:px-6 sm:py-10 sm:pb-20 lg:px-8 mb-14 sm:mb-0">
         <div className="mx-auto max-w-7xl">{children}</div>
       </main>
 
