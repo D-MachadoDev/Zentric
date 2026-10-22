@@ -305,6 +305,10 @@ app.UseAuthorization();
 // Health checks endpoints para Docker, balanceadores y orquestadores.
 // /health  -> liveness (proceso vivo)
 // /ready   -> readiness (DB disponible, listo para servir tráfico)
+//
+// Ambos son anonimos a proposito: la politica de reserva exige token en
+// TODA ruta, y una sonda de salud sin token recibia 401 en vez de
+// responder. Un orquestador no tiene token: por eso lleva AllowAnonymous.
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
     Predicate = _ => false, // solo liveness: no verifica dependencias
@@ -317,7 +321,9 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
             timestamp = DateTimeOffset.UtcNow
         }));
     }
-});
+})
+.AllowAnonymous()
+.WithName("Health");
 
 app.MapHealthChecks("/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
