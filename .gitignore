@@ -453,3 +453,21 @@ FodyWeavers.xsd
 .agents/skills/
 .atl/
 
+# --- Metodologia interna de agentes (nunca codigo del proyecto) ---
+# El repositorio publico debe mostrar solo codigo: estas carpetas documentan
+# el proceso de desarrollo con agentes (orquestacion, skills, SDD, ODD, handoffs)
+# y no forman parte del producto. Se conservan en disco pero fuera de git.
+.agents/
+.atl/
+.engram/
+.codegraph/
+odd/
+backendSDD/
+frontendSDD/
+AGENTS.md
+orchestrator-state.json
+HANDOFF.md
+ORIGINAL_REQUEST.md
+AUDITORIA_SDD_*.md
+skills-lock.json
+
