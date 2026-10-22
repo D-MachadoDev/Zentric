@@ -80,12 +80,26 @@ export interface CreatedProduct {
   variantIds: string[];
 }
 
-/** Parámetros de consulta paginada del catálogo */
+/**
+ * Parámetros de consulta paginada del catálogo.
+ *
+ * `search`, `sort` y `type` operan sobre TODO el catálogo en el servidor (S3):
+ * el filtrado/ordenamiento debe ocurrir en el backend, nunca sobre la página
+ * activa en el cliente. Todos son opcionales para no alterar el comportamiento
+ * previo (ausente = sin filtro / orden actual `CreatedAt` asc).
+ *
+ * `sort` y `type` viajan con los valores exactos que espera el backend
+ * (`relevance | price-asc | price-desc` y `Physical | Digital`; ADR-0012 envía
+ * el NOMBRE del enum, nunca el índice).
+ */
 export interface ListProductsPagedParams {
   vendorId?: string;
   page?: number;
   size?: number;
   category?: string;
+  search?: string;
+  sort?: 'relevance' | 'price-asc' | 'price-desc';
+  type?: ProductType;
 }
 
 /** Envoltorio estándar de paginación del backend */

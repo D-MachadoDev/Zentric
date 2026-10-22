@@ -6,6 +6,7 @@ import type {
   AnnulInvoiceInput,
   AuthToken,
   CancelGhostStockInput,
+  Category,
   CreateFulfillmentInput,
   CreateProductInput,
   CreateUserInput,
@@ -37,7 +38,7 @@ import type { FulfillmentStatus, OrderStatus, ReturnStatus, UserRole } from '../
 /**
  * Puerto de salida unificado hacia la API de Zentric (Frontend-Architecture §5.1).
  *
- * Contiene los 45 métodos canónicos en inglés (Decision A2) que orquestan los 44 endpoints
+ * Contiene los 47 métodos canónicos en inglés (Decision A2) que orquestan los 46 endpoints
  * REST de negocio de backendSDD/Presentation/01-endpoints.md + 1 sonda /health.
  *
  * Se proporcionan alias compatibles para firmas previas (ej. `getUser` para `getUserById`).
@@ -84,6 +85,21 @@ export interface ZentricApiPort {
   getProductById(id: string): Promise<Product>;
   /** Alias compatible para getProductById */
   getProduct(id: string): Promise<Product>;
+  /**
+   * Categorías del marketplace (S1: sólo las que tienen >= 1 producto publicado).
+   *
+   * Es la ÚNICA fuente de categorías del buyer: chips del catálogo, atajos del
+   * header y enlaces del footer salen de aquí, nunca de una lista hardcodeada.
+   */
+  listCategories(): Promise<Category[]>;
+  /**
+   * Productos destacados para el hero/mosaico (S2).
+   *
+   * El backend devuelve productos publicados en orden aleatorio y sin repetir;
+   * el hero no debe depender de un rubro fijo.
+   * @param count Cantidad solicitada (por defecto 6 en el backend).
+   */
+  listHeroProducts(count?: number): Promise<Product[]>;
 
   // ── Módulo 5: Carrito y Pedidos (/api/orders) ───────────────────────────
   createCart(): Promise<string>;

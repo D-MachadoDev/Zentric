@@ -66,6 +66,8 @@ test.describe('Buyer journey', () => {
     await search.fill('teclado');
     await page.waitForLoadState('networkidle');
 
+    // El listener se registra ANTES de escribir: con debounce de 300 ms, la
+    // peticion puede salir antes de que se llegue a la linea siguiente.
     const request = page.waitForRequest((r) => r.url().includes('search='), { timeout: 10_000 });
     await search.fill('monitor');
     const req = await request;
@@ -76,13 +78,22 @@ test.describe('Buyer journey', () => {
     await page.goto('/buyer/catalog');
     await page.waitForLoadState('networkidle');
 
-    // Primer producto real de la grilla.
-    const grid = page.locator('#product-grid');
-    await expect(grid).toBeVisible();
-    await grid.locator('a').first().click();
+    // Se recorren los productos hasta dar con uno FISICO: un producto Digital
+    // no ofrece "Agregar al Carrito" (ofrece su propia via de compra), y el
+    // orden de la grilla depende del orden de creacion en la base, que es
+    // dato compartido entre pruebas.
+    const links = grid.locator('a[href*="/buyer/catalog/"]');
+    const candidates = Math.min(await links.count(), 5);
+    let addButton = page.getByRole('button', { name: /Agregar al Carrito/i });
 
-    await expect(page).toHaveURL(/\/buyer\/catalog\/.+/);
-    const addButton = page.getByRole('button', { name: /Agregar al Carrito/i });
+    for (let i = 0; i < candidates; i++) {
+      await links.nth(i).click();
+      await expect(page).toHaveURL(/\/buyer\/catalog\/.+/);
+      if (await addButton.isVisible({ timeout: 5000 }).catch(() => false)) break;
+      await page.goBack();
+      await expect(grid).toBeVisible();
+    }
+
     await expect(addButton).toBeVisible();
 
     // El nombre del producto se captura ANTES de agregar, para poder

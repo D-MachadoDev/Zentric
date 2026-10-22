@@ -1,4 +1,10 @@
-import type { FulfillmentStatus, OrderStatus, ReturnStatus, UserRole } from '../../domain';
+import type {
+  FulfillmentStatus,
+  ListProductsPagedParams,
+  OrderStatus,
+  ReturnStatus,
+  UserRole,
+} from '../../domain';
 
 /**
  * Jerarquía centralizada de claves de consulta de TanStack Query (Frontend-Domain-Services §2).
@@ -33,9 +39,21 @@ export const queryKeys = {
   products: {
     all: ['products'] as const,
     list: (filters?: { vendorId?: string }) => ['products', 'list', filters ?? {}] as const,
-    paged: (params?: { page?: number; size?: number; vendorId?: string; category?: string }) =>
-      ['products', 'paged', params ?? {}] as const,
+    paged: (params?: ListProductsPagedParams) => ['products', 'paged', params ?? {}] as const,
     detail: (id: string) => ['products', 'detail', id] as const,
+  },
+  /**
+   * Categorías reales del marketplace (S1). Clave única por recurso: la lista
+   * completa llega del backend, por lo que no admite filtros de cliente.
+   */
+  categories: {
+    all: ['categories'] as const,
+    list: () => ['categories', 'list'] as const,
+  },
+  /** Productos destacados del hero (S2); el `count` solicitado forma la clave. */
+  heroProducts: {
+    all: ['heroProducts'] as const,
+    list: (count: number) => ['heroProducts', 'list', count] as const,
   },
   orders: {
     all: ['orders'] as const,

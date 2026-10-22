@@ -5,6 +5,7 @@ export * from './Auth';
 export * from './User';
 export * from './Warehouse';
 export * from './Product';
+export * from './Category';
 export * from './Inventory';
 export * from './Order';
 export * from './Fulfillment';

@@ -7,6 +7,7 @@ import type {
   AnnulInvoiceInput,
   AuthToken,
   CancelGhostStockInput,
+  Category,
   CreateFulfillmentInput,
   CreateProductInput,
   CreateUserInput,
@@ -70,7 +71,7 @@ function readBaseUrlFromEnv(): string {
 /**
  * Adaptador HTTP con monopolio de red (Frontend-Adapters §1–§3.4).
  *
- * Implementa los 45 métodos canónicos de `ZentricApiPort` en inglés (Decision A2)
+ * Implementa los 47 métodos canónicos de `ZentricApiPort` en inglés (Decision A2)
  * traduciendo rutas, cabeceras estándar, inyección síncrona de Bearer JWT,
  * abortos por timeout (15 s) y mapeo defensivo de errores RFC 7807/9457.
  */
@@ -329,8 +330,22 @@ export class HttpClient implements ZentricApiPort {
     if (params?.page !== undefined) queryParams.set('page', String(params.page));
     if (params?.size !== undefined) queryParams.set('size', String(params.size));
     if (params?.category) queryParams.set('category', params.category);
+    // S3: filtros de servidor; sólo se serializan los parámetros definidos y no
+    // vacíos para no alterar la petición previa cuando el buyer no filtra nada.
+    if (params?.search) queryParams.set('search', params.search);
+    if (params?.sort) queryParams.set('sort', params.sort);
+    if (params?.type) queryParams.set('type', params.type);
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
     return this.#json<PagedResult<Product>>(`/api/Catalog/products/paged${query}`, { method: 'GET' });
+  }
+
+  listCategories(): Promise<Category[]> {
+    return this.#json<Category[]>('/api/Catalog/categories', { method: 'GET' });
+  }
+
+  listHeroProducts(count?: number): Promise<Product[]> {
+    const query = count !== undefined ? `?count=${count}` : '';
+    return this.#json<Product[]>(`/api/Catalog/products/hero${query}`, { method: 'GET' });
   }
 
   getProductById(id: string): Promise<Product> {
