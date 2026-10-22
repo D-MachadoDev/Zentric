@@ -106,7 +106,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             request.ClearDomainEvents();
 
             var dbModel = ReturnRequestMapper.ToDbModel(request);
-            _dbContext.ReturnRequests.Update(dbModel);
+            TrackedState.ReplaceAsModified(_dbContext, _dbContext.ReturnRequests, dbModel, r => r.Id);
             return Task.CompletedTask;
         }
     }

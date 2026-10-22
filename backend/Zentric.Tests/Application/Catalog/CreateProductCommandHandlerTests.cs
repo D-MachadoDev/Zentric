@@ -66,6 +66,12 @@ namespace Zentric.Tests.Application.Catalog
             }
             return Task.CompletedTask;
         }
+
+        public Task<IReadOnlyList<CategoryDto>> GetCategoriesWithCountAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<CategoryDto>>(Array.Empty<CategoryDto>());
+
+        public Task<IReadOnlyList<Product>> GetHeroProductsAsync(int count, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<Product>>(Array.Empty<Product>());
     }
 
     public class CreateProductCommandHandlerTests

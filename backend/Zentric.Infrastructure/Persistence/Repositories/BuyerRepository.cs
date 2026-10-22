@@ -37,7 +37,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
         public Task UpdateAsync(Buyer buyer, CancellationToken cancellationToken = default)
         {
             var dbModel = BuyerMapper.ToDbModel(buyer);
-            _dbContext.Buyers.Update(dbModel);
+            TrackedState.ReplaceAsModified(_dbContext, _dbContext.Buyers, dbModel, b => b.UserId);
             return Task.CompletedTask;
         }
     }

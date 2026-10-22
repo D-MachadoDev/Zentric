@@ -58,7 +58,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
         public Task UpdateAsync(Warehouse warehouse, CancellationToken cancellationToken = default)
         {
             var dbModel = WarehouseMapper.ToDbModel(warehouse);
-            _dbContext.Warehouses.Update(dbModel);
+            TrackedState.ReplaceAsModified(_dbContext, _dbContext.Warehouses, dbModel, w => w.Id);
             return Task.CompletedTask;
         }
     }

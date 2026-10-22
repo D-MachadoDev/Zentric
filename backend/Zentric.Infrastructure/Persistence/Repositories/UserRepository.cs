@@ -58,7 +58,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
         public Task UpdateAsync(User user)
         {
             var dbModel = UserDbModelMapper.ToDbModel(user);
-            _dbContext.Users.Update(dbModel);
+            TrackedState.ReplaceAsModified(_dbContext, _dbContext.Users, dbModel, u => u.Id);
             return Task.CompletedTask;
         }
     }

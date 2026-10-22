@@ -50,7 +50,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
         public async Task UpdateAsync(PaymentReceipt receipt, CancellationToken cancellationToken = default)
         {
             var model = PaymentReceiptMapper.ToDbModel(receipt);
-            _dbContext.PaymentReceipts.Update(model);
+            TrackedState.ReplaceAsModified(_dbContext, _dbContext.PaymentReceipts, model, r => r.Id);
 
             // DbSet.Update marca todo el grafo como Modified porque las claves
             // vienen rellenadas. Para el comprobante esta bien, que su fila ya

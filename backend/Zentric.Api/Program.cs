@@ -13,6 +13,7 @@
 // =================================================================================================
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Zentric.Infrastructure.Persistence;
 using Zentric.Application.Orders.Commands;
 using Zentric.Infrastructure.Persistence.Repositories;
@@ -177,6 +178,10 @@ builder.Services.AddDbContext<ZentricDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
         b => b.MigrationsAssembly("Zentric.Infrastructure")));
 
+// HealthChecks
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<ZentricDbContext>(name: "database", tags: new[] { "ready" });
+
 // Register Repositories and UnitOfWork
 builder.Services.AddScoped<Zentric.Application.Common.Ports.IUnitOfWork, Zentric.Infrastructure.Persistence.UnitOfWork>();
 builder.Services.AddScoped<Zentric.Infrastructure.Persistence.IDomainEventDispatcher, Zentric.Infrastructure.Persistence.DomainEventDispatcher>();
@@ -297,29 +302,45 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Sonda de salud para Docker, balanceadores y el healthcheck de compose.
-// Verifica tambien la conectividad con PostgreSQL, no solo que el proceso exista.
-app.MapGet("/health", async (Zentric.Infrastructure.Persistence.ZentricDbContext db) =>
+// Health checks endpoints para Docker, balanceadores y orquestadores.
+// /health  -> liveness (proceso vivo)
+// /ready   -> readiness (DB disponible, listo para servir tráfico)
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
-    try
+    Predicate = _ => false, // solo liveness: no verifica dependencias
+    ResponseWriter = async (context, report) =>
     {
-        var canConnect = await db.Database.CanConnectAsync();
-        return Results.Ok(new
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(new
         {
-            status = canConnect ? "healthy" : "degraded",
-            database = canConnect ? "up" : "down",
+            status = "healthy",
             timestamp = DateTimeOffset.UtcNow
-        });
+        }));
     }
-    catch (Exception ex)
+});
+
+app.MapHealthChecks("/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready"), // verifica DB
+    ResponseWriter = async (context, report) =>
     {
-        return Results.Json(
-            new { status = "unhealthy", database = "down", error = ex.Message },
-            statusCode: 503);
+        context.Response.ContentType = "application/json";
+        var status = report.Status == Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Healthy ? "healthy" : "unhealthy";
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(new
+        {
+            status,
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description
+            }),
+            timestamp = DateTimeOffset.UtcNow
+        }));
     }
 })
 .AllowAnonymous()
-.WithName("Health");
+.WithName("Ready");
 
 // Alta del primer Administrador. Solo actua cuando NO existe ningun usuario con rol
 // Administrador, de modo que un despliegue no duplica el administrador en cada reinicio.

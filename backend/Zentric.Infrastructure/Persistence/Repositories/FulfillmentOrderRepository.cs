@@ -97,7 +97,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
         public Task UpdateAsync(FulfillmentOrder order, CancellationToken cancellationToken = default)
         {
             var dbModel = FulfillmentOrderMapper.ToDbModel(order);
-            _dbContext.FulfillmentOrders.Update(dbModel);
+            TrackedState.ReplaceAsModified(_dbContext, _dbContext.FulfillmentOrders, dbModel, o => o.Id);
             return Task.CompletedTask;
         }
     }

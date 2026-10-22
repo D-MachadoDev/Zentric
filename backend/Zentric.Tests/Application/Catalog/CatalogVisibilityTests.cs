@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Zentric.Application.Catalog.Queries;
+using Zentric.Domain.Inventories.Ports;
 using Zentric.Domain.Products;
 using Zentric.Domain.Products.Enums;
 using Zentric.Domain.Products.Ports;
@@ -25,6 +26,43 @@ namespace Zentric.Tests.Application.Catalog
     /// </summary>
     public class CatalogVisibilityTests
     {
+        // Null Object para IInventoryRepository en tests de visibilidad (no necesitan stock real).
+        private sealed class NullInventoryRepository : IInventoryRepository
+        {
+            public Task<int> GetTotalAvailableStockAsync(Guid variantId, CancellationToken cancellationToken = default)
+                => Task.FromResult(0);
+
+            public Task<Zentric.Domain.Inventories.Inventory?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+                => Task.FromResult<Zentric.Domain.Inventories.Inventory?>(null);
+
+            public Task<Zentric.Domain.Inventories.Inventory?> GetByVariantAndWarehouseAsync(Guid variantId, Guid warehouseId, CancellationToken cancellationToken = default)
+                => Task.FromResult<Zentric.Domain.Inventories.Inventory?>(null);
+
+            public Task<IEnumerable<Zentric.Domain.Inventories.Inventory>> GetByVariantIdAsync(Guid variantId, CancellationToken cancellationToken = default)
+                => Task.FromResult(Enumerable.Empty<Zentric.Domain.Inventories.Inventory>());
+
+            public Task<IReadOnlyList<Zentric.Domain.Inventories.Inventory>> GetListAsync(Guid? vendorId, CancellationToken cancellationToken = default)
+                => Task.FromResult<IReadOnlyList<Zentric.Domain.Inventories.Inventory>>(Array.Empty<Zentric.Domain.Inventories.Inventory>());
+
+            public Task AddAsync(Zentric.Domain.Inventories.Inventory inventory, CancellationToken cancellationToken = default)
+                => Task.CompletedTask;
+
+            public Task UpdateAsync(Zentric.Domain.Inventories.Inventory inventory, CancellationToken cancellationToken = default)
+                => Task.CompletedTask;
+
+            public Task<Zentric.Domain.Inventories.Inventory> LoadWithHistoryAsync(Guid id, CancellationToken cancellationToken = default)
+                => Task.FromResult<Zentric.Domain.Inventories.Inventory>(null!);
+
+            public Task SaveAdjustmentAsync(Zentric.Domain.Inventories.Inventory inventory, Zentric.Domain.Inventories.StockAdjustmentRecord record, CancellationToken cancellationToken = default)
+                => Task.CompletedTask;
+
+            public Task<bool> TryReserveStockAsync(Guid inventoryId, int quantity, CancellationToken cancellationToken = default)
+                => Task.FromResult(false);
+
+            public Task ReleaseReservedStockAsync(Guid inventoryId, int quantity, CancellationToken cancellationToken = default)
+                => Task.CompletedTask;
+        }
+
         private sealed class VisibilityFakeRepository : IProductRepository
         {
             public List<Product> Products { get; } = new();
@@ -65,6 +103,12 @@ namespace Zentric.Tests.Application.Catalog
 
             public Task UpdateAsync(Product product, CancellationToken cancellationToken = default)
                 => Task.CompletedTask;
+
+            public Task<IReadOnlyList<Zentric.Domain.Products.Ports.CategoryDto>> GetCategoriesWithCountAsync(CancellationToken cancellationToken = default)
+                => Task.FromResult<IReadOnlyList<Zentric.Domain.Products.Ports.CategoryDto>>(Array.Empty<Zentric.Domain.Products.Ports.CategoryDto>());
+
+            public Task<IReadOnlyList<Product>> GetHeroProductsAsync(int count, CancellationToken cancellationToken = default)
+                => Task.FromResult<IReadOnlyList<Product>>(Array.Empty<Product>());
         }
 
         private static Product NewProduct(Guid vendorId, string name, bool suspended = false)
@@ -90,7 +134,7 @@ namespace Zentric.Tests.Application.Catalog
             repo.Products.Add(NewProduct(vendorId, "Publicado"));
             repo.Products.Add(NewProduct(vendorId, "Suspendido", suspended: true));
 
-            var handler = new GetProductsQueryHandler(repo);
+            var handler = new GetProductsQueryHandler(repo, new NullInventoryRepository());
 
             var result = await handler.Handle(
                 new GetProductsQuery(VendorId: null, CallerId: Guid.NewGuid()),
@@ -108,7 +152,7 @@ namespace Zentric.Tests.Application.Catalog
             repo.Products.Add(NewProduct(vendorId, "PublicadoAjeno"));
             repo.Products.Add(NewProduct(vendorId, "SuspendidoAjeno", suspended: true));
 
-            var handler = new GetProductsQueryHandler(repo);
+            var handler = new GetProductsQueryHandler(repo, new NullInventoryRepository());
 
             var result = await handler.Handle(
                 new GetProductsQuery(VendorId: vendorId, CallerId: Guid.NewGuid()),
@@ -128,7 +172,7 @@ namespace Zentric.Tests.Application.Catalog
             repo.Products.Add(NewProduct(vendorId, "PublicadoPropio"));
             repo.Products.Add(NewProduct(vendorId, "SuspendidoPropio", suspended: true));
 
-            var handler = new GetProductsQueryHandler(repo);
+            var handler = new GetProductsQueryHandler(repo, new NullInventoryRepository());
 
             var result = await handler.Handle(
                 new GetProductsQuery(VendorId: vendorId, CallerId: vendorId),
@@ -148,7 +192,7 @@ namespace Zentric.Tests.Application.Catalog
             for (var i = 0; i < 3; i++) repo.Products.Add(NewProduct(vendorId, $"Publicado{i}"));
             repo.Products.Add(NewProduct(vendorId, "Suspendido", suspended: true));
 
-            var handler = new GetProductsPagedQueryHandler(repo);
+            var handler = new GetProductsPagedQueryHandler(repo, new NullInventoryRepository());
 
             var result = await handler.Handle(
                 new GetProductsPagedQuery(vendorId, Guid.NewGuid(), Page: 0, Size: 10),
@@ -166,7 +210,7 @@ namespace Zentric.Tests.Application.Catalog
             for (var i = 0; i < 3; i++) repo.Products.Add(NewProduct(vendorId, $"Publicado{i}"));
             repo.Products.Add(NewProduct(vendorId, "Suspendido", suspended: true));
 
-            var handler = new GetProductsPagedQueryHandler(repo);
+            var handler = new GetProductsPagedQueryHandler(repo, new NullInventoryRepository());
 
             var result = await handler.Handle(
                 new GetProductsPagedQuery(vendorId, vendorId, Page: 0, Size: 10),

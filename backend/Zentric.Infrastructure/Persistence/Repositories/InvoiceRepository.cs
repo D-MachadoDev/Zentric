@@ -83,7 +83,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
         public Task UpdateAsync(Invoice invoice, CancellationToken cancellationToken = default)
         {
             var dbModel = InvoiceMapper.ToDbModel(invoice);
-            _dbContext.Invoices.Update(dbModel);
+            TrackedState.ReplaceAsModified(_dbContext, _dbContext.Invoices, dbModel, i => i.Id);
             return Task.CompletedTask;
         }
 
