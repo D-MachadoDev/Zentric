@@ -7,9 +7,41 @@
       name="description"
       content="Consola operativa del marketplace Zentric: catálogo, inventario, pedidos, logística y devoluciones."
     />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="light dark" />
     <title>Zentric — Consola operativa</title>
-    <script src="/env-config.js"></script>
+
+    <!-- Brandkit (generado por `pnpm brandkit:generate` + `pnpm brandkit:rasterize`) -->
+    <link rel="icon" type="image/svg+xml" href="/brandkit/logo/zentric-icon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/brandkit/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/brandkit/favicon/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/brandkit/favicon/apple-touch-icon-180x180.png" />
+    <link rel="manifest" href="/brandkit/manifest.json" />
+    <meta name="theme-color" content="#F5F6F8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0C0F16" media="(prefers-color-scheme: dark)" />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Zentric" />
+    <meta property="og:title" content="Zentric — Marketplace multi-vendedor" />
+    <meta
+      property="og:description"
+      content="Reserva atómica de 15 minutos, despacho rastreable y devolución segura."
+    />
+    <meta property="og:image" content="/brandkit/og/og-default.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Zentric — Marketplace multi-vendedor" />
+    <meta name="twitter:description" content="Reserva atómica de 15 minutos, despacho rastreable y devolución segura." />
+    <meta name="twitter:image" content="/brandkit/og/og-default.png" />
+
+    <!-- `defer`: el script de configuracion de runtime solo fija la URL de la
+         API, que se lee en la primera peticion, no en el primer pintado.
+         Cargarlo de forma sincronica en el <head> bloqueaba el render
+         315 ms (medido por Lighthouse) sin aportar nada al LCP. Con `defer` se
+         ejecuta antes que el modulo de la aplicacion, porque ambos esperan
+         al final del parseo y el orden del documento se respeta. -->
+    <script src="/env-config.js" defer></script>
   </head>
   <body>
     <div id="root"></div>

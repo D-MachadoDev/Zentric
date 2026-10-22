@@ -1,0 +1,79 @@
+/** Brandkit Zentric - generado desde frontendSDD/Frontend-Design-System.md §9.
+ *  No editar a mano: regenerar con `pnpm brandkit:generate`.
+ *  La app ya define su propia paleta en packages/ui/src/styles/theme.css (fuente
+ *  unica real); este archivo es un espejo para consumidores externos. */
+
+export const roleAccent = {
+        'buyer': { light: '#0F766E', lightHover: '#0B5D56', dark: '#2DD4BF', darkHover: '#5EEAD4' },
+        'seller': { light: '#6D28D9', lightHover: '#5B21B6', dark: '#A78BFA', darkHover: '#C4B5FD' },
+        'admin': { light: '#4338CA', lightHover: '#3730A3', dark: '#818CF8', darkHover: '#A5B4FC' },
+        'logistics': { light: '#0E7490', lightHover: '#0A5C74', dark: '#22D3EE', darkHover: '#67E8F9' },
+        'supervisor': { light: '#A21CAF', lightHover: '#86198F', dark: '#E879F9', darkHover: '#F0ABFC' },
+};
+
+export const palette = {
+  light: {
+    "background": "#F5F6F8",
+    "surface": "#FFFFFF",
+    "surface-muted": "#EEF0F4",
+    "border": "#E1E5EB",
+    "border-subtle": "#EBEEF2",
+    "foreground": "#0E1420",
+    "foreground-muted": "#454F63",
+    "foreground-subtle": "#5F6B82",
+    "success": "#15803D",
+    "warning": "#B45309",
+    "danger": "#B91C1C",
+    "info": "#1D4ED8"
+  },
+  dark: {
+    "background": "#0C0F16",
+    "surface": "#131824",
+    "surface-muted": "#1A2030",
+    "border": "#252D40",
+    "border-subtle": "#1D2334",
+    "foreground": "#EDF1F7",
+    "foreground-muted": "#98A2B8",
+    "foreground-subtle": "#7D88A3",
+    "success": "#4ADE80",
+    "warning": "#FBBF24",
+    "danger": "#F87171",
+    "info": "#60A5FA"
+  },
+};
+
+export const brandkitTailwind = {
+  theme: {
+    extend: {
+      colors: {
+        brand: 'var(--brand)',
+        'brand-strong': 'var(--brand-strong)',
+        background: 'var(--background)',
+        surface: 'var(--surface)',
+        'surface-muted': 'var(--surface-muted)',
+        border: 'var(--border)',
+        'border-subtle': 'var(--border-subtle)',
+        foreground: 'var(--foreground)',
+        'foreground-muted': 'var(--foreground-muted)',
+        'foreground-subtle': 'var(--foreground-subtle)',
+        success: 'var(--success)',
+        warning: 'var(--warning)',
+        danger: 'var(--danger)',
+        info: 'var(--info)',
+      },
+      fontFamily: {
+        sans: ["'Geist Variable'", 'system-ui', 'sans-serif'],
+        mono: ["'Geist Mono Variable'", 'ui-monospace', 'monospace'],
+      },
+      borderRadius: {
+        sm: '6px', md: '8px', lg: '12px', xl: '16px', '2xl': '20px', '3xl': '24px', '4xl': '28px', full: '9999px',
+      },
+      transitionTimingFunction: {
+        'out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',
+        'out-quint': 'cubic-bezier(0.22, 1, 0.36, 1)',
+      },
+    },
+  },
+};
+
+export default brandkitTailwind;

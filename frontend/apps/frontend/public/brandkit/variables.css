@@ -1,0 +1,72 @@
+/* Brandkit Zentric - generado desde frontendSDD/Frontend-Design-System.md §9.
+   No editar a mano: regenerar con `pnpm brandkit:generate`. */
+
+:root {
+  /* Modo claro "Estudio Porcelana" (§9.1) */
+  --color-background: #F5F6F8;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #EEF0F4;
+  --color-border: #E1E5EB;
+  --color-border-subtle: #EBEEF2;
+  --color-foreground: #0E1420;
+  --color-foreground-muted: #454F63;
+  --color-foreground-subtle: #5F6B82;
+  --color-success: #15803D;
+  --color-warning: #B45309;
+  --color-danger: #B91C1C;
+  --color-info: #1D4ED8;
+  --color-brand: #0F766E;
+  --color-brand-strong: #0B5D56;
+}
+
+.dark {
+  /* Modo oscuro "Boveda Grafito" (§9.1) */
+  --color-background: #0C0F16;
+  --color-surface: #131824;
+  --color-surface-muted: #1A2030;
+  --color-border: #252D40;
+  --color-border-subtle: #1D2334;
+  --color-foreground: #EDF1F7;
+  --color-foreground-muted: #98A2B8;
+  --color-foreground-subtle: #7D88A3;
+  --color-success: #4ADE80;
+  --color-warning: #FBBF24;
+  --color-danger: #F87171;
+  --color-info: #60A5FA;
+  --color-brand: #2DD4BF;
+  --color-brand-strong: #5EEAD4;
+}
+
+/* Identidad por rol (§9.2): el scope remapea SOLO el eje de acento. */
+[data-role='seller'] {
+  --color-brand: #6D28D9;
+  --color-brand-strong: #5B21B6;
+}
+.dark [data-role='seller'] {
+  --color-brand: #A78BFA;
+  --color-brand-strong: #C4B5FD;
+}
+[data-role='admin'] {
+  --color-brand: #4338CA;
+  --color-brand-strong: #3730A3;
+}
+.dark [data-role='admin'] {
+  --color-brand: #818CF8;
+  --color-brand-strong: #A5B4FC;
+}
+[data-role='logistics'] {
+  --color-brand: #0E7490;
+  --color-brand-strong: #0A5C74;
+}
+.dark [data-role='logistics'] {
+  --color-brand: #22D3EE;
+  --color-brand-strong: #67E8F9;
+}
+[data-role='supervisor'] {
+  --color-brand: #A21CAF;
+  --color-brand-strong: #86198F;
+}
+.dark [data-role='supervisor'] {
+  --color-brand: #E879F9;
+  --color-brand-strong: #F0ABFC;
+}
