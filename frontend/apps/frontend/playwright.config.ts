@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'node:path';
 
 /**
  * URL de la API que usan los E2E.
@@ -65,15 +66,32 @@ export default defineConfig({
       use: { ...devices['iPhone 12'] },
     },
   ],
-  webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:15434',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    env: {
-      VITE_API_BASE_URL: API_BASE_URL,
+  webServer: [
+    {
+      // La API la levanta Playwright, no el shell: si el proceso se muere a
+      // mitad de la suite, los tests fallan con ECONNREFUSED y parecen
+      // regresiones de codigo cuando son caidas de infraestructura.
+      command: 'dotnet run --project backend/Zentric.Api --urls http://localhost:15433',
+      // Chequeo de PUERTO, no de URL: `/health` exige token y responde 401,
+      // que un lector de URL tomaria por "todavia no esta listo". El propio
+      // test se encarga de confirmar que la API responde.
+      port: 15433,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+      cwd: path.resolve(import.meta.dirname, '..', '..', '..'),
+      stdout: 'ignore',
+      stderr: 'pipe',
     },
-  },
+    {
+      command: 'pnpm dev',
+      url: 'http://localhost:15434',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+      env: {
+        VITE_API_BASE_URL: API_BASE_URL,
+      },
+    },
+  ],
   expect: {
     // La captura de pagina completa tarda mas de 5 s en webkit (motor de
     // Safari): con el limite por defecto de Playwright, la propia captura

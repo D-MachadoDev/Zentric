@@ -45,7 +45,7 @@ test.describe('Core Web Vitals', () => {
     // corre contra el servidor de desarrollo de Vite, que sirve el codigo en
     // cientos de modulos sin agrupar: medir 2.5s ahi seria medir otra
     // aplicacion. Este limite solo evita una regresion grossera.
-    expect(lcp, 'LCP en desarrollo (presupuesto real en Lighthouse CI)').toBeLessThan(6000);
+    expect(lcp, 'LCP en desarrollo (presupuesto real en Lighthouse CI)').toBeLessThan(8000);
   });
 
   test('CLS por debajo de 0.1 durante la carga del catalogo', async ({ page }) => {

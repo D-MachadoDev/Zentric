@@ -1,0 +1,214 @@
+name: frontend-quality
+
+# Compuertas de calidad del frontend que complementan a `frontend.yml`
+# (typecheck + tests + build). Aqui viven las compuertas que necesitan
+# navegador o stack completo:
+#   - audit:design  -> verifica el design system contra la Ley (§9 del spec)
+#   - storybook     -> compila el catalogo de componentes
+#   - e2e           -> Playwright (buyer journey, snapshots, WCAG 2.2, CWV)
+#   - lighthouse    -> budgets de performance, accesibilidad y SEO
+#
+# Regla de datos segun `frontendSDD/Frontend-Design-System.md` §9: la paleta se
+# parsea del propio spec, asi que un cambio del Owner en §9 rompe la
+# compuerta (que es exactamente lo que se busca).
+
+on:
+  push:
+    paths:
+      - "frontend/**"
+      - "frontendSDD/**"
+      - "AGENTS.md"
+      - "docker-compose.yml"
+      - ".github/workflows/frontend-quality.yml"
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "frontendSDD/**"
+      - "AGENTS.md"
+      - "docker-compose.yml"
+      - ".github/workflows/frontend-quality.yml"
+
+concurrency:
+  group: frontend-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # 1. Compuerta de design system (sin dependencias: lee el repo)
+  # ───────────────────────────────────────────────────────────────────────────
+  design-audit:
+    name: Design system audit (§9)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit del design system contra la Ley §9
+        working-directory: frontend
+        run: node scripts/audit-design-system.cjs
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 2. Storybook compila (detecta stories rotas antes del E2E)
+  # ───────────────────────────────────────────────────────────────────────────
+  storybook-build:
+    name: Storybook build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - working-directory: frontend
+        name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - working-directory: frontend/apps/frontend
+        name: Compilar catalogo Storybook
+        run: pnpm storybook:build --output-dir /tmp/sb-out
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: storybook-static
+          path: /tmp/sb-out
+          retention-days: 7
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 3. Playwright E2E + snapshots + WCAG 2.2 contra el stack real
+  # ───────────────────────────────────────────────────────────────────────────
+  e2e:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-postgres-password-32-chars
+          POSTGRES_DB: ZentricDb
+        ports:
+          - 15432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ZentricDb"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - working-directory: frontend
+        name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Preparar variables de entorno de CI
+        run: |
+          cat > .env <<'ENV'
+          POSTGRES_PASSWORD=ci-postgres-password-32-chars
+          POSTGRES_PORT=15432
+          POSTGRES_DB=ZentricDb
+          POSTGRES_USER=postgres
+          ASPNETCORE_ENVIRONMENT=Development
+          Jwt__Issuer=zentric-api
+          Jwt__Audience=zentric-client
+          Jwt__SigningKey=ci-only-signing-key-base64-abcdefghijklmnopqrstuvwxyz0123456789
+          BOOTSTRAP_ADMIN_EMAIL=admin@zentric.test
+          BOOTSTRAP_ADMIN_PASSWORD=ci-only-admin-password
+          Cors__AllowedOrigins=http://localhost:15434
+          ASPNETCORE_HTTP_PORT=15433
+          FRONTEND_PROD_PORT=15436
+          ENV
+
+      - name: Restaurar y compilar la API
+        working-directory: .
+        run: |
+          dotnet restore backend/Zentric.slnx
+          dotnet build backend/Zentric.slnx -warnaserror --no-restore
+
+      - name: Instalar navegadores de Playwright
+        working-directory: frontend/apps/frontend
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
+
+      - name: Levantar la API
+        working-directory: .
+        env:
+          ConnectionStrings__DefaultConnection: Host=localhost;Port=15432;Database=ZentricDb;Username=postgres;Password=ci-postgres-password-32-chars
+        run: |
+          dotnet run --project backend/Zentric.Api --urls http://localhost:15433 &
+          echo $! > /tmp/api.pid
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:15433/health > /dev/null 2>&1; then
+              echo "API lista"; break
+            fi
+            sleep 2
+          done
+          curl -fsS http://localhost:15433/health || { echo "La API no levanto"; exit 1; }
+
+      - name: Ejecutar Playwright E2E
+        working-directory: frontend/apps/frontend
+        env:
+          VITE_API_BASE_URL: http://localhost:15433
+        run: pnpm exec playwright test --reporter=html,line
+
+      - name: Publicar reporte Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/apps/frontend/playwright-report
+          retention-days: 7
+
+      - name: Publicar snapshots visuales
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-snapshots
+          path: frontend/apps/frontend/tests/e2e/__snapshots__
+          retention-days: 7
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 4. Lighthouse CI sobre el build de produccion
+  # ───────────────────────────────────────────────────────────────────────────
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - working-directory: frontend
+        name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - working-directory: frontend
+        name: Build de produccion
+        run: pnpm build
+      - working-directory: frontend/apps/frontend
+        name: Ejecutar Lighthouse CI
+        run: pnpm exec lhci autorun --collect.staticDistDir=./dist
+      - name: Publicar reporte Lighthouse
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: frontend/apps/frontend/.lighthouseci
+          retention-days: 7
