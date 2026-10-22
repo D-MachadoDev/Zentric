@@ -93,7 +93,6 @@ const paletteByToken = {
 } as const;
 
 type PaletteKey = keyof typeof paletteByToken;
-type Palette = Record<PaletteKey, string>;
 
 describe('tokens de color y paridad con theme.css (dual theme §9)', () => {
   it('espeja el modo claro (:root) sin divergir en ningun valor de la paleta', () => {

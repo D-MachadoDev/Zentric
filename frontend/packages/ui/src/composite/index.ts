@@ -13,5 +13,7 @@ export * from './StatCard';
 export * from './OrderTimeline';
 export * from './ModalDialog';
 export * from './ResponsiveDrawer';
-export * from './ZentricDataTable';
+export * from './DataTable';
+// Alias historico: el mismo compuesto con el nombre anterior.
+export { ZentricDataTable } from './ZentricDataTable';
 export * from './SearchInput';

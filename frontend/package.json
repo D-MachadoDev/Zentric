@@ -17,7 +17,16 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,css,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,css,json,md}\"",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "audit:design": "node scripts/audit-design-system.cjs",
+    "storybook": "pnpm --filter frontend storybook",
+    "storybook:build": "pnpm --filter frontend storybook:build",
+    "e2e": "pnpm --filter frontend e2e",
+    "e2e:update-snapshots": "pnpm --filter frontend e2e:update-snapshots",
+    "lighthouse": "pnpm --filter frontend lighthouse",
+    "brandkit:generate": "node scripts/generate-brandkit.cjs",
+    "brandkit:rasterize": "node scripts/rasterize-brandkit.cjs",
+    "quality:gate": "pnpm --filter frontend quality:gate"
   },
   "devDependencies": {
     "prettier": "3.9.10",

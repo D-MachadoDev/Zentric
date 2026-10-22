@@ -156,6 +156,20 @@ export function SearchInput({
     return items;
   }, [mergedRecentSearches, suggestions, showRecentSearches, value]);
 
+  const handleSelectItem = (item: SearchSuggestion) => {
+    if (item.type === 'divider-history' || item.type === 'divider-suggestions' || item.type === 'divider-trending') {
+      return;
+    }
+    onChange(item.label);
+    if (onSearch) {
+      onSearch(item.label);
+    }
+    saveToHistory(item.label);
+    setShowDropdown(false);
+    setSelectedIndex(-1);
+    inputRef.current?.focus();
+  };
+
   // Handle keyboard navigation
   React.useEffect(() => {
     function handleKeyDown(e: React.KeyboardEvent) {
@@ -216,20 +230,6 @@ export function SearchInput({
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showDropdown]);
-
-  const handleSelectItem = (item: SearchSuggestion) => {
-    if (item.type === 'divider-history' || item.type === 'divider-suggestions' || item.type === 'divider-trending') {
-      return;
-    }
-    onChange(item.label);
-    if (onSearch) {
-      onSearch(item.label);
-    }
-    saveToHistory(item.label);
-    setShowDropdown(false);
-    setSelectedIndex(-1);
-    inputRef.current?.focus();
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -346,7 +346,11 @@ export function SearchInput({
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             value.trim() ? 'bg-brand hover:bg-brand-strong' : 'bg-surface-muted text-foreground-muted hover:bg-surface'
           )}
-          aria-label={value.trim() ? 'Buscar' : 'Abrir sugerencias'}
+          // WCAG 2.5.3 (Label in Name): el nombre accesible debe contener el
+          // texto visible. Con el campo vacio el boton muestra "Ver" y el
+          // aria-label decia "Abrir sugerencias", que no lo contiene: la
+          // auditoria lo marcaba como `label-content-name-mismatch`.
+          aria-label={value.trim() ? 'Buscar' : 'Ver sugerencias'}
         >
           {value.trim() ? 'Buscar' : 'Ver'}
         </button>
