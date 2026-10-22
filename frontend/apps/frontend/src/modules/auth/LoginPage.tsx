@@ -134,7 +134,12 @@ export function LoginPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-5">
             <div className="flex items-center gap-3">
               <Logo />
-              <span className="rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 text-[10px] font-semibold text-brand tracking-wide uppercase">
+              {/* `text-brand-strong` y no `text-brand`: el jade de marca (#0F766E)
+                  alcanza 4.25:1 sobre el lienzo claro, por debajo del 4.5:1 que
+                  exige AA para texto normal, y baja a 3.76:1 sobre el propio
+                  tinte `bg-brand/10`. El paso profundo del ramp de marca
+                  (#0B5D56) sube a 6.07:1 y 5.37:1 respectivamente. */}
+              <span className="rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 text-[10px] font-semibold text-brand-strong tracking-wide uppercase">
                 Marketplace Oficial
               </span>
             </div>
@@ -142,7 +147,9 @@ export function LoginPage() {
           </div>
 
           <div className="max-w-xl space-y-4">
-            <div className="font-mono text-xs font-semibold tracking-[0.14em] text-brand uppercase">
+            {/* `text-brand-strong` por contraste AA en texto pequeno (ver el
+                comentario del chip "Marketplace Oficial" mas arriba). */}
+            <div className="font-mono text-xs font-semibold tracking-[0.14em] text-brand-strong uppercase">
               COMERCIO DIGITAL & HARDWARE EMPRESARIAL
             </div>
             <h1 className="font-sans text-3xl leading-[1.08] font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.65rem]">

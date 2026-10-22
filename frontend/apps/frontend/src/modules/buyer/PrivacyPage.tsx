@@ -17,7 +17,7 @@ export function PrivacyPage() {
     <PublicLayout>
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <header className="mb-12 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-2 text-sm font-semibold text-brand mb-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-2 text-sm font-semibold text-brand-strong mb-6">
             <Lock className="h-4 w-4" />
             <span>Política de Privacidad</span>
           </div>

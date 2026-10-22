@@ -43,9 +43,15 @@ export function PublicLayout({ children }: PublicLayoutProps) {
         {children}
       </main>
 
-      {/* Pie de página institucional */}
+      {/* Pie de página institucional con enlaces legales */}
       <footer className="relative z-10 flex h-14 items-center justify-between border-t border-border bg-background/85 px-6 font-mono text-xs text-foreground-subtle backdrop-blur-md">
         <span>© {new Date().getFullYear()} Zentric Marketplace Inc.</span>
+        <nav className="flex items-center gap-4" aria-label="Enlaces legales">
+          <Link to="/terms" className="text-foreground-subtle hover:text-brand transition-colors">Términos</Link>
+          <Link to="/privacy" className="text-foreground-subtle hover:text-brand transition-colors">Privacidad</Link>
+          <Link to="/cookies" className="text-foreground-subtle hover:text-brand transition-colors">Cookies</Link>
+          <Link to="/legal" className="text-foreground-subtle hover:text-brand transition-colors">Aviso Legal</Link>
+        </nav>
         <span>Consola Operativa Suiza · Doble Tema Porcelana/Grafito · v2.0.0</span>
       </footer>
     </div>
