@@ -12,52 +12,168 @@ import {
   LogisticsLayout,
   SupervisorLayout,
 } from '../layouts';
-import { LoginPage, RegisterBuyerPage, HealthStatusPage } from '../../modules/auth'
-import { TermsPage, PrivacyPage, CookiesPage, LegalPage } from '../../modules/buyer';
-import {
-  BuyerCatalogPage,
-  BuyerProductDetailPage,
-  BuyerCartPage,
-  BuyerOrdersPage,
-  BuyerOrderDetailPage,
-  BuyerOrderPaymentPage,
-  RequestReturnPage,
-  BuyerProfilePage,
-} from '../../modules/buyer';
-import {
-  SellerDashboardPage,
-  SellerProductsPage,
-  CreateProductPage,
-  SellerProductDetailPage,
-  SellerInventoryPage,
-  SellerOrdersPage,
-  SellerFulfillmentsPage,
-  SellerReturnsPage,
-} from '../../modules/seller';
-import {
-  AdminDashboardPage,
-  UserListPage,
-  CreateUserPage,
-  WarehouseListPage,
-  InventoryAdjustPage,
-  RefundListPage,
-  InvoiceManagementPage,
-} from '../../modules/admin';
-import {
-  LogisticsFulfillmentsPage,
-  FulfillmentOperationsPage,
-  GhostStockReportPage,
-  LogisticsReturnsInspectPage,
-} from '../../modules/logistics';
-import {
-  SupervisorDashboardPage,
-  SupervisorOrdersPage,
-  SupervisorOrderAuditPage,
-  SupervisorFulfillmentsPage,
-  SupervisorReturnsPage,
-  SupervisorInvoicesPage,
-  SupervisorInventoryAuditPage,
-} from '../../modules/supervisor';
+import { lazy, Suspense, type ComponentType } from 'react';
+
+/**
+ * Carga perezosa de una pagina de ruta.
+ *
+ * Cada pagina se convierte en su propio chunk: el visitante descarga el
+ * shell y la ruta que pide, no las 44 paginas de los cinco roles. El
+ * `Suspense` va aqui para que la frontera de carga se declare una sola vez.
+ */
+function lazyPage(
+  load: () => Promise<{ default: ComponentType<Record<string, never>> }>,
+): ComponentType<Record<string, never>> {
+  const Lazy = lazy(load);
+  return function LazyPage(props: Record<string, never>) {
+    return (
+      <Suspense fallback={<RouteLoading />}>
+        <Lazy {...props} />
+      </Suspense>
+    );
+  };
+}
+
+/** Estado de carga de ruta: respects `prefers-reduced-motion` del tema. */
+function RouteLoading() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex min-h-[100svh] items-center justify-center"
+    >
+      <span className="sr-only">Cargando…</span>
+      <span
+        aria-hidden="true"
+        className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-brand"
+      />
+    </div>
+  );
+}
+
+const LoginPage = lazyPage(() =>
+  import('../../modules/auth/LoginPage').then((m) => ({ default: m.LoginPage })),
+);
+const RegisterBuyerPage = lazyPage(() =>
+  import('../../modules/auth/RegisterBuyerPage').then((m) => ({ default: m.RegisterBuyerPage })),
+);
+const HealthStatusPage = lazyPage(() =>
+  import('../../modules/auth/HealthStatusPage').then((m) => ({ default: m.HealthStatusPage })),
+);
+const TermsPage = lazyPage(() =>
+  import('../../modules/buyer/TermsPage').then((m) => ({ default: m.TermsPage })),
+);
+const PrivacyPage = lazyPage(() =>
+  import('../../modules/buyer/PrivacyPage').then((m) => ({ default: m.PrivacyPage })),
+);
+const CookiesPage = lazyPage(() =>
+  import('../../modules/buyer/CookiesPage').then((m) => ({ default: m.CookiesPage })),
+);
+const LegalPage = lazyPage(() =>
+  import('../../modules/buyer/LegalPage').then((m) => ({ default: m.LegalPage })),
+);
+const BuyerCatalogPage = lazyPage(() =>
+  import('../../modules/buyer/BuyerCatalogPage').then((m) => ({ default: m.BuyerCatalogPage })),
+);
+const BuyerProductDetailPage = lazyPage(() =>
+  import('../../modules/buyer/BuyerProductDetailPage').then((m) => ({ default: m.BuyerProductDetailPage })),
+);
+const BuyerCartPage = lazyPage(() =>
+  import('../../modules/buyer/BuyerCartPage').then((m) => ({ default: m.BuyerCartPage })),
+);
+const BuyerOrdersPage = lazyPage(() =>
+  import('../../modules/buyer/BuyerOrdersPage').then((m) => ({ default: m.BuyerOrdersPage })),
+);
+const BuyerOrderDetailPage = lazyPage(() =>
+  import('../../modules/buyer/BuyerOrderDetailPage').then((m) => ({ default: m.BuyerOrderDetailPage })),
+);
+const BuyerOrderPaymentPage = lazyPage(() =>
+  import('../../modules/buyer/BuyerOrderPaymentPage').then((m) => ({ default: m.BuyerOrderPaymentPage })),
+);
+const RequestReturnPage = lazyPage(() =>
+  import('../../modules/buyer/RequestReturnPage').then((m) => ({ default: m.RequestReturnPage })),
+);
+const BuyerProfilePage = lazyPage(() =>
+  import('../../modules/buyer/BuyerProfilePage').then((m) => ({ default: m.BuyerProfilePage })),
+);
+const SellerDashboardPage = lazyPage(() =>
+  import('../../modules/seller/SellerDashboardPage').then((m) => ({ default: m.SellerDashboardPage })),
+);
+const SellerProductsPage = lazyPage(() =>
+  import('../../modules/seller/SellerProductsPage').then((m) => ({ default: m.SellerProductsPage })),
+);
+const CreateProductPage = lazyPage(() =>
+  import('../../modules/seller/CreateProductPage').then((m) => ({ default: m.CreateProductPage })),
+);
+const SellerProductDetailPage = lazyPage(() =>
+  import('../../modules/seller/SellerProductDetailPage').then((m) => ({ default: m.SellerProductDetailPage })),
+);
+const SellerInventoryPage = lazyPage(() =>
+  import('../../modules/seller/SellerInventoryPage').then((m) => ({ default: m.SellerInventoryPage })),
+);
+const SellerOrdersPage = lazyPage(() =>
+  import('../../modules/seller/SellerOrdersPage').then((m) => ({ default: m.SellerOrdersPage })),
+);
+const SellerFulfillmentsPage = lazyPage(() =>
+  import('../../modules/seller/SellerFulfillmentsPage').then((m) => ({ default: m.SellerFulfillmentsPage })),
+);
+const SellerReturnsPage = lazyPage(() =>
+  import('../../modules/seller/SellerReturnsPage').then((m) => ({ default: m.SellerReturnsPage })),
+);
+const AdminDashboardPage = lazyPage(() =>
+  import('../../modules/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })),
+);
+const UserListPage = lazyPage(() =>
+  import('../../modules/admin/UserListPage').then((m) => ({ default: m.UserListPage })),
+);
+const CreateUserPage = lazyPage(() =>
+  import('../../modules/admin/CreateUserPage').then((m) => ({ default: m.CreateUserPage })),
+);
+const WarehouseListPage = lazyPage(() =>
+  import('../../modules/admin/WarehouseListPage').then((m) => ({ default: m.WarehouseListPage })),
+);
+const InventoryAdjustPage = lazyPage(() =>
+  import('../../modules/admin/InventoryAdjustPage').then((m) => ({ default: m.InventoryAdjustPage })),
+);
+const RefundListPage = lazyPage(() =>
+  import('../../modules/admin/RefundListPage').then((m) => ({ default: m.RefundListPage })),
+);
+const InvoiceManagementPage = lazyPage(() =>
+  import('../../modules/admin/InvoiceManagementPage').then((m) => ({ default: m.InvoiceManagementPage })),
+);
+const LogisticsFulfillmentsPage = lazyPage(() =>
+  import('../../modules/logistics/LogisticsFulfillmentsPage').then((m) => ({ default: m.LogisticsFulfillmentsPage })),
+);
+const FulfillmentOperationsPage = lazyPage(() =>
+  import('../../modules/logistics/FulfillmentOperationsPage').then((m) => ({ default: m.FulfillmentOperationsPage })),
+);
+const GhostStockReportPage = lazyPage(() =>
+  import('../../modules/logistics/GhostStockReportPage').then((m) => ({ default: m.GhostStockReportPage })),
+);
+const LogisticsReturnsInspectPage = lazyPage(() =>
+  import('../../modules/logistics/LogisticsReturnsInspectPage').then((m) => ({ default: m.LogisticsReturnsInspectPage })),
+);
+const SupervisorDashboardPage = lazyPage(() =>
+  import('../../modules/supervisor/SupervisorDashboardPage').then((m) => ({ default: m.SupervisorDashboardPage })),
+);
+const SupervisorOrdersPage = lazyPage(() =>
+  import('../../modules/supervisor/SupervisorOrdersPage').then((m) => ({ default: m.SupervisorOrdersPage })),
+);
+const SupervisorOrderAuditPage = lazyPage(() =>
+  import('../../modules/supervisor/SupervisorOrderAuditPage').then((m) => ({ default: m.SupervisorOrderAuditPage })),
+);
+const SupervisorFulfillmentsPage = lazyPage(() =>
+  import('../../modules/supervisor/SupervisorFulfillmentsPage').then((m) => ({ default: m.SupervisorFulfillmentsPage })),
+);
+const SupervisorReturnsPage = lazyPage(() =>
+  import('../../modules/supervisor/SupervisorReturnsPage').then((m) => ({ default: m.SupervisorReturnsPage })),
+);
+const SupervisorInvoicesPage = lazyPage(() =>
+  import('../../modules/supervisor/SupervisorInvoicesPage').then((m) => ({ default: m.SupervisorInvoicesPage })),
+);
+const SupervisorInventoryAuditPage = lazyPage(() =>
+  import('../../modules/supervisor/SupervisorInventoryAuditPage').then((m) => ({ default: m.SupervisorInventoryAuditPage })),
+);
 
 
 /**

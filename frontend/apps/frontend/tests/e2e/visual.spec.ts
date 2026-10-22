@@ -78,19 +78,21 @@ function volatileMask(page: Page) {
  * snapshot y producir un diff que no corresponde a un cambio del diseno.
  */
 async function waitForImages(page: Page) {
-  await page.waitForLoadState('networkidle');
+  // Con rutas perezosas la red no se queda quieta: el chunk de la pagina se
+  // pide despues del primer pintado. Se espera al DOM y a las imagenes.
+  await page.waitForLoadState('domcontentloaded');
   await page
     .waitForFunction(
       () => Array.from(document.images).every((img) => img.complete && img.naturalWidth > 0),
       undefined,
-      { timeout: 15_000 },
+      { timeout: 20_000 },
     )
     .catch(() => {
       // Si alguna imagen no carga (red lenta), se sigue: el snapshot sera
       // distinto, pero la prueba no debe bloquear el pipeline por una foto.
     });
   await waitForCatalogContent(page);
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(500);
 }
 
 /**
@@ -115,7 +117,7 @@ async function waitForCatalogContent(page: Page) {
         return node.querySelectorAll('h3').length > 0 || vacio !== null;
       },
       undefined,
-      { timeout: 15_000 },
+      { timeout: 20_000 },
     )
     .catch(() => {
       // Si la grilla no llega a poblar, la prueba debe fallar por el diff
@@ -137,6 +139,12 @@ const PLACEHOLDER_PNG =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
 test.describe('Snapshots visuales', () => {
+  // Con carga perezosa de rutas, la pagina tarda mas en montar (chunk de la
+  // ruta + sus imagenes) y la captura de pagina completa a 375 px es un
+  // recorrido largo. 60 s de margen evitan que un baseline valido se lea
+  // como regresion por tiempo.
+  test.setTimeout(60_000);
+
   test.beforeEach(async ({ page }) => {
     // El carrusel de "Productos populares" auto-avanza cada 5 s, de modo que la
     // posicion del scroll (y por tanto los bordes de las tarjetas visibles)
@@ -193,7 +201,6 @@ test.describe('Snapshots visuales', () => {
       await loginAsBuyer(page);
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto('/buyer/catalog');
-      await page.waitForLoadState('networkidle');
       await waitForImages(page);
 
       await expect(page).toHaveScreenshot(`catalogo-${vp.name}.png`, {
@@ -216,7 +223,6 @@ test.describe('Snapshots visuales', () => {
       if (route.name !== 'login') await loginAsBuyer(page);
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(route.path);
-      await page.waitForLoadState('networkidle');
       await waitForImages(page);
 
       await expect(page).toHaveScreenshot(`${route.name}-desktop.png`, {
@@ -248,7 +254,6 @@ test.describe('Snapshots visuales', () => {
     });
 
     await page.goto('/buyer/catalog');
-    await page.waitForLoadState('networkidle');
     await waitForImages(page);
 
     // El modo oscuro tiene que estar REALMENTE aplicado: si el proveedor
@@ -282,7 +287,7 @@ test.describe('Snapshots visuales', () => {
     await loginAsBuyer(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/buyer/orders');
-    await page.waitForLoadState('networkidle');
+    await waitForImages(page);
 
     await expect(page.getByRole('heading', { name: 'Mis Pedidos' })).toBeVisible();
     await expect(page.getByText('Pendientes de Pago (15 min)')).toBeVisible();
@@ -298,7 +303,7 @@ test.describe('Snapshots visuales', () => {
   test('el tema aplica el acento del rol al boton primario', async ({ page }) => {
     await loginAsBuyer(page);
     await page.goto('/buyer/catalog');
-    await page.waitForLoadState('networkidle');
+    await waitForImages(page);
 
     // El layout de comprador ancla `data-role="buyer"` en su raiz.
     const roleScope = page.locator('[data-role="buyer"]');
