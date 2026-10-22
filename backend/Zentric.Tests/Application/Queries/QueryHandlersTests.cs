@@ -142,6 +142,12 @@ namespace Zentric.Tests.Application.Queries
 
         public Task AddAsync(Product product, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task UpdateAsync(Product product, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task<IReadOnlyList<Zentric.Domain.Products.Ports.CategoryDto>> GetCategoriesWithCountAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<Zentric.Domain.Products.Ports.CategoryDto>>(Array.Empty<Zentric.Domain.Products.Ports.CategoryDto>());
+
+        public Task<IReadOnlyList<Product>> GetHeroProductsAsync(int count, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<Product>>(Array.Empty<Product>());
     }
 
     internal class FakeInventoryQueryRepo : IInventoryRepository

@@ -71,6 +71,8 @@ namespace Zentric.Tests.Presentation
                 ["CatalogController.GetProducts"] = AuthorizationPolicies.AnyAuthenticatedUser,
                 ["CatalogController.GetProductsPaged"] = AuthorizationPolicies.AnyAuthenticatedUser,
                 ["CatalogController.GetProductById"] = AuthorizationPolicies.AnyAuthenticatedUser,
+                ["CatalogController.GetCategories"] = AuthorizationPolicies.AnyAuthenticatedUser,
+                ["CatalogController.GetHeroProducts"] = AuthorizationPolicies.AnyAuthenticatedUser,
 
                 // 4. Inventario (seccion 12: "Administracion Inventario").
                 ["InventoriesController.AddStock"] = AuthorizationPolicies.InventoryManagement,
@@ -87,6 +89,7 @@ namespace Zentric.Tests.Presentation
                 ["OrdersController.GetOrders"] = AuthorizationPolicies.OrderRead,
                 ["OrdersController.GetBuyerOrders"] = AuthorizationPolicies.OrderRead,
                 ["OrdersController.GetOrderById"] = AuthorizationPolicies.OrderRead,
+                ["OrdersController.UpdateCartItemQuantity"] = AuthorizationPolicies.Checkout,
 
                 // 6. Logistica (ADDENDUM Dominio 8).
                 ["LogisticsController.CreateFulfillment"] = AuthorizationPolicies.FulfillmentOperate,

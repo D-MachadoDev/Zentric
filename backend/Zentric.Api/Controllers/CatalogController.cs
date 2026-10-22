@@ -149,27 +149,45 @@ namespace Zentric.Api.Controllers
         /// <remarks>
         /// Comparte con <c>GET products</c> la regla de visibilidad: sólo <c>Published</c>,
         /// salvo el <c>VendorId</c> propio del llamante (vista de gestión).
+        ///
+        /// Los filtros del comprador (S3) operan sobre TODO el catalogo, no sobre la
+        /// pagina: <c>search</c>, <c>sort</c> y <c>type</c> se aplican antes del conteo
+        /// y la paginacion, para que <c>totalItems</c> y <c>totalPages</c> cuadren.
         /// </remarks>
         /// <param name="vendorId">Filtro opcional por identificador único del vendedor.</param>
         /// <param name="page">Página basada en cero (primera página = 0).</param>
         /// <param name="size">Tamaño de página (1..100, por defecto 20).</param>
         /// <param name="category">Filtro opcional por categoría del producto.</param>
+        /// <param name="search">Búsqueda opcional por nombre o descripción, insensible a mayúsculas. Vacío o ausente no filtra.</param>
+        /// <param name="sort">Orden: <c>relevance</c> (por defecto, fecha de creación ascendente), <c>price-asc</c> o <c>price-desc</c>. Un valor fuera de esos tres responde 400.</param>
+        /// <param name="type">Tipo de producto: <c>Physical</c> o <c>Digital</c>. Un valor fuera de esos dos responde 400.</param>
         /// <response code="200">Página de productos con metadatos de paginación.</response>
+        /// <response code="400">Algún filtro tiene un valor fuera del contrato (RFC 7807 ProblemDetails).</response>
         [HttpGet("products/paged")]
         [HttpGet("/api/products/paged")]
         [Authorize(Policy = AuthorizationPolicies.AnyAuthenticatedUser)]
         [ProducesResponseType(typeof(PagedResult<ProductDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetProductsPaged(
             [FromQuery] Guid? vendorId = null,
             [FromQuery] int page = 1,
             [FromQuery] int size = PageRequest.DefaultPageSize,
-            [FromQuery] string? category = null)
+            [FromQuery] string? category = null,
+            [FromQuery] string? search = null,
+            [FromQuery] string? sort = null,
+            [FromQuery] string? type = null)
         {
             var userId = _currentUser.UserId;
             if (userId is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
             var zeroBasedPage = page > 0 ? page - 1 : 0;
-            var result = await _mediator.Send(new GetProductsPagedQuery(vendorId, userId.Value, zeroBasedPage, size, category));
+            var result = await _mediator.Send(new GetProductsPagedQuery(
+                vendorId, userId.Value, zeroBasedPage, size, category, search, sort, type));
+
+            // El validador del caso de uso puede fallar (sort/type fuera del contrato):
+            // sin esta guarda result.Value lanzaria y el 400 prometido se volveria 500.
+            if (result.IsFailure) return result.ToProblem();
+
             return Ok(result.Value);
         }
         /// <summary>
@@ -186,6 +204,34 @@ namespace Zentric.Api.Controllers
         {
             var result = await _mediator.Send(new GetProductByIdQuery(id));
             if (result.IsFailure) return result.ToProblem();
+            return Ok(result.Value);
+        }
+
+        /// <summary>
+        /// Obtiene las categorías con conteo de productos publicados.
+        /// Solo devuelve categorías que tienen al menos 1 producto publicado.
+        /// </summary>
+        /// <response code="200">Lista de categorías con conteo.</response>
+        [HttpGet("categories")]
+        [Authorize(Policy = AuthorizationPolicies.AnyAuthenticatedUser)]
+        [ProducesResponseType(typeof(IReadOnlyList<CategoryDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetCategories()
+        {
+            var result = await _mediator.Send(new GetCategoriesQuery());
+            return Ok(result.Value);
+        }
+
+        /// <summary>
+        /// Obtiene una muestra aleatoria de productos publicados para el hero/mosaico.
+        /// </summary>
+        /// <param name="count">Número de productos a devolver (por defecto 6).</param>
+        /// <response code="200">Lista de productos aleatorios.</response>
+        [HttpGet("products/hero")]
+        [Authorize(Policy = AuthorizationPolicies.AnyAuthenticatedUser)]
+        [ProducesResponseType(typeof(IReadOnlyList<ProductDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetHeroProducts([FromQuery] int count = 6)
+        {
+            var result = await _mediator.Send(new GetHeroProductsQuery(count));
             return Ok(result.Value);
         }
     }

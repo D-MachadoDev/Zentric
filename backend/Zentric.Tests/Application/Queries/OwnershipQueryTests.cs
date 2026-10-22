@@ -185,6 +185,12 @@ namespace Zentric.Tests.Application.Queries
 
             public Task UpdateAsync(Product product, CancellationToken cancellationToken = default)
                 => Task.CompletedTask;
+
+            public Task<IReadOnlyList<Zentric.Domain.Products.Ports.CategoryDto>> GetCategoriesWithCountAsync(CancellationToken cancellationToken = default)
+                => Task.FromResult<IReadOnlyList<Zentric.Domain.Products.Ports.CategoryDto>>(Array.Empty<Zentric.Domain.Products.Ports.CategoryDto>());
+
+            public Task<IReadOnlyList<Product>> GetHeroProductsAsync(int count, CancellationToken cancellationToken = default)
+                => Task.FromResult<IReadOnlyList<Product>>(Array.Empty<Product>());
         }
         // ---- Vista del pedido para el vendedor (P2 de la ronda 2) ----
 

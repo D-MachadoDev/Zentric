@@ -127,6 +127,12 @@ namespace Zentric.Tests.UseCases
 
             public Task UpdateAsync(Zentric.Domain.Products.Product product, CancellationToken ct = default)
                 => Task.CompletedTask;
+
+            public Task<IReadOnlyList<Zentric.Domain.Products.Ports.CategoryDto>> GetCategoriesWithCountAsync(CancellationToken cancellationToken = default)
+                => Task.FromResult<IReadOnlyList<Zentric.Domain.Products.Ports.CategoryDto>>(Array.Empty<Zentric.Domain.Products.Ports.CategoryDto>());
+
+            public Task<IReadOnlyList<Zentric.Domain.Products.Product>> GetHeroProductsAsync(int count, CancellationToken cancellationToken = default)
+                => Task.FromResult<IReadOnlyList<Zentric.Domain.Products.Product>>(Array.Empty<Zentric.Domain.Products.Product>());
         }
 
         private sealed class FakeFulfillmentOrderRepository : IFulfillmentOrderRepository

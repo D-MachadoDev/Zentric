@@ -109,6 +109,12 @@ namespace Zentric.Tests.Application.Orders
             var items = filtered.Skip(skip).Take(take).ToList();
             return Task.FromResult(( (IReadOnlyList<Product>)items, filtered.Count ));
         }
+
+        public Task<IReadOnlyList<Zentric.Domain.Products.Ports.CategoryDto>> GetCategoriesWithCountAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<Zentric.Domain.Products.Ports.CategoryDto>>(Array.Empty<Zentric.Domain.Products.Ports.CategoryDto>());
+
+        public Task<IReadOnlyList<Product>> GetHeroProductsAsync(int count, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<Product>>(Array.Empty<Product>());
     }
 
     public class FakeCustomerOrderRepositoryForPay : ICustomerOrderRepository

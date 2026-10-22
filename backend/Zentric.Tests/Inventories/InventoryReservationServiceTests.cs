@@ -128,6 +128,12 @@ namespace Zentric.Tests.Inventories
             public Task<(IReadOnlyList<Zentric.Domain.Products.Product> Items, int TotalItems)> GetPagedAsync(Guid? vendorId, ProductStatus? status, int skip, int take, CancellationToken cancellationToken = default)
                 => Task.FromResult<(IReadOnlyList<Zentric.Domain.Products.Product>, int)>((new List<Zentric.Domain.Products.Product>(), 0));
 
+            public Task<IReadOnlyList<Zentric.Domain.Products.Ports.CategoryDto>> GetCategoriesWithCountAsync(CancellationToken cancellationToken = default)
+                => Task.FromResult<IReadOnlyList<Zentric.Domain.Products.Ports.CategoryDto>>(Array.Empty<Zentric.Domain.Products.Ports.CategoryDto>());
+
+            public Task<IReadOnlyList<Zentric.Domain.Products.Product>> GetHeroProductsAsync(int count, CancellationToken cancellationToken = default)
+                => Task.FromResult<IReadOnlyList<Zentric.Domain.Products.Product>>(Array.Empty<Zentric.Domain.Products.Product>());
+
             public Task AddAsync(Zentric.Domain.Products.Product product, CancellationToken cancellationToken = default) => Task.CompletedTask;
             public Task UpdateAsync(Zentric.Domain.Products.Product product, CancellationToken cancellationToken = default) => Task.CompletedTask;
         }
