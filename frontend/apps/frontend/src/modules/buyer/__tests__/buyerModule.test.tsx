@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as BuyerExports from '../index';
 import {
@@ -23,6 +24,7 @@ import {
   FulfillmentStatus,
   WarehouseType,
   UserRole,
+  type Category,
   type Product,
   type Order,
   type OrderListItem,
@@ -109,6 +111,67 @@ const mockDigitalProduct: Product = {
   variants: [{ id: 'var-2222-1111', sku: 'LIC-CLOUD-01', canBeSold: true }],
   createdAt: new Date().toISOString(),
 };
+
+/** Categorías reales que expone `GET api/catalog/categories` (S1). */
+const mockCategories: Category[] = [
+  { id: 'perifericos', name: 'Periféricos & Teclados', productCount: 8 },
+  { id: 'software', name: 'Software & Licencias Cloud', productCount: 3 },
+];
+
+/**
+ * Destacados del hero (S2) con nombres propios: así una aserción de texto en el
+ * mosaico nunca se confunde con la grilla del catálogo.
+ */
+const mockHeroProducts: Product[] = Array.from({ length: 6 }).map((_, index) => ({
+  ...mockPhysicalProduct,
+  id: `hero-prod-${index + 1}`,
+  name: `Destacado Alfa ${index + 1}`,
+  price: 1200000 + index,
+}));
+
+/** Chrome del catálogo (categorías + hero) servido por el adaptador real. */
+function mockCatalogChrome() {
+  vi.spyOn(appServices.api, 'listCategories').mockResolvedValue(mockCategories);
+  vi.spyOn(appServices.api, 'listHeroProducts').mockResolvedValue(mockHeroProducts);
+}
+
+/**
+ * Adaptador paginado que respeta los parámetros del servidor.
+ *
+ * S3: `search`, `type` y `category` se resuelven sobre el catálogo COMPLETO,
+ * nunca sobre la página activa en el cliente.
+ */
+function mockPagedFromFixtures(fixtures: Product[]) {
+  return vi.spyOn(appServices.api, 'listProductsPaged').mockImplementation(async (params) => {
+    const term = params?.search?.trim().toLowerCase() ?? '';
+    const matches = fixtures.filter((product) => {
+      if (params?.type && product.type !== params.type) return false;
+      if (params?.category && product.category?.toLowerCase() !== params.category.toLowerCase()) {
+        return false;
+      }
+      if (term !== '') {
+        const inName = product.name.toLowerCase().includes(term);
+        const inDescription = (product.description ?? '').toLowerCase().includes(term);
+        if (!inName && !inDescription) return false;
+      }
+      return true;
+    });
+
+    const page = params?.page ?? 1;
+    const size = params?.size ?? 12;
+    const start = (page - 1) * size;
+    const items = matches.slice(start, start + size);
+    const totalPages = Math.ceil(matches.length / size) || 1;
+
+    return {
+      items,
+      page,
+      size,
+      totalItems: matches.length,
+      totalPages,
+    };
+  });
+}
 
 const mockCartOrder: OrderListItem = {
   id: 'cart-order-1',
@@ -223,6 +286,11 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
   // 1. BuyerCatalogPage
   // ==========================================================================
   describe('BuyerCatalogPage', () => {
+    beforeEach(() => {
+      // El catálogo lee categorías reales y destacados reales en cada render.
+      mockCatalogChrome();
+    });
+
     it('renderiza el catálogo de productos con paginación y filtros', async () => {
       vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValue({
         items: [mockPhysicalProduct, mockDigitalProduct],
@@ -241,43 +309,60 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       expect(screen.getByText('Digital')).toBeInTheDocument();
     });
 
-    it('permite filtrar por término de búsqueda y por tipo de producto', async () => {
-      vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValue({
-        items: [mockPhysicalProduct, mockDigitalProduct],
-        page: 1,
-        size: 12,
-        totalItems: 2,
-        totalPages: 1,
-      });
+    it('envía la búsqueda y el tipo al backend y refleja el resultado real (S3)', async () => {
+      const listSpy = mockPagedFromFixtures([mockPhysicalProduct, mockDigitalProduct]);
 
       renderWithClient(<BuyerCatalogPage />);
       await screen.findByText('Teclado Mecánico Ergonómico');
 
-      // Filtrar por texto
+      // La búsqueda viaja al servidor (con debounce) y la grilla pinta lo que devuelve
       const searchInput = screen.getByPlaceholderText(/Buscar por nombre/i);
       fireEvent.change(searchInput, { target: { value: 'Licencia' } });
 
-      expect(screen.queryByText('Teclado Mecánico Ergonómico')).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(listSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ search: 'Licencia', page: 1 }),
+        );
+      });
+      await waitFor(() => {
+        expect(screen.queryByText('Teclado Mecánico Ergonómico')).not.toBeInTheDocument();
+      });
       expect(screen.getByText('Licencia Software Cloud')).toBeInTheDocument();
 
       // Filtrar por Físicos
       fireEvent.change(searchInput, { target: { value: '' } });
-      const physicalButton = screen.getByRole('button', { name: 'Físicos' });
-      fireEvent.click(physicalButton);
+      fireEvent.click(screen.getByRole('button', { name: 'Físicos' }));
 
-      expect(screen.getByText('Teclado Mecánico Ergonómico')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(listSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ type: ProductType.Physical, page: 1 }),
+        );
+      });
+      await waitFor(() => {
+        expect(screen.getByText('Teclado Mecánico Ergonómico')).toBeInTheDocument();
+      });
       expect(screen.queryByText('Licencia Software Cloud')).not.toBeInTheDocument();
 
       // Filtrar por Digitales
-      const digitalButton = screen.getByRole('button', { name: 'Digitales' });
-      fireEvent.click(digitalButton);
-      expect(screen.queryByText('Teclado Mecánico Ergonómico')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Digitales' }));
+      await waitFor(() => {
+        expect(listSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ type: ProductType.Digital }),
+        );
+      });
+      await waitFor(() => {
+        expect(screen.queryByText('Teclado Mecánico Ergonómico')).not.toBeInTheDocument();
+      });
       expect(screen.getByText('Licencia Software Cloud')).toBeInTheDocument();
 
-      // Filtrar por Todos
-      const allButton = screen.getByRole('button', { name: 'Todos' });
-      fireEvent.click(allButton);
-      expect(screen.getByText('Teclado Mecánico Ergonómico')).toBeInTheDocument();
+      // Filtrar por Todos (sin filtro de tipo)
+      fireEvent.click(screen.getByRole('button', { name: 'Todos' }));
+      await waitFor(() => {
+        expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ type: undefined }));
+      });
+      await waitFor(() => {
+        expect(screen.getByText('Teclado Mecánico Ergonómico')).toBeInTheDocument();
+      });
       expect(screen.getByText('Licencia Software Cloud')).toBeInTheDocument();
     });
 
@@ -345,34 +430,194 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       fireEvent.click(prevBtn);
     });
 
-    it('filtra productos por categoría pasando el parámetro category al backend (Slice 4)', async () => {
-      const listSpy = vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValue({
-        items: [mockPhysicalProduct],
-        page: 1,
-        size: 12,
-        totalItems: 1,
-        totalPages: 1,
+    it('renderiza los chips de categoría desde el backend con su conteo (S1)', async () => {
+      mockPagedFromFixtures([mockPhysicalProduct]);
+
+      renderWithClient(<BuyerCatalogPage />);
+
+      // Esperar a que las categorías terminen de cargar (aria-busy=false)
+      const chipGroup = await screen.findByRole('group', { name: 'Categorías de productos' });
+      await waitFor(() => expect(chipGroup).not.toHaveAttribute('aria-busy', 'true'));
+
+      // Los botones incluyen el conteo: "Periféricos & Teclados, 8 productos"
+      expect(
+        within(chipGroup).getByRole('button', { name: /Periféricos & Teclados, 8 productos/ }),
+      ).toBeInTheDocument();
+      expect(
+        within(chipGroup).getByRole('button', { name: /Software & Licencias Cloud, 3 productos/ }),
+      ).toBeInTheDocument();
+      expect(
+        within(chipGroup).getByRole('button', { name: 'Todas las categorías' }),
+      ).toBeInTheDocument();
+      // Nunca se inventan categorías fuera del backend
+      expect(within(chipGroup).queryAllByRole('button')).toHaveLength(3);
+    });
+
+    it('no inventa categorías cuando el backend no devuelve ninguna (S1)', async () => {
+      vi.spyOn(appServices.api, 'listCategories').mockResolvedValue([]);
+      mockPagedFromFixtures([mockPhysicalProduct]);
+
+      renderWithClient(<BuyerCatalogPage />);
+
+      const chipGroup = await screen.findByRole('group', { name: 'Categorías de productos' });
+      await waitFor(() => {
+        expect(within(chipGroup).queryAllByRole('button')).toHaveLength(1);
       });
+
+      expect(
+        within(chipGroup).getByRole('button', { name: 'Todas las categorías' }),
+      ).toBeInTheDocument();
+      expect(screen.getByText(/Aún no hay categorías publicadas/i)).toBeInTheDocument();
+    });
+
+    it('informa el error de categorías y permite reintentar (S1)', async () => {
+      const categoriesSpy = vi
+        .spyOn(appServices.api, 'listCategories')
+        .mockRejectedValue(new Error('Catálogo de categorías no disponible'));
+      mockPagedFromFixtures([mockPhysicalProduct]);
+
+      renderWithClient(<BuyerCatalogPage />);
+
+      expect(await screen.findByText('No pudimos cargar las categorías')).toBeInTheDocument();
+
+      categoriesSpy.mockResolvedValueOnce(mockCategories);
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+
+      const chipGroup = screen.getByRole('group', { name: 'Categorías de productos' });
+      await waitFor(() => {
+        expect(
+          within(chipGroup).getByRole('button', { name: /Periféricos & Teclados, 8 productos/ }),
+        ).toBeInTheDocument();
+      });
+      expect(screen.queryByText('No pudimos cargar las categorías')).not.toBeInTheDocument();
+    });
+
+    it('filtra productos por la categoría real elegida en el chip (S1)', async () => {
+      const listSpy = mockPagedFromFixtures([mockPhysicalProduct]);
 
       renderWithClient(<BuyerCatalogPage />);
       expect(await screen.findByText('Teclado Mecánico Ergonómico')).toBeInTheDocument();
       expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ category: undefined }));
 
-      // Seleccionar categoría 'Periféricos & Teclados'
-      const catButton = screen.getByRole('button', { name: 'Periféricos & Teclados' });
-      fireEvent.click(catButton);
+      fireEvent.click(screen.getByRole('button', { name: /Periféricos & Teclados, 8 productos/ }));
 
       await waitFor(() => {
-        expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ category: 'perifericos', page: 1 }));
+        expect(listSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ category: 'perifericos', page: 1 }),
+        );
       });
+      expect(mockNavigate).toHaveBeenLastCalledWith({ search: { cat: 'perifericos' } });
 
-      // Volver a 'Todas las Categorías'
-      const allCatButton = screen.getByRole('button', { name: 'Todas las Categorías' });
-      fireEvent.click(allCatButton);
+      // Volver a "Todas las categorías"
+      fireEvent.click(screen.getByRole('button', { name: 'Todas las categorías' }));
 
       await waitFor(() => {
-        expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ category: undefined, page: 1 }));
+        expect(listSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ category: undefined, page: 1 }),
+        );
       });
+      expect(mockNavigate).toHaveBeenLastCalledWith({ search: {} });
+    });
+
+    it('envía el orden elegido al backend y reinicia la página (S3)', async () => {
+      const listSpy = mockPagedFromFixtures([mockPhysicalProduct, mockDigitalProduct]);
+
+      renderWithClient(<BuyerCatalogPage />);
+      await screen.findByText('Teclado Mecánico Ergonómico');
+
+      fireEvent.change(screen.getByLabelText('Ordenar por'), { target: { value: 'price-asc' } });
+      await waitFor(() => {
+        expect(listSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ sort: 'price-asc', page: 1 }),
+        );
+      });
+
+      fireEvent.change(screen.getByLabelText('Ordenar por'), { target: { value: 'price-desc' } });
+      await waitFor(() => {
+        expect(listSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ sort: 'price-desc', page: 1 }),
+        );
+      });
+    });
+
+    it('sincroniza la página elegida con el URL (?page=) y la pide al backend (S3)', async () => {
+      // Crear 25 productos fixture para tener 3 páginas (pageSize=12)
+      const manyProducts = Array.from({ length: 25 }, (_, i) => ({
+        ...mockPhysicalProduct,
+        id: `prod-${i + 1}`,
+        name: `Producto ${i + 1}`,
+      }));
+      mockCatalogChrome();
+      const listSpy = mockPagedFromFixtures(manyProducts);
+
+      renderWithClient(<BuyerCatalogPage />);
+
+      // Esperar a que la paginación se renderice (confirma que la query respondió con totalPages > 1)
+      await screen.findByRole('navigation', { name: 'Paginación del catálogo' });
+
+      // Verificar que los botones de paginación existen en la renderización inicial
+      expect(screen.getByRole('button', { name: 'Ir a la página 1' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Ir a la página 2' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Ir a la página 3' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Ir a la página 3' }));
+
+      await waitFor(() => {
+        expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ page: 3 }));
+        expect(mockNavigate).toHaveBeenLastCalledWith({ search: { page: 3 } });
+      });
+
+      // Esperar a que el botón de página 3 tenga aria-current="page" (re-render completado)
+      await screen.findByRole('button', { name: 'Ir a la página 3' });
+      expect(screen.getByRole('button', { name: 'Ir a la página 3' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      );
+      expect(screen.getByRole('navigation', { name: 'Paginación del catálogo' })).toBeInTheDocument();
+
+      // Volver a la primera página limpia el parámetro del URL
+      fireEvent.click(screen.getByRole('button', { name: 'Ir a la página 1' }));
+
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenLastCalledWith({ search: {} });
+        expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ page: 1 }));
+      });
+    });
+
+    it('compone el hero con productos reales y enlaza a su ficha (S2)', async () => {
+      mockPagedFromFixtures([mockPhysicalProduct]);
+
+      renderWithClient(<BuyerCatalogPage />);
+
+      expect(await screen.findByText('Destacado Alfa 1')).toBeInTheDocument();
+      expect(screen.getByRole('img', { name: 'Destacado Alfa 1' })).toBeInTheDocument();
+
+      // El precio del destacado es el real del backend, en cifras mono
+      const heroLink = screen.getByRole('link', { name: /Destacado Alfa 1/ });
+      expect(heroLink).toHaveAttribute(
+        'data-params',
+        JSON.stringify({ productId: 'hero-prod-1' }),
+      );
+      expect(heroLink).toHaveTextContent(/1[.,]200[.,]000/);
+      // No hay ninguna URL de imagen cableada: la foto sale del producto real
+      expect(screen.getByRole('img', { name: 'Destacado Alfa 1' })).toHaveAttribute(
+        'src',
+        expect.stringContaining('http'),
+      );
+    });
+
+    it('no muestra imágenes inventadas si fallan los destacados del hero (S2)', async () => {
+      vi.spyOn(appServices.api, 'listHeroProducts').mockRejectedValue(
+        new Error('Destacados no disponibles'),
+      );
+      mockPagedFromFixtures([mockPhysicalProduct]);
+
+      renderWithClient(<BuyerCatalogPage />);
+
+      expect(await screen.findByText('No pudimos cargar los productos destacados')).toBeInTheDocument();
+      expect(screen.queryByAltText(/Destacado Alfa/)).not.toBeInTheDocument();
+      // El catálogo completo sigue disponible para el comprador
+      expect(await screen.findByText('Teclado Mecánico Ergonómico')).toBeInTheDocument();
     });
   });
 
