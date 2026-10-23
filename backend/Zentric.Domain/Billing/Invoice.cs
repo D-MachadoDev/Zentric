@@ -6,15 +6,14 @@ namespace Zentric.Domain.Billing
     /// <summary>
     /// Policy de comision de la plataforma.
     ///
-    /// DECISION DEL OWNER (2026-09-27, Q-15): la Ley funcional (ZENTRIC.md,
+    /// DECISION DEL OWNER (2026-09-27): la Ley funcional (ZENTRIC.md,
     /// Dominio 9) define que existe un "Detalle Zentric" y una "Factura de
     /// Vendedor" por split, pero NO fija el porcentaje NI el reparto entre
     /// plataforma y vendedor.
     ///
     /// Mientras el reparto no este definido, el sistema **calcula** la
     /// comision para poder mostrarla, pero **no la cobra**: el resultado queda
-    /// marcado como estimado y bloqueado. Nadie paga un numero que invento el
-    /// agente.
+    /// marcado como estimado y bloqueado. Nadie paga un numero inventado.
     ///
     /// Para habilitar el cobro hay que llamar a Ratify(), que exige un reparto
     /// explicito. Hasta entonces, IsCollectable es false.
@@ -56,7 +55,7 @@ namespace Zentric.Domain.Billing
         public PlatformFeePolicy(decimal percentage) : this(percentage, null) { }
 
         /// <summary>
-        /// Reparto ratificado por el Owner (2026-09-27, Q-15): el 5 % es la
+        /// Reparto ratificado por el Owner (2026-09-27): el 5 % es la
         /// comision definitiva de la plataforma y el 95 % corresponde al
         /// vendedor. Con este reparto el cobro queda habilitado
         /// (<see cref="IsCollectable"/> = true).
@@ -74,7 +73,7 @@ namespace Zentric.Domain.Billing
 
         /// <summary>
         /// Registra el reparto ratificado por el Owner y habilita el cobro.
-        /// No usar hasta que exista el dictamen (Q-15).
+        /// No usar hasta que exista el dictamen del Owner.
         /// </summary>
         public static PlatformFeePolicy Ratify(decimal percentage, FeeSplit split)
             => new(percentage, split ?? throw new ArgumentNullException(nameof(split)));

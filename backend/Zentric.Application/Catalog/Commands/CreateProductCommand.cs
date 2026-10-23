@@ -20,7 +20,7 @@ namespace Zentric.Application.Catalog.Commands
     /// Identificadores que devuelve el alta de un producto.
     ///
     /// <c>ProductId</c> identifica el producto y <c>VariantIds</c> las variantes creadas. Un
-    /// producto Fisico siempre nace con al menos una variante (Q-10 = C3, ADR-0003); uno Digital
+    /// producto Fisico siempre nace con al menos una variante (ADR-0003); uno Digital
     /// puede nacer sin ninguna, y entonces la lista llega vacia. Por eso es una LISTA y no un
     /// <c>Guid</c> suelto: la forma del contrato no depende de lo que se pidio, y el frontend no
     /// tiene que decidir de antemano si espera un valor o una coleccion.

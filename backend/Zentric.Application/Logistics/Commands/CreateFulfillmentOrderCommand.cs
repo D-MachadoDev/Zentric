@@ -8,7 +8,7 @@ using Zentric.Domain.Users.Enums;
 namespace Zentric.Application.Logistics.Commands
 {
     /// <summary>
-    /// Crea un despacho. Q-21b: el Vendedor solo puede crear despachos a su
+    /// Crea un despacho. El Vendedor solo puede crear despachos a su
     /// nombre; el Operador puede crearlos para cualquier vendedor, porque
     /// preparar y despachar en bodega es su rol.
     /// </summary>
@@ -31,7 +31,7 @@ namespace Zentric.Application.Logistics.Commands
 
         public async Task<Result<Guid>> Handle(CreateFulfillmentOrderCommand request, CancellationToken cancellationToken)
         {
-            // Q-21b: el vendedor no puede crear despachos a nombre de otro.
+            // El vendedor no puede crear despachos a nombre de otro.
             if (request.CallerRole == UserRole.Seller && request.VendorId != request.CallerId)
             {
                 return Result<Guid>.Failure("A seller can only create fulfillments for themselves.");

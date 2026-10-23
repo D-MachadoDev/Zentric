@@ -4,8 +4,7 @@ namespace Zentric.Tests.Products;
 
 /// <summary>
 /// Pruebas de caracterización del Value Object Money.
-/// Referencias: backendSDD/Domain/02-value-objects.md, sección 1 (inmutable, no negativo,
-/// solo se opera con la misma moneda).
+/// Inmutable, no negativo, solo se opera con la misma moneda.
 /// </summary>
 public sealed class MoneyTests
 {
@@ -45,7 +44,7 @@ public sealed class MoneyTests
     [InlineData("ABCD")]
     public void Constructor_UnsupportedCurrency_ThrowsArgumentException(string currency)
     {
-        // Lista blanca (Q-16): longitud valida no significa divisa soportada.
+        // Lista blanca: longitud valida no significa divisa soportada.
         Assert.Throws<ArgumentException>(() => new Money(1m, currency));
     }
 
@@ -67,7 +66,7 @@ public sealed class MoneyTests
     [Fact]
     public void Add_DifferentCurrency_ThrowsMixedCurrencyException()
     {
-        // Q-16: al mezclar divisas se lanza una excepcion de negocio (400),
+        // Al mezclar divisas se lanza una excepcion de negocio (400),
         // no una excepcion tecnica (500).
         Assert.Throws<ArgumentException>(() => new Money(10m, "COP").Add(new Money(1m, "EUR")));
     }

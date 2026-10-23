@@ -104,7 +104,7 @@ namespace Zentric.Tests.Application.Logistics
         [Fact]
         public async Task Handle_ForeignSeller_CannotDispatchAnotherSellersPackage()
         {
-            // Q-21b: antes, cualquier Seller despachaba el paquete de otro con solo
+            // Antes, cualquier Seller despachaba el paquete de otro con solo
             // conocer su GUID. La respuesta debe ser la de "no existe" y el paquete
             // no debe cambiar de estado.
             var order = new FulfillmentOrder(Guid.NewGuid(), Guid.NewGuid());
@@ -125,7 +125,7 @@ namespace Zentric.Tests.Application.Logistics
         [Fact]
         public async Task Handle_OwnSeller_CanDispatchOwnPackage()
         {
-            // Q-21b: el vendedor sí despacha lo suyo.
+            // El vendedor sí despacha lo suyo.
             var vendorId = Guid.NewGuid();
             var order = new FulfillmentOrder(Guid.NewGuid(), vendorId);
             order.Pack();
@@ -143,7 +143,7 @@ namespace Zentric.Tests.Application.Logistics
         [Fact(DisplayName = "UltimoDespacho_ElPedidoMaestroPasaADispatched")]
         public async Task Handle_LastFulfillmentDispatched_MovesMasterOrderToDispatched()
         {
-            // PED-05: antes nadie llamaba a CustomerOrder.Dispatch(), asi que un pedido
+            // Antes nadie llamaba a CustomerOrder.Dispatch(), asi que un pedido
             // pagado se quedaba en Paid para siempre aunque todo se hubiera enviado.
             var master = PaidOrder(Guid.NewGuid());
             var fulfillment = new FulfillmentOrder(master.Id, Guid.NewGuid());

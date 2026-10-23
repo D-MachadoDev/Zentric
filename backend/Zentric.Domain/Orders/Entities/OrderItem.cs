@@ -11,7 +11,7 @@ namespace Zentric.Domain.Orders.Entities
         /// <summary>
         /// Vendedor al momento de la compra (instantanea historica).
         ///
-        /// DECISION DEL OWNER (2026-09-27, Q-18): se guarda en la linea del
+        /// DECISION DEL OWNER (2026-09-27): se guarda en la linea del
         /// pedido, no se cruza contra el producto al facturar. Si un producto
         /// cambia de vendedor despues de la venta, la factura debe seguir
         /// reflejando quien lo vendio en ese momento: es lo contablemente

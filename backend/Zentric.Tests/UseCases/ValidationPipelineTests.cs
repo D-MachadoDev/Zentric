@@ -21,7 +21,7 @@ namespace Zentric.Tests.UseCases
     /// Verificación de integración en memoria del montaje de dependencias que usa
     /// <c>Zentric.Api/Program.cs</c>: descubrimiento de validadores FluentValidation,
     /// resolución del comportamiento genérico del pipeline de mensajes propio y ejecución real
-    /// de los handlers. Cubre AGENTS.md, secciones 3.2, 3.4, 4.3 y 6.
+    /// de los handlers.
     /// </summary>
     public class ValidationPipelineTests
     {
@@ -48,7 +48,7 @@ namespace Zentric.Tests.UseCases
         public Task<CustomerOrder?> GetByIdForVendorAsync(
             Guid id, Guid vendorId, CancellationToken cancellationToken = default)
         {
-            // Q-21b: mismo filtro-en-consulta que el repositorio real.
+            // Mismo filtro-en-consulta que el repositorio real.
             var order = _orders.TryGetValue(id, out var found)
                 && found.Items.Any(i => i.VendorId == vendorId)
                 ? found
@@ -81,9 +81,9 @@ namespace Zentric.Tests.UseCases
 
         private sealed class FakeProductRepository : Zentric.Domain.Products.Ports.IProductRepository
         {
-            // Q-18: el dueno del producto devuelto. Los tests deben pasar este
+            // El dueno del producto devuelto. Los tests deben pasar este
             // mismo valor como VendorId del comando para que la validacion
-            // de propiedad (Q-18) pase.
+            // de propiedad pase.
             public static Guid VendorIdUnderTest { get; set; } = Guid.NewGuid();
 
             public Task<Zentric.Domain.Products.Product?> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -91,7 +91,7 @@ namespace Zentric.Tests.UseCases
 
             public Task<Zentric.Domain.Products.Product?> GetByVariantIdAsync(Guid variantId, CancellationToken ct = default)
             {
-                // Q-18: el handler valida que el VendorId de la linea coincida
+                // El handler valida que el VendorId de la linea coincida
                 // con el dueno real de la variante. Este fake construye un
                 // producto cuyo dueno es VendorIdUnderTest.
                 var money = new Money(10m, "COP");
@@ -194,7 +194,7 @@ public Task<IReadOnlyList<FulfillmentOrder>> GetByCustomerOrderIdAsync(
             services.AddSingleton<Zentric.Domain.Products.Ports.IProductRepository>(products);
             services.AddSingleton<Zentric.Domain.Inventories.Services.InventoryReservationService>(new Zentric.Domain.Inventories.Services.InventoryReservationService(new FakeInventoryRepository(), new FakeProductRepository()));
 
-            // Q-14: el dispatcher propio registra validadores y handlers del ensamblado.
+            // El dispatcher propio registra validadores y handlers del ensamblado.
             services.AddZentricApplication(typeof(CreateCartCommand).Assembly);
 
             // El comportamiento de validacion envuelve la ejecucion del handler.
@@ -284,7 +284,7 @@ public Task<IReadOnlyList<FulfillmentOrder>> GetByCustomerOrderIdAsync(
             Assert.Equal(1, orders.UpdateCalls);
             Assert.Single(order.Items);
             Assert.Equal(variantId, order.Items.First().VariantId);
-// PED-04 / ADR-0020: el total sale del precio del catalogo (10.00 x 2), no del
+            // ADR-0020: el total sale del precio del catalogo (10.00 x 2), no del
             // cuerpo de la peticion, que ya no admite precio.
             Assert.Equal(new Money(20m, "COP"), order.TotalAmount);
         }
@@ -303,7 +303,7 @@ public Task<IReadOnlyList<FulfillmentOrder>> GetByCustomerOrderIdAsync(
         [Fact]
         public async Task Send_AddOrderItemCommandForAnotherBuyersCart_ReturnsNotFoundAndPersistsNothing()
         {
-            // Q-21b: el carrito ajeno se trata como inexistente. Antes, cualquier
+            // El carrito ajeno se trata como inexistente. Antes, cualquier
             // comprador podia agregar items al de otro con solo conocer su GUID.
             var (mediator, orders) = BuildMediator();
             var ownerId = Guid.NewGuid();

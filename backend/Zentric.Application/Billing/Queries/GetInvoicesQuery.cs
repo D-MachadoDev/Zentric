@@ -10,7 +10,7 @@ namespace Zentric.Application.Billing.Queries
     /// Listado de facturas.
     ///
     /// Devuelve el MISMO <see cref="InvoiceDto"/> que el listado por pedido. El reparto por rol es
-    /// identico al de ahi (Q-21b) y por eso ambos comparten DTO: si difirieran, el frontend
+    /// identico al de ahi y por eso ambos comparten DTO: si difirieran, el frontend
     /// tendria dos formas de la misma factura segun de que pantalla venga.
     /// </summary>
     public record GetInvoicesQuery(Guid CallerId, UserRole CallerRole) : IRequest<Result<IReadOnlyList<InvoiceDto>>>;

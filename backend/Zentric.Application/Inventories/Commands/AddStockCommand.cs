@@ -10,7 +10,7 @@ using Zentric.Domain.Warehouses.Ports;
 namespace Zentric.Application.Inventories.Commands
 {
     /// <summary>
-    /// Ingreso de stock. Q-21b: el Vendedor solo ingresa stock de SUS productos
+    /// Ingreso de stock. El Vendedor solo ingresa stock de SUS productos
     /// (variante cuyo producto es suyo) y solo en SUS bodegas; el Operador puede
     /// hacerlo en cualquiera de las dos, porque la recepcion en bodega es su rol.
     /// </summary>
@@ -43,7 +43,7 @@ namespace Zentric.Application.Inventories.Commands
 
         public async Task<Result<Guid>> Handle(AddStockCommand request, CancellationToken cancellationToken)
         {
-            // Q-21b: el vendedor no puede mover el stock de otro ni entrar stock en
+            // El vendedor no puede mover el stock de otro ni entrar stock en
             // bodegas ajenas. Los mensajes son los de "no existe" para no confirmar
             // que ese producto o esa bodega existen y son de otro.
             if (request.CallerRole == UserRole.Seller)

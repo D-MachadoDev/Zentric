@@ -10,7 +10,7 @@ using Zentric.Domain.Users.Enums;
 namespace Zentric.Tests.Presentation;
 
 /// <summary>
-/// Q-22 / ADR-0012: el contrato publico de los enum del cuerpo JSON es por nombre y solo por
+/// ADR-0012: el contrato publico de los enum del cuerpo JSON es por nombre y solo por
 /// nombre (dictado del Owner el 2026-09-29, forma estricta).
 ///
 /// <remarks>
@@ -18,7 +18,7 @@ namespace Zentric.Tests.Presentation;
 /// no unas opciones fabricadas por separado: si el registro se desconecta de la tuberia, aqui se ve.
 /// Lo que aqui no se puede probar es que <c>Program.cs</c> llame al extension; eso lo cubre la
 /// comprobacion por HTTP de <c>backend/scripts/authorization-smoke.ps1</c> (dos capas, igual que
-/// la matriz de autorizacion de Q-21).
+/// la matriz de autorizacion por rol).
 /// </remarks>
 /// </summary>
 public class EnumJsonContractTests
@@ -56,7 +56,7 @@ public class EnumJsonContractTests
     {
         var options = BuildPipelineOptions();
 
-        // Antes de Q-22 esto era un alta valida: 0 == Buyer. Con allowIntegerValues: false el
+        // Antes de esta regla esto era un alta valida: 0 == Buyer. Con allowIntegerValues: false el
         // lector lanza y el pipeline de MVC responde 400, que es lo que dicto el Owner.
         var body = BuildUserBody("0");
 

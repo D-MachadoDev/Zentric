@@ -19,8 +19,8 @@ interface LogisticsLayoutProps {
 }
 
 /**
- * Shell del Operador Logístico — "Tablero de Colas" (Frontend-Design-System §9.6).
- * Exige rol LogisticsOperator o Administrator en beforeLoad (C4-4 §2: LogisticsShell).
+ * Shell del Operador Logístico — "Tablero de Colas".
+ * Exige rol LogisticsOperator o Administrator en beforeLoad (LogisticsShell).
  *
  * Estructura diferenciada: sin barra lateral; franja de colas en Geist Mono
  * mayúsculas (ADN de terminal) bajo una cabecera compacta h-14, densidad de

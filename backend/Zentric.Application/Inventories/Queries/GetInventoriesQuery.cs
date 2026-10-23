@@ -10,7 +10,7 @@ namespace Zentric.Application.Inventories.Queries
     /// Listado de existencias.
     ///
     /// Devuelve el MISMO <see cref="InventoryDto"/> que el detalle por variante. El reparto por rol
-    /// es identico al de ahi (Q-21b): el Vendedor ve el stock de SUS productos, el Operador ve la
+    /// es identico al de ahi: el Vendedor ve el stock de SUS productos, el Operador ve la
     /// red completa porque el stock de la red es su trabajo, y el resto sin filtro.
     /// </summary>
     public record GetInventoriesQuery(Guid CallerId, UserRole CallerRole) : IRequest<Result<IReadOnlyList<InventoryDto>>>;

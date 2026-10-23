@@ -9,7 +9,7 @@ using Zentric.Domain.Users.Enums;
 namespace Zentric.Application.Returns.Commands
 {
     /// <summary>
-    /// Aprueba una devolucion. Q-21b: solo la aprueba el vendedor cuyo producto se
+    /// Aprueba una devolucion. Solo la aprueba el vendedor cuyo producto se
     /// devuelve; la politica sigue siendo solo-Seller (ADDENDUM Dominio 10).
     /// </summary>
     public record ApproveReturnCommand(
@@ -47,7 +47,7 @@ namespace Zentric.Application.Returns.Commands
                 return Result<bool>.NotFound("Return request not found.");
             }
 
-            // Q-21b: la aprobacion es del vendedor del producto devuelto
+            // La aprobacion es del vendedor del producto devuelto
             // (ADDENDUM Dominio 10). El mensaje es el de "no existe" para no
             // confirmar que esa devolucion existe y es de otro.
             var product = await _productRepository.GetByVariantIdAsync(returnReq.VariantId, cancellationToken);

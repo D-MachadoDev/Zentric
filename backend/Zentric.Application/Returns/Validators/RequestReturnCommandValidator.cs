@@ -27,7 +27,7 @@ namespace Zentric.Application.Returns.Validators
             // no vienen del cuerpo (el tipo lo deduce el producto en el servidor y la
             // recepcion se contrasta con bodegas reales).
 
-            // Q-21b: identidad derivada del token por el controlador; el handler
+            // Identidad derivada del token por el controlador; el handler
             // la usa para verificar la propiedad del pedido.
             RuleFor(command => command.BuyerId)
                 .NotEmpty()

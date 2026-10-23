@@ -78,7 +78,7 @@ namespace Zentric.Tests.E2E
         }
 
         /// <summary>
-        /// Q-21: el Administrador lee la ficha por id; inexistente responde 404.
+        /// El Administrador lee la ficha por id; inexistente responde 404.
         /// </summary>
         [Fact]
         public async Task GetUserById_PropioYAjenoResponden200Y404()
@@ -99,7 +99,7 @@ namespace Zentric.Tests.E2E
         }
 
         /// <summary>
-        /// Q-25: suspender saca del catalogo y publicar devuelve; repetir, 400; inexistente, 404.
+        /// Suspender saca del catalogo y publicar devuelve; repetir, 400; inexistente, 404.
         /// </summary>
         [Fact]
         public async Task Publicar_TrasSuspenderDevuelveElProductoAlCatalogo()
@@ -200,7 +200,7 @@ namespace Zentric.Tests.E2E
         }
 
         /// <summary>
-        /// Q-21b + matriz: bodega propia 200, ajena 404, filtro de otro 400; login fallido 401.
+        /// Matriz de autorizacion: bodega propia 200, ajena 404, filtro de otro 400; login fallido 401.
         /// </summary>
         [Fact]
         public async Task Lecturas_MatrizRespondeSegunPropiedad()

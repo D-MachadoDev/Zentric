@@ -39,7 +39,7 @@ function authAs(role: UserRole) {
   vi.spyOn(appServices.api, 'currentUser').mockResolvedValue(user);
 }
 
-describe('Layouts de Rol y Componentes de Shell (C4-4-Codigo-React.md §2)', () => {
+describe('Layouts de Rol y Componentes de Shell', () => {
   beforeEach(() => {
     appServices.session.clear();
     vi.restoreAllMocks();

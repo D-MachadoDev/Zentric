@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react';
 import type { CurrentUser, LoginInput, SessionPort, UserRole, ZentricApiPort } from '../../domain';
 
 /**
- * Estado compartido por Context (C4-4 §3: `AuthProvider` / `useAuth()`).
+ * Estado compartido por Context (`AuthProvider` / `useAuth()`).
  */
 export interface AuthValue {
   /** El puerto de sesión: mismas lecturas que hacen las guardas del router. */

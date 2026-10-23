@@ -82,7 +82,7 @@ function formatVariantDisplayName(sku: string, index: number): { title: string; 
 
 /**
  * Ficha Técnica y Detalle del Producto para el Comprador (Frontend-Role-Modules §2.4).
- * Rediseñado con la doctrina de Modern High-End Commerce y Dual Theme (Decisiones A1, A2, A4 en /grill-me).
+ * Rediseñado con la doctrina de Modern High-End Commerce y Dual Theme (Decisiones A1, A2, A4).
  * Split-Frame Asimétrico (60% / 40%) con selector de variantes interactivo, buy-box comercial y reserva atómica.
  */
 export function BuyerProductDetailPage() {

@@ -2,7 +2,7 @@ import type { CurrentUser } from '../models';
 import type { UserRole } from '../enums';
 
 /**
- * Puerto de sesión (Frontend-Architecture §5.2).
+ * Puerto de sesión.
  *
  * El backend NO tiene token de refresco (ADR-0009). El access token vive
  * SOLO en memoria RAM; al recargar la página se pierde y toca volver a autenticarse.

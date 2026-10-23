@@ -3,7 +3,7 @@ import { HttpClient } from '../HttpClient';
 import { MemorySessionAdapter } from '../../session/MemorySessionAdapter';
 import { ProblemDetailsError } from '../../../domain';
 
-describe('HttpClient (Frontend-Adapters §1–§3.4)', () => {
+describe('HttpClient', () => {
   const BASE_URL = 'http://api.zentric.test';
 
   function createTestClient(responder: (url: string, init: RequestInit) => Response | Promise<Response>, token: string | null = 'test-token') {

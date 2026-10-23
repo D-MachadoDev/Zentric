@@ -9,8 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Zentric.Application.Common.Messaging
 {
     /// <summary>
-    /// Dispatcher propio de mensajes. Q-14 (ratificado por el Owner el
-    /// 2026-09-27): sustituye a MediatR 14, cuya licencia es RPL 1.5 / comercial
+    /// Dispatcher propio de mensajes. Sustituye a MediatR 14, cuya licencia es RPL 1.5 / comercial
     /// y obliga a comprar clave o a publicar el codigo derivado. Este dispatcher
     /// no tiene dependencias externas y resuelve handlers por reflexion y cache.
     ///

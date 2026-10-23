@@ -9,7 +9,7 @@ using System;
 namespace Zentric.Tests.Billing
 {
     /// <summary>
-    /// Persistencia de la factura de vendedor (Q-18).
+    /// Persistencia de la factura de vendedor.
     ///
     /// Regresion: el mapper no transportaba <c>VendorId</c>, de modo que la
     /// factura se guardaba sin_dueno y todas las facturas de vendedor quedaban
@@ -123,7 +123,7 @@ namespace Zentric.Tests.Billing
         [Fact]
         public void DefaultPercentage_IsFivePercent_RatifiedByOwner()
         {
-            // Q-15: el Owner ratifico el 5% de plataforma el 2026-09-27.
+            // El Owner ratifico el 5% de plataforma el 2026-09-27.
             // Este test documenta la decision vigente. Si el Owner cambia el
             // reparto, hay que actualizar PlatformFeePolicy.RatifiedSplit y aqui.
             Assert.Equal(0.05m, PlatformFeePolicy.DefaultPercentage);

@@ -17,7 +17,7 @@ using Zentric.Domain.Products.ValueObjects;
 namespace Zentric.Tests.Application.Billing
 {
     /// <summary>
-    /// Emision de facturas (Q-21d). El dictamen confirmo que solo el Administrador
+    /// Emision de facturas. El dictamen confirmo que solo el Administrador
     /// emite, y ordeno las dos guardas que la spec del endpoint prometia y el handler
     /// no tenia: no se factura un pedido sin pagar y no se factura dos veces.
     /// </summary>
@@ -124,7 +124,7 @@ namespace Zentric.Tests.Application.Billing
         [InlineData(OrderStatus.Cancelled)]
         public async Task Handle_OrderNotPaid_RefusesToInvoice(OrderStatus status)
         {
-            // Q-21d: la spec del endpoint ya prometia este 400 y no existia. Facturar un
+            // La spec del endpoint ya prometia este 400 y no existia. Facturar un
             // carrito o un pedido pendiente de pago es emitir un documento financiero
             // sobre una operacion que no ocurrio.
             var invoices = new FakeInvoiceRepository();
@@ -145,7 +145,7 @@ namespace Zentric.Tests.Application.Billing
         [Fact]
         public async Task Handle_AlreadyInvoiced_RefusesToIssueThemTwice()
         {
-            // Q-21d: un doble clic o un reintento duplicaba las tres facturas. Este caso
+            // Un doble clic o un reintento duplicaba las tres facturas. Este caso
             // no lo puede cazar una prueba de autorizacion: es la misma peticion dos veces.
             var invoices = new FakeInvoiceRepository();
             var orders = new FakeOrderRepository();

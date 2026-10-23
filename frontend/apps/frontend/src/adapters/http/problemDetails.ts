@@ -2,7 +2,7 @@ import { ProblemDetailsError } from '../../domain';
 import type { ProblemDetailsData } from '../../domain';
 
 /**
- * Traducción de `ProblemDetails` a `ProblemDetailsError` (Frontend-Adapters §3.4).
+ * Traducción de `ProblemDetails` a `ProblemDetailsError`.
  *
  * El backend emite dos envoltorios distintos: el middleware de validación de
  * ASP.NET añade `title` + `errors` + `traceId`, mientras que el controlador

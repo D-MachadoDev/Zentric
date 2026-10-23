@@ -66,7 +66,7 @@ namespace Zentric.Tests.Application.Queries
             var repo = new FakeWarehouseQueryRepo(new List<Warehouse> { warehouse });
             var handler = new GetWarehousesQueryHandler(repo);
 
-            // Q-21b: sin filtro de dueno para Operador/Administrador; el
+            // Sin filtro de dueno para Operador/Administrador; el
             // encerramiento del Vendedor se prueba en OwnershipQueryTests.
             var result = await handler.Handle(
                 new GetWarehousesQuery(null, Guid.NewGuid(), UserRole.Administrator), CancellationToken.None);
@@ -85,7 +85,7 @@ namespace Zentric.Tests.Application.Queries
             var repo = new FakeInventoryQueryRepo(new List<Inventory> { inv });
             var handler = new GetInventoryByVariantQueryHandler(repo, new FakeProductQueryRepo());
 
-            // Operador: sin filtro de dueno (Q-21b); el Vendedor se prueba en
+            // Operador: sin filtro de dueno; el Vendedor se prueba en
             // OwnershipQueryTests.
             var result = await handler.Handle(
                 new GetInventoryByVariantQuery(variantId, Guid.NewGuid(), UserRole.LogisticsOperator), CancellationToken.None);

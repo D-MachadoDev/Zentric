@@ -3,7 +3,7 @@ using Zentric.Domain.Products.ValueObjects;
 namespace Zentric.Tests.Products;
 
 /// <summary>
-/// Ramas de Money sin cubrir: lista blanca de divisas (Q-16), resta bajo
+/// Ramas de Money sin cubrir: lista blanca de divisas, resta bajo
 /// cero, cantidad negativa y la igualdad.
 /// </summary>
 public sealed class MoneyGuardsTests
@@ -33,7 +33,7 @@ public sealed class MoneyGuardsTests
     [Fact]
     public void Normalize_NoSoportada_Lanza()
     {
-        // Q-16: solo las divisas de la lista blanca; "USD" no esta habilitada.
+        // Solo las divisas de la lista blanca; "USD" no esta habilitada.
         Assert.Throws<ArgumentException>(() => SupportedCurrencies.Normalize("USD"));
         Assert.Throws<ArgumentException>(() => new Money(10m, "USD"));
     }

@@ -1,6 +1,6 @@
 {
   "$meta": {
-    "source": "frontendSDD/Frontend-Design-System.md §9.1 / §9.2",
+    "source": "owner-palette",
     "generated": "2026-10-22",
     "note": "Paleta dual. El acento de marca es el jade Comprador; los demas roles re-mapean --brand via data-role."
   },

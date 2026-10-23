@@ -11,7 +11,7 @@ namespace Zentric.Application.Orders.EventHandlers
     /// <summary>
     /// Consumidor de <see cref="CartExpiredDomainEvent"/>.
     ///
-    /// Se ejecuta cuando un carrito expira por timeout de 15 minutos (PED-01).
+    /// Se ejecuta cuando un carrito expira por timeout de 15 minutos.
     /// Actualmente solo registra en log; preparado para integración futura con
     /// servicio de notificaciones (email, push, webhook).
     /// </summary>

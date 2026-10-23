@@ -45,7 +45,7 @@ namespace Zentric.Tests.UseCases
         [Fact]
         public void Validate_EmptyCallerId_ReturnsError()
         {
-            // Q-21b: la identidad la fija el token por el controlador; esta regla
+            // La identidad la fija el token por el controlador; esta regla
             // es defensa en profundidad.
             var result = _validator.Validate(new CreateFulfillmentOrderCommand(
                 Guid.NewGuid(), Guid.NewGuid(), Guid.Empty, UserRole.Seller));

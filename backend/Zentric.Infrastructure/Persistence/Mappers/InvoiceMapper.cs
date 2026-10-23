@@ -34,7 +34,7 @@ namespace Zentric.Infrastructure.Persistence.Mappers
                 Id = domain.Id,
                 CustomerOrderId = domain.CustomerOrderId,
                 Type = domain.Type,
-                // Q-18: sin esta asignacion la factura de vendedor se persiste sin
+                // Sin esta asignacion la factura de vendedor se persiste sin
                 // dueño y deja de ser distinguible de las demas.
                 VendorId = domain.VendorId,
                 IssuedAt = domain.IssuedAt,

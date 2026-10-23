@@ -40,7 +40,7 @@ namespace Zentric.Application.Logistics.Commands
                 return Result<bool>.NotFound($"FulfillmentOrder with ID {request.FulfillmentOrderId} not found.");
             }
 
-            // Q-21b: el vendedor no despacha el paquete de otro. El mensaje es el
+            // El vendedor no despacha el paquete de otro. El mensaje es el
             // de "no existe" para no confirmar que ese despacho existe.
             if (request.CallerRole == UserRole.Seller && fulfillmentOrder.VendorId != request.CallerId)
             {
@@ -63,7 +63,7 @@ namespace Zentric.Application.Logistics.Commands
         }
 
         /// <summary>
-        /// PED-05: al despachar el ultimo despacho, el pedido maestro pasa a Dispatched.
+        /// Al despachar el ultimo despacho, el pedido maestro pasa a Dispatched.
         /// Se hace en la misma transaccion para que el comprador no lea un estado rancio.
         /// </summary>
         private async Task SynchronizeMasterOrderAsync(FulfillmentOrder changed, CancellationToken cancellationToken)

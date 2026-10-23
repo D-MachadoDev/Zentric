@@ -14,7 +14,6 @@ namespace Zentric.Tests.Security
 {
     /// <summary>
     /// Pruebas unitarias para ProblemDetailsOutputFormatter y registro de contrato RFC 7807 / RFC 9457.
-    /// Fuente de Verdad: backendSDD/Presentation/03-error-handling.md.
     /// </summary>
     public sealed class ProblemDetailsSecurityTests
     {

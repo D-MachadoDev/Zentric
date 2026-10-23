@@ -14,7 +14,7 @@ import type { ConfirmacionAlerta } from '../../adapters/alert/AlertAdapter';
 import { alertAdapter } from '../../app/providers/alertAdapter';
 
 /**
- * Punto de pintado de `AlertPort` (Frontend-Adapters §5).
+ * Punto de pintado de `AlertPort`.
  *
  * Es la mitad de presentación del adaptador: el adaptador decide QUÉ hay que
  * avisar o confirmar y resuelve las promesas; aquí sólo se traduce eso a los

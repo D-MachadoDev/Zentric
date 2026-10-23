@@ -47,7 +47,7 @@ namespace Zentric.Api.Controllers
             var role = User.GetUserRole();
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
-            // Q-21b: el Vendedor solo crea despachos a su nombre; el Operador
+            // El Vendedor solo crea despachos a su nombre; el Operador
             // puede crearlos para cualquier vendedor.
             var result = await _mediator.Send(command with { CallerId = userId.Value, CallerRole = role.Value });
             if (result.IsFailure) return result.ToProblem();
@@ -74,7 +74,7 @@ namespace Zentric.Api.Controllers
             var role = User.GetUserRole();
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
-            // Q-21b: el Vendedor solo despacha los suyos; el Operador, cualquiera.
+            // El Vendedor solo despacha los suyos; el Operador, cualquiera.
             var result = await _mediator.Send(new DispatchFulfillmentCommand(id, userId.Value, role.Value));
             if (result.IsFailure) return result.ToProblem();
             return Ok();
@@ -103,7 +103,7 @@ namespace Zentric.Api.Controllers
             var role = User.GetUserRole();
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
-            // Q-21b: el Vendedor solo empaca los suyos; el Operador empaca cualquiera.
+            // El Vendedor solo empaca los suyos; el Operador empaca cualquiera.
             var result = await _mediator.Send(new PackFulfillmentCommand(id, userId.Value, role.Value));
             if (result.IsFailure) return result.ToProblem();
             return Ok();
@@ -157,8 +157,8 @@ namespace Zentric.Api.Controllers
             var role = User.GetUserRole();
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
-            // Q-21b: el despacho ajeno se trata como inexistente. El Operador tambien puede
-            // reportar el faltante: Q-21c esta DICTADA (ADR-0014) y abre la politica
+            // El despacho ajeno se trata como inexistente. El Operador tambien puede
+            // reportar el faltante: la regla esta DICTADA (ADR-0014) y abre la politica
             // al Operador, no solo al Vendedor.
             var result = await _mediator.Send(command with { CallerId = userId.Value, CallerRole = role.Value });
             if (result.IsFailure) return result.ToProblem();
@@ -172,11 +172,11 @@ namespace Zentric.Api.Controllers
         /// de trabajo del Operador era inejecutable de verdad: no habia forma de descubrir que
         /// existia un despacho pendiente de empacar sin conocer su GUID de antemano.
         ///
-        /// El Vendedor queda encerrado en los suyos y el Comprador en los de sus pedidos (Q-21b);
+        /// El Vendedor queda encerrado en los suyos y el Comprador en los de sus pedidos;
         /// Operador, Administrador y Supervisor ven la cola completa, que es su pantalla de trabajo.
         /// El filtro no es un parametro: no hay forma de pedir los de otro.
         /// </remarks>
-        /// <param name="status">Filtro opcional por estado del despacho, por nombre (Q-22/ADR-0012).</param>
+        /// <param name="status">Filtro opcional por estado del despacho, por nombre (ADR-0012).</param>
         /// <response code="200">Listado de despachos visibles para el llamante.</response>
         /// <response code="400">El estado indicado no es un <c>FulfillmentStatus</c> valido (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
@@ -221,7 +221,7 @@ namespace Zentric.Api.Controllers
         /// Obtiene el estado, vendedor, pedido y paquetes de envío de una orden de fulfillment por su identificador.
         /// </summary>
         /// <remarks>
-        /// Q-21b: el Comprador solo ve despachos de pedidos propios y el
+        /// El Comprador solo ve despachos de pedidos propios y el
         /// Vendedor solo los suyos; el Operador, el Administrador y el Supervisor
         /// leen sin filtro de dueño. Un despacho ajeno responde 404, igual que
         /// uno inexistente.

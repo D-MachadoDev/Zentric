@@ -33,7 +33,7 @@ namespace Zentric.Api.Controllers
         /// Valida que el pedido se encuentre debidamente entregado y que la solicitud esté dentro
         /// del período legal de garantía del producto según las reglas de negocio de ZENTRIC.md.
         /// </remarks>
-        /// <param name="command">Datos de la devolución (CustomerOrderId, VariantId, WarehouseId de recepción, Quantity). El tipo de producto NO viaja: el servidor lo deduce (ADR-0018), igual que la identidad (Q-21b).</param>
+        /// <param name="command">Datos de la devolución (CustomerOrderId, VariantId, WarehouseId de recepción, Quantity). El tipo de producto NO viaja: el servidor lo deduce (ADR-0018), igual que la identidad.</param>
         /// <response code="200">Solicitud de devolución radicada con éxito. Retorna el identificador (Guid).</response>
         /// <response code="400">Error si el plazo de garantía ha expirado, el producto no corresponde a la orden o el pedido no pertenece al llamante (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
@@ -47,7 +47,7 @@ namespace Zentric.Api.Controllers
             var userId = _currentUser.UserId;
             if (userId is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
-            // Q-21b: la identidad la fija el token, no el cuerpo; el handler
+            // La identidad la fija el token, no el cuerpo; el handler
             // verifica que el pedido a devolver sea del llamante.
             var result = await _mediator.Send(command with { BuyerId = userId.Value });
             if (result.IsFailure) return result.ToProblem();
@@ -100,7 +100,7 @@ namespace Zentric.Api.Controllers
             var role = User.GetUserRole();
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
-            // Q-21b: la aprobacion es del vendedor del producto devuelto.
+            // La aprobacion es del vendedor del producto devuelto.
             var result = await _mediator.Send(command with { CallerId = userId.Value, CallerRole = role.Value });
             if (result.IsFailure) return result.ToProblem();
             return Ok();
@@ -171,11 +171,11 @@ namespace Zentric.Api.Controllers
         /// devoluciones: ni el Comprador puede ver lo que devolvio, ni el Vendedor lo que tiene que
         /// aprobar o rechazar, ni el Supervisor puede auditar.
         ///
-        /// El reparto por rol es el mismo que en el detalle (Q-21b): Comprador por pedido,
+        /// El reparto por rol es el mismo que en el detalle: Comprador por pedido,
         /// Vendedor por variante, y Operador, Administrador y Supervisor sin filtro. El filtro no es
         /// un parametro: no hay forma de pedir las de otro.
         /// </remarks>
-        /// <param name="status">Filtro opcional por estado de la devolucion, por nombre (Q-22/ADR-0012).</param>
+        /// <param name="status">Filtro opcional por estado de la devolucion, por nombre (ADR-0012).</param>
         /// <response code="200">Listado de devoluciones visibles para el llamante.</response>
         /// <response code="400">El estado indicado no es un <c>ReturnStatus</c> valido (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
@@ -219,7 +219,7 @@ namespace Zentric.Api.Controllers
         /// Obtiene el estado, motivo y dictamen de inspección de una solicitud de devolución por su identificador.
         /// </summary>
         /// <remarks>
-        /// Q-21b: el Comprador solo ve devoluciones de pedidos propios y el
+        /// El Comprador solo ve devoluciones de pedidos propios y el
         /// Vendedor solo las de productos suyos; el Operador, el Administrador y
         /// el Supervisor leen sin filtro de dueño. Una devolución ajena responde
         /// 404, igual que una inexistente.

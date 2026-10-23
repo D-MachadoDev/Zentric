@@ -63,9 +63,8 @@ namespace Zentric.Domain.Inventories.Services
                 // V-02 (dictamen del Owner 2026-09-30): la reserva ordena por MAYOR
                 // stock disponible y NO distingue entre bodega Marketplace y bodega
                 // del Vendedor. Ese invariante se retiro: `Inventory` no transporta el
-                // tipo de bodega, y con `VendorId = User.Id` (Q-21b, P1) el dueno del
-                // stock es el dueno del producto, no el de la bodega. Ver
-                // backendSDD/Adr/0001-reserva-fragmentacion-contingencia.md.
+                // tipo de bodega, y con `VendorId = User.Id` el dueno del
+                // stock es el dueno del producto, no el de la bodega. Ver ADR-0001.
                 // No se ordena por cercania geografica porque el sistema no modela
                 // ubicacion y la Ley no la define (ADR-0008).
                 // Desempate estable por Id para que dos ejecuciones con los mismos

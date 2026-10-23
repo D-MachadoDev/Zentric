@@ -17,12 +17,12 @@ namespace Zentric.Api.Security
     /// el middleware. No hay ninguna via alternativa: si el token falta o es
     /// invalido, la peticion no llega al controlador porque responde 401 antes.
     ///
-    /// Q-21b (dictada por el Owner el 2026-09-29): la propiedad del recurso se
+    /// Regla dictada por el Owner el 2026-09-29: la propiedad del recurso se
     /// comprueba contra este identificador en las tres fronteras (lecturas,
     /// listados y escrituras). Para el Comprador su valor ES el BuyerId del
     /// pedido (ZENTRIC.md Dominio 2: "el comprador nunca administrara informacion
     /// de otros compradores") y para el Vendedor ES su VendorId, por la
-    /// convencion ratificada en Q-21b (el id del vendedor es su User.Id, espejo
+    /// convencion (el id del vendedor es su User.Id, espejo
     /// del 1:1 Buyer.UserId). Por eso el nombre generico: "Buyer" se quedaba
     /// corto cuando el mismo valor identifica a cualquier rol.
     /// </summary>
@@ -38,7 +38,7 @@ namespace Zentric.Api.Security
     /// <summary>
     /// Implementacion sobre <see cref="ClaimsPrincipal"/>. El claim <c>sub</c> es
     /// el identificador de <c>User</c>; como <c>Buyer.UserId</c> y el VendorId
-    /// convenido (Q-21b) son 1:1 con <c>User.Id</c>, el mismo valor identifica
+    /// convenido son 1:1 con <c>User.Id</c>, el mismo valor identifica
     /// al usuario en todos los roles.
     /// </summary>
     public sealed class ClaimsUserAccessor : ICurrentUserAccessor

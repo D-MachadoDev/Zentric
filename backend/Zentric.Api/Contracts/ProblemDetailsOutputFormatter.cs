@@ -8,7 +8,7 @@ namespace Zentric.Api.Contracts
 {
     /// <summary>
     /// Hace que toda respuesta con cuerpo <see cref="ProblemDetails"/> salga como
-    /// <c>application/problem+json</c> (RFC 7807/9457, exigido por AGENTS.md seccion 3.4).
+    /// <c>application/problem+json</c> (RFC 7807/9457).
     ///
     /// Por que un formateador y no un filtro: con un filtro solo, ajustar <c>ContentTypes</c> no
     /// basta. Cuando el cliente NO envia cabecera <c>Accept</c> (como hace <c>HttpClient</c>), la

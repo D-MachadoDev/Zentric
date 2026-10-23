@@ -9,7 +9,7 @@ using Zentric.Domain.Products.Ports;
 namespace Zentric.Application.Catalog.Commands
 {
     /// <summary>
-    /// Lleva un producto al estado Suspended (Q-25, dictamen del Owner).
+    /// Lleva un producto al estado Suspended.
     /// El estado Suspended existe en la Ley (ZENTRIC.md Dominio 5) y publish
     /// reactiva desde el, pero no habia camino de entrada. Este comando lo provee.
     /// </summary>

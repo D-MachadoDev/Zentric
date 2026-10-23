@@ -29,7 +29,7 @@ export interface AlertHostBindings {
 }
 
 /**
- * Adaptador de `AlertPort` (Frontend-Architecture §5.3, Frontend-Adapters §4).
+ * Adaptador de `AlertPort`.
  *
  * Es PURO TypeScript: no conoce React ni librerías de UI externas.
  * Administra la cola de alertas y resuelve promesas de confirmación modal.

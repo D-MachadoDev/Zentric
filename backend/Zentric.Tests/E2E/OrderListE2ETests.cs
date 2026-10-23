@@ -55,7 +55,7 @@ namespace Zentric.Tests.E2E
         /// <summary>
         /// El Vendedor ve el pedido porque tiene una linea suya, pero del total solo ve SU subtotal
         /// y el BuyerId le llega VACIO (null): identificar al cliente final en cada venta es
-        /// informacion que Q-21b decidio no exponerle. Comprador y roles operativos si lo ven:
+        /// informacion que la regla decidio no exponerle. Comprador y roles operativos si lo ven:
         /// el comprador es el dueno del pedido y la operacion necesita saber a quien entrega.
         /// </summary>
         [Fact]

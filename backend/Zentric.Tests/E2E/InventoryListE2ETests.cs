@@ -39,7 +39,7 @@ namespace Zentric.Tests.E2E
         }
 
         /// <summary>
-        /// El Operador ve la red completa: el stock de la red es literalmente su trabajo (Q-21b).
+        /// El Operador ve la red completa: el stock de la red es literalmente su trabajo.
         /// Es el mismo criterio que aplica el detalle por variante.
         /// </summary>
         [Fact]

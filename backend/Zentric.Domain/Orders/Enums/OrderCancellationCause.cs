@@ -11,7 +11,7 @@ namespace Zentric.Domain.Orders.Enums
     /// si compartieran nombre, la propiedad taparia al tipo dentro de la clase.
     public enum OrderCancellationCause
     {
-        /// <summary>Vencimiento de la ventana de pago (PED-01).</summary>
+        /// <summary>Vencimiento de la ventana de pago.</summary>
         PaymentTimeout = 0,
 
         /// <summary>

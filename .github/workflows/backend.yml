@@ -1,7 +1,7 @@
 name: backend
 on:
   push:
-    paths: ["backend/**", "orchestrator-state.json", ".github/workflows/backend.yml"]
+    paths: ["backend/**", ".github/workflows/backend.yml"]
   pull_request:
     paths: ["backend/**"]
 jobs:

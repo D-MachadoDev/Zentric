@@ -67,7 +67,7 @@ namespace Zentric.Application.Logistics.Commands
         }
 
         /// <summary>
-        /// PED-05: el pedido maestro refleja el minimo comun de sus despachos, asi que
+        /// El pedido maestro refleja el minimo comun de sus despachos, asi que
         /// avanza cuando el ultimo de ellos llega al estado. Se sincroniza en la MISMA
         /// transaccion que el cambio del despacho: hacerlo despues dejaria al comprador
         /// leyendo un pedido que aun no refleja lo que acaba de ocurrir.

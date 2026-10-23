@@ -22,7 +22,7 @@ using Zentric.Domain.Warehouses.Ports;
 namespace Zentric.Tests.Application.Returns
 {
     /// <summary>
-    /// Productos en memoria. Q-21b: la aprobacion de una devolucion es del
+    /// Productos en memoria. La aprobacion de una devolucion es del
     /// vendedor cuyo producto se devuelve, y eso se comprueba contra el
     /// VendorId del producto de la variante.
     /// </summary>
@@ -133,7 +133,7 @@ namespace Zentric.Tests.Application.Returns
         [Fact]
         public async Task Handle_ForeignSeller_CannotApproveAnotherSellersReturn()
         {
-            // Q-21b: antes, cualquier Seller aprobaba cualquier devolucion con solo
+            // Antes, cualquier Seller aprobaba cualquier devolucion con solo
             // conocer su GUID, y la aprobacion dispara el reingreso del stock.
             var repository = new FakeReturnRequestRepository();
             var unitOfWork = new FakeUnitOfWork();

@@ -5,9 +5,7 @@ namespace Zentric.Domain.Buyers.ValueObjects
     /// <summary>
     /// Ubicacion geografica estandarizada de una direccion de entrega.
     ///
-    /// Referencia: backendSDD/Domain/02-value-objects.md, seccion `Address`
-    /// (propiedades Street, City, State, ZipCode, Country) y ZENTRIC.md
-    /// Dominio 2, que exige direccion principal obligatoria.
+    /// Referencia: ZENTRIC.md Dominio 2, que exige direccion principal obligatoria.
     ///
     /// Inmutable: si el comprador cambia de casa se genera una nueva `Address`,
     /// nunca se muta la existente. No guarda coordenadas ni calcula distancias:

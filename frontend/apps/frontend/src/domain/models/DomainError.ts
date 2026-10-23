@@ -1,5 +1,5 @@
 /**
- * Error base del dominio del cliente (Frontend-Architecture §5).
+ * Error base del dominio del cliente.
  */
 export class DomainError extends Error {
   constructor(message: string) {

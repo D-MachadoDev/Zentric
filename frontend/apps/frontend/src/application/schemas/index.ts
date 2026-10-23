@@ -20,7 +20,7 @@ import type {
 
 /**
  * Esquemas de validación Zod derivados 1:1 de los contratos OpenAPI y FluentValidation
- * (Frontend-Domain-Services §4 y backendSDD/Presentation/01-endpoints.md).
+ * de los endpoints.
  *
  * Cada esquema está estrictamente anclado al tipo de entrada del puerto (`z.ZodType<T, T>`).
  * Se proporcionan identificadores en inglés (Decision A2) y alias en español para

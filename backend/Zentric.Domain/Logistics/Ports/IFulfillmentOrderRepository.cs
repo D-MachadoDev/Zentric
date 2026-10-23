@@ -10,7 +10,7 @@ namespace Zentric.Domain.Logistics.Ports
         /// <summary>
         /// Despachos de UN pedido, en cualquier estado.
         ///
-        /// PED-05 necesita el conjunto completo para calcular el minimo comun de sus
+        /// Se necesita el conjunto completo para calcular el minimo comun de sus
         /// despachos y decidir si el pedido maestro avanza. No existe forma de obtenerlo
         /// con <see cref="GetListAsync"/>: sus filtros son por vendedor, comprador y
         /// estado, y ninguno de los tres devuelve "los despachos de este pedido".
@@ -27,7 +27,7 @@ namespace Zentric.Domain.Logistics.Ports
         ///
         /// El filtro <paramref name="buyerId"/> no aplica sobre esta tabla directamente: el
         /// despacho no guarda al comprador, guarda el pedido. Se resuelve por el pedido, que es
-        /// donde vive el BuyerId. Se incluye porque el detalle (Q-21b) ya deja ver al Comprador sus
+        /// donde vive el BuyerId. Se incluye porque el detalle ya deja ver al Comprador sus
         /// propios despachos, y un listado mas restrictivo que el detalle seria incoherente: el
         /// usuario tendria que conocer un GUID para ver algo que su propia lista niega existir.
         ///

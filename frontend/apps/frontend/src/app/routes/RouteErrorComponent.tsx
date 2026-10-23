@@ -4,17 +4,17 @@ import { isApiError } from '../../domain';
 import { RolNoAutorizadoError } from './guards';
 
 /**
- * Estado de error de ruta (Frontend-Role-Modules §3).
+ * Estado de error de ruta.
  *
  * Se distinguen dos casos con comportamientos deliberadamente distintos:
  *
  * - **Rol equivocado:** estado `403` que **conserva la sesión**. Redirigir a
  *   `/entrar` destruiría una sesión perfectamente válida sólo porque el usuario
  *   pulsó un enlace que no le corresponde — y así actúa también el servidor: un
- *   `403` no cierra la sesión (`Frontend-Adapters.md` §5).
+ *   `403` no cierra la sesión.
  * - **Cualquier otro fallo:** mensaje genérico con `traceId` cuando lo hay. El
  *   `error.message` de una excepción inesperada NO se pinta: puede arrastrar
- *   detalles técnicos que §5 prohíbe exponer al usuario.
+ *   detalles técnicos que no deben exponerse al usuario.
  */
 export function RouteErrorComponent({ error, reset }: ErrorComponentProps) {
   if (error instanceof RolNoAutorizadoError) {

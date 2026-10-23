@@ -8,7 +8,7 @@ namespace Zentric.Tests.E2E
     /// El recorrido de negocio completo contra HTTP real: producto -> stock -> carrito -> item ->
     /// checkout -> pago -> facturas.
     ///
-    /// Antes de esto, el unico recorrido asi vivia en el smoke de PowerShell, y el SDD reconocia
+    /// Antes de esto, el unico recorrido asi vivia en el smoke de PowerShell, y se reconocia
     /// que no habia ninguna prueba automatizada del camino feliz. Estas pruebas fijan el
     /// comportamiento por escrito: si alguien rompe el pago o la emision, falla aqui.
     ///
@@ -24,7 +24,7 @@ namespace Zentric.Tests.E2E
 
         /// <summary>
         /// El vendedor queda encerrado en su VendorId aunque el cuerpo diga otro. Es la pieza que
-        /// hace fiable el reparto de la facturacion (Q-18): si el alta aceptara el VendorId del
+        /// hace fiable el reparto de la facturacion: si el alta aceptara el VendorId del
         /// cuerpo, un cliente podria atribuir la venta a otro vendedor.
         /// </summary>
         [Fact]
@@ -53,7 +53,7 @@ namespace Zentric.Tests.E2E
 
         /// <summary>
         /// Tres facturas por pedido: maestra (lo que paga el comprador), detalle Zentric (la
-        /// comision) y detalle de vendedor (su parte). Es el reparto que dicta Q-15/Q-18.
+        /// comision) y detalle de vendedor (su parte). Es el reparto de la facturacion.
         /// </summary>
         [Fact]
         public async Task Facturacion_EmiteMaestraDetalleZentricYDetalleDeVendedor()

@@ -11,7 +11,7 @@ namespace Zentric.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Q-18 (dictamen del Owner): la linea del pedido guarda el VendorId
+            // Dictamen del Owner: la linea del pedido guarda el VendorId
             // como instantanea historica del vendedor en el momento de la compra.
             //
             // ADVERTENCIA: las filas existentes reciben Guid.Empty porque no es

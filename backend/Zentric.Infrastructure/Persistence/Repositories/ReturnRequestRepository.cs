@@ -27,7 +27,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             IQueryable<ReturnRequestDbModel> query = _dbContext.ReturnRequests.AsNoTracking();
 
             // Los dos filtros se resuelven por las tablas que SI guardan al dueno, porque la
-            // devolucion guarda el pedido y la variante, no suspropietarios (Q-21b).
+            // devolucion guarda el pedido y la variante, no suspropietarios.
             if (buyerId.HasValue)
             {
                 var buyer = buyerId.Value;

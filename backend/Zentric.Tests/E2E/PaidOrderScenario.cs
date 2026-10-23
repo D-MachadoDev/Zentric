@@ -86,7 +86,7 @@ namespace Zentric.Tests.E2E
 
         private async Task<Scenario> BuildAsync()
         {
-            // El alta de producto ignora el VendorId del cuerpo a proposito (Q-21b): se manda uno
+            // El alta de producto ignora el VendorId del cuerpo a proposito: se manda uno
             // falso y luego se comprueba que el dueno real es el del token. Es la contraprueba de
             // que la identidad NO viaja en el cuerpo.
             var wrongVendor = Guid.NewGuid();
@@ -189,7 +189,7 @@ namespace Zentric.Tests.E2E
         {
             using var client = _actors.ClientFor("Buyer");
 
-            // Solo lo que admite el contrato: ni precio ni vendedor (PED-04 / ADR-0020).
+            // Solo lo que admite el contrato: ni precio ni vendedor (ADR-0020).
             // Mandarlos aqui pasaria desapercibido porque el binder ignora lo que no
             // conoce, y el E2E dejaria de comprobar que el precio sale del catalogo.
             using var response = await client.PostAsJsonAsync("/api/orders/cart/items", new

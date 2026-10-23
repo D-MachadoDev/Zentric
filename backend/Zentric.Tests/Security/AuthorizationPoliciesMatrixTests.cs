@@ -9,7 +9,6 @@ namespace Zentric.Tests.Security
 {
     /// <summary>
     /// Pruebas exhaustivas de la Matriz Canónica de 21 Políticas de Autorización.
-    /// Fuente de Verdad: backendSDD/Presentation/02-authorization.md, sección 2.
     /// Valida roles permitidos, exclusividad de operaciones sensibles y principio de menor privilegio.
     /// </summary>
     public sealed class AuthorizationPoliciesMatrixTests

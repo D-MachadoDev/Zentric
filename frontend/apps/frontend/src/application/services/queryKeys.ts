@@ -7,7 +7,7 @@ import type {
 } from '../../domain';
 
 /**
- * Jerarquía centralizada de claves de consulta de TanStack Query (Frontend-Domain-Services §2).
+ * Jerarquía centralizada de claves de consulta de TanStack Query.
  *
  * Garantiza invalidaciones deterministas tras cada mutación y tipado estricto en
  * las operaciones de caché.

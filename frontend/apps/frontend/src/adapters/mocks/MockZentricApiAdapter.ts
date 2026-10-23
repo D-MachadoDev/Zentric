@@ -41,7 +41,7 @@ import type {
 import { ProblemDetailsError } from '../../domain';
 
 /**
- * Adaptador simulado determinista de `ZentricApiPort` (Frontend-Adapters §4).
+ * Adaptador simulado determinista de `ZentricApiPort`.
  *
  * Implementa en memoria las 47 operaciones del backend con estado reactivo,
  * permitiendo pruebas exhaustivas sin depender de red externa.

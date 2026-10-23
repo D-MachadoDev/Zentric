@@ -11,7 +11,7 @@ using Zentric.Domain.Products.Ports;
 namespace Zentric.Application.Orders.Commands
 {
     /// <summary>
-    /// Cobra y marca como pagado un pedido. Q-21b: <paramref name="BuyerId"/>
+    /// Cobra y marca como pagado un pedido. <paramref name="BuyerId"/>
     /// viaja para que el handler cargue el pedido con el filtro por comprador:
     /// nadie paga un pedido ajeno.
     /// </summary>
@@ -41,7 +41,7 @@ namespace Zentric.Application.Orders.Commands
 
         public async Task<Result<bool>> Handle(PayOrderCommand request, CancellationToken cancellationToken)
         {
-            // Q-21b: el pedido se carga con el filtro por comprador; el de otro
+            // El pedido se carga con el filtro por comprador; el de otro
             // comprador se trata igual que uno inexistente.
             var order = await _orderRepository.GetByIdForBuyerAsync(
                 request.OrderId, request.BuyerId, cancellationToken);
@@ -50,7 +50,7 @@ namespace Zentric.Application.Orders.Commands
                 return Result<bool>.NotFound($"Order with ID {request.OrderId} not found.");
             }
 
-            // Q-08: primero se cobra, y solo si la pasarela aprueba se marca el
+            // Primero se cobra, y solo si la pasarela aprueba se marca el
             // pedido como pagado. El inverso (marcar pagado y cobrar despues)
             // dejaria pedidos pagados sin Cobro, que es el fallo que la pasarela
             // existe para evitar. Un rechazo es un resultado previsto, no una

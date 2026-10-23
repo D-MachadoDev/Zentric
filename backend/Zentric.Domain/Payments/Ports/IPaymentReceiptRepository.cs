@@ -9,8 +9,6 @@ namespace Zentric.Domain.Payments.Ports
     /// <summary>
     /// Puerto de salida del comprobante de pago. Solo lectura y actualizacion:
     /// el comprobante nace en el caso de uso que cobra, no se crea aqui.
-    ///
-    /// Referencia: backendSDD/Domain/05-ports.md.
     /// </summary>
     public interface IPaymentReceiptRepository
     {

@@ -29,13 +29,13 @@ namespace Zentric.Application.Catalog.Queries
         string? Category = null);
 
     /// <summary>
-    /// Visibilidad del catalogo (Q-27, dictamen Q22=B).
+    /// Visibilidad del catalogo.
     ///
     /// ZENTRIC.md:101: "Publicacion: los productos se hacen visibles en el catalogo
     /// publico", de modo que el listado solo refleja <c>Published</c>. La unica
     /// excepcion es quien pide su propio <c>VendorId</c>: si tambien se le ocultaran
     /// sus productos, suspender seria un callejon sin salida porque <c>publish</c>
-    /// (Q-25) exige encontrar antes el producto, y no existe listado de "mis
+    /// exige encontrar antes el producto, y no existe listado de "mis
     /// productos".
     ///
     /// <c>null</c> significa "sin filtro de estado": la vista de gestion del dueno.

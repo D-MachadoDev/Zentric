@@ -1,5 +1,5 @@
 /**
- * Capa de dominio del cliente (Frontend-Architecture §2).
+ * Capa de dominio del cliente.
  *
  * Importa NADA del proyecto: es el centro hexagonal. Contiene el vocabulario
  * (modelos y enums transcritos del contrato del backend) y los

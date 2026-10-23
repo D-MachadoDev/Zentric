@@ -8,8 +8,8 @@ namespace Zentric.Tests.E2E
     /// Categorias del catalogo verificadas por HTTP real contra PostgreSQL.
     ///
     /// Este endpoint existia en el codigo pero NO en la especificacion
-    /// (backendSDD/Presentation/01-endpoints.md). Se documento antes de
-    /// arreglarlo y sus reglas son las que estas pruebas comprueban.
+    /// inicial. Se documento antes de arreglarlo y sus reglas son las que
+    /// estas pruebas comprueban.
     ///
     /// El motivo de que la prueba sea E2E y no unitaria: el defecto que estos
     /// tests persiguen era de TRADUCCION A SQL, no de regla de negocio. La

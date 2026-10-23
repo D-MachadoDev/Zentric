@@ -29,7 +29,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
                 .AsNoTracking()
                 .Include(o => o.Shipments);
 
-            // El filtro va en la consulta (Q-21b). Traerlo todo y descartar en memoria daria el
+            // El filtro va en la consulta. Traerlo todo y descartar en memoria daria el
             // mismo resultado visible, pero moveria por la base los despachos de otros
             // vendedores: esa es exactamente la superficie que la propiedad oculta.
             if (vendorId.HasValue)
@@ -40,7 +40,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             if (buyerId.HasValue)
             {
                 // El despacho no guarda al comprador: guarda el pedido. Se resuelve por ahi, que
-                // es donde vive el BuyerId (Q-21b).
+                // es donde vive el BuyerId.
                 var buyer = buyerId.Value;
                 query = query.Where(o => _dbContext.CustomerOrders.Any(co => co.Id == o.CustomerOrderId && co.BuyerId == buyer));
             }
@@ -62,7 +62,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
         public async Task<IReadOnlyList<FulfillmentOrder>> GetByCustomerOrderIdAsync(
             Guid customerOrderId, CancellationToken cancellationToken = default)
         {
-            // PED-05: el minimo comun se calcula sobre TODOS los despachos del pedido,
+            // El minimo comun se calcula sobre TODOS los despachos del pedido,
             // incluidos los cancelados (se excluyen despues, en el servicio de dominio,
             // porque un cancelado no bloquea al maestro). Por eso no se filtra por estado.
             var dbModels = await _dbContext.FulfillmentOrders

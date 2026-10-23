@@ -20,7 +20,7 @@ namespace Zentric.Application.Returns.Queries
         DateTime CreatedAt);
 
     /// <summary>
-    /// Devolucion por id. Q-21b: la visibilidad depende del rol del llamante
+    /// Devolucion por id. La visibilidad depende del rol del llamante
     /// (ver el handler); un recurso ajeno responde igual que uno inexistente.
     /// </summary>
     public record GetReturnByIdQuery(Guid Id, Guid CallerId, UserRole CallerRole) : IRequest<Result<ReturnRequestDto>>;
@@ -49,7 +49,7 @@ namespace Zentric.Application.Returns.Queries
                 return Result<ReturnRequestDto>.NotFound("Return request not found.");
             }
 
-            // Q-21b: la visibilidad depende del rol. Un recurso ajeno responde
+            // La visibilidad depende del rol. Un recurso ajeno responde
             // igual que uno inexistente (anti-enumeracion).
             var isVisible = request.CallerRole switch
             {

@@ -61,7 +61,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
                 query = query.Where(p => p.VendorId == vendorId.Value);
             }
 
-            // Q-27: el estado se filtr aqui, en SQL, y no en el handler. El filtro de
+            // El estado se filtr aqui, en SQL, y no en el handler. El filtro de
             // visibilidad es una regla de negocio (ZENTRIC.md:101) y su lugar es la
             // capa de aplicacion, pero aplicarlo aqui evita traer la tabla entera
             // para descartarla en memoria.
@@ -102,7 +102,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
                 query = query.Where(p => p.VendorId == vendorId.Value);
             }
 
-            // Q-27: el mismo filtro del conteo y de la pagina, asi el total refleja
+            // El mismo filtro del conteo y de la pagina, asi el total refleja
             // solo lo visible. Contar sin filtrar y despues descartar dejaria un
             // total inflado y menos elementos de los pedidos por pagina.
             if (status.HasValue)
@@ -198,7 +198,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
 
         /// <summary>
         /// Primera letra en mayuscula, resto intacto. Regla de presentacion
-        /// (backendSDD/Presentation/01-endpoints.md, endpoint de categorias).
+        /// (del endpoint de categorias).
         /// </summary>
         private static string Capitalize(string value)
         {

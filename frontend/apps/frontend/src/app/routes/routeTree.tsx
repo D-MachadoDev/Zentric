@@ -188,7 +188,7 @@ export const rootRoute = createRootRouteWithContext<RouterContext>()({
 });
 
 /**
- * Ruta /login para acceso con credenciales (C4-4 §2 y Decisión A4).
+ * Ruta /login para acceso con credenciales (Decisión A4).
  */
 export const loginRoute = createRoute({
   getParentRoute: () => rootRoute,

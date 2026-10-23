@@ -11,7 +11,7 @@ export interface NavItem {
 }
 
 export interface NavGroup {
-  /** Rótulo mono-caps del grupo (Frontend-Design-System §9.6). */
+  /** Rótulo mono-caps del grupo. */
   label: string;
   items: NavItem[];
 }
@@ -36,7 +36,7 @@ interface LayoutSidebarProps {
 }
 
 /**
- * Barra lateral de navegación responsiva (C4-4-Codigo-React.md §2 y Frontend-Design-System §9.6).
+ * Barra lateral de navegación responsiva.
  *
  * Aplica:
  * - Identidad de rol por herencia: el acento de selección y el logo toman

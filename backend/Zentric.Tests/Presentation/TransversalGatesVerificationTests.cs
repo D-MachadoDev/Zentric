@@ -40,9 +40,8 @@ namespace Zentric.Tests.Presentation
     /// Verificación explícita de las compuertas transversales de cierre (W5-S02):
     /// - Gate (d): Confidencialidad de la factura de comisión del 5% (ZentricDetail) en BillingController,
     ///   garantizando que jamás se serialice hacia Buyer ni Seller, y solo sea visible para Administrator y Supervisor
-    ///   (ZENTRIC.md ADDENDUM Dominio 9, ADR-0013, ADR-0023, Q-21b).
-    /// - Gate (e): Auditoría Anti-Amnesia de los 14 DbSets en ZentricDbContext, los 11 repositorios y las 15 migraciones
-    ///   (AGENTS.md sección 2.4, backendSDD/Infrastructure/01-data-access.md y 04-entity-map.md).
+    ///   (ZENTRIC.md ADDENDUM Dominio 9, ADR-0013, ADR-0023).
+    /// - Gate (e): Auditoría Anti-Amnesia de los 14 DbSets en ZentricDbContext, los 11 repositorios y las 15 migraciones.
     /// </summary>
     public sealed class TransversalGatesVerificationTests
     {
@@ -70,7 +69,7 @@ namespace Zentric.Tests.Presentation
                 => Task.FromResult<IReadOnlyList<Invoice>>(
                     _invoices.Where(i => i.CustomerOrderId == orderId).ToList());
 
-            // Replica exacta del filtrado en base de datos de InvoiceRepository.GetListAsync (Q-21b / ADR-0017):
+            // Replica exacta del filtrado en base de datos de InvoiceRepository.GetListAsync (ADR-0017):
             // - Si se filtra por buyerId: únicamente Facturas Maestras (Master) de pedidos de ese comprador.
             // - Si se filtra por vendorId: únicamente Facturas de Vendedor (VendorDetail) de ese vendedor.
             // - Si ambos son null (Administrator / Supervisor): todas las facturas, incluyendo ZentricDetail (5%).

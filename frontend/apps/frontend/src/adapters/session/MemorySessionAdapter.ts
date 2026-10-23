@@ -4,7 +4,7 @@ export const SESSION_TOKEN_STORAGE_KEY = 'zentric.auth.token';
 export const SESSION_USER_STORAGE_KEY = 'zentric.auth.user';
 
 /**
- * Adaptador de sesión sincronizado con `localStorage` ([ADDENDUM - DICTADO POR OWNER] ADR-0009, Frontend-Adapters §4).
+ * Adaptador de sesión sincronizado con `localStorage` ([ADDENDUM - DICTADO POR OWNER] ADR-0009).
  *
  * Hidrata síncronamente `accessToken` y `CurrentUser` desde `window.localStorage`
  * al inicializar para preservar la sesión activa al recargar la página (`F5`), y

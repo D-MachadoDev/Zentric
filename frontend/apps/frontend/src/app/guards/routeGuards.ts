@@ -3,7 +3,7 @@ import { UserRole } from '../../domain';
 import type { RouterContext } from '../routes/routerContext';
 
 /**
- * Guardas de acceso y navegación (Frontend SDD C4-4 §2 y Frontend-Role-Modules §3).
+ * Guardas de acceso y navegación.
  *
  * En TanStack Router las guardas se ejecutan en `beforeLoad`:
  * - Se resuelven ANTES de hidratar el componente o descargar el bundle del módulo.

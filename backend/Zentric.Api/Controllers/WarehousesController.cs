@@ -62,7 +62,7 @@ namespace Zentric.Api.Controllers
         /// Obtiene la lista de bodegas físicas, con filtro opcional por vendedor.
         /// </summary>
         /// <remarks>
-        /// Q-21b: el Vendedor queda encerrado en sus propias bodegas; pedir las de
+        /// El Vendedor queda encerrado en sus propias bodegas; pedir las de
         /// otro vendedor responde 400. El Operador y el Administrador listan todas.
         /// </remarks>
         /// <param name="vendorId">Filtro opcional por identificador único del vendedor.</param>

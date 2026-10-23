@@ -1,5 +1,4 @@
-# Q10 (grill): monorepo Turborepo + pnpm workspaces.
-# Q16-A: la raiz del monorepo es frontend/, para conservar docker-compose.yml
+# La raiz del monorepo es frontend/, para conservar docker-compose.yml
 # (context: ./frontend), el Dockerfile y el job de CI existentes sin romperlos.
 packages:
   - "apps/*"

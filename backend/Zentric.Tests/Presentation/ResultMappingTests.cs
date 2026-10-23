@@ -6,7 +6,7 @@ using Xunit;
 namespace Zentric.Tests.Presentation
 {
     /// <summary>
-    /// Traduccion de un fallo a respuesta HTTP (dictamen del Owner sobre Q-21b).
+    /// Traduccion de un fallo a respuesta HTTP (dictamen del Owner).
     ///
     /// La regla es una sola: un recurso ausente o ajeno responde 404 y una regla de
     /// negocio responde 400. El codigo sale de la <see cref="ErrorKind"/> del fallo,

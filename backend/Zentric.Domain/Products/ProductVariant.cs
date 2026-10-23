@@ -6,9 +6,7 @@ namespace Zentric.Domain.Products
     /// Entidad hija del agregado <see cref="Product"/>. Representa la combinación
     /// vendible del producto (ej. Talla/Color) y su <see cref="Id"/> actúa como
     /// VariantId (SKU) que identifica el stock en el inventario.
-    /// Referencia: backendSDD/Domain/02-aggregates-and-entities.md, sección 2,
-    /// backendSDD/Domain/03-value-objects.md (Identificadores fuertemente tipados) y
-    /// backendSDD/Adr/0002-clave-inventario-variantid.md.
+    /// Referencia: ADR-0002.
     /// La vía prevista de creación es <see cref="Product.AddVariant"/>: el agregado
     /// controla el ciclo de vida de sus variantes.
     /// </summary>

@@ -35,7 +35,7 @@ namespace Zentric.Api.Controllers
         /// Permite a un vendedor registrado definir el SKU, nombre comercial, dimensiones físicas (alto, ancho, largo, peso)
         /// y precio unitario base para su posterior comercialización en el Marketplace.
         /// </remarks>
-        /// <param name="command">Datos descriptivos, dimensionales y precio del producto. El VendorId ya no lo decide el cliente: lo fija el token (Q-21b), y un valor en el cuerpo se descarta.</param>
+        /// <param name="command">Datos descriptivos, dimensionales y precio del producto. El VendorId ya no lo decide el cliente: lo fija el token, y un valor en el cuerpo se descarta.</param>
         /// <response code="200">Ficha de producto creada en estado Published (CAT-01, sin aprobación previa). Retorna el productId y los variantIds creados, para que el vendedor pueda dar de alta stock sin releer el producto.</response>
         /// <response code="400">Error de validación si faltan dimensiones o el precio es inválido (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
@@ -49,9 +49,9 @@ namespace Zentric.Api.Controllers
             var userId = _currentUser.UserId;
             if (userId is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
-            // Q-21b: el vendedor es el llamante. Un VendorId en el cuerpo se
+            // El vendedor es el llamante. Un VendorId en el cuerpo se
             // descarta: registrar producto a nombre de otro corromperia el split
-            // de facturacion (Q-18) y no se podria corregir despues.
+            // de facturacion y no se podria corregir despues.
             var result = await _mediator.Send(command with { VendorId = userId.Value });
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
@@ -81,7 +81,7 @@ namespace Zentric.Api.Controllers
         }
 
         /// <summary>
-        /// Suspende un producto (Q-25: camino de entrada al estado Suspended).
+        /// Suspende un producto (camino de entrada al estado Suspended).
         /// </summary>
         /// <remarks>
         /// La Ley (ZENTRIC.md Dominio 5) define tres estados: Published, Suspended, Discontinued.
@@ -115,7 +115,7 @@ namespace Zentric.Api.Controllers
         /// Obtiene el catálogo de productos registrados, con filtro opcional por vendedor.
         /// </summary>
         /// <remarks>
-        /// El catálogo comercial sólo muestra productos <c>Published</c> (Q-27). La única
+        /// El catálogo comercial sólo muestra productos <c>Published</c>. La única
         /// excepción es el Vendedor que pide su propio <c>VendorId</c>: esa es su vista de
         /// gestión y sí refleja los suspendidos, porque si no no podría reactivarlos con
         /// <c>publish</c>.
@@ -131,7 +131,7 @@ namespace Zentric.Api.Controllers
             [FromQuery] Guid? vendorId = null,
             [FromQuery] string? category = null)
         {
-            // Q-27 (Q22=B): la identidad viene del token y decide qué se ve. Pedir el
+            // La identidad viene del token y decide qué se ve. Pedir el
             // propio vendorId es la vista de gestión del dueno; cualquier otro filtro
             // (incluido ninguno) es el catálogo comercial, sólo Published.
             var userId = _currentUser.UserId;

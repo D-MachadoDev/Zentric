@@ -8,9 +8,8 @@ namespace Zentric.Tests.Warehouses;
 /// Pruebas de caracterización del agregado Warehouse.
 /// Reglas protegidas: bodega Marketplace sin vendedor, bodega de vendedor con
 /// dueño obligatorio, operaciones bloqueadas sobre bodegas inactivas o borradas.
-/// Referencias: backendSDD/Domain/01-models.md, sección 3; backendSDD/Domain/02-value-objects.md.
 /// Nota: la especificación usa el término "Vendor"; el código actual usa
-/// "Seller". Hallazgo C-05 / R-09 (decisión pendiente Q-05). Estas pruebas fijan
+/// "Seller". Hallazgo C-05 / R-09. Estas pruebas fijan
 /// el comportamiento actual sin resolver el naming.
 /// </summary>
 public sealed class WarehouseTests

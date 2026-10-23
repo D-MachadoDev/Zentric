@@ -6,7 +6,7 @@ using Xunit;
 namespace Zentric.Tests.E2E
 {
     /// <summary>
-    /// Propiedad del recurso verificada por HTTP real (Q-21b, ADR-0013).
+    /// Propiedad del recurso verificada por HTTP real (ADR-0013).
     ///
     /// La regla es una sola y ya estaba dictada: un recurso ausente o de otro responde 404, nunca
     /// 403. La distincion importa por una razon concreta: un 403 confirmaria que el recurso EXISTE,
@@ -123,7 +123,7 @@ namespace Zentric.Tests.E2E
 
         /// <summary>
         /// Cada rol ve solo su parte de la facturacion: el comprador su Factura Maestra, el
-        /// vendedor la suya, el administrador las tres. Es el reparto que dicta Q-15/Q-18 visto
+        /// vendedor la suya, el administrador las tres. Es el reparto visto
         /// desde la perspectiva de quien las pide.
         /// </summary>
         [Fact]

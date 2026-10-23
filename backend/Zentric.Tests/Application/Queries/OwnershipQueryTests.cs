@@ -35,7 +35,7 @@ using Zentric.Domain.Warehouses.Ports;
 namespace Zentric.Tests.Application.Queries
 {
     /// <summary>
-    /// Propiedad del recurso en las lecturas de detalle (Q-21b, dictamen A):
+    /// Propiedad del recurso en las lecturas de detalle (dictamen A):
     /// Comprador y Vendedor solo ven lo suyo; Operador, Administrador y
     /// Supervisor leen sin filtro de dueno. Un recurso ajeno responde igual que
     /// uno inexistente, para no permitir enumeracion por GUID.
@@ -493,7 +493,7 @@ namespace Zentric.Tests.Application.Queries
         [Fact]
         public async Task SellerListsOnlyOwnWarehouses()
         {
-            // Q-21b: antes, el Vendedor veia todas las bodegas del sistema y podia
+            // Antes, el Vendedor veia todas las bodegas del sistema y podia
             // filtrar por el vendorId de otro.
             var vendorId = Guid.NewGuid();
             var warehouses = new FakeOwnershipWarehouseRepository();
@@ -512,7 +512,7 @@ namespace Zentric.Tests.Application.Queries
         [Fact]
         public async Task SellerAskingForAnotherVendorsWarehouses_IsRejected()
         {
-            // Q-21b: pedir el listado de otro vendedor responde 400 en vez de
+            // Pedir el listado de otro vendedor responde 400 en vez de
             // devolver en silencio las propias.
             var warehouses = new FakeOwnershipWarehouseRepository();
             warehouses.Warehouses.Add(new Warehouse("Mia", "Bogota", 100, WarehouseType.Vendor, Guid.NewGuid()));
@@ -528,7 +528,7 @@ namespace Zentric.Tests.Application.Queries
         [Fact]
         public async Task OperatorListsAllWarehouses()
         {
-            // Q-21b: el Operador trabaja sobre toda la red logistica.
+            // El Operador trabaja sobre toda la red logistica.
             var warehouses = new FakeOwnershipWarehouseRepository();
             warehouses.Warehouses.Add(new Warehouse("A", "Bogota", 100, WarehouseType.Vendor, Guid.NewGuid()));
             warehouses.Warehouses.Add(new Warehouse("B", "Medellin", 100, WarehouseType.Vendor, Guid.NewGuid()));
@@ -576,7 +576,7 @@ namespace Zentric.Tests.Application.Queries
         [Fact]
         public async Task SellerSeesStockOfOwnProductInAnyWarehouse()
         {
-            // Q-21b: el dueno del stock es el dueno del producto; sus bienes se leen
+            // El dueno del stock es el dueno del producto; sus bienes se leen
             // aunque esten en la bodega de otro (hub del Marketplace incluida).
             var vendorId = Guid.NewGuid();
             var variantId = Guid.NewGuid();

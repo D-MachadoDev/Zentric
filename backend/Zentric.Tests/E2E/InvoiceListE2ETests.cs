@@ -23,7 +23,7 @@ namespace Zentric.Tests.E2E
         /// <summary>
         /// Factura el pedido compartido, una sola vez para toda la clase.
         ///
-        /// El pedido de la suite es el MISMO para todos los tests, y Q-21d impide facturarlo dos
+        /// El pedido de la suite es el MISMO para todos los tests, y la regla impide facturarlo dos
         /// veces: la segunda llamada responde 400 a proposito, porque el frontend tiene que poder
         /// reintentar sin miedo a que se dupliquen las tres facturas. Por eso se tolera ese 400
         /// concreto y no otro: si fuera por cualquier otro motivo, el fallo se veria igual.

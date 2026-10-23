@@ -83,7 +83,7 @@ namespace Zentric.Tests.Application.Orders
             var order = new CustomerOrder(buyerId);
             var variantId1 = Guid.NewGuid();
             var variantId2 = Guid.NewGuid();
-            // Q-18: la linea guarda el VendorId como instantanea historica.
+            // La linea guarda el VendorId como instantanea historica.
             // Orden de la firma: AddItem(variantId, vendorId, quantity, unitPrice).
             var vendor1Id = Guid.NewGuid();
             var vendor2Id = Guid.NewGuid();
@@ -133,7 +133,7 @@ namespace Zentric.Tests.Application.Orders
         [Fact]
         public async Task Handle_ForeignBuyer_CannotCheckoutAnotherBuyersCart()
         {
-            // Q-21b: el handler carga el carrito con el filtro por comprador, asi
+            // El handler carga el carrito con el filtro por comprador, asi
             // que el de otro comprador no se materializa y el intento responde
             // "not found" sin reservar stock ni crear fulfillments.
             var command = new CheckoutOrderCommand(Guid.NewGuid(), Guid.NewGuid());
@@ -149,7 +149,7 @@ namespace Zentric.Tests.Application.Orders
         }
 
         /// <summary>
-        /// Criterio (dictamen del Owner sobre Q-21b): un recurso que es de otro se
+        /// Criterio (dictamen del Owner): un recurso que es de otro se
         /// declara NotFound, no un fallo de validacion. Es lo que hace que la capa HTTP
         /// responda 404 y no 400, y por tanto que el cliente no pueda distinguir "no
         /// existe" de "es de otro" por el codigo de estado.

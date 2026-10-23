@@ -16,7 +16,7 @@ namespace Zentric.Application.Inventories.Queries
         int DamagedQuantity);
 
     /// <summary>
-    /// Stock de una variante. Q-21b: el Vendedor solo ve el stock de SUS
+    /// Stock de una variante. El Vendedor solo ve el stock de SUS
     /// productos, esten donde esten; la variante de otro se trata como
     /// inexistente. El Operador ve cualquiera: el stock de la red es su trabajo.
     /// </summary>

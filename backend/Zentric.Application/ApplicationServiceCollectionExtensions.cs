@@ -8,7 +8,7 @@ using Zentric.Application.Common.Messaging;
 namespace Zentric.Application
 {
     /// <summary>
-    /// Montaje de la capa Application. Q-14: el registro de mensajes y handlers
+    /// Montaje de la capa Application. El registro de mensajes y handlers
     /// reemplaza a <c>AddMediatR</c> con un escaneo del propio ensamblado.
     /// </summary>
     public static class ApplicationServiceCollectionExtensions

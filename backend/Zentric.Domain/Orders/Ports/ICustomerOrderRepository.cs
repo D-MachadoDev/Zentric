@@ -17,7 +17,7 @@ namespace Zentric.Domain.Orders.Ports
 
         /// <summary>
         /// Busca un pedido verificando que contenga al menos una linea del
-        /// vendedor indicado (Q-21b). Devuelve null si el pedido no existe o si
+        /// vendedor indicado. Devuelve null si el pedido no existe o si
         /// el vendedor no participa, de modo que el llamante no pueda distinguir
         /// "no existe" de "no es suyo".
         /// </summary>
@@ -35,8 +35,8 @@ namespace Zentric.Domain.Orders.Ports
         /// Listado de pedidos segun quien pregunta.
         ///
         /// Antes no existía este listado, y sin él el frontend no puede mostrar "mis pedidos": solo sabía
-        /// abrir un pedido si ya conocia su GUID. El filtro se aplica EN LA CONSULTA segun el rol
-        /// (Q-21b), nunca despues de traerlos todos: traerlos y descartar en memoria seria correcto
+        /// abrir un pedido si ya conocia su GUID. El filtro se aplica EN LA CONSULTA segun el rol,
+        /// nunca despues de traerlos todos: traerlos y descartar en memoria seria correcto
         /// en el resultado y desastroso en el rendimiento y en la superficie de datos.
         ///
         /// - <c>Buyer</c>: solo los suyos.

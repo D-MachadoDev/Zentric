@@ -40,8 +40,8 @@ interface AdminLayoutProps {
 }
 
 /**
- * Shell del Administrador — "Centro de Mando" (Frontend-Design-System §9.6).
- * Exige rol Administrator en beforeLoad (C4-4-Codigo-React.md §2: AdminShell).
+ * Shell del Administrador — "Centro de Mando".
+ * Exige rol Administrator en beforeLoad (AdminShell).
  *
  * Estructura diferenciada: barra lateral persistente con secciones mono-caps
  * agrupadas (GOBERNANZA / INFRAESTRUCTURA / FINANZAS & POSTVENTA), acento

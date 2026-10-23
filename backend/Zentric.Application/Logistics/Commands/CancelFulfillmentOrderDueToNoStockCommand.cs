@@ -20,9 +20,9 @@ using Zentric.Domain.Users.Ports;
 namespace Zentric.Application.Logistics.Commands
 {
     /// <summary>
-    /// Cancela un despacho por quiebre de stock fantasma. Q-21c quedo cerrada en ADR-0014:
+    /// Cancela un despacho por quiebre de stock fantasma (ADR-0014):
     /// el quiebre lo reporta Vendedor u Operador. Un Vendedor solo cancela su
-    /// propio despacho (el ajeno responde 404, Q-21b); el Operador no exige
+    /// propio despacho (el ajeno responde 404); el Operador no exige
     /// comprobacion de propiedad (rol transversal).
     /// </summary>
     public record CancelFulfillmentOrderDueToNoStockCommand(
@@ -59,8 +59,8 @@ namespace Zentric.Application.Logistics.Commands
             var order = await _fulfillmentRepository.GetByIdAsync(request.FulfillmentOrderId, cancellationToken);
             if (order == null) return Result<bool>.NotFound("Fulfillment order not found.");
 
-            // Q-21b: el vendedor no cancela el despacho de otro (politica
-            // solo-Seller, ver Q-21c). El mensaje es el de "no existe".
+            // El vendedor no cancela el despacho de otro (politica
+            // solo-Seller). El mensaje es el de "no existe".
             if (request.CallerRole == UserRole.Seller && order.VendorId != request.CallerId)
             {
                 return Result<bool>.NotFound("Fulfillment order not found.");
@@ -107,7 +107,7 @@ namespace Zentric.Application.Logistics.Commands
         }
 
         /// <summary>
-        /// PED-05 con EXC-01: cancelar un despacho por quiebre de stock lo deja en
+        /// EXC-01: cancelar un despacho por quiebre de stock lo deja en
         /// Cancelled, un estado del que nunca saldra. Sin esta sincronizacion, el pedido
         /// maestro se quedaria en Paid para siempre en cuanto un solo producto se perdiera,
         /// aunque el resto se entregara. El servicio de dominio excluye los cancelados del

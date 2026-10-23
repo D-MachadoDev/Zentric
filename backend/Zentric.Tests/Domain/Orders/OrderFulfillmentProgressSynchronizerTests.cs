@@ -9,7 +9,7 @@ using Zentric.Domain.Orders.Services;
 namespace Zentric.Tests.Domain.Orders
 {
     /// <summary>
-    /// PED-05: el pedido maestro refleja el minimo comun de SUS despachos. Un despacho
+    /// El pedido maestro refleja el minimo comun de SUS despachos. Un despacho
     /// cancelado por quiebre de stock (EXC-01) no se entrega nunca, asi que si se contara
     /// bloquearia al pedido para siempre. El dinero de esa linea se salda por EXC-02.
     /// </summary>
@@ -35,7 +35,7 @@ namespace Zentric.Tests.Domain.Orders
         public void Synchronize_OneCancelledDelivery_DoesNotBlockTheOrder()
         {
             // El escenario que hoy esta roto: un producto se pierde por stock fantasma
-            // y el otro si llega. Con la regla literal de PED-05 el pedido se quedaria
+            // y el otro si llega. Con la regla literal el pedido se quedaria
             // en Paid para siempre.
             var order = PaidOrder();
             order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 1, new Zentric.Domain.Products.ValueObjects.Money(100m, "COP"));

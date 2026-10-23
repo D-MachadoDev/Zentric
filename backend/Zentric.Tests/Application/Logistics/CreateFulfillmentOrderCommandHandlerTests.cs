@@ -13,7 +13,7 @@ using Zentric.Domain.Users.Enums;
 namespace Zentric.Tests.Application.Logistics
 {
     /// <summary>
-    /// Alta de despachos (Q-21b): el Vendedor solo crea despachos a su nombre; el
+    /// Alta de despachos: el Vendedor solo crea despachos a su nombre; el
     /// Operador puede crearlos para cualquier vendedor.
     /// </summary>
     public class CreateFulfillmentOrderCommandHandlerTests
@@ -74,7 +74,7 @@ namespace Zentric.Tests.Application.Logistics
         [Fact]
         public async Task Handle_SellerCannotCreateFulfillmentForAnotherVendor()
         {
-            // Q-21b: antes, un Seller creaba despachos a nombre de otro vendedor
+            // Antes, un Seller creaba despachos a nombre de otro vendedor
             // escribiendo su VendorId en el cuerpo.
             var repo = new FakeFulfillmentRepository();
             var uow = new FakeUnitOfWork();
@@ -92,7 +92,7 @@ namespace Zentric.Tests.Application.Logistics
         [Fact]
         public async Task Handle_OperatorCreatesFulfillmentForAnyVendor()
         {
-            // Q-21b: el Operador prepara despachos de toda la red.
+            // El Operador prepara despachos de toda la red.
             var repo = new FakeFulfillmentRepository();
             var uow = new FakeUnitOfWork();
             var handler = new CreateFulfillmentOrderCommandHandler(repo, uow);

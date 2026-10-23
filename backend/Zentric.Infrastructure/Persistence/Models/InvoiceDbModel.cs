@@ -11,7 +11,7 @@ namespace Zentric.Infrastructure.Persistence.Models
 
         /// <summary>
         /// Vendedor al que corresponde la factura. Es null en la factura maestra
-        /// y en el detalle de la plataforma. Q-18: sin esta columna no se puede
+        /// y en el detalle de la plataforma. Sin esta columna no se puede
         /// saber a quien pertenece cada factura de vendedor.
         /// </summary>
         public Guid? VendorId { get; set; }

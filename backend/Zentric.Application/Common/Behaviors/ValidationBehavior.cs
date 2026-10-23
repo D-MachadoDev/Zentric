@@ -8,8 +8,7 @@ namespace Zentric.Application.Common.Behaviors
     /// <summary>
     /// Ejecuta los validadores FluentValidation de un comando antes de invocar su handler.
     /// Si la entrada no es válida devuelve un fallo de negocio (<see cref="Result"/>.Failure)
-    /// en lugar de lanzar excepciones, según AGENTS.md, secciones 3.2 y 4.3 y
-    /// backendSDD/Application/01-use-cases-and-ports.md, secciones 1 y 7.
+    /// en lugar de lanzar excepciones.
     /// </summary>
     public sealed class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
         where TRequest : IRequest<TResponse>

@@ -14,7 +14,7 @@ Monorepo Turborepo que aloja el design system y la consola web que consume la AP
 
 ## Estructura
 
-Q10 (grill) separa por paquetes; Q16-A fija la raíz del monorepo en `frontend/` para
+Q10 separa por paquetes; Q16-A fija la raíz del monorepo en `frontend/` para
 conservar `docker-compose.yml` (`context: ./frontend`) y el job de CI sin romperlos.
 
 ```text

@@ -21,7 +21,7 @@ using Zentric.Tests.Application.Catalog;
 namespace Zentric.Tests.Application.Orders
 {
     /// <summary>
-    /// Pasarela que aprueba siempre. Q-08: el cobro ocurre antes de marcar el
+    /// Pasarela que aprueba siempre. El cobro ocurre antes de marcar el
     /// pedido como pagado, asi que los tests del handler necesitan una pasarela.
     /// </summary>
     public sealed class ApprovingPaymentGateway : IPaymentGatewayService
@@ -212,7 +212,7 @@ namespace Zentric.Tests.Application.Orders
         [Fact]
         public async Task Handle_WhenGatewayDeclines_DoesNotMarkOrderAsPaid()
         {
-            // Q-08: un rechazo es un resultado previsto de negocio, no una excepcion,
+            // Un rechazo es un resultado previsto de negocio, no una excepcion,
             // y el pedido NO debe quedar pagado (seria un pedido cobrado sin cobrar).
             var repo = new FakeCustomerOrderRepositoryForPay();
             var uow = new FakeUnitOfWork();
@@ -289,7 +289,7 @@ namespace Zentric.Tests.Application.Orders
         [Fact]
         public async Task Handle_ForeignBuyer_CannotPayAnotherBuyersOrder()
         {
-            // Q-21b: sin el filtro por comprador, cualquier Buyer podia disparar
+            // Sin el filtro por comprador, cualquier Buyer podia disparar
             // el cobro de un pedido ajeno con solo conocer su GUID. El intento
             // debe responder igual que un pedido inexistente ("not found"), el
             // pedido debe seguir sin pagar y la pasarela sin ser invocada.

@@ -5,7 +5,7 @@ using Zentric.Application.Orders.Validators;
 namespace Zentric.Tests.UseCases
 {
     /// <summary>
-    /// Validación de entrada de <see cref="CreateCartCommand"/> (AGENTS.md, secciones 3.2 y 4.3):
+    /// Validación de entrada de <see cref="CreateCartCommand"/>:
     /// se cubre antes de que el comando toque el dominio.
     /// </summary>
     public class CreateCartCommandValidatorTests

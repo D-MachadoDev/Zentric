@@ -14,7 +14,7 @@ interface LayoutHeaderProps {
 }
 
 /**
- * Cabecera superior unificada de contexto operativo (C4-4-Codigo-React.md §2).
+ * Cabecera superior unificada de contexto operativo.
  *
  * Muestra:
  * - Botón de menú móvil / colapso lateral.

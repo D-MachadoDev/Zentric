@@ -17,7 +17,7 @@ namespace Zentric.Application.Billing.Queries
         DateTime IssuedAt);
 
     /// <summary>
-    /// Facturas de un pedido. Q-21b: la visibilidad depende del rol del llamante
+    /// Facturas de un pedido. La visibilidad depende del rol del llamante
     /// (ver el handler). <paramref name="CallerId"/> es el <c>sub</c> del token y
     /// <paramref name="CallerRole"/> el rol ya autorizado por la matriz.
     /// </summary>
@@ -43,7 +43,7 @@ namespace Zentric.Application.Billing.Queries
             switch (request.CallerRole)
             {
                 case UserRole.Buyer:
-                    // Q-21b: el Comprador solo ve la Factura Maestra de un pedido
+                    // El Comprador solo ve la Factura Maestra de un pedido
                     // propio. El ZentricDetail es control interno de plataforma y
                     // las facturas de vendedor no son suyas (ADDENDUM Dominio 9).
                     var order = await _customerOrderRepository.GetByIdForBuyerAsync(
@@ -57,7 +57,7 @@ namespace Zentric.Application.Billing.Queries
                     break;
 
                 case UserRole.Seller:
-                    // Q-21b: el Vendedor solo ve sus facturas de vendedor
+                    // El Vendedor solo ve sus facturas de vendedor
                     // (VendorId == sub). Si no participo, la lista sale vacia:
                     // una lista vacia no revela nada.
                     invoices = invoices.Where(i => i.VendorId == request.CallerId).ToList();
@@ -65,7 +65,6 @@ namespace Zentric.Application.Billing.Queries
 
                 default:
                     // Operador, Administrador y Supervisor: sin filtro de dueno
-                    // (dictado de Q-21 + dictamen de Q-21b).
                     break;
             }
 

@@ -90,7 +90,7 @@ namespace Zentric.Domain.Returns.Services
             // Regla 2: Devolución estándar aprobada por Vendedor → EXCEPCIÓN
             // Hoy TODA devolución aprobada por el Vendedor requiere dictamen del Administrador
             // para liberar el dinero (separación de poderes: Vendedor aprueba reingreso stock,
-            // Administrador libera dinero). Ver ADR-0014 / Q-24.
+            // Administrador libera dinero). Ver ADR-0014.
             if (context.Reason == "vendor_approved_return")
             {
                 return RefundDecision.Exception("Standard vendor-approved return requires Administrator dictamen (separation of powers, ADR-0014)");

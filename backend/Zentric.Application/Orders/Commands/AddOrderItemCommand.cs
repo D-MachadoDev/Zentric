@@ -12,13 +12,13 @@ namespace Zentric.Application.Orders.Commands
     /// <summary>
     /// Agrega una linea al carrito.
     ///
-    /// PED-04 ([ADR-0020]): el contrato **no admite precio ni vendedor**. Ambos los
+    /// El contrato **no admite precio ni vendedor** (ADR-0020). Ambos los
     /// pone el servidor con lo que hay en el catalogo (<c>Product.Price</c> y
     /// <c>Product.VendorId</c>), de modo que la linea queda con un precio congelado
     /// que el cliente no puede negociar y el reparto de la facturacion no depende de
-    /// lo que afirme la peticion (Q-18).
+    /// lo que afirme la peticion.
     ///
-    /// Q-21b: <paramref name="BuyerId"/> es la identidad del llamante derivada
+    /// <paramref name="BuyerId"/> es la identidad del llamante derivada
     /// del token (el controlador descarta el valor que venga en el cuerpo). El
     /// handler carga el pedido con el filtro por comprador, de modo que un
     /// carrito ajeno responde "Order not found.".
@@ -50,7 +50,7 @@ namespace Zentric.Application.Orders.Commands
 
         public async Task<Result> Handle(AddOrderItemCommand request, CancellationToken cancellationToken)
         {
-            // Q-21b: el pedido se carga con el filtro por comprador; un carrito
+            // El pedido se carga con el filtro por comprador; un carrito
             // ajeno se trata igual que uno inexistente.
             var order = await _orderRepository.GetByIdForBuyerAsync(
                 request.OrderId, request.BuyerId, cancellationToken);
@@ -64,17 +64,17 @@ namespace Zentric.Application.Orders.Commands
                 return Result.Failure("Items can only be added while the order is in the Cart status.");
             }
 
-            // PED-04 / ADR-0020: el precio y el vendedor los pone el servidor. El contrato ya
+            // ADR-0020: el precio y el vendedor los pone el servidor. El contrato ya
             // no los admite, asi que no queda nada del cliente que validar contra el
             // catalogo: la comprobacion "el vendedor coincide" que antes hacia falta
-            // desaparece porque el vendedor nunca viene de la peticion (Q-18).
+            // desaparece porque el vendedor nunca viene de la peticion.
             var product = await _productRepository.GetByVariantIdAsync(request.VariantId, cancellationToken);
             if (product == null)
             {
                 return Result.NotFound($"Product for variant {request.VariantId} not found.");
             }
 
-            // Q-27. 01-endpoints.md §3.4: un producto suspendido "deja de ser visible
+            // Un producto suspendido "deja de ser visible
             // en busquedas y no se puede agregar a carritos"; la Ley refuerza que el
             // Comprador "adquiere productos publicados" (ZENTRIC.md:83).
             //

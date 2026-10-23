@@ -43,10 +43,10 @@ namespace Zentric.Api.Controllers
         /// "mis pedidos", ni de pedidos por despachar, ni de pedidos del comprador.
         ///
         /// El filtro lo decide el rol, no un parámetro: el Comprador ve los suyos, el Vendedor los
-        /// que tienen alguna línea suya, y Administrador, Operador y Supervisor ven todos
-        /// (Q-21b). Un cliente no puede pedir "los de otro" porque no hay por dónde decirlo.
+        /// que tienen alguna línea suya, y Administrador, Operador y Supervisor ven todos.
+        /// Un cliente no puede pedir "los de otro" porque no hay por dónde decirlo.
         ///
-        /// <c>status</c> es un filtro opcional y va por nombre (Q-22/ADR-0012). Sin él también
+        /// <c>status</c> es un filtro opcional y va por nombre (ADR-0012). Sin él también
         /// devuelve los carritos: el comprador tiene que ver su carrito abierto para poder
         /// continuar la compra.
         /// </remarks>
@@ -136,7 +136,7 @@ namespace Zentric.Api.Controllers
         /// </summary>
         /// <remarks>
         /// Crea una orden de compra en estado inicial Cart asociada al comprador
-        /// del token. Q-21b (dictada por el Owner el 2026-09-29): el BuyerId ya no
+        /// del token. Regla dictada por el Owner el 2026-09-29: el BuyerId ya no
         /// viaja en el cuerpo; se deriva del claim <c>sub</c>, de modo que un
         /// carrito a nombre de otro comprador es imposible por contrato.
         /// Este carrito servirá de contenedor para acumular los productos seleccionados.
@@ -166,7 +166,7 @@ namespace Zentric.Api.Controllers
         /// Valida en tiempo real la disponibilidad de existencias físicas en el inventario antes de admitir el ítem.
         /// Previene la sobreventa bloqueando la adición si la cantidad requerida supera el stock disponible.
         /// </remarks>
-        /// <param name="command">Identificador del carrito, variante y cantidad. El precio y el vendedor NO viajan: los pone el servidor con el catálogo (PED-04 / ADR-0020). Un BuyerId en el cuerpo se descarta: la identidad la fija el token (Q-21b).</param>
+        /// <param name="command">Identificador del carrito, variante y cantidad. El precio y el vendedor NO viajan: los pone el servidor con el catálogo (ADR-0020). Un BuyerId en el cuerpo se descarta: la identidad la fija el token.</param>
         /// <response code="200">Ítem añadido satisfactoriamente al carrito.</response>
         /// <response code="400">Error si el carrito no está en estado Cart, si no hay stock suficiente o si el carrito no pertenece al llamante (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
@@ -180,7 +180,7 @@ namespace Zentric.Api.Controllers
             var userId = _currentUser.UserId;
             if (userId is null) return MissingIdentity();
 
-            // Q-21b: la identidad la fija el token, no el cuerpo. El valor que
+            // La identidad la fija el token, no el cuerpo. El valor que
             // traiga el cliente se descarta antes de llegar al caso de uso, y el
             // handler verifica la propiedad del pedido contra este mismo valor.
             var result = await _mediator.Send(command with { BuyerId = userId.Value });
@@ -196,7 +196,7 @@ namespace Zentric.Api.Controllers
         /// subdivide el pedido en órdenes de fulfillment agrupadas por vendedor (VendorId)
         /// y activa la ventana de 15 minutos para formalizar el pago antes de que el stock expire automáticamente.
         /// </remarks>
-        /// <param name="orderId">Identificador único (Guid) del pedido en estado Cart a procesar. Debe pertenecer al comprador del token (Q-21b).</param>
+        /// <param name="orderId">Identificador único (Guid) del pedido en estado Cart a procesar. Debe pertenecer al comprador del token.</param>
         /// <response code="200">Checkout completado, reservas aplicadas y paquetes de fulfillment creados.</response>
         /// <response code="400">Error si el pedido está vacío, no existe (o no es suyo) o expiró la sesión (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
@@ -210,7 +210,7 @@ namespace Zentric.Api.Controllers
             var userId = _currentUser.UserId;
             if (userId is null) return MissingIdentity();
 
-            // Q-21b: el checkout solo opera sobre pedidos propios.
+            // El checkout solo opera sobre pedidos propios.
             var result = await _mediator.Send(new CheckoutOrderCommand(orderId, userId.Value));
             if (result.IsFailure) return result.ToProblem();
             return Ok();
@@ -286,7 +286,7 @@ namespace Zentric.Api.Controllers
         /// Transita el estado de la orden de Checkout a Paid, confirmando la reserva definitiva del inventario
         /// y habilitando las órdenes de fulfillment para su preparación física y posterior despacho logístico.
         /// </remarks>
-        /// <param name="orderId">Identificador único (Guid) del pedido a marcar como pagado. Debe pertenecer al comprador del token (Q-21b).</param>
+        /// <param name="orderId">Identificador único (Guid) del pedido a marcar como pagado. Debe pertenecer al comprador del token.</param>
         /// <response code="200">Pago registrado y confirmado exitosamente.</response>
         /// <response code="400">Error si la orden no se encuentra en estado Checkout, ya fue pagada o no pertenece al llamante (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
@@ -300,7 +300,7 @@ namespace Zentric.Api.Controllers
             var userId = _currentUser.UserId;
             if (userId is null) return MissingIdentity();
 
-            // Q-21b: nadie paga un pedido ajeno; el filtro por comprador viaja a
+            // Nadie paga un pedido ajeno; el filtro por comprador viaja a
             // la consulta del handler.
             var result = await _mediator.Send(new PayOrderCommand(orderId, userId.Value));
             if (result.IsFailure) return result.ToProblem();
@@ -311,7 +311,7 @@ namespace Zentric.Api.Controllers
         /// Obtiene el estado actual, total e ítems de un pedido por su identificador único.
         /// </summary>
         /// <remarks>
-        /// Q-21b: la respuesta depende del rol. El Comprador recibe su pedido
+        /// La respuesta depende del rol. El Comprador recibe su pedido
         /// completo; el Vendedor recibe la vista filtrada (solo sus líneas y su
         /// subtotal, sin datos de otros vendedores); el Operador, el
         /// Administrador y el Supervisor leen sin filtro de dueño. Un pedido
@@ -335,8 +335,8 @@ namespace Zentric.Api.Controllers
             var role = User.GetUserRole();
             if (userId is null || role is null) return MissingIdentity();
 
-            // Q-21b: cada rol lee lo suyo; el Operador, el Administrador y el
-            // Supervisor leen sin filtro de dueno (dictado de Q-21 + dictamen).
+            // Cada rol lee lo suyo; el Operador, el Administrador y el
+            // Supervisor leen sin filtro de dueno.
             switch (role.Value)
             {
                 case UserRole.Buyer:

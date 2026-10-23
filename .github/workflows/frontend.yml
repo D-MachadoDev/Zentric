@@ -1,7 +1,7 @@
 name: frontend
 on:
   push:
-    paths: ["frontend/**", "orchestrator-state.json", ".github/workflows/frontend.yml"]
+    paths: ["frontend/**", ".github/workflows/frontend.yml"]
   pull_request:
     paths: ["frontend/**"]
 jobs:

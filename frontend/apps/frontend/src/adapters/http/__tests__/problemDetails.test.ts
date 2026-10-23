@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { toApiError } from '../problemDetails';
 
-describe('toApiError (Frontend-Adapters §3.4)', () => {
+describe('toApiError', () => {
   it('prefiere `detail` del ProblemDetails del controlador', () => {
     const error = toApiError(404, JSON.stringify({ status: 404, detail: 'Order with ID x not found.' }));
 

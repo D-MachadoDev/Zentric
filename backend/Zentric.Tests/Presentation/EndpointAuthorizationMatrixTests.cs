@@ -7,7 +7,7 @@ using Zentric.Domain.Users.Enums;
 namespace Zentric.Tests.Presentation
 {
     /// <summary>
-    /// Matriz de autorizacion por rol (Q-21). Cierra RG-03: "ningun participante podra
+    /// Matriz de autorizacion por rol. Cierra RG-03: "ningun participante podra
     /// administrar informacion fuera de su rol" (ZENTRIC.md seccion 10).
     ///
     /// Que comprueba esta clase y por que existe. La autorizacion por rol no se puede validar
@@ -18,8 +18,8 @@ namespace Zentric.Tests.Presentation
     /// endpoint sin politica o con una politica equivocada rompe la compilacion de verde a rojo
     /// sin necesidad de levantar el servidor.
     ///
-    /// Cada nombre de test se lee como el criterio de aceptacion de la especificacion:
-    /// backendSDD/Presentation/02-authorization.md.
+    /// Cada nombre de test se lee como el criterio de aceptacion de la
+    /// autorizacion por rol.
     /// </summary>
     public sealed class EndpointAuthorizationMatrixTests
     {
@@ -50,7 +50,7 @@ namespace Zentric.Tests.Presentation
                 ["UsersController.CreateUser"] = Anonymous,
                 ["UsersController.GetUsers"] = AuthorizationPolicies.UserAdministration,
                 ["UsersController.GetUserById"] = AuthorizationPolicies.UserAdministration,
-                // INV-05 (dictamen Q-26, Owner 2026-10-06): el bloqueo es administracion de
+                // INV-05 (dictamen del Owner 2026-10-06): el bloqueo es administracion de
                 // usuarios, asi que cae en la misma politica que el alta y la consulta. El
                 // Supervisor no participa: es perfil de consulta, no de escritura.
                 ["UsersController.BlockUser"] = AuthorizationPolicies.UserAdministration,
@@ -215,7 +215,7 @@ namespace Zentric.Tests.Presentation
         }
 
         /// <summary>
-        /// Criterio del dictamen Q-21c (Owner, 2026-09-29): el Operador Logistico
+        /// Criterio del dictamen (Owner, 2026-09-29): el Operador Logistico
         /// detecta el faltante en bodega, asi que puede reportarlo. El Vendedor sigue
         /// dentro porque el ADDENDUM Dominio 8 le asigna la cancelacion. Sin esta
         /// asercion, quitar al Operador devolveria al flujo a un estado que la Ley

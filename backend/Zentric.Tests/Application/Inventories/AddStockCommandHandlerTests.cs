@@ -100,7 +100,7 @@ namespace Zentric.Tests.Application.Inventories
     }
 
     /// <summary>
-    /// Q-21b: el dueño del stock es el dueño del producto, y la bodega donde
+    /// El dueño del stock es el dueño del producto, y la bodega donde
     /// entra tiene que ser del vendedor que lo ingresa.
     /// </summary>
     public class FakeStockOwnershipProductRepository : IProductRepository
@@ -158,7 +158,7 @@ namespace Zentric.Tests.Application.Inventories
         {
             var repo = new FakeInventoryRepository();
             var uow = new FakeUnitOfWork();
-            // Operador: recepcion transversal, sin filtro de dueno (Q-21b).
+            // Operador: recepcion transversal, sin filtro de dueno.
             var handler = new AddStockCommandHandler(repo, uow, new FakeStockOwnershipProductRepository(), new FakeWarehouseRepository());
 
             var variantId = Guid.NewGuid();
@@ -199,7 +199,7 @@ namespace Zentric.Tests.Application.Inventories
         [Fact]
         public async Task Handle_SellerOwnProductAndWarehouse_CreatesStock()
         {
-            // Q-21b: el vendedor ingresa su stock en su bodega.
+            // El vendedor ingresa su stock en su bodega.
             var vendorId = Guid.NewGuid();
             var repo = new FakeInventoryRepository();
             var uow = new FakeUnitOfWork();
@@ -223,7 +223,7 @@ namespace Zentric.Tests.Application.Inventories
         [Fact]
         public async Task Handle_SellerForeignProduct_DoesNotEnterStock()
         {
-            // Q-21b: antes, cualquier Seller metia stock del producto de otro.
+            // Antes, cualquier Seller metia stock del producto de otro.
             var vendorId = Guid.NewGuid();
             var repo = new FakeInventoryRepository();
             var uow = new FakeUnitOfWork();
@@ -249,7 +249,7 @@ namespace Zentric.Tests.Application.Inventories
         [Fact]
         public async Task Handle_SellerForeignWarehouse_DoesNotEnterStock()
         {
-            // Q-21b: antes, cualquier Seller metia stock en la bodega de otro.
+            // Antes, cualquier Seller metia stock en la bodega de otro.
             var vendorId = Guid.NewGuid();
             var repo = new FakeInventoryRepository();
             var uow = new FakeUnitOfWork();

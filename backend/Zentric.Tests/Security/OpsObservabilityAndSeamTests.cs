@@ -10,7 +10,7 @@ namespace Zentric.Tests.Security;
 
 /// <summary>
 /// Pruebas de verificación operativa de la Oleada 6 (W6-S03):
-/// - Seam de pasarela de pagos (Payments:Provider según Q-08).
+/// - Seam de pasarela de pagos (Payments:Provider).
 /// - Cabeceras de seguridad HTTP de la API (X-Content-Type-Options, X-Frame-Options, Referrer-Policy).
 /// - Configuración estructurada de logs de producción y scripts de backup/restore Postgres.
 /// </summary>

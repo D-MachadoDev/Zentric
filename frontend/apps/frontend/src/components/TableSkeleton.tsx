@@ -1,7 +1,7 @@
 import { Skeleton } from '@zentric/ui/components/ui/skeleton';
 
 /**
- * Esqueleto de tabla (Frontend-Design-System §4).
+ * Esqueleto de tabla.
  *
  * §4 exige "estructura visible, sin salto de layout" mientras carga un listado.
  * Vive en `components/` porque lo usan varios módulos y cada copia local se

@@ -7,12 +7,10 @@ namespace Zentric.Domain.Payments
     /// <summary>
     /// Raiz de agregado que representa el comprobante de un cobro.
     ///
-    /// Invariante 9 (backendSDD/Domain/04-invariants-and-rules.md): el dominio
+    /// Invariante 9: el dominio
     /// avanza de estado con un simple comprobante que valida el exito o el fallo
     /// de la pasarela. NO se almacenan tarjetas de credito ni billeteras; este
     /// agregado guarda unicamente el resultado del cobro.
-    ///
-    /// Referencia: backendSDD/Domain/04-invariants-and-rules.md, invariante 9.
     /// </summary>
     public sealed class PaymentReceipt
     {

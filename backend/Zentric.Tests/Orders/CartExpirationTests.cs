@@ -11,7 +11,7 @@ namespace Zentric.Tests.Orders
     /// <summary>
     /// Criterios de aceptacion de la caducidad del carrito (T-004; H-06/R-06).
     ///
-    /// La regla "un carrito vive 15 minutos" (PED-01) se prueba moviendo un
+    /// La regla "un carrito vive 15 minutos" se prueba moviendo un
     /// reloj falso, nunca esperando de verdad: si esta suite tardara 15 minutos
     /// en correr, nadie la correria y la regla quedaria sin comprobar.
     ///

@@ -51,7 +51,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             Guid id, Guid vendorId, CancellationToken cancellationToken = default)
         {
             // El filtro va en la consulta: un pedido sin lineas del vendedor no
-            // se materializa, igual que en GetByIdForBuyerAsync (Q-21b).
+            // se materializa, igual que en GetByIdForBuyerAsync.
             var dbModel = await _dbContext.CustomerOrders
                 .AsNoTracking()
                 .Include(o => o.Items)
@@ -66,7 +66,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
         public async Task<IReadOnlyList<CustomerOrder>> GetListAsync(
             Guid? buyerId, Guid? vendorId, OrderStatus? status, CancellationToken cancellationToken = default)
         {
-            // Los filtros van en la consulta (Q-21b). Traer todo y descartar en memoria daria el
+            // Los filtros van en la consulta. Traer todo y descartar en memoria daria el
             // mismo resultado visible, pero moveria por la base los pedidos que el llamante no
             // puede ver: eso es exactamente la superficie de datos que la propiedad oculta.
             // Tipo explicito: con "var" el compilador no logra resolver los Where encadenados sobre

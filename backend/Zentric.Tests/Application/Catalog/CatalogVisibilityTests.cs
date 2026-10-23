@@ -14,14 +14,14 @@ using Zentric.Domain.Products.ValueObjects;
 namespace Zentric.Tests.Application.Catalog
 {
     /// <summary>
-    /// Visibilidad del catalogo (Q-27, dictamen Q22=B).
+    /// Visibilidad del catalogo.
     ///
     /// ZENTRIC.md:101: "Publicacion: los productos se hacen visibles en el catalogo
-    /// publico". 01-endpoints.md §3.4 promete ademas que al suspender "el producto
+    /// publico". La especificacion promete ademas que al suspender "el producto
     /// deja de ser visible en busquedas".
     ///
     /// La unica excepcion es quien pide su propio VendorId: esa es su vista de
-    /// gestion y si refleja los suspendidos, porque publish (Q-25) exige encontrar
+    /// gestion y si refleja los suspendidos, porque publish exige encontrar
     /// antes el producto y no existe listado de "mis productos".
     /// </summary>
     public class CatalogVisibilityTests
@@ -162,7 +162,7 @@ namespace Zentric.Tests.Application.Catalog
             Assert.Equal(new[] { "PublicadoAjeno" }, result.Value.Select(p => p.Name));
         }
 
-        // El dictamen Q22=B: sin esta excepcion, suspender seria un callejon sin salida
+        // Sin esta excepcion, suspender seria un callejon sin salida
         // porque el Vendedor no encontraria su producto para reactivarlo con publish.
         [Fact(DisplayName = "CatalogoDelPropioVendedor_ExponeSusSuspendidosParaReactivarlos")]
         public async Task Handle_OwnVendorFilter_ReturnsEveryStatus()

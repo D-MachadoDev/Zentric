@@ -34,7 +34,7 @@ namespace Zentric.Api.Controllers
         /// Registra la entrada física de inventario para un producto en una bodega específica,
         /// diferenciando entre unidades nuevas (NewQuantity) y usadas/reacondicionadas (UsedQuantity).
         /// </remarks>
-        /// <param name="command">Datos de entrada de stock (ProductId, WarehouseId, NewQuantity, UsedQuantity). Un CallerId en el cuerpo se descarta: la identidad la fija el token (Q-21b).</param>
+        /// <param name="command">Datos de entrada de stock (ProductId, WarehouseId, NewQuantity, UsedQuantity). Un CallerId en el cuerpo se descarta: la identidad la fija el token.</param>
         /// <response code="200">Stock registrado con éxito. Retorna el identificador del registro de inventario (Guid).</response>
         /// <response code="400">Error si la bodega o producto no existen, las cantidades son negativas o el vendedor no es dueño del producto o de la bodega (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
@@ -61,7 +61,7 @@ namespace Zentric.Api.Controllers
         /// antemano la variante. Sin este listado no hay pantalla de inventario: ni el Vendedor
         /// puede revisar su stock, ni el Operador puede ver la red de bodegas.
         ///
-        /// El reparto por rol es el mismo que en el detalle (Q-21b): el Vendedor ve el stock de SUS
+        /// El reparto por rol es el mismo que en el detalle: el Vendedor ve el stock de SUS
         /// productos aunque esten en cualquier bodega, y el Operador ve la red completa. El filtro
         /// no es un parametro: no hay forma de pedir el stock de otro.
         /// </remarks>
@@ -88,7 +88,7 @@ namespace Zentric.Api.Controllers
         /// Consulta las existencias físicas, reservas y stock disponible de una variante (SKU) en las bodegas.
         /// </summary>
         /// <remarks>
-        /// Q-21b: el Vendedor solo ve el stock de sus productos; la variante de
+        /// El Vendedor solo ve el stock de sus productos; la variante de
         /// otro responde 404. El Operador ve cualquiera: el stock de la red es su
         /// trabajo.
         /// </remarks>

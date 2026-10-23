@@ -57,8 +57,8 @@ namespace Zentric.Tests.Application.Catalog
         }
 
         /// <summary>
-        /// El XML doc de <c>CatalogController.PublishProduct</c> y
-        /// <c>Presentation/01-endpoints.md</c> prometen 400 para "ya publicado". Sin
+        /// El XML doc de <c>CatalogController.PublishProduct</c> promete 400
+        /// para "ya publicado". Sin
         /// el capturador del handler, la guarda del agregado subia al middleware
         /// global y respondia 500: un contrato roto que ningun test cubria.
         /// </summary>

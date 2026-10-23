@@ -20,7 +20,7 @@ namespace Zentric.Application.Orders.Queries
     /// dos formas segun de que pantalla venga, porque el frontend acabaria pidiendo una conversion.
     ///
     /// Deliberadamente NO lleva el total completo ni el BuyerId para el Vendedor: son los datos
-    /// que el dictamen de Q-21b decidio no exponer. En su lugar el <c>TotalAmount</c> que llega es
+    /// que se decidio no exponer. En su lugar el <c>TotalAmount</c> que llega es
     /// el SUBTOTAL de sus lineas, calculado en el handler.
     /// </summary>
     public record OrderListItemDto(

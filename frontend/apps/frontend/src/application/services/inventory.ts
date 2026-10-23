@@ -33,7 +33,7 @@ export function useInventoryByVariantQuery(variantId: string, api?: ZentricApiPo
 
 /**
  * Hook de mutación para ingresar existencias de stock nuevo.
- * Invalida ['inventories'] y ['products'] (Frontend-Domain-Services §3.2).
+ * Invalida ['inventories'] y ['products'].
  */
 export function useAddStockMutation(api?: ZentricApiPort) {
   const queryClient = useQueryClient();

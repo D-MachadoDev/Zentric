@@ -10,7 +10,6 @@ namespace Zentric.Tests.Security
 {
     /// <summary>
     /// Pruebas contractuales para la política de CORS ("Frontend").
-    /// Fuente de Verdad: backendSDD/Backend-Cors-Security.md.
     /// Valida que no se permitan comodines (*), que los orígenes provengan de configuración,
     /// que las credenciales (cookies) estén deshabilitadas y que soporte los métodos y cabeceras de integración.
     /// </summary>
@@ -59,7 +58,7 @@ namespace Zentric.Tests.Security
             Assert.Contains("http://localhost:15434", policy.Origins);
             Assert.Contains("http://localhost:15435", policy.Origins);
             Assert.DoesNotContain("*", policy.Origins);
-            Assert.False(policy.SupportsCredentials, "AllowCredentials debe ser false según Backend-Cors-Security.md sección 2");
+            Assert.False(policy.SupportsCredentials, "AllowCredentials debe ser false segun la politica de CORS");
         }
 
         [Fact]

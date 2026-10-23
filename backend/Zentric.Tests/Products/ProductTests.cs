@@ -8,7 +8,6 @@ namespace Zentric.Tests.Products;
 /// Pruebas de caracterización del agregado Product.
 /// Regla protegida: CAT-01 / invariante 5 ("todo producto creado entra de
 /// inmediato a estado publicado, sin aprobación previa").
-/// Referencias: backendSDD/Domain/01-models.md, sección 2; backendSDD/Domain/06-business-rules.md, sección 3.
 /// Nota: la especificación declara ProductStatus (Published/Suspended/
 /// Discontinued); el código usa IsActive + DeletedAt. Hallazgo C-05/R-09,
 /// decisión pendiente. Estas pruebas fijan el comportamiento actual.
@@ -17,7 +16,7 @@ public sealed class ProductTests
 {
     private static readonly Guid VendorId = Guid.NewGuid();
 
-    // Q-10 = C3 (ADR-0003) — un producto Fisico exige al menos una variante, por
+    // Regla (ADR-0003) — un producto Fisico exige al menos una variante, por
     // eso el helper por defecto crea un Digital (CAT-02: sin logistica ni inventario).
     private static Product CreateProduct(ProductType type = ProductType.Digital)
         => new("Camiseta", "Camiseta de algodón", new Money(25.50m, "COP"), VendorId, type);
@@ -315,7 +314,7 @@ public sealed class ProductTests
             () => variants.Add(product.AddVariant("CAM-M", new List<VariantAttribute> { new("Talla", "M") })));
     }
 
-    // --- Q-10 = C3 (ADR-0003): la variante es obligatoria solo para productos Fisicos ---
+    // --- ADR-0003: la variante es obligatoria solo para productos Fisicos ---
 
     [Fact]
     public void Constructor_PhysicalWithoutVariants_ThrowsArgumentException()

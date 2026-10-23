@@ -2,7 +2,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import type { SessionPort, ZentricApiPort } from '../../domain';
 
 /**
- * Contrato de contexto inyectado al router en beforeLoad y loaders (C4-4-Codigo-React.md §1.1).
+ * Contrato de contexto inyectado al router en beforeLoad y loaders.
  *
  * Contiene dependencias inyectadas para resolución determinista:
  * - `session`: Puerto de sesión en memoria RAM (ADR-0009).

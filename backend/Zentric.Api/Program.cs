@@ -29,7 +29,7 @@ using Zentric.Api.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Q-22 (ADR-0012): el contrato de los enum va por nombre y solo por nombre. El Owner dicto la
+// ADR-0012: el contrato de los enum va por nombre y solo por nombre. El Owner dicto la
 // forma estricta, asi que un cuerpo con "role": 2 responde 400 en lugar de colarse como
 // Administrador. Las salidas ya devolvian nombres y la query ya los aceptaba; el cuerpo era lo
 // unico que hablaba en numeros. Todo el contrato vive en EnumJsonContract.
@@ -83,7 +83,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddOpenApi();
 
-// Mapeo de errores a RFC 7807 (Problem Details), exigido por AGENTS.md, sección 3.4.
+// Mapeo de errores a RFC 7807 (Problem Details).
 builder.Services.AddProblemDetails();
 
 // Identidad del llamante y autenticacion (ADR-0009, cierra RG-01).
@@ -128,7 +128,7 @@ builder.Services.AddAuthorization(options =>
         .RequireAuthenticatedUser()
         .Build();
 
-    // RG-03 (Q-21, ADR-0011): las politicas por rol se generan recorriendo la matriz de
+    // RG-03 (ADR-0011): las politicas por rol se generan recorriendo la matriz de
     // AuthorizationPolicies, que es la Matriz de Responsabilidades de ZENTRIC.md escrita una
     // sola vez. No se agrega ninguna politica a mano: ponerla en el diccionario la registra
     // aqui, la exige el [Authorize] del controlador y la aserta EndpointAuthorizationMatrixTests.
@@ -155,7 +155,7 @@ builder.Services.AddScoped<Zentric.Api.Security.ICurrentUserAccessor, Zentric.Ap
 // intercambiables: cambiar el algoritmo de hash o el formato del token no exige
 // tocar Dominio ni los casos de uso. La caducidad del token se calcula con el
 // mismo IClock registrado abajo (H-06): un Func<DateTimeOffset> suelto habria
-// dejado el reloj sin contrato trazable en el SDD.
+// dejado el reloj sin contrato trazable en la arquitectura.
 builder.Services.AddSingleton<Zentric.Domain.Users.Ports.IPasswordHasher, Zentric.Infrastructure.Security.Pbkdf2PasswordHasher>();
 builder.Services.AddSingleton<Zentric.Domain.Users.Ports.IAuthTokenService>(sp =>
 {
@@ -170,7 +170,7 @@ builder.Services.AddSingleton<Zentric.Domain.Users.Ports.IAuthTokenService>(sp =
 // estado). Los adaptadores que toman decisiones con "ahora" (caducidad de
 // tokens, barrido de carritos vencidos) consumen este puerto y NO
 // DateTime.UtcNow directamente: asi la suite puede congelar el tiempo con un
-// reloj falso. Ver backendSDD/Domain/services/checkout-timeout-service.md.
+// reloj falso.
 builder.Services.AddSingleton<Zentric.Domain.Common.Ports.IClock, Zentric.Infrastructure.Common.SystemClock>();
 
 // Register DbContext
@@ -201,7 +201,7 @@ builder.Services.AddScoped<Zentric.Domain.Returns.Ports.IRefundAuditRepository, 
   // builder.Services.AddHostedService<Zentric.Infrastructure.BackgroundServices.CheckoutTimeoutService>();
 
 // Registro de la capa Application: dispatcher propio, validacion de entrada
-// (FluentValidation) y handlers. Q-14: sustituye a AddMediatR.
+// (FluentValidation) y handlers. El dispatcher propio sustituye a AddMediatR.
 builder.Services.AddZentricApplication();
 
 // Comportamientos del pipeline de mensajes: la validacion se ejecuta antes del handler.
@@ -212,7 +212,7 @@ builder.Services.AddScoped<Zentric.Domain.Inventories.Services.InventoryReservat
 builder.Services.AddScoped<Zentric.Domain.Orders.Services.OrderFulfillmentProgressSynchronizer>();
 builder.Services.AddScoped<Zentric.Domain.Returns.Services.RefundPolicyService>();
 
-// Q-08: pasarela de pago SIMULADA. El puerto vive en el Dominio; sustituir este
+// Pasarela de pago SIMULADA. El puerto vive en el Dominio; sustituir este
 // adaptador por uno real (PSE, Wompi, Stripe) no exige tocar Dominio ni casos de uso.
 // La seleccion sale de configuracion Payments:Provider; hoy solo "simulated" es
 // valido. Otro valor hace fallar el arranque para no cobrar en falso.
@@ -291,7 +291,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// Middleware global de excepciones: las fallas técnicas no controladas se convierten en Problem Details (AGENTS.md, sección 3.4).
+// Middleware global de excepciones: las fallas técnicas no controladas se convierten en Problem Details.
 app.UseExceptionHandler();
 
 app.UseHttpsRedirection();

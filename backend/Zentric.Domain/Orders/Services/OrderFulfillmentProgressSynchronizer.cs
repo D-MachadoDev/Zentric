@@ -7,7 +7,7 @@ using Zentric.Domain.Orders.Enums;
 namespace Zentric.Domain.Orders.Services
 {
     /// <summary>
-    /// PED-05: el pedido maestro refleja el minimo comun de SUS despachos.
+    /// El pedido maestro refleja el minimo comun de SUS despachos.
     ///
     /// Se invoca tras cada cambio de estado de un despacho (despachar, entregar o
     /// cancelar) y decide si el pedido maestro puede avanzar. El agregado

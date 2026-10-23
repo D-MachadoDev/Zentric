@@ -8,7 +8,7 @@ import { AuthContext } from './authContext';
 import type { AuthValue } from './authContext';
 
 /**
- * Publica la sesión a páginas, layouts y guardas (C4-4 §3).
+ * Publica la sesión a páginas, layouts y guardas.
  *
  * **Context no es almacenamiento persistente:** el access token vive sólo en
  * `SessionPort`, que a su vez sólo usa memoria. Al recargar la página se pierde
@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [session]);
 
-  // C4-4 §4: al montar, valida `GET /api/auth/me` sólo si queda token en
+  // Al montar, valida `GET /api/auth/me` sólo si queda token en
   // memoria. Al abrir la app normalmente no lo hay (se perdió al recargar), así
   // que la llamada no se hace y no hay tráfico espurio.
   useEffect(() => {

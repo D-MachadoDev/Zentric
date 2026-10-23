@@ -7,14 +7,14 @@ namespace Zentric.Application.Common.Messaging
 {
     /// <summary>
     /// Marcador de un mensaje con una unica respuesta associated.
-    /// Q-14: sustituye a <c>MediatR.IRequest&lt;TResponse&gt;</c>.
+    /// Sustituye a <c>MediatR.IRequest&lt;TResponse&gt;</c>.
     /// </summary>
     public interface IRequest<out TResponse>
     {
     }
 
     /// <summary>
-    /// Manejador de un mensaje. Q-14: sustituye a
+    /// Manejador de un mensaje. Sustituye a
     /// <c>MediatR.IRequestHandler&lt;TRequest, TResponse&gt;</c>.
     /// </summary>
     public interface IRequestHandler<in TRequest, TResponse>
@@ -31,7 +31,7 @@ namespace Zentric.Application.Common.Messaging
     public delegate Task<TResponse> RequestHandlerDelegate<TResponse>();
 
     /// <summary>
-    /// Comportamiento abierto del pipeline. Q-14: sustituye a
+    /// Comportamiento abierto del pipeline. Sustituye a
     /// <c>MediatR.IPipelineBehavior&lt;TRequest, TResponse&gt;</c>.
     /// </summary>
     public interface IPipelineBehavior<in TRequest, TResponse>
@@ -53,7 +53,7 @@ namespace Zentric.Application.Common.Messaging
     }
 
     /// <summary>
-    /// Evento sin respuesta, con uno o varios consumidores. Q-14: sustituye a
+    /// Evento sin respuesta, con uno o varios consumidores. Sustituye a
     /// <c>MediatR.INotification</c>.
     /// </summary>
     public interface INotification
@@ -67,7 +67,7 @@ namespace Zentric.Application.Common.Messaging
     }
 
     /// <summary>
-    /// Manejador de una notificacion. Q-14: sustituye a
+    /// Manejador de una notificacion. Sustituye a
     /// <c>MediatR.INotificationHandler&lt;TNotification&gt;</c>.
     /// </summary>
     public interface INotificationHandler<in TNotification>

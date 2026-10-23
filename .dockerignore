@@ -29,7 +29,7 @@
 **/*.trx
 **/*.binlog
 
-# Documentacion y SDD: no son necesarios en runtime
+# Documentacion: no necesaria en runtime
 backendSDD
 frontendSDD
 *.md

@@ -171,8 +171,7 @@ namespace Zentric.Domain.Inventories
 
         public void ReturnToAvailable(int quantity)
         {
-            // INV-01 / invariante 1 (backendSDD/Domain/06-business-rules.md, sección 1,
-            // backendSDD/Domain/04-invariants-and-rules.md, sección 1): AvailableQuantity nunca puede
+            // INV-01 / invariante 1: AvailableQuantity nunca puede
             // ser negativo. Sin esta guarda, una cantidad no positiva (p. ej. -100)
             // reducia AvailableQuantity por debajo de cero. Correccion T-003 (H-08).
             if (quantity <= 0)

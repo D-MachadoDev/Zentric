@@ -33,7 +33,7 @@ namespace Zentric.Application.Logistics.Commands
                 return Result<bool>.NotFound($"FulfillmentOrder with ID {request.FulfillmentOrderId} not found.");
             }
 
-            // Q-21b: el vendedor no empaqueta el paquete de otro. El mensaje es el de "no
+            // El vendedor no empaqueta el paquete de otro. El mensaje es el de "no
             // existe" para no confirmar que ese despacho existe.
             if (request.CallerRole == UserRole.Seller && fulfillmentOrder.VendorId != request.CallerId)
             {

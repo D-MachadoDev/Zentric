@@ -6,7 +6,7 @@ namespace Zentric.Api.Contracts
     /// <summary>
     /// Traduce un <see cref="Result"/> fallido a la respuesta HTTP.
     ///
-    /// Q-21b: el codigo lo decide la <see cref="ErrorKind"/> del fallo, no el texto
+    /// El codigo lo decide la <see cref="ErrorKind"/> del fallo, no el texto
     /// del mensaje. Concentrarlo aqui evita que cada controlador invente su propio
     /// criterio y que un "no encontrado" vuelva a salir como 400 en la siguiente
     ///.endpoint.

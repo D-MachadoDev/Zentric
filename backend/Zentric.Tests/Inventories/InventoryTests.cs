@@ -6,7 +6,6 @@ namespace Zentric.Tests.Inventories;
 /// Pruebas de caracterización del agregado de inventario.
 /// Invariante protegida: INV-01 / invariante 1 ("AvailableQuantity nunca puede
 /// ser negativo bajo ninguna circunstancia").
-/// Referencias: backendSDD/Domain/06-business-rules.md, sección 1; backendSDD/Domain/04-invariants-and-rules.md, sección 1.
 /// </summary>
 public sealed class InventoryTests
 {
@@ -160,7 +159,7 @@ public sealed class InventoryTests
     }
 
     /// <summary>
-    /// Regresión del hallazgo H-08 (backendSDD/00-bootstrap/spec-conformance-matrix.md, sección 7):
+    /// Regresión del hallazgo H-08:
     /// ReturnToAvailable no validaba cantidades no positivas como el resto de las
     /// operaciones, lo que permitía dejar AvailableQuantity por debajo de cero y
     /// violar INV-01. Prueba asociada a la corrección T-003.

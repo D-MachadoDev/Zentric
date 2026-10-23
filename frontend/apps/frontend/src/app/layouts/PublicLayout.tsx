@@ -7,7 +7,7 @@ interface PublicLayoutProps {
 }
 
 /**
- * Shell para pantallas públicas y de autenticación (C4-4-Codigo-React.md §2: AuthShell).
+ * Shell para pantallas públicas y de autenticación (AuthShell).
  *
  * Aplica (Frontend-Design-System §9):
  * - Lienzo porcelana en claro / grafito-tinta en oscuro (#0B0F19 / #111827),

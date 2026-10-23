@@ -3,28 +3,24 @@ name: frontend-quality
 # Compuertas de calidad del frontend que complementan a `frontend.yml`
 # (typecheck + tests + build). Aqui viven las compuertas que necesitan
 # navegador o stack completo:
-#   - audit:design  -> verifica el design system contra la Ley (§9 del spec)
+#   - audit:design  -> verifica el design system contra `design-tokens.json`
 #   - storybook     -> compila el catalogo de componentes
 #   - e2e           -> Playwright (buyer journey, snapshots, WCAG 2.2, CWV)
 #   - lighthouse    -> budgets de performance, accesibilidad y SEO
 #
-# Regla de datos segun `frontendSDD/Frontend-Design-System.md` §9: la paleta se
-# parsea del propio spec, asi que un cambio del Owner en §9 rompe la
-# compuerta (que es exactamente lo que se busca).
+# Regla de datos: la paleta se parsea de `design-tokens.json`, asi que un
+# cambio de Owner en los tokens rompe la compuerta (que es exactamente
+# lo que se busca).
 
 on:
   push:
     paths:
       - "frontend/**"
-      - "frontendSDD/**"
-      - "AGENTS.md"
       - "docker-compose.yml"
       - ".github/workflows/frontend-quality.yml"
   pull_request:
     paths:
       - "frontend/**"
-      - "frontendSDD/**"
-      - "AGENTS.md"
       - "docker-compose.yml"
       - ".github/workflows/frontend-quality.yml"
 
@@ -37,14 +33,14 @@ jobs:
   # 1. Compuerta de design system (sin dependencias: lee el repo)
   # ───────────────────────────────────────────────────────────────────────────
   design-audit:
-    name: Design system audit (§9)
+    name: Design system audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Audit del design system contra la Ley §9
+      - name: Audit del design system contra design-tokens.json
         working-directory: frontend
         run: node scripts/audit-design-system.cjs
 

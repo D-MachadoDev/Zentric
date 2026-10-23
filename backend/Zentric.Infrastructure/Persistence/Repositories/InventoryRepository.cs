@@ -26,7 +26,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             if (vendorId.HasValue)
             {
                 // La existencia no guarda al vendedor: guarda la variante. Se resuelve por ahi, que
-                // es donde vive el dueno del producto (Q-21b). Mismo criterio que el detalle.
+                // es donde vive el dueno del producto. Mismo criterio que el detalle.
                 var vendor = vendorId.Value;
                 query = query.Where(i => _dbContext.Products
                     .Any(p => p.VendorId == vendor && p.Variants.Any(v => v.Id == i.VariantId)));

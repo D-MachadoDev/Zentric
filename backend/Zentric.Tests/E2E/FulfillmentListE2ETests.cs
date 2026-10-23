@@ -41,7 +41,7 @@ namespace Zentric.Tests.E2E
 
         /// <summary>
         /// El Vendedor ve los suyos, que es lo unico que puede operar. Y el Comprador ve los
-        /// despachos de SUS pedidos: el detalle ya se lo permitia (Q-21b), asi que el listado
+        /// despachos de SUS pedidos: el detalle ya se lo permitia, asi que el listado
         /// haciendo menos seria incoherente.
         /// </summary>
         [Fact]

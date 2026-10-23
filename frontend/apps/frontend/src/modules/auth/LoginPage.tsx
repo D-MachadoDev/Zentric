@@ -340,7 +340,7 @@ export function LoginPage() {
             </Button>
           </form>
 
-          {/* Conmutador discreto Modo Demo / QA (ADR-0012 & design.md) */}
+          {/* Conmutador discreto Modo Demo / QA (ADR-0012) */}
           <div className="pt-1">
             <button
               type="button"

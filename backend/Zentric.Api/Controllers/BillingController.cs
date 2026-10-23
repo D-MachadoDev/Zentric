@@ -87,7 +87,7 @@ namespace Zentric.Api.Controllers
         /// de antemano el pedido. Sin este listado no hay "mis facturas": ni el Comprador puede ver
         /// sus facturas maestras, ni el Vendedor las suyas, ni el Supervisor puede auditar.
         ///
-        /// El reparto por rol es el mismo que en el listado por pedido (Q-21b y ADDENDUM Dominio 9).
+        /// El reparto por rol es el mismo que en el listado por pedido (ADDENDUM Dominio 9).
         /// El filtro no es un parametro: no hay forma de pedir las de otro.
         /// </remarks>
         /// <response code="200">Listado de facturas visibles para el llamante.</response>
@@ -112,7 +112,7 @@ namespace Zentric.Api.Controllers
         /// Obtiene la lista de facturas emitidas para un pedido específico, visible según el rol del llamante.
         /// </summary>
         /// <remarks>
-        /// Q-21b: el Comprador solo ve la Factura Maestra de un pedido propio;
+        /// El Comprador solo ve la Factura Maestra de un pedido propio;
         /// el Vendedor solo sus facturas de vendedor; el Administrador y el
         /// Supervisor ven todas (incluido el Detalle Zentric de plataforma).
         /// </remarks>
@@ -131,7 +131,7 @@ namespace Zentric.Api.Controllers
             var role = User.GetUserRole();
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
-            // Q-21b: la visibilidad de cada factura depende del rol (ver el handler).
+            // La visibilidad de cada factura depende del rol (ver el handler).
             var result = await _mediator.Send(new GetInvoicesByOrderQuery(orderId, userId.Value, role.Value));
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);

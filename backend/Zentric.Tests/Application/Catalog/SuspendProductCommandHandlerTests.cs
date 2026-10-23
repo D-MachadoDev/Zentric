@@ -12,7 +12,7 @@ using Zentric.Tests.Application.Catalog;
 namespace Zentric.Tests.Application.Catalog
 {
     /// <summary>
-    /// Criterios de aceptacion de Q-25: suspender un producto (camino de entrada a Suspended).
+    /// Suspender un producto: criterios de aceptacion (camino de entrada a Suspended).
     /// </summary>
     public class SuspendProductCommandHandlerTests
     {

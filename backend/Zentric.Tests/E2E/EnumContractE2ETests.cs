@@ -7,7 +7,7 @@ using Xunit;
 namespace Zentric.Tests.E2E
 {
     /// <summary>
-    /// Contrato JSON de los <c>enum</c> verificado por HTTP real (Q-22, ADR-0012).
+    /// Contrato JSON de los <c>enum</c> verificado por HTTP real (ADR-0012).
     ///
     /// La forma estricta que dicto el Owner dice que un cuerpo con <c>"role": 2</c> responde 400 y
     /// no se colaba como Administrador. Con las pruebas de contrato existentes se comprobaba la

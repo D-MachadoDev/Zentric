@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Zentric.Api.Contracts;
 
 /// <summary>
-/// Unica configuracion del contrato JSON de los enum (Q-22, ADR-0012).
+/// Unica configuracion del contrato JSON de los enum (ADR-0012).
 ///
 /// <remarks>
 /// Decision del Owner del 2026-09-29 (forma estricta): los enum del cuerpo JSON viajan

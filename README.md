@@ -8,7 +8,6 @@
 [![Tests](https://img.shields.io/badge/Tests-592%20Passing%20(100%25)-brightgreen?style=for-the-badge&logo=xunit)](https://xunit.net/)
 [![Architecture](https://img.shields.io/badge/Architecture-Hexagonal%20%2B%20DDD%20%2B%20CQRS-orange?style=for-the-badge)](./backendSDD/02-software-architecture.md)
 [![Methodology](https://img.shields.io/badge/Methodology-SDD%20%2B%20ODD-blue?style=for-the-badge)](./AGENTS.md)
-[![Orchestration](https://img.shields.io/badge/Orchestrator-13%20Agents%20(DAG)-purple?style=for-the-badge)](./.agents/orchestration/master-orchestrator.prompt.md)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](./LICENSE)
 
 Plataforma empresarial de comercio electrónico y marketplace multi-vendedor **Zentric**. Diseñada bajo principios rigurosos de ingeniería de software: **Arquitectura Hexagonal (Puertos y Adaptadores)**, **Domain-Driven Design (DDD)** táctico, segregación de responsabilidades con **CQRS**, y gobernada mediante **Spec-Driven Development (SDD)** y **Outcome-Driven Development (ODD)** a través de una flota coordinada de 13 agentes especializados.
@@ -27,8 +26,7 @@ Plataforma empresarial de comercio electrónico y marketplace multi-vendedor **Z
 9. [Tratamiento Estandarizado de Errores (RFC 7807)](#-tratamiento-estandarizado-de-errores-rfc-7807)
 10. [Instalación y Despliegue](#-instalación-y-despliegue)
 11. [Pruebas Automatizadas y Calidad](#-pruebas-automatizadas-y-calidad)
-12. [Orquestación Multi-Agente y Gobernanza SDD + ODD](#-orquestación-multi-agente-y-gobernanza-sdd--odd)
-13. [Matriz de Trazabilidad Técnica](#-matriz-de-trazabilidad-técnica)
+12. [Matriz de Trazabilidad Técnica](#-matriz-de-trazabilidad-técnica)
 
 ---
 
@@ -390,51 +388,11 @@ Passed!  - Failed: 0, Passed: 592, Skipped: 0, Total: 592, Duration: 1 s - Zentr
 
 ---
 
-## 🤖 Orquestación Multi-Agente y Gobernanza SDD + ODD
-
-Zentric cuenta con una infraestructura de orquestación determinista diseñada para ser ejecutada por cualquier modelo de IA (Claude, Gemini, GPT, DeepSeek) o CLI sin pérdida de contexto ni fatiga de tokens:
-
-- **Prompt Orquestador Maestro:** [`.agents/orchestration/master-orchestrator.prompt.md`](./.agents/orchestration/master-orchestrator.prompt.md)
-- **Máquina de Estados Unificada:** [`orchestrator-state.json`](./orchestrator-state.json)
-
-### Flota de 13 Agentes Especializados con Contextos Acotados:
-Cada agente opera exclusivamente sobre una lista blanca de archivos definida en [`.agents/orchestration/agents/`](./.agents/orchestration/agents/):
-
-| # | Agente | Rol | Alcance de Trabajo |
-|---|---|---|---|
-| **00** | `coordinator` | Orquestación General | Despacho de oleadas, commits atómicos y control de `orchestrator-state.json`. |
-| **12** | `sdd-alignment-auditor` | Gobernanza SDD/ODD | Auditoría spec ↔ código, activación de `/grill-me` y persistencia en Engram. |
-| **01** | `domain-architect` | Dominio Backend C# | Entidades, value objects, invariantes y domain events sin dependencias. |
-| **02** | `application-builder` | Casos de Uso CQRS | Comandos, consultas, validadores FluentValidation y puertos de negocio. |
-| **03** | `infrastructure-adapter` | Persistencia EF Core | DbSets, DbModels, mapeadores, repositorios y migraciones PostgreSQL. |
-| **04** | `api-presenter` | API REST & Seguridad | Endpoints REST, RFC 7807 (Problem Details), CORS y 21 políticas de autorización. |
-| **05** | `backend-qa-guardian` | QA Backend & Cobertura | Suites xUnit, Testcontainers, BDD y compuerta de cobertura >= 90%. |
-| **07** | `frontend-tokens-primitives` | Design System Base | Tokens semánticos, neutros tintados, tipografía Geist y primitivas UI atómicas. |
-| **08** | `frontend-composite-ui` | Componentes Ricos | DataTables, ResponsiveDrawers, Modales, StatCards con WAI-ARIA. |
-| **09** | `frontend-application-architect` | Servicios & Adaptadores | Cliente HTTP tipado, esquemas Zod, TanStack Query y SessionPort en memoria. |
-| **10** | `frontend-routing-shell` | Enrutamiento & Shells | TanStack Router, guardas `beforeLoad` por rol y Shell responsivo. |
-| **11** | `frontend-role-modules` | Módulos por Rol | Vistas especializadas: Buyer, Seller, Admin, Logistics, Supervisor. |
-| **13** | `frontend-qa-guardian` | QA Frontend & Cobertura | Suites Vitest + React Testing Library y compuerta de cobertura >= 90%. |
-
-### Grafo Dirigido Acíclico (DAG) por Oleadas:
-```text
-Oleada 0 (Secuencial): Auditoría y congelamiento de baseline documental (12-sdd-alignment-auditor).
-Oleada 1 (Paralelo):   01-domain-architect (Backend) || 07-frontend-tokens-primitives (Frontend).
-Oleada 2 (Paralelo):   02-application-builder + 03-infrastructure-adapter (Backend) ||
-                       09-frontend-application-architect + 08-frontend-composite-ui (Frontend).
-Oleada 3 (Paralelo):   04-api-presenter (Backend) || 10-frontend-routing-shell (Frontend).
-Oleada 4 (Especial):   11-frontend-role-modules (Pantallas de negocio por rol).
-Oleada 5 (Cierre):     05-backend-qa-guardian (xUnit >= 90%) || 13-frontend-qa-guardian (Vitest >= 90%).
-```
-
----
-
 ## 📊 Matriz de Trazabilidad Técnica
 
 | Componente Arquitectónico | Especificación y Requisitos | Ubicación en Código Fuente |
 | :--- | :--- | :--- |
 | **Metodología SDD + ODD** | Jerarquía de verdad formal, ADRs y outcomes medibles. | [`ZENTRIC.md`](./ZENTRIC.md)<br/>[`backendSDD/`](./backendSDD/)<br/>[`frontendSDD/`](./frontendSDD/) |
-| **Orquestación Multi-Agente** | Flota de 13 agentes especializados y máquina de estados. | [`.agents/orchestration/`](./.agents/orchestration/)<br/>[`orchestrator-state.json`](./orchestrator-state.json) |
 | **Arquitectura Hexagonal (Backend)** | Dependencia estricta hacia el centro; dominio C# puro. | [`Zentric.Domain/`](./backend/Zentric.Domain/)<br/>[`backendSDD/02-software-architecture.md`](./backendSDD/02-software-architecture.md) |
 | **Modelado DDD** | 10 Agregados Raíz + 1 Auditoría con métodos semánticos. | [`Zentric.Domain/`](./backend/Zentric.Domain/)<br/>[`backendSDD/Domain/`](./backendSDD/Domain/) |
 | **Aislamiento de Persistencia** | 14 DbSets, modelos `*DbModel` y `*Mapper` dedicados; Unit of Work. | [`Zentric.Infrastructure/Persistence/`](./backend/Zentric.Infrastructure/Persistence/) |

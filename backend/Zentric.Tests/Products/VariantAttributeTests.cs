@@ -4,8 +4,7 @@ namespace Zentric.Tests.Products;
 
 /// <summary>
 /// Pruebas de caracterización del Value Object VariantAttribute.
-/// Referencia: backendSDD/Domain/02-aggregates-and-entities.md, sección 2 (la variante maneja
-/// combinaciones tipo Talla/Color) y ADR-0002.
+/// La variante maneja combinaciones tipo Talla/Color (ADR-0002).
 /// </summary>
 public sealed class VariantAttributeTests
 {

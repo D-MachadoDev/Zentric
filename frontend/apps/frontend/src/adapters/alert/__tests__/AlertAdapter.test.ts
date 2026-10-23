@@ -3,7 +3,7 @@ import { AlertAdapter } from '../AlertAdapter';
 import type { AvisoAlerta, ConfirmacionAlerta } from '../AlertAdapter';
 
 /**
- * `AlertPort` (Frontend-Adapters §5).
+ * `AlertPort`.
  *
  * El adaptador no pinta: sólo decide y resuelve. Estas pruebas fijan el
  * contrato que la UI depende: nunca quedarse con una promesa colgada y nunca

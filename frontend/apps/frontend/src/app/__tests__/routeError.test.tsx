@@ -6,7 +6,7 @@ import { ApiError } from '../../domain/models/ApiError';
 import { RolNoAutorizadoError } from '../guards/routeGuards';
 import { RouteErrorComponent } from '../routes/RouteErrorComponent';
 
-describe('RouteErrorComponent (Frontend-Role-Modules §3)', () => {
+describe('RouteErrorComponent', () => {
   it('renderiza pantalla 403 ante RolNoAutorizadoError preservando mensaje explicativo', () => {
     const error = new RolNoAutorizadoError(UserRole.Administrator);
     const reset = vi.fn();

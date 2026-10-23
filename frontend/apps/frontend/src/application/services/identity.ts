@@ -15,7 +15,7 @@ import { queryKeys } from './queryKeys';
 import { resolveApi, resolveSession } from './apiContext';
 
 /**
- * Hook de mutación para inicio de sesión (Frontend-Domain-Services §3.1).
+ * Hook de mutación para inicio de sesión.
  *
  * Guarda el token y el perfil en SessionPort en memoria RAM (ADR-0009) y
  * actualiza la clave ['auth', 'me'] en TanStack Query.

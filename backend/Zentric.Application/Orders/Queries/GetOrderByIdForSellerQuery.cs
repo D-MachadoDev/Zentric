@@ -6,7 +6,7 @@ using Zentric.Domain.Orders.Ports;
 namespace Zentric.Application.Orders.Queries
 {
     /// <summary>
-    /// Vista del pedido para un vendedor participante (Q-21b, dictamen A).
+    /// Vista del pedido para un vendedor participante.
     ///
     /// El vendedor ve el estado del pedido, SUS lineas y SU subtotal. No ve el
     /// total completo, ni el BuyerId, ni las lineas de otros vendedores: en un

@@ -23,7 +23,7 @@ namespace Zentric.Domain.Orders
         /// <summary>
         /// Momento en que se inició el checkout (transición Cart → PendingPayment).
         /// Null hasta que se llama a <see cref="Checkout()"/>.
-        /// La ventana de 15 minutos (PED-01) se computa desde este instante, no desde <see cref="CreatedAt"/>.
+        /// La ventana de 15 minutos se computa desde este instante, no desde <see cref="CreatedAt"/>.
         /// </summary>
         public DateTime? CheckoutStartedAt { get; private set; }
 
@@ -201,12 +201,11 @@ namespace Zentric.Domain.Orders
             }
 
             // T-004 (H-06/R-06): la caducidad es una regla de negocio y vive aqui, no
-            // en el lector del carrito. La ventana reglamentaria es PED-01
-            // (15 minutos): el umbral lo calcula quien llama con un IClock (ver
+            // en el lector del carrito. La ventana reglamentaria dura 15 minutos:
+            // el umbral lo calcula quien llama con un IClock (ver
             // CheckoutTimeoutService) y Checkout solo decide si ya expiro con el
             // instante que el propio agregado conoce. Asi la caducidad se
-            // comprueba moviendo el reloj, no la suite. Ver
-            // backendSDD/Domain/services/checkout-timeout-service.md.
+            // comprueba moviendo el reloj, no la suite.
             //
             // FIX: El timeout de 15 minutos empieza en el momento del checkout,
             // no en la creación del carrito (CreatedAt).

@@ -9,7 +9,7 @@ using Zentric.Domain.Users.Ports;
 namespace Zentric.Application.Users.Commands
 {
     /// <summary>
-    /// Devuelve el acceso a un usuario bloqueado (INV-05, dictamen Q-26).
+    /// Devuelve el acceso a un usuario bloqueado (INV-05).
     /// </summary>
     /// <param name="Id">Identificador del usuario que se reactiva.</param>
     public record ActivateUserCommand(Guid Id) : IRequest<Result>;

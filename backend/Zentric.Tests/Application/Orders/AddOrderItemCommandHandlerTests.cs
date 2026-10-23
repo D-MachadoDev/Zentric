@@ -38,7 +38,7 @@ namespace Zentric.Tests.Application.Orders
         public Task<CustomerOrder?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
             => Task.FromResult(_orders.FirstOrDefault(o => o.Id == id));
 
-        // El filtro por comprador va en la consulta (Q-21b), no despues: un carrito
+        // El filtro por comprador va en la consulta, no despues: un carrito
         // ajeno es indistinguible de uno inexistente.
         public Task<CustomerOrder?> GetByIdForBuyerAsync(
             Guid id, Guid buyerId, CancellationToken cancellationToken = default)
@@ -179,7 +179,7 @@ namespace Zentric.Tests.Application.Orders
                 new FakeProductRepositoryForCart { Product = product },
                 new FakeUnitOfWorkForCart());
 
-            // El cliente ya no puede mandar precio: el comando no lo admite (PED-04).
+            // El cliente ya no puede mandar precio: el comando no lo admite.
             var result = await handler.Handle(
                 new AddOrderItemCommand(order.Id, variantId, 2, buyerId),
                 CancellationToken.None);
@@ -191,7 +191,7 @@ namespace Zentric.Tests.Application.Orders
             Assert.Equal(Currency, line.UnitPrice.Currency);
         }
 
-        // Q-27. Criterio de aceptación de 01-endpoints.md §3.4: el producto suspendido
+        // Criterio de aceptación: el producto suspendido
         // "no se puede agregar a carritos". Se afirma también que no queda linea: un
         // rechazo que aun asi mutara el pedido dejaria el carrito corrupto.
         [Fact(DisplayName = "AltaDeLinea_ProductoSuspendido_SeRechazaYTocaElCarrito")]

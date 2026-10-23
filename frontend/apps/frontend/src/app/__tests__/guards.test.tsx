@@ -23,7 +23,7 @@ function redirectDe(error: unknown): { to?: string; search?: Record<string, unkn
 }
 
 /**
- * Guardas de rol (Frontend-Role-Modules §3).
+ * Guardas de rol.
  *
  * La tabla de la spec distingue TRES resultados, y cada uno es una decisión
  * distinta que conviene fijar con una prueba: sin sesión hay redirección, con
@@ -97,8 +97,8 @@ describe('guardas de rol (§3)', () => {
 
     expect(() => exigirRol({ session }, UserRole.Administrator)).toThrow();
 
-    // §3: la sesión se conserva, igual que en el servidor, donde un `403` no
-    // cierra la sesión (`Frontend-Adapters.md` §5). Redirigir a `/login`
+    // La sesión se conserva, igual que en el servidor, donde un `403` no
+    // cierra la sesión. Redirigir a `/login`
     // borraría una sesión válida sólo por pulsar un enlace que no corresponde.
     expect(session.getAccessToken()).toBe('token');
     expect(session.getRole()).toBe(UserRole.Buyer);

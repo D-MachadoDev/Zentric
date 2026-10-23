@@ -11,7 +11,7 @@ interface State {
 }
 
 /**
- * Límite global de errores de renderizado para React 19 (C4-4-Codigo-React.md §1).
+ * Límite global de errores de renderizado para React 19.
  *
  * Captura excepciones catastróficas en el árbol de componentes y ofrece una
  * recuperación controlada mediante recarga limpia de la consola, evitando la

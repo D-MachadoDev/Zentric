@@ -19,7 +19,7 @@ namespace Zentric.Application.Logistics.Queries
         DateTime CreatedAt);
 
     /// <summary>
-    /// Despacho por id. Q-21b: la visibilidad depende del rol del llamante (ver
+    /// Despacho por id. La visibilidad depende del rol del llamante (ver
     /// el handler); un recurso ajeno responde igual que uno inexistente.
     /// </summary>
     public record GetFulfillmentByIdQuery(Guid Id, Guid CallerId, UserRole CallerRole) : IRequest<Result<FulfillmentOrderDto>>;
@@ -45,7 +45,7 @@ namespace Zentric.Application.Logistics.Queries
                 return Result<FulfillmentOrderDto>.NotFound("Fulfillment order not found.");
             }
 
-            // Q-21b: la visibilidad depende del rol. Un recurso ajeno responde
+            // La visibilidad depende del rol. Un recurso ajeno responde
             // igual que uno inexistente (anti-enumeracion).
             var isVisible = request.CallerRole switch
             {

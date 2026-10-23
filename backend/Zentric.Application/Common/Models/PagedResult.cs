@@ -5,9 +5,6 @@ namespace Zentric.Application.Common.Models
     /// <summary>
     /// Pagina pedida por el cliente. El indice es de base cero, como
     /// `Skip/Take` de EF Core y como espera un frontend paginado.
-    ///
-    /// Referencia: backendSDD/Application/01-use-cases-and-ports.md y el riesgo
-    /// API4 (recurso sin limitacion) del SDD.
     /// </summary>
     public readonly record struct PageRequest
     {

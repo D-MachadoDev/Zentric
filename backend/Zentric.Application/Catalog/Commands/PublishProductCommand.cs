@@ -34,8 +34,8 @@ namespace Zentric.Application.Catalog.Commands
                 product.Publish();
             }
             // Sin este catch la guarda "ya esta publicado" subia al middleware global y
-            // respondia 500, mientras que el XML doc y Presentation/01-endpoints.md
-            // prometen 400. Es regla de negocio predecible, no fallo de infraestructura.
+            // respondia 500, mientras que el XML doc
+            // promete 400. Es regla de negocio predecible, no fallo de infraestructura.
             catch (InvalidOperationException ex)
             {
                 return Result.Failure(ex.Message);

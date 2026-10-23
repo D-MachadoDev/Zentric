@@ -33,7 +33,7 @@ namespace Zentric.Tests.E2E
         /// <summary>Comprador propietario del escenario.</summary>
         public ApiActor Buyer => Get()["Buyer"];
 
-        /// <summary>Segundo comprador: existe para probar la propiedad cruzada (Q-21b).</summary>
+        /// <summary>Segundo comprador: existe para probar la propiedad cruzada.</summary>
         public ApiActor Buyer2 => Get()["Buyer2"];
 
         /// <summary>Vendedor propietario del producto.</summary>
@@ -157,7 +157,7 @@ namespace Zentric.Tests.E2E
                 document++;
                 var email = $"e2e-{key.ToLowerInvariant()}@zentric-e2e.test";
 
-                // Q-22 (ADR-0012): el rol viaja por nombre. Un entero responderia 400 y la siembra
+                // ADR-0012: el rol viaja por nombre. Un entero responderia 400 y la siembra
                 // fallaria por un contrato que estas pruebas precisamente quieren verificar.
                 await CreateUserAsync(adminToken, email, fullName, $"DOC-E2E-{document}", role);
 

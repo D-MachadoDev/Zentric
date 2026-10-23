@@ -12,7 +12,7 @@ namespace Zentric.Tests.E2E
     /// comprobaba nadie de forma automatica. Aqui es codigo de produccion que nadie puede saltarse
     /// sin que se rompa el pipeline.
     ///
-    /// Cada caso traduce una fila de la matriz de <c>backendSDD/Presentation/02-authorization.md</c>.
+    /// Cada caso traduce una fila de la matriz de autorización por rol.
     /// "Abierto" no es un codigo: significa que la peticion SUPERA la barrera de autorizacion y
     /// muere mas adelante, en validacion (400) o por recurso inexistente (404). Un 401 o un 403
     /// donde se esperaba "abierto" significa que la politica de rol se aplico cuando no tocaba.
@@ -77,12 +77,12 @@ namespace Zentric.Tests.E2E
             { "POST", "/api/logistics/fulfillment", "Seller", "abierto" },
             { "POST", "/api/logistics/fulfillment", "Buyer", "403" },
 
-            // Cancelar por stock fantasma: Vendedor u Operador (Q-21c: quien esta en bodega
+            // Cancelar por stock fantasma: Vendedor u Operador (quien esta en bodega
             // detecta el faltante). El Operador puede, no es un descuido de la matriz.
             { "POST", "/api/logistics/fulfillment/cancel-ghost-stock", "Seller", "abierto" },
             { "POST", "/api/logistics/fulfillment/cancel-ghost-stock", "Operator", "abierto" },
 
-            // Emitir facturas: solo Administrador (Q-21d).
+            // Emitir facturas: solo Administrador.
             { "POST", $"/api/billing/invoices/generate/{Missing}", "Admin", "abierto" },
             { "POST", $"/api/billing/invoices/generate/{Missing}", "Seller", "403" },
 

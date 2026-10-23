@@ -19,7 +19,7 @@ namespace Zentric.Application.Warehouses.Queries
     }
 
     /// <summary>
-    /// Listado de bodegas. Q-21b: el Vendedor queda encerrado en las suyas.
+    /// Listado de bodegas. El Vendedor queda encerrado en las suyas.
     /// Pedir las de otro vendedor responde 400 en vez de devolver en silencio las
     /// propias: el filtro pedido y el aplicado serian distintos, y responder como
     /// si nada oculta el limite.
@@ -57,7 +57,7 @@ namespace Zentric.Application.Warehouses.Queries
     }
 
     /// <summary>
-    /// Detalle de bodega. Q-21b: el Vendedor solo lee las suyas; una bodega de
+    /// Detalle de bodega. El Vendedor solo lee las suyas; una bodega de
     /// otro responde igual que una inexistente.
     /// </summary>
     public record GetWarehouseByIdQuery(Guid Id, Guid CallerId, UserRole CallerRole) : IRequest<Result<WarehouseDto>>;

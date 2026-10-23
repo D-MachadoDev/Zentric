@@ -49,7 +49,7 @@ namespace Zentric.Application.Returns.Commands
                 return Result<bool>.NotFound("Return request not found.");
             }
 
-            // Q-21b: el rechazo es del vendedor del producto. El mensaje es el de "no existe" para
+            // El rechazo es del vendedor del producto. El mensaje es el de "no existe" para
             // no confirmar que esa devolucion existe y es de otro.
             var product = await _productRepository.GetByVariantIdAsync(returnReq.VariantId, cancellationToken);
             if (product == null || product.VendorId != request.CallerId)

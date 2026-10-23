@@ -8,7 +8,7 @@ namespace Zentric.Tests.UseCases
     /// Validación de entrada de <see cref="AddOrderItemCommand"/>. Las reglas espejan las
     /// guardas del dominio (<c>OrderItem</c> y <c>CustomerOrder.AddItem</c>),
     /// de modo que un error de formato nunca alcanza las entidades. No hay reglas de
-    /// precio ni de moneda: esos campos no viajan en el comando (PED-04 / ADR-0020).
+    /// precio ni de moneda: esos campos no viajan en el comando (ADR-0020).
     /// </summary>
     public class AddOrderItemCommandValidatorTests
     {
@@ -63,7 +63,7 @@ namespace Zentric.Tests.UseCases
         [Fact]
         public void Validate_EmptyBuyerId_ReturnsError()
         {
-            // Q-21b: la identidad la fija el token; esta regla es defensa en
+            // La identidad la fija el token; esta regla es defensa en
             // profundidad para que un comando mal compuesto nunca llegue al handler.
             var command = ValidCommand() with { BuyerId = Guid.Empty };
 

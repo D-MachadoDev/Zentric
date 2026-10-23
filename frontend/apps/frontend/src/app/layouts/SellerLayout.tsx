@@ -44,8 +44,8 @@ interface SellerLayoutProps {
 }
 
 /**
- * Shell del Vendedor — "Estudio del Vendedor" (Frontend-Design-System §9.6).
- * Exige rol Seller o Administrator en beforeLoad (C4-4 §2: SellerShell).
+ * Shell del Vendedor — "Estudio del Vendedor".
+ * Exige rol Seller o Administrator en beforeLoad (SellerShell).
  *
  * Estructura diferenciada: barra lateral persistente con secciones mono-caps
  * (Catálogo / Ventas) tipo taller de gestión, acento violeta de socio

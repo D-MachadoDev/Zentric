@@ -1,5 +1,5 @@
 /**
- * Puerto de alertas y confirmaciones (Frontend-Architecture §5.3).
+ * Puerto de alertas y confirmaciones.
  *
  * Desacopla la confirmación obligatoria de acciones críticas y avisos
  * respecto a los componentes visuales de React.

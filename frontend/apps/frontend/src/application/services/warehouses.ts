@@ -4,7 +4,7 @@ import { queryKeys } from './queryKeys';
 import { resolveApi } from './apiContext';
 
 /**
- * Hook de consulta para listar bodegas físicas (Frontend-Domain-Services §3.2).
+ * Hook de consulta para listar bodegas físicas.
  */
 export function useWarehousesQuery(vendorId?: string, api?: ZentricApiPort) {
   return useQuery({

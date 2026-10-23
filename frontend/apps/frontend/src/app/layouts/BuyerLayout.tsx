@@ -33,7 +33,7 @@ const buyerNavItems = [
 const CATEGORY_SHORTCUT_SKELETONS = 4;
 
 /**
- * Shell del Comprador — "Portal Comercial Marketplace" (Frontend-Design-System §9.6).
+ * Shell del Comprador — "Portal Comercial Marketplace".
  * Diseñado con psicología de conversión, arquitectura de marketplace moderno
  * (referencias estilo Shopify / Amazon / Best Buy), navegación de alto contraste,
  * barra de búsqueda principal y sin fondos cuadriculados genéricos de IA.

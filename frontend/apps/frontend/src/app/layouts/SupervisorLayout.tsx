@@ -35,8 +35,8 @@ interface SupervisorLayoutProps {
 }
 
 /**
- * Shell del Supervisor de Auditoría — "Sala de Libros" (Frontend-Design-System §9.6).
- * Exige rol Supervisor o Administrator en beforeLoad (C4-4 §2: SupervisorShell).
+ * Shell del Supervisor de Auditoría — "Sala de Libros".
+ * Exige rol Supervisor o Administrator en beforeLoad (SupervisorShell).
  *
  * Estructura diferenciada: índice forense estrecho (w-56) con grupos mono-caps
  * y el contenido enmarcado como "hoja de libro mayor" (superficie continua

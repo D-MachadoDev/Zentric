@@ -1,7 +1,7 @@
 import type { HealthStatus, ZentricApiPort } from '../../domain';
 
 /**
- * Servicios transversales (Frontend-Domain-Services §3).
+ * Servicios transversales.
  */
 
 export { useHealthQuery } from './health';

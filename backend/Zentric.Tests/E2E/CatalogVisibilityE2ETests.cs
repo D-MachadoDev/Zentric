@@ -5,9 +5,9 @@ using Xunit;
 namespace Zentric.Tests.E2E
 {
     /// <summary>
-    /// Visibilidad del catalogo verificada por HTTP real (Q-27, dictamen Q22=B).
+    /// Visibilidad del catalogo verificada por HTTP real.
     ///
-    /// 01-endpoints.md §3.4 promete que al suspender "el producto deja de ser visible en
+    /// La especificacion promete que al suspender "el producto deja de ser visible en
     /// busquedas". La prueba unitaria cubre la regla de negocio pero NO el SQL: en el
     /// listado paginado el total se cuenta antes del Skip/Take, de modo que un repositorio
     /// que filtrara en memoria devolveria la pagina bien pero un total inflado. Solo una
@@ -55,9 +55,9 @@ namespace Zentric.Tests.E2E
         }
 
         /// <summary>
-        /// El dictamen Q22=B: quien pide su propio vendorId obtiene la vista de gestion y
+        /// Dictamen del Owner: quien pide su propio vendorId obtiene la vista de gestion y
         /// si ve sus suspendidos. Sin esto, suspender seria un callejon sin salida porque
-        /// publish (Q-25) exige encontrar antes el producto.
+        /// publish exige encontrar antes el producto.
         /// </summary>
         [Fact]
         public async Task Catalogo_ElVendedorSiVeLosSuspendidosDeSuPropioCatalogo()

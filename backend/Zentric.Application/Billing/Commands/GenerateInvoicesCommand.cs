@@ -32,7 +32,7 @@ namespace Zentric.Application.Billing.Commands
                 return Result<bool>.NotFound("Order not found.");
             }
 
-            // Q-21d (dictamen del Owner 2026-09-29): estas dos guardas ya las prometia la
+            // Estas dos guardas ya las prometia la
             // spec de este endpoint y no existian. Sin ellas, un segundo clic en
             // "facturar" -o un reintento del frontend- duplicaba las tres facturas del
             // pedido, y se podia facturar un carrito que nadie ha pagado.
@@ -48,13 +48,13 @@ namespace Zentric.Application.Billing.Commands
                 return Result<bool>.Failure($"Invoices have already been issued for order {order.Id}.");
             }
 
-            // Q-15 (dictamen del Owner 2026-09-27): reparto ratificado 5% plataforma /
+            // Reparto ratificado 5% plataforma /
             // 95% vendedor. El cobro de la comision queda habilitado.
             if (!PlatformFeePolicy.Current.IsCollectable)
             {
                 return Result<bool>.Failure(
                     "Platform fee cannot be charged: the revenue split has not been ratified by the owner. " +
-                    "See backendSDD question Q-15.");
+                    "Ratify the split in PlatformFeePolicy before generating invoices.");
             }
 
             try
@@ -71,7 +71,7 @@ namespace Zentric.Application.Billing.Commands
                 invoicesToSave.Add(
                     Invoice.CreateZentricDetail(order.Id, feePolicy.ApplyTo(totalAmount)));
 
-                // 3. Factura por vendedor (split). Q-18: el VendorId vive en la
+                // 3. Factura por vendedor (split). El VendorId vive en la
                 //    linea del pedido como instantanea historica, de modo que la
                 //    factura refleje quien vendio en el momento de la compra.
                 //    Se agrupa por vendedor y se descuenta la comion

@@ -26,7 +26,7 @@ namespace Zentric.Application.Returns.Queries
         public async Task<Result<IReadOnlyList<ReturnRequestDto>>> Handle(
             GetReturnsQuery request, CancellationToken cancellationToken)
         {
-            // Mismo reparto de roles que el detalle (Q-21b), para que listar y abrir no discrepen:
+            // Mismo reparto de roles que el detalle, para que listar y abrir no discrepen:
             // el Comprador ve las de sus pedidos, el Vendedor las de sus variantes, y Operador,
             // Administrador y Supervisor todas.
             Guid? buyerId = null;

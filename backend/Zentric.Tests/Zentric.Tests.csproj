@@ -25,10 +25,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Zentric.Application\Zentric.Application.csproj" />
     <ProjectReference Include="..\Zentric.Domain\Zentric.Domain.csproj" />
-    <!-- Necesaria para probar los mappers de persistencia (Q-18: VendorId en factura). -->
+    <!-- Necesaria para probar los mappers de persistencia (VendorId en factura). -->
     <ProjectReference Include="..\Zentric.Infrastructure\Zentric.Infrastructure.csproj" />
     <!--
-      Necesaria para la matriz de autorizacion (Q-21): EndpointAuthorizationMatrixTests refleja
+      Necesaria para la matriz de autorizacion: EndpointAuthorizationMatrixTests refleja
       sobre los controladores de Zentric.Api para comprobar que cada endpoint declara la politica
       que dicta la Ley. Es la unica forma de que la Matriz de Responsabilidades sea un test y no
       una promesa. El FrameworkReference se declara explicito porque el proyecto de pruebas usa

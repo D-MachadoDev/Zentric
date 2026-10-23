@@ -7,7 +7,7 @@ namespace Zentric.Domain.Products.ValueObjects
     /// <summary>
     /// Lista blanca de divisas que el sistema acepta.
     ///
-    /// DECISION DEL OWNER (2026-09-27, Q-16): el sistema sigue siendo
+    /// DECISION DEL OWNER (2026-09-27): el sistema sigue siendo
     /// multi-moneda, pero solo admite las divisas declaradas aqui. Antes
     /// aceptaba cualquier codigo de 3 letras, lo que permitia inventar
     /// divisas como "ABC" y mezclarlas dentro de un mismo pedido.
@@ -96,7 +96,7 @@ namespace Zentric.Domain.Products.ValueObjects
                 throw new ArgumentOutOfRangeException(nameof(amount), "Amount cannot be negative.");
             }
 
-            // Valida contra la lista blanca de divisas soportadas (Q-16).
+            // Valida contra la lista blanca de divisas soportadas.
             var normalizedCurrency = SupportedCurrencies.Normalize(currency);
 
             Amount = decimal.Round(amount, 2, MidpointRounding.AwayFromZero);

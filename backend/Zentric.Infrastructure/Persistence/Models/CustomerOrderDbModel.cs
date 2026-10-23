@@ -23,7 +23,7 @@ namespace Zentric.Infrastructure.Persistence.Models
         public Guid VariantId { get; set; }
 
         /// <summary>
-        /// Instantanea historica del vendedor (Q-18). No se recalcula contra
+        /// Instantanea historica del vendedor. No se recalcula contra
         /// el producto: la factura refleja quien vendio en la compra.
         /// </summary>
         public Guid VendorId { get; set; }

@@ -10,7 +10,7 @@ namespace Zentric.Api.Security
     /// El rol viaja como claim con la URI larga de <see cref="ClaimTypes.Role"/>
     /// (lo emite <c>JwtAuthTokenService</c> y lo valida el middleware). El parseo
     /// vive aqui para que ningun controlador escriba literales de rol ni parseos
-    /// sueltos: Q-21b necesita conocer el rol del llamante para aplicar la
+    /// sueltos: la regla de propiedad necesita conocer el rol del llamante para aplicar la
     /// propiedad del recurso (Comprador y Vendedor ven lo suyo; Operador,
     /// Administrador y Supervisor leen sin filtro de dueno).
     /// </summary>

@@ -42,7 +42,7 @@ namespace Zentric.Application.Orders.Commands
 
         public async Task<Result<bool>> Handle(CheckoutOrderCommand request, CancellationToken cancellationToken)
         {
-            // Q-21b: el carrito se carga con el filtro por comprador; el de otro
+            // El carrito se carga con el filtro por comprador; el de otro
             // comprador se trata igual que uno inexistente.
             var order = await _orderRepository.GetByIdForBuyerAsync(
                 request.OrderId, request.BuyerId, cancellationToken);

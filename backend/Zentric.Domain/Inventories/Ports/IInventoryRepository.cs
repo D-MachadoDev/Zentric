@@ -63,7 +63,7 @@ namespace Zentric.Domain.Inventories.Ports
         /// reservado -= n, disponible += n WHERE reservado >= n). Es la
         /// compensacion que exige ADR-0001 para que un fallo a mitad de la
         /// reserva no deje parciales confirmados, y se aplica en el mismo
-        /// estilo atomico que la reserva. Ver backendSDD/Adr/0025.
+        /// estilo atomico que la reserva. Ver ADR-0025.
         /// </summary>
         Task ReleaseReservedStockAsync(Guid inventoryId, int quantity, CancellationToken cancellationToken = default);
 

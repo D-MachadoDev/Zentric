@@ -42,7 +42,7 @@ namespace Zentric.Application.Returns.Commands
         /// exige registrar la "regla aplicada": en un string por credito y no en una
         /// columna de version, para que no dependa de tablas y responda exactamente
         /// cual regla se aplico en ese momento. Credito = precio congelado de la linea
-        /// (invariante 15 / PED-04) x unidades devueltas, con el tope de invariante 14.
+        /// (invariante 15) x unidades devueltas, con el tope de invariante 14.
         /// </summary>
         private const string RefundRuleApplied = "EXC-02: frozen line price x returned units (ADR-0020 d.6, invariants 14-15)";
 

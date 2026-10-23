@@ -16,7 +16,7 @@ namespace Zentric.Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    // Q-21: los listados de usuario exponen PII (documento de identidad y correo), asi que la
+    // Los listados de usuario exponen PII (documento de identidad y correo), asi que la
     // Ley los deja solo en manos del Administrador (seccion 5: "responsable de la administracion
     // de vendedores"). El Supervisor NO los lee: su "consulta y seguimiento operativo" (seccion
     // 5) no incluye datos personales. Cada usuario conserva su propia identidad por GET /auth/me.
@@ -159,7 +159,7 @@ namespace Zentric.Api.Controllers
         }
 
         /// <summary>
-        /// Devuelve el acceso a un usuario bloqueado (INV-05, dictamen Q-26).
+        /// Devuelve el acceso a un usuario bloqueado (INV-05).
         /// </summary>
         /// <remarks>
         /// Es la inversa de <c>POST {id}/block</c>: sin ella un error del

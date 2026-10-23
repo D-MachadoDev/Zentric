@@ -14,7 +14,7 @@ namespace Zentric.Tests.Application.Users
     ///
     /// La Ley (ZENTRIC.md, Dominio 1) dice que el estado del usuario es "Activo,
     /// Bloqueado, etc." pero no dice quien lo bloquea ni si es reversible: el dictamen
-    /// Q-26 del Owner fija que el comando vive en <c>POST /api/users/{id}/block</c>
+    /// del Owner fija que el comando vive en <c>POST /api/users/{id}/block</c>
     /// con la politica <c>UserAdministration</c> (solo Administrador) y que la
     /// reactivacion es su inversa, porque sin ella un error del Administrador seria
     /// irreversible.

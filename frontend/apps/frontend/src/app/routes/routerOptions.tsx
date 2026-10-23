@@ -4,7 +4,7 @@ import { routeTree } from './routeTree';
 import { appServices } from '../providers/appServices';
 
 /**
- * Opciones compartidas del router (C4-4-Codigo-React.md §1.1).
+ * Opciones compartidas del router.
  *
  * En producción y en pruebas unitarias se aplican las MISMAS opciones, garantizando
  * que el contexto de dependencias y el tratamiento de errores 403 / 404 sean idénticos.

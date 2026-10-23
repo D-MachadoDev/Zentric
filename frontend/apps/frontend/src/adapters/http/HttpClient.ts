@@ -69,7 +69,7 @@ function readBaseUrlFromEnv(): string {
 }
 
 /**
- * Adaptador HTTP con monopolio de red (Frontend-Adapters §1–§3.4).
+ * Adaptador HTTP con monopolio de red.
  *
  * Implementa los 47 métodos canónicos de `ZentricApiPort` en inglés (Decision A2)
  * traduciendo rutas, cabeceras estándar, inyección síncrona de Bearer JWT,
@@ -106,7 +106,7 @@ export class HttpClient implements ZentricApiPort {
     headers.set('Accept', 'application/json');
     if (init.body !== undefined) headers.set('Content-Type', 'application/json');
 
-    // Erradicación de cabeceras forjables (Frontend-Adapters §1)
+    // Erradicación de cabeceras forjables
     headers.delete('X-Buyer-Id');
     headers.delete('X-User-Id');
     headers.delete('X-Role');
@@ -448,7 +448,7 @@ export class HttpClient implements ZentricApiPort {
 
   /**
    * POST /api/Returns/{id}/approve exige { returnRequestId: id } en el body
-   * según ReturnsController.cs:95-97 y Frontend-Adapters §3.4.
+   * según ReturnsController.cs:95-97.
    */
   approveReturn(id: string): Promise<void> {
     return this.#json<void>(

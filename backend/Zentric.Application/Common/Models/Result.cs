@@ -3,7 +3,7 @@ namespace Zentric.Application.Common.Models
     /// <summary>
     /// Clasifica el fallo para que la capa HTTP el traduzca sin adivinar.
     ///
-    /// Q-21b (dictamen del Owner 2026-09-29): un recurso que es de otro tiene que
+    /// Un recurso que es de otro tiene que
     /// responder igual que uno que no existe, tanto en el codigo como en el mensaje,
     /// para que nadie pueda enumerar GUID ajenos. Como las escrituras tambien filtran
     /// por dueno, el "no encontrado" tiene que ser distinguible del error de

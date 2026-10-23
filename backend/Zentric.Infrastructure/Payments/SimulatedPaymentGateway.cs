@@ -9,7 +9,7 @@ namespace Zentric.Infrastructure.Payments
     /// <summary>
     /// Adaptador de salida SIMULADO para <see cref="IPaymentGatewayService"/>.
     ///
-    /// Q-08 (ratificado por el Owner el 2026-09-27): no existe pasarela real
+    /// Ratificada por el Owner el 2026-09-27: no existe pasarela real
     /// integrada. Este adaptador aprueba siempre el cobro y genera un
     /// identificador de transaccion local, de modo que los casos de uso de pago
     /// se puedan ejecutar y probar de punta a punta.
