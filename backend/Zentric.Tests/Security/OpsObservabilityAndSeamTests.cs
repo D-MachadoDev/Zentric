@@ -71,7 +71,10 @@ public sealed class OpsObservabilityAndSeamTests
     {
         // Localizar la raíz del repositorio subiendo desde el directorio de pruebas.
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "orchestrator-state.json")))
+        // El marcador `orchestrator-state.json` fue retirado por la limpieza
+        // de metodologia (S9), asi que se usa `ZENTRIC.md`, que es la Ley del
+        // proyecto y esta en la raiz del repositorio.
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "ZENTRIC.md")))
         {
             dir = dir.Parent;
         }
