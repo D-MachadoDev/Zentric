@@ -407,10 +407,6 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     if (prod) prod.status = 'Suspended';
   }
 
-  async listProducts(vendorId?: string): Promise<Product[]> {
-    return vendorId ? this.products.filter((p) => p.vendorId === vendorId) : [...this.products];
-  }
-
   async listProductsPaged(params?: ListProductsPagedParams): Promise<PagedResult<Product>> {
     const page = params?.page ?? 0;
     const size = params?.size ?? 10;
@@ -569,6 +565,34 @@ export class MockZentricApiAdapter implements ZentricApiPort {
         buyerId: o.buyerId,
         createdAt: o.createdAt,
       }));
+  }
+
+  async listOrdersPaged(params?: { status?: OrderStatus | string; page?: number; size?: number }): Promise<PagedResult<OrderListItem>> {
+    const page = params?.page ?? 0;
+    const size = params?.size ?? 20;
+    const filtered = this.orders
+      .filter((o) => !params?.status || o.status === params.status)
+      .map((o) => ({
+        id: o.id,
+        status: o.status,
+        currency: o.currency,
+        totalAmount: o.totalAmount,
+        items: o.items,
+        itemCount: o.items.length,
+        buyerId: o.buyerId,
+        createdAt: o.createdAt,
+      }));
+    const start = page * size;
+    const items = filtered.slice(start, start + size);
+    return {
+      items,
+      page,
+      size,
+      totalItems: filtered.length,
+      totalPages: Math.ceil(filtered.length / size),
+      hasPrevious: page > 0,
+      hasNext: start + items.length < filtered.length,
+    };
   }
 
   async getOrderById(id: string): Promise<Order | SellerOrderView> {

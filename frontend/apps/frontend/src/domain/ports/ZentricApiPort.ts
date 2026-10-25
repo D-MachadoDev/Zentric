@@ -35,6 +35,13 @@ import type {
 } from '../models';
 import type { FulfillmentStatus, OrderStatus, ReturnStatus, UserRole } from '../enums';
 
+/** Parámetros para listado paginado de pedidos. */
+export interface ListOrdersPagedParams {
+  status?: OrderStatus | string;
+  page?: number;
+  size?: number;
+}
+
 /**
  * Puerto de salida unificado hacia la API de Zentric (Frontend-Architecture §5.1).
  *
@@ -80,7 +87,6 @@ export interface ZentricApiPort {
   createProduct(input: CreateProductInput): Promise<CreatedProduct>;
   publishProduct(productId: string): Promise<void>;
   suspendProduct(productId: string): Promise<void>;
-  listProducts(vendorId?: string): Promise<Product[]>;
   listProductsPaged(params?: ListProductsPagedParams): Promise<PagedResult<Product>>;
   getProductById(id: string): Promise<Product>;
   /** Alias compatible para getProductById */
@@ -110,6 +116,8 @@ export interface ZentricApiPort {
   cancelOrder?(orderId: string): Promise<void>;
   payOrder(orderId: string): Promise<void>;
   listOrders(status?: OrderStatus | string): Promise<OrderListItem[]>;
+  /** Listado paginado de pedidos (backend: GET /api/Orders?status&page&size). */
+  listOrdersPaged(params?: ListOrdersPagedParams): Promise<PagedResult<OrderListItem>>;
   getOrderById(id: string): Promise<Order | SellerOrderView>;
   /** Alias compatible para getOrderById */
   getOrder(id: string): Promise<Order | SellerOrderView>;

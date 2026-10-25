@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   AddCartItemInput,
+  ListOrdersPagedParams,
   Order,
   OrderListItem,
   OrderStatus,
+  PagedResult,
   SellerOrderView,
   UpdateCartItemQuantityInput,
   ZentricApiPort,
@@ -12,7 +14,7 @@ import { queryKeys } from './queryKeys';
 import { resolveApi } from './apiContext';
 
 /**
- * Hook de consulta para listar pedidos.
+ * Hook de consulta para listar pedidos (sin paginar - legacy).
  */
 export function useOrdersQuery(
   status?: OrderStatus | string,
@@ -22,6 +24,23 @@ export function useOrdersQuery(
   return useQuery({
     queryKey: queryKeys.orders.list({ status }),
     queryFn: () => resolveApi(api).listOrders(status),
+    enabled: options?.enabled,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Hook de consulta para listar pedidos paginados (server-side).
+ * El backend filtra, pagina y ordena; el frontend solo renderiza.
+ */
+export function useOrdersPagedQuery(
+  params?: ListOrdersPagedParams,
+  api?: ZentricApiPort,
+  options?: { enabled?: boolean },
+) {
+  return useQuery({
+    queryKey: queryKeys.orders.listPaged(params),
+    queryFn: () => resolveApi(api).listOrdersPaged(params),
     enabled: options?.enabled,
     staleTime: 30_000,
   });

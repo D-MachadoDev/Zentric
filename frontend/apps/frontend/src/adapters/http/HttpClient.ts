@@ -21,6 +21,7 @@ import type {
   InspectReturnInput,
   Inventory,
   Invoice,
+  ListOrdersPagedParams,
   ListProductsPagedParams,
   LoginInput,
   Order,
@@ -367,11 +368,6 @@ export class HttpClient implements ZentricApiPort {
     );
   }
 
-  listProducts(vendorId?: string): Promise<Product[]> {
-    const query = vendorId ? `?vendorId=${encodeURIComponent(vendorId)}` : '';
-    return this.#json<Product[]>(`/api/Catalog/products${query}`, { method: 'GET' });
-  }
-
   listProductsPaged(params?: ListProductsPagedParams): Promise<PagedResult<Product>> {
     const queryParams = new URLSearchParams();
     if (params?.vendorId) queryParams.set('vendorId', params.vendorId);
@@ -443,6 +439,15 @@ export class HttpClient implements ZentricApiPort {
   listOrders(status?: OrderStatus | string): Promise<OrderListItem[]> {
     const query = status ? `?status=${encodeURIComponent(status)}` : '';
     return this.#json<OrderListItem[]>(`/api/Orders${query}`, { method: 'GET' });
+  }
+
+  listOrdersPaged(params?: ListOrdersPagedParams): Promise<PagedResult<OrderListItem>> {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.set('status', params.status);
+    if (params?.page !== undefined) queryParams.set('page', String(params.page));
+    if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.#json<PagedResult<OrderListItem>>(`/api/Orders${query}`, { method: 'GET' });
   }
 
   getOrderById(id: string): Promise<Order | SellerOrderView> {

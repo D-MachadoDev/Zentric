@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useOrdersQuery, useCancelOrderMutation } from '../../application/services/orders';
-import { useProductsQuery } from '../../application/services/catalog';
+import { useProductsPagedQuery } from '../../application/services/catalog';
 import { useReturnsQuery } from '../../application/services/returns';
 import { OrderStatus, type OrderListItem, type ReturnRequest } from '../../domain';
 import {
@@ -50,7 +50,8 @@ export function BuyerOrdersPage() {
   const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const { data: orders, isLoading, isError, error, refetch, isFetching } = useOrdersQuery();
-  const { data: products } = useProductsQuery();
+  const { data: productsResult } = useProductsPagedQuery();
+  const products = productsResult?.items ?? [];
   const { data: returns } = useReturnsQuery();
   const cancelOrderMutation = useCancelOrderMutation();
   const buyerReturns = returns ?? [];
