@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import { useOrdersQuery } from '../../application/services/orders';
+import { useOrdersQuery, useCancelOrderMutation } from '../../application/services/orders';
 import { useProductsQuery } from '../../application/services/catalog';
 import { useReturnsQuery } from '../../application/services/returns';
 import { OrderStatus, type OrderListItem, type ReturnRequest } from '../../domain';
@@ -34,21 +34,35 @@ import {
   Package,
   Copy,
   Check,
+  XCircle,
 } from 'lucide-react';
 import { getProductImageUrl } from './productImages';
 
 /**
  * Historial de Pedidos del Comprador (Frontend-Role-Modules §2.4).
- * Hero KPI Strip + Listado Filtrable con acceso al pago atómico de 15 min y detalle de despacho.
+ * - Los pedidos en `PendingPayment` solo permanecen en "Pendientes de Pago" mientras su
+ *   ventana de 15 minutos esté vigente (`expiresAt > now`). Si expiran, salen de la lista.
+ * - Incluye botón "Cancelar pedido" para liberar manualmente la reserva sin esperar 15 minutos.
+ * - Todos los elementos (título del pedido, productos, miniaturas y devoluciones) son clicables.
  */
 export function BuyerOrdersPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
-  const [nowMs] = useState(() => Date.now());
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const { data: orders, isLoading, isError, error, refetch, isFetching } = useOrdersQuery();
   const { data: products } = useProductsQuery();
   const { data: returns } = useReturnsQuery();
+  const cancelOrderMutation = useCancelOrderMutation();
   const buyerReturns = returns ?? [];
+
+  // Actualizar reloj cada 15s para retirar automáticamente pedidos cuyo checkout de 15 min expiró
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowMs(Date.now());
+    }, 15_000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleCopyOrderId = (id: string) => {
     try {
@@ -60,18 +74,37 @@ export function BuyerOrdersPage() {
     }
   };
 
+  const handleCancelPendingOrder = async (orderId: string) => {
+    setCancellingOrderId(orderId);
+    try {
+      await cancelOrderMutation.mutateAsync(orderId);
+      void refetch();
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
+
   const allOrders = orders ?? [];
 
-  // Excluir carritos abiertos y pedidos pendientes de pago cuya reserva expiró y ya NO tienen stock en bodega
+  const isPendingPaymentActive = (o: OrderListItem): boolean => {
+    if (o.status !== OrderStatus.PendingPayment) return false;
+    if (o.canStillPay === false) return false;
+    if (o.expiresAt && new Date(o.expiresAt).getTime() <= nowMs) return false;
+    return true;
+  };
+
+  // Excluir carritos abiertos y pedidos pendientes de pago cuyo tiempo de checkout de 15 min ya expiró
   const nonCartOrders = allOrders.filter((o: OrderListItem) => {
     if (o.status === OrderStatus.Cart) return false;
-    if (o.status === OrderStatus.PendingPayment && o.canStillPay === false) return false;
+    if (o.status === OrderStatus.PendingPayment) {
+      return isPendingPaymentActive(o);
+    }
     return true;
   });
 
   // Métricas para el Hero KPI Strip
-  const pendingPaymentOrders = nonCartOrders.filter(
-    (o: OrderListItem) => o.status === OrderStatus.PendingPayment && o.canStillPay !== false
+  const pendingPaymentOrders = nonCartOrders.filter((o: OrderListItem) =>
+    isPendingPaymentActive(o),
   );
   const deliveredOrders = nonCartOrders.filter(
     (o: OrderListItem) => o.status === OrderStatus.Delivered
@@ -188,7 +221,7 @@ export function BuyerOrdersPage() {
         />
       </div>
 
-      {/* ── Seguimiento de Devoluciones y Garantías Activas ────────────── */}
+      {/* ── Seguimiento de Devoluciones y Garantías Activas (Clicables) ── */}
       {buyerReturns.length > 0 && (
         <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
@@ -204,12 +237,14 @@ export function BuyerOrdersPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {buyerReturns.map((ret: ReturnRequest) => (
-              <div
+              <Link
                 key={ret.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-muted/40 p-3 text-xs"
+                to="/buyer/orders/$orderId"
+                params={{ orderId: ret.customerOrderId }}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-muted/40 p-3 text-xs transition-colors hover:border-brand/50 hover:bg-surface-muted"
               >
                 <div className="space-y-0.5 font-mono">
-                  <div className="font-bold text-foreground">
+                  <div className="font-bold text-foreground hover:text-brand">
                     Devolución #{ret.id.slice(0, 8).toUpperCase()}
                   </div>
                   <div className="text-[11px] text-foreground-muted">
@@ -224,7 +259,7 @@ export function BuyerOrdersPage() {
                     {ret.isGoodCondition ? 'Inspección: Intacto' : 'Inspección física en proceso'}
                   </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -282,10 +317,6 @@ export function BuyerOrdersPage() {
           {filteredOrders.map((order: OrderListItem) => {
             const isPendingPayment = order.status === OrderStatus.PendingPayment;
             const isDelivered = order.status === OrderStatus.Delivered;
-            const isReservationWindowElapsed =
-              isPendingPayment &&
-              Boolean(order.expiresAt) &&
-              new Date(order.expiresAt!).getTime() <= nowMs;
 
             return (
               <div
@@ -300,9 +331,13 @@ export function BuyerOrdersPage() {
                 <div className="border-b border-border/70 bg-surface-muted/40 p-4 sm:px-6 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-mono font-bold text-foreground">
+                      <Link
+                        to="/buyer/orders/$orderId"
+                        params={{ orderId: order.id }}
+                        className="text-sm font-mono font-bold text-foreground hover:text-brand transition-colors"
+                      >
                         Pedido #{order.id.slice(0, 8).toUpperCase()}
-                      </span>
+                      </Link>
                       <button
                         type="button"
                         onClick={() => handleCopyOrderId(order.id)}
@@ -327,17 +362,10 @@ export function BuyerOrdersPage() {
                       {NOMBRES_DE_ESTADO_DE_PEDIDO[order.status]}
                     </StatusBadge>
                     {isPendingPayment && (
-                      isReservationWindowElapsed ? (
-                        <Badge className="bg-brand/15 text-brand border-brand/30 text-xs font-mono">
-                          <CheckCircle className="h-3 w-3 mr-1 inline" />
-                          Stock disponible · Listo para pagar
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-warning/20 text-warning border-warning/30 text-xs font-mono animate-pulse">
-                          <Clock className="h-3 w-3 mr-1 inline" />
-                          Reserva activa (15 min)
-                        </Badge>
-                      )
+                      <Badge className="bg-warning/20 text-warning border-warning/30 text-xs font-mono animate-pulse">
+                        <Clock className="h-3 w-3 mr-1 inline" />
+                        Reserva activa (15 min)
+                      </Badge>
                     )}
                   </div>
 
@@ -356,7 +384,7 @@ export function BuyerOrdersPage() {
                   </div>
                 </div>
 
-                {/* ── Desglose de Artículos del Pedido ── */}
+                {/* ── Desglose de Artículos del Pedido (100% Clicable) ── */}
                 <div className="p-4 sm:p-6 divide-y divide-border/50">
                   {order.items && order.items.length > 0 ? (
                     order.items.map((item) => {
@@ -372,7 +400,6 @@ export function BuyerOrdersPage() {
                         ? getProductImageUrl(matchedProduct)
                         : 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=300&q=80');
                       const vendorName = item.vendorName;
-
                       const targetProductId = item.productId || matchedProduct?.id;
 
                       return (
@@ -381,12 +408,33 @@ export function BuyerOrdersPage() {
                           className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <img
-                              src={imageUrl}
-                              alt={productName}
-                              className="h-12 w-12 rounded-xl object-cover bg-surface-muted border border-border shrink-0"
-                              loading="lazy"
-                            />
+                            {targetProductId ? (
+                              <Link
+                                to="/buyer/catalog/$productId"
+                                params={{ productId: targetProductId }}
+                                className="shrink-0"
+                              >
+                                <img
+                                  src={imageUrl}
+                                  alt={productName}
+                                  className="h-12 w-12 rounded-xl object-cover bg-surface-muted border border-border hover:border-brand transition-colors"
+                                  loading="lazy"
+                                />
+                              </Link>
+                            ) : (
+                              <Link
+                                to="/buyer/orders/$orderId"
+                                params={{ orderId: order.id }}
+                                className="shrink-0"
+                              >
+                                <img
+                                  src={imageUrl}
+                                  alt={productName}
+                                  className="h-12 w-12 rounded-xl object-cover bg-surface-muted border border-border hover:border-brand transition-colors"
+                                  loading="lazy"
+                                />
+                              </Link>
+                            )}
                             <div className="min-w-0 space-y-0.5">
                               <div className="flex items-center gap-2">
                                 {targetProductId ? (
@@ -398,9 +446,13 @@ export function BuyerOrdersPage() {
                                     {productName}
                                   </Link>
                                 ) : (
-                                  <h4 className="text-sm font-semibold text-foreground truncate">
+                                  <Link
+                                    to="/buyer/orders/$orderId"
+                                    params={{ orderId: order.id }}
+                                    className="text-sm font-semibold text-foreground hover:text-brand transition-colors truncate"
+                                  >
                                     {productName}
-                                  </h4>
+                                  </Link>
                                 )}
                                 {vendorName && (
                                   <Badge variant="outline" className="text-[10px] font-mono border-border text-foreground-muted px-1.5 py-0 shrink-0">
@@ -436,10 +488,14 @@ export function BuyerOrdersPage() {
                       );
                     })
                   ) : (
-                    <div className="py-2 text-xs text-foreground-muted font-mono flex items-center gap-2">
+                    <Link
+                      to="/buyer/orders/$orderId"
+                      params={{ orderId: order.id }}
+                      className="py-2 text-xs text-foreground-muted hover:text-brand font-mono flex items-center gap-2 transition-colors"
+                    >
                       <Package className="h-4 w-4 text-brand" />
-                      <span>{order.itemCount} artículo(s) procesados en esta orden.</span>
-                    </div>
+                      <span>{order.itemCount} artículo(s) procesados en esta orden. Ver desglose →</span>
+                    </Link>
                   )}
                 </div>
 
@@ -456,19 +512,33 @@ export function BuyerOrdersPage() {
 
                   <div className="flex flex-wrap items-center gap-2">
                     {isPendingPayment && (
-                      <Link to="/buyer/orders/$orderId/pay" params={{ orderId: order.id }}>
+                      <>
                         <Button
+                          type="button"
+                          variant="outline"
                           size="sm"
-                          className="bg-warning hover:bg-warning/90 text-primary-foreground font-bold text-xs shadow-md shadow-warning/20"
+                          onClick={() => void handleCancelPendingOrder(order.id)}
+                          disabled={cancellingOrderId === order.id || cancelOrderMutation.isPending}
+                          className="border-danger/40 text-danger hover:bg-danger/10 text-xs font-mono"
                         >
-                          <CreditCard className="h-3.5 w-3.5 mr-1.5" />
-                          Pagar Pedido
+                          <XCircle className="h-3.5 w-3.5 mr-1.5" />
+                          {cancellingOrderId === order.id ? 'Cancelando...' : 'Cancelar pedido'}
                         </Button>
-                      </Link>
+
+                        <Link to="/buyer/orders/$orderId/pay" params={{ orderId: order.id }}>
+                          <Button
+                            size="sm"
+                            className="bg-warning hover:bg-warning/90 text-primary-foreground font-bold text-xs shadow-md shadow-warning/20"
+                          >
+                            <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+                            Pagar Pedido
+                          </Button>
+                        </Link>
+                      </>
                     )}
 
                     {isDelivered && (
-                      <Link to="/buyer/returns/new">
+                      <Link to="/buyer/returns/new" search={{ orderId: order.id }}>
                         <Button
                           variant="outline"
                           size="sm"

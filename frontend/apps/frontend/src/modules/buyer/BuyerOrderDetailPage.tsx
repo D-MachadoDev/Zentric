@@ -1,5 +1,6 @@
-import { useParams, Link } from '@tanstack/react-router';
-import { useOrderQuery } from '../../application/services/orders';
+import { useParams, Link, useNavigate } from '@tanstack/react-router';
+import { useOrderQuery, useCancelOrderMutation } from '../../application/services/orders';
+import { useProductsQuery } from '../../application/services/catalog';
 import { useInvoicesByOrderQuery } from '../../application/services/billing';
 import { useFulfillmentsQuery } from '../../application/services/logistics';
 import { useReturnsQuery } from '../../application/services/returns';
@@ -41,16 +42,19 @@ import {
   ShieldCheck,
   Copy,
   Check,
+  XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
+import { getProductImageUrl } from './productImages';
 
 /**
  * Detalle del Pedido para el Comprador (Frontend-Role-Modules §2.4).
- * Split-Frame Asimétrico (65% / 35%) con desglose de ítems, guías de despacho,
- * Factura Maestra, línea de tiempo OrderTimeline y disparador de devoluciones si Delivered.
+ * Split-Frame Asimétrico (65% / 35%) con desglose de ítems clicables hacia su ficha en el catálogo,
+ * botón de cancelación inmediata en estado PendingPayment, guías de despacho, Factura Maestra y OrderTimeline.
  */
 export function BuyerOrderDetailPage() {
   const { orderId } = useParams({ strict: false }) as { orderId?: string };
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -66,12 +70,23 @@ export function BuyerOrderDetailPage() {
 
   const { data: orderData, isLoading: isLoadingOrder, isError: isErrorOrder, error: orderError } =
     useOrderQuery(orderId ?? '');
+  const { data: products } = useProductsQuery();
+  const cancelOrderMutation = useCancelOrderMutation();
 
   const { data: invoices, isLoading: isLoadingInvoices } = useInvoicesByOrderQuery(orderId ?? '');
   const { data: fulfillments } = useFulfillmentsQuery();
   const { data: returns } = useReturnsQuery();
 
-  // Filtrar fulfillments y devoluciones pertenecientes a esta orden
+  const handleCancelOrder = async () => {
+    if (!orderId) return;
+    try {
+      await cancelOrderMutation.mutateAsync(orderId);
+      navigate({ to: '/buyer/orders' });
+    } catch {
+      // Error manejado por estado
+    }
+  };
+
   const orderFulfillments: FulfillmentOrder[] = (fulfillments ?? []).filter(
     (f: FulfillmentOrder) => f.customerOrderId === orderId
   );
@@ -79,7 +94,6 @@ export function BuyerOrderDetailPage() {
     (r: ReturnRequest) => r.customerOrderId === orderId
   );
 
-  // Extraer Factura Maestra (Master)
   const masterInvoice: Invoice | undefined = (invoices ?? []).find(
     (inv: Invoice) => inv.type === InvoiceType.Master
   );
@@ -115,7 +129,6 @@ export function BuyerOrderDetailPage() {
     );
   }
 
-  // orderData es un Order
   const order = orderData as Order;
   const isPendingPayment = order.status === OrderStatus.PendingPayment;
   const isDelivered = order.status === OrderStatus.Delivered;
@@ -165,12 +178,26 @@ export function BuyerOrderDetailPage() {
         </div>
 
         {isPendingPayment && (
-          <Link to="/buyer/orders/$orderId/pay" params={{ orderId: order.id }}>
-            <Button className="bg-warning hover:bg-warning/90 text-primary-foreground font-bold text-sm shadow-md shadow-warning/20">
-              <CreditCard className="h-4 w-4 mr-2" />
-              Pagar Pedido (15 min)
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void handleCancelOrder()}
+              disabled={cancelOrderMutation.isPending}
+              className="border-danger/40 text-danger hover:bg-danger/10 text-xs font-mono"
+            >
+              <XCircle className="h-4 w-4 mr-1.5" />
+              {cancelOrderMutation.isPending ? 'Cancelando...' : 'Cancelar pedido'}
             </Button>
-          </Link>
+
+            <Link to="/buyer/orders/$orderId/pay" params={{ orderId: order.id }}>
+              <Button className="bg-warning hover:bg-warning/90 text-primary-foreground font-bold text-sm shadow-md shadow-warning/20">
+                <CreditCard className="h-4 w-4 mr-2" />
+                Pagar Pedido (15 min)
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
 
@@ -191,25 +218,61 @@ export function BuyerOrderDetailPage() {
 
             <div className="divide-y divide-border">
               {order.items.map((item: OrderItem) => {
-                const productName = item.productName || `Artículo #${item.variantId.slice(0, 8)}`;
+                const matchedProduct = products?.find((p) =>
+                  p.variants?.some((v) => v.id === item.variantId)
+                );
+                const productName =
+                  item.productName ||
+                  matchedProduct?.name ||
+                  `Artículo #${item.variantId.slice(0, 8)}`;
                 const sku = item.sku || item.variantId.slice(0, 8);
-                const imageUrl = item.imageUrl || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=300&q=80';
+                const imageUrl =
+                  item.imageUrl ||
+                  (matchedProduct
+                    ? getProductImageUrl(matchedProduct)
+                    : 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=300&q=80');
                 const vendorName = item.vendorName;
+                const targetProductId = item.productId || matchedProduct?.id;
 
                 return (
                   <div key={item.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3.5 min-w-0">
-                      <img
-                        src={imageUrl}
-                        alt={productName}
-                        className="h-14 w-14 rounded-xl object-cover bg-surface-muted border border-border shrink-0"
-                        loading="lazy"
-                      />
+                      {targetProductId ? (
+                        <Link
+                          to="/buyer/catalog/$productId"
+                          params={{ productId: targetProductId }}
+                          className="shrink-0"
+                        >
+                          <img
+                            src={imageUrl}
+                            alt={productName}
+                            className="h-14 w-14 rounded-xl object-cover bg-surface-muted border border-border hover:border-brand transition-colors"
+                            loading="lazy"
+                          />
+                        </Link>
+                      ) : (
+                        <img
+                          src={imageUrl}
+                          alt={productName}
+                          className="h-14 w-14 rounded-xl object-cover bg-surface-muted border border-border shrink-0"
+                          loading="lazy"
+                        />
+                      )}
                       <div className="min-w-0 space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h4 className="text-sm font-semibold text-foreground truncate">
-                            {productName}
-                          </h4>
+                          {targetProductId ? (
+                            <Link
+                              to="/buyer/catalog/$productId"
+                              params={{ productId: targetProductId }}
+                              className="text-sm font-semibold text-foreground hover:text-brand transition-colors truncate"
+                            >
+                              {productName}
+                            </Link>
+                          ) : (
+                            <h4 className="text-sm font-semibold text-foreground truncate">
+                              {productName}
+                            </h4>
+                          )}
                           {vendorName && (
                             <Badge variant="outline" className="text-[10px] font-mono border-border text-foreground-muted px-1.5 py-0">
                               Vendedor: {vendorName}
@@ -345,16 +408,13 @@ export function BuyerOrderDetailPage() {
 
         {/* Lado Derecho: Línea de Tiempo y Acciones (35% -> col-span-4) */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Tarjeta de Línea de Tiempo */}
           <div className="rounded-2xl border border-border bg-surface p-6 space-y-6 shadow-xl sticky top-6">
             <h2 className="text-sm uppercase font-mono tracking-wider text-foreground-muted">
               Ciclo de Vida del Pedido
             </h2>
 
-            {/* Componente OrderTimeline */}
             <OrderTimeline currentStatus={order.status} orientation="vertical" />
 
-            {/* Seguimiento de Devoluciones del Pedido */}
             {orderReturns.length > 0 && (
               <div className="border-t border-border pt-5 space-y-3">
                 <span className="text-xs font-mono font-semibold text-foreground flex items-center gap-1.5">
@@ -387,7 +447,6 @@ export function BuyerOrderDetailPage() {
               </div>
             )}
 
-            {/* Solicitud de Devolución (Solo si Delivered) */}
             {isDelivered && (
               <div className="border-t border-border pt-5 space-y-3">
                 <div className="space-y-1">
@@ -412,7 +471,6 @@ export function BuyerOrderDetailPage() {
               </div>
             )}
 
-            {/* Garantía de Seguridad */}
             <div className="rounded-xl border border-border bg-surface-muted/50 p-4 space-y-2 text-xs">
               <div className="flex items-center gap-2 text-brand font-mono font-semibold">
                 <ShieldCheck className="h-4 w-4" />

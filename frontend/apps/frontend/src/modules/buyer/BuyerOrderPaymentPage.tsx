@@ -4,6 +4,7 @@ import {
   useOrderQuery,
   usePayOrderMutation,
   useCheckoutOrderMutation,
+  useCancelOrderMutation,
 } from '../../application/services/orders';
 import {
   useUserProfileQuery,
@@ -32,6 +33,7 @@ import {
   RefreshCw,
   Edit3,
   Truck,
+  XCircle,
 } from 'lucide-react';
 
 /**
@@ -39,6 +41,7 @@ import {
  * Incluye:
  * - Gestión en línea de Domicilio de Entrega estilo Mercado Libre (respaldada por GET/PUT /api/users/profile).
  * - Temporizador determinista en Geist Mono tabular-nums con reactivación de reserva de 15 min mientras exista stock disponible.
+ * - Botón "Cancelar pedido y liberar reserva" para desistir inmediatamente sin esperar los 15 minutos.
  * - Formulario de pago que invoca usePayOrderMutation().
  */
 export function BuyerOrderPaymentPage() {
@@ -50,6 +53,7 @@ export function BuyerOrderPaymentPage() {
   const updateProfileMutation = useUpdateUserProfileMutation();
   const payOrderMutation = usePayOrderMutation();
   const renewReservationMutation = useCheckoutOrderMutation();
+  const cancelOrderMutation = useCancelOrderMutation();
 
   const calculateRemainingSeconds = () => {
     const expiresAt = (orderData as Order | undefined)?.expiresAt;
@@ -76,7 +80,6 @@ export function BuyerOrderPaymentPage() {
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [renewalSuccess, setRenewalSuccess] = useState<string | null>(null);
 
-  // Estado de Dirección de Entrega en línea (Mercado Libre style)
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [street, setStreet] = useState('');
   const [city, setCity] = useState('');
@@ -95,7 +98,6 @@ export function BuyerOrderPaymentPage() {
     setPhone(profileData.phone ?? '');
   }
 
-  // Campos de tarjeta simulada
   const [cardNumber, setCardNumber] = useState('4532 •••• •••• 8821');
   const [cardHolder, setCardHolder] = useState('COMPRADOR ZENTRIC');
   const [expiry, setExpiry] = useState('12/28');
@@ -172,6 +174,18 @@ export function BuyerOrderPaymentPage() {
         err instanceof Error
           ? err.message
           : 'No fue posible renovar la reserva porque el stock ya no está disponible.';
+      setPaymentError(msg);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!orderId) return;
+    setPaymentError(null);
+    try {
+      await cancelOrderMutation.mutateAsync(orderId);
+      navigate({ to: '/buyer/orders' });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'No fue posible cancelar el pedido.';
       setPaymentError(msg);
     }
   };
@@ -275,8 +289,21 @@ export function BuyerOrderPaymentPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-brand">
-          <Lock className="h-4 w-4" /> Conexión Cifrada SSL
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void handleCancelOrder()}
+            disabled={cancelOrderMutation.isPending}
+            className="border-danger/40 text-danger hover:bg-danger/10 text-xs font-mono"
+          >
+            <XCircle className="h-3.5 w-3.5 mr-1.5" />
+            {cancelOrderMutation.isPending ? 'Cancelando...' : 'Cancelar pedido'}
+          </Button>
+          <div className="flex items-center gap-2 text-xs font-mono text-brand">
+            <Lock className="h-4 w-4" /> Conexión Cifrada SSL
+          </div>
         </div>
       </div>
 

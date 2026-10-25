@@ -43,7 +43,7 @@ import { ProblemDetailsError } from '../../domain';
 /**
  * Adaptador simulado determinista de `ZentricApiPort`.
  *
- * Implementa en memoria las 47 operaciones del backend con estado reactivo,
+ * Implementa en memoria las operaciones del backend con estado reactivo,
  * permitiendo pruebas exhaustivas sin depender de red externa.
  */
 export class MockZentricApiAdapter implements ZentricApiPort {
@@ -389,6 +389,8 @@ export class MockZentricApiAdapter implements ZentricApiPort {
         id: variantIds[i] ?? `var-${i}`,
         sku: v.sku,
         canBeSold: true,
+        price: v.priceAmount ?? input.priceAmount,
+        attributes: v.attributes,
       })),
       createdAt: new Date().toISOString(),
     });
@@ -424,8 +426,6 @@ export class MockZentricApiAdapter implements ZentricApiPort {
           (p.description && p.description.toLowerCase().includes(cat)),
       );
     }
-    // S3: `search` replica la regla del backend (Name OR Description, contains,
-    // case-insensitive) sobre el catálogo COMPLETO, no sobre la página activa.
     if (params?.search) {
       const term = params.search.trim().toLowerCase();
       if (term !== '') {
@@ -438,7 +438,6 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     if (params?.type) {
       filtered = filtered.filter((p) => p.type === params.type);
     }
-    // S3: `relevance` conserva el orden de inserción (equivalente a CreatedAt asc).
     if (params?.sort === 'price-asc') {
       filtered = [...filtered].sort((a, b) => a.price - b.price);
     } else if (params?.sort === 'price-desc') {
@@ -473,13 +472,6 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     return this.getProductById(id);
   }
 
-  /**
-   * Categorías derivadas de los productos en memoria.
-   *
-   * S1: una categoría existe sólo si tiene productos; los productos sin
-   * `category` no generan categoría y el conteo usa productos publicados para
-   * respetar el mismo criterio del backend (productCount desc).
-   */
   async listCategories(): Promise<Category[]> {
     const counts = new Map<string, number>();
     for (const product of this.products) {
@@ -491,7 +483,6 @@ export class MockZentricApiAdapter implements ZentricApiPort {
       .sort((a, b) => b.productCount - a.productCount);
   }
 
-  /** S2: hero determinista = primeros `count` productos publicados. */
   async listHeroProducts(count = 6): Promise<Product[]> {
     return this.products.filter((p) => p.status === 'Published').slice(0, count);
   }
@@ -557,6 +548,12 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     const order = this.orders.find((o) => o.id === orderId);
     if (!order) throw new ProblemDetailsError({ status: 404, detail: 'Pedido no encontrado' });
     order.status = 'Paid';
+  }
+
+  async cancelOrder(orderId: string): Promise<void> {
+    const order = this.orders.find((o) => o.id === orderId);
+    if (!order) throw new ProblemDetailsError({ status: 404, detail: 'Pedido no encontrado' });
+    order.status = 'Cancelled';
   }
 
   async listOrders(status?: OrderStatus | string): Promise<OrderListItem[]> {
