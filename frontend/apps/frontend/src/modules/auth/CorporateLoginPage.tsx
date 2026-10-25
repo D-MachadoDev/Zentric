@@ -499,7 +499,7 @@ export function CorporateLoginPage() {
                 className="border-border bg-surface font-mono text-sm text-foreground focus:border-brand"
               />
               {fieldErrors.email && (
-                <p className="text-xs text-red-400">{fieldErrors.email}</p>
+                <p className="text-xs text-destructive">{fieldErrors.email}</p>
               )}
             </div>
 
@@ -544,7 +544,7 @@ export function CorporateLoginPage() {
               </button>
             </div>
               {fieldErrors.password && (
-                <p className="text-xs text-red-400">{fieldErrors.password}</p>
+                <p className="text-xs text-destructive">{fieldErrors.password}</p>
               )}
             </div>
 

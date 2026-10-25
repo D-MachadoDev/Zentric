@@ -132,8 +132,8 @@ export function SupervisorInventoryAuditPage() {
   if (isError) {
     return (
       <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5 text-destructive" />
           <AlertTitle>Error al cargar posiciones de inventario</AlertTitle>
           <AlertDescription>
             {error instanceof Error ? error.message : 'Ocurrió un error inesperado al consultar el inventario.'}
@@ -194,8 +194,8 @@ export function SupervisorInventoryAuditPage() {
             </h2>
 
             {serverError && (
-              <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-                <AlertCircle className="h-4 w-4 text-red-400" />
+              <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+                <AlertCircle className="h-4 w-4 text-destructive" />
                 <AlertTitle>Error en el ajuste de auditoría</AlertTitle>
                 <AlertDescription className="text-xs">{serverError}</AlertDescription>
               </Alert>
@@ -238,7 +238,7 @@ export function SupervisorInventoryAuditPage() {
                   </div>
                   <div>
                     <span className="text-foreground-muted block text-[10px] uppercase">Dañado</span>
-                    <span className="font-mono font-bold text-red-400 tabular-nums">
+                    <span className="font-mono font-bold text-destructive tabular-nums">
                       {selectedInventory.damagedQuantity}
                     </span>
                   </div>
@@ -258,7 +258,7 @@ export function SupervisorInventoryAuditPage() {
                   className="bg-surface-muted border-border text-foreground font-mono text-sm focus:border-warning"
                 />
                 {formErrors.countedQuantity && (
-                  <p data-testid="counted-quantity-error" className="text-[11px] text-red-400">
+                  <p data-testid="counted-quantity-error" className="text-[11px] text-destructive">
                     {formErrors.countedQuantity}
                   </p>
                 )}
@@ -277,7 +277,7 @@ export function SupervisorInventoryAuditPage() {
                   className="bg-surface-muted border-border text-foreground text-xs placeholder:text-foreground-muted focus:border-warning"
                 />
                 {formErrors.reason && (
-                  <p data-testid="reason-error" className="text-[11px] text-red-400">
+                  <p data-testid="reason-error" className="text-[11px] text-destructive">
                     {formErrors.reason}
                   </p>
                 )}

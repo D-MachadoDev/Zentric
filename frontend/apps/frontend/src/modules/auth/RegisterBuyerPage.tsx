@@ -227,7 +227,7 @@ export function RegisterBuyerPage() {
                 className="bg-surface border-border focus:border-brand text-foreground"
               />
               {fieldErrors.identityDocument && (
-                <p className="text-xs text-red-400">{fieldErrors.identityDocument}</p>
+                <p className="text-xs text-destructive">{fieldErrors.identityDocument}</p>
               )}
             </div>
 
@@ -248,7 +248,7 @@ export function RegisterBuyerPage() {
                 className="bg-surface border-border focus:border-brand text-foreground"
               />
               {fieldErrors.fullName && (
-                <p className="text-xs text-red-400">{fieldErrors.fullName}</p>
+                <p className="text-xs text-destructive">{fieldErrors.fullName}</p>
               )}
             </div>
 
@@ -269,7 +269,7 @@ export function RegisterBuyerPage() {
                 className="bg-surface border-border focus:border-brand text-foreground"
               />
               {fieldErrors.email && (
-                <p className="text-xs text-red-400">{fieldErrors.email}</p>
+                <p className="text-xs text-destructive">{fieldErrors.email}</p>
               )}
             </div>
 
@@ -291,7 +291,7 @@ export function RegisterBuyerPage() {
                   className="bg-surface border-border focus:border-brand text-foreground"
                 />
                 {fieldErrors.password && (
-                  <p className="text-xs text-red-400">{fieldErrors.password}</p>
+                  <p className="text-xs text-destructive">{fieldErrors.password}</p>
                 )}
               </div>
 
@@ -312,7 +312,7 @@ export function RegisterBuyerPage() {
                   className="bg-surface border-border focus:border-brand text-foreground"
                 />
                 {fieldErrors.confirmPassword && (
-                  <p className="text-xs text-red-400">{fieldErrors.confirmPassword}</p>
+                  <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>
                 )}
               </div>
             </div>

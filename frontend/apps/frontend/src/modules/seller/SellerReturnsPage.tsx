@@ -136,8 +136,8 @@ export function SellerReturnsPage() {
   if (isError) {
     return (
       <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5 text-destructive" />
           <AlertTitle>Error al cargar devoluciones</AlertTitle>
           <AlertDescription>
             {error instanceof Error
@@ -276,7 +276,7 @@ export function SellerReturnsPage() {
                             className={`text-xs font-medium px-2 py-1 rounded-full ${
                               r.isGoodCondition
                                 ? 'bg-brand/10 text-brand border border-brand/30'
-                                : 'bg-red-950/40 text-red-400 border border-red-900/40'
+                                : 'bg-destructive/10 text-destructive border border-destructive/30'
                             }`}
                           >
                             {r.isGoodCondition ? 'Buen Estado' : 'Dañado / No Apto'}
@@ -325,14 +325,14 @@ export function SellerReturnsPage() {
                   className={`rounded-xl border p-4 space-y-2 ${
                     selectedReturn.isGoodCondition
                       ? 'border-brand/40 bg-brand/5'
-                      : 'border-red-900/40 bg-red-950/20'
+                      : 'border-destructive/30 bg-destructive/10'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     {selectedReturn.isGoodCondition ? (
                       <ShieldCheck className="h-5 w-5 text-brand" />
                     ) : (
-                      <ShieldAlert className="h-5 w-5 text-red-400" />
+                      <ShieldAlert className="h-5 w-5 text-destructive" />
                     )}
                     <span className="text-xs font-bold text-foreground">
                       {selectedReturn.isGoodCondition
@@ -394,7 +394,7 @@ export function SellerReturnsPage() {
                     variant="outline"
                     onClick={() => handleReject(selectedReturn.id)}
                     disabled={rejectMutation.isPending}
-                    className="w-full border-red-900/60 text-red-400 hover:bg-red-950/40 hover:text-red-300"
+                    className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
                     {rejectMutation.isPending ? (
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -419,9 +419,9 @@ export function SellerReturnsPage() {
               )}
 
               {selectedReturn.status === ReturnStatus.Rejected && (
-                <div className="rounded-xl border border-red-900/40 bg-red-950/20 p-4 text-center space-y-1">
-                  <XCircle className="h-6 w-6 text-red-400 mx-auto" />
-                  <p className="text-xs font-semibold text-red-400">
+                <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-center space-y-1">
+                  <XCircle className="h-6 w-6 text-destructive mx-auto" />
+                  <p className="text-xs font-semibold text-destructive">
                     Devolución Rechazada
                   </p>
                   <p className="text-[11px] text-foreground-muted">

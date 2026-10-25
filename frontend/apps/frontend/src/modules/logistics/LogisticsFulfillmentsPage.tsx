@@ -158,8 +158,8 @@ export function LogisticsFulfillmentsPage() {
   if (isError) {
     return (
       <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5 text-destructive" />
           <AlertTitle>Error al cargar despachos</AlertTitle>
           <AlertDescription>
             {error instanceof Error ? error.message : 'Ocurrió un error inesperado.'}
@@ -290,7 +290,7 @@ export function LogisticsFulfillmentsPage() {
           <span className="text-[11px] font-mono uppercase tracking-wider text-foreground-muted block">
             4. Entregados
           </span>
-          <span className="mt-1 text-2xl font-bold font-mono text-emerald-400 tabular-nums block">
+          <span className="mt-1 text-2xl font-bold font-mono text-success tabular-nums block">
             {deliveredTotal}
           </span>
           <span className="text-[10px] font-mono text-foreground-muted">Entrega certificada</span>
@@ -390,7 +390,7 @@ export function LogisticsFulfillmentsPage() {
                                   ? 'border-brand/40 text-brand bg-brand/10'
                                   : ful.status === FulfillmentStatus.Delivered
                                   ? 'border-emerald-400/40 text-emerald-300 bg-emerald-500/10'
-                                  : 'border-red-400/40 text-red-400 bg-red-400/10'
+                                  : 'border-destructive/30 text-destructive bg-destructive/10'
                               }`}
                             >
                               {isPendingPack && (
@@ -426,7 +426,7 @@ export function LogisticsFulfillmentsPage() {
                                   type="button"
                                   onClick={() => void handleQuickDeliver(ful.id)}
                                   disabled={deliverMutation.isPending}
-                                  className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 font-mono text-[10px] font-semibold text-emerald-400 hover:bg-emerald-500 hover:text-primary-foreground transition-colors"
+                                  className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 font-mono text-[10px] font-semibold text-success hover:bg-emerald-500 hover:text-primary-foreground transition-colors"
                                 >
                                   Certificar Entrega
                                 </button>
@@ -466,8 +466,8 @@ export function LogisticsFulfillmentsPage() {
             )}
 
             {createError && (
-              <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-                <AlertCircle className="h-4 w-4 text-red-400" />
+              <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+                <AlertCircle className="h-4 w-4 text-destructive" />
                 <AlertDescription className="text-xs">{createError}</AlertDescription>
               </Alert>
             )}
@@ -485,7 +485,7 @@ export function LogisticsFulfillmentsPage() {
                   className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-brand"
                 />
                 {formErrors.customerOrderId && (
-                  <p className="text-[11px] text-red-400 mt-1">{formErrors.customerOrderId}</p>
+                  <p className="text-[11px] text-destructive mt-1">{formErrors.customerOrderId}</p>
                 )}
               </div>
 
@@ -501,7 +501,7 @@ export function LogisticsFulfillmentsPage() {
                   className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-brand"
                 />
                 {formErrors.vendorId && (
-                  <p className="text-[11px] text-red-400 mt-1">{formErrors.vendorId}</p>
+                  <p className="text-[11px] text-destructive mt-1">{formErrors.vendorId}</p>
                 )}
               </div>
 

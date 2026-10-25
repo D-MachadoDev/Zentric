@@ -83,8 +83,8 @@ export function SupervisorReturnsPage() {
   if (isError) {
     return (
       <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5 text-destructive" />
           <AlertTitle>Error al cargar expedientes de devolución</AlertTitle>
           <AlertDescription>
             {error instanceof Error ? error.message : 'Ocurrió un error inesperado al consultar las devoluciones.'}
@@ -216,7 +216,7 @@ export function SupervisorReturnsPage() {
                             ) : ret.isGoodCondition === false ? (
                               <Badge
                                 variant="outline"
-                                className="border-red-900/60 text-red-400 text-[10px] font-mono"
+                                className="border-destructive/30 text-destructive text-[10px] font-mono"
                               >
                                 Dañado / No Apto
                               </Badge>
@@ -298,7 +298,7 @@ export function SupervisorReturnsPage() {
                       </>
                     ) : activeReturn.isGoodCondition === false ? (
                       <>
-                        <XCircle className="h-3.5 w-3.5 text-red-400" />
+                        <XCircle className="h-3.5 w-3.5 text-destructive" />
                         No Apto / Dañado
                       </>
                     ) : (

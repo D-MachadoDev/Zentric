@@ -236,8 +236,8 @@ export function WarehouseListPage() {
   if (isError) {
     return (
       <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5 text-destructive" />
           <AlertTitle>Error al cargar la red de bodegas</AlertTitle>
           <AlertDescription>
             {error instanceof Error ? error.message : 'Ocurrió un error inesperado.'}
@@ -448,8 +448,8 @@ export function WarehouseListPage() {
             )}
 
             {actionError && (
-              <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-                <AlertCircle className="h-4 w-4 text-red-400" />
+              <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+                <AlertCircle className="h-4 w-4 text-destructive" />
                 <AlertTitle>Error al crear</AlertTitle>
                 <AlertDescription className="text-xs">{actionError}</AlertDescription>
               </Alert>
@@ -467,7 +467,7 @@ export function WarehouseListPage() {
                   className="bg-surface-muted border-border text-foreground text-xs focus:border-brand"
                 />
                 {formErrors.name && (
-                  <p className="text-[11px] text-red-400">{formErrors.name}</p>
+                  <p className="text-[11px] text-destructive">{formErrors.name}</p>
                 )}
               </div>
 
@@ -482,7 +482,7 @@ export function WarehouseListPage() {
                   className="bg-surface-muted border-border text-foreground text-xs focus:border-brand"
                 />
                 {formErrors.location && (
-                  <p className="text-[11px] text-red-400">{formErrors.location}</p>
+                  <p className="text-[11px] text-destructive">{formErrors.location}</p>
                 )}
               </div>
 
@@ -499,7 +499,7 @@ export function WarehouseListPage() {
                   className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-brand"
                 />
                 {formErrors.capacity && (
-                  <p className="text-[11px] text-red-400">{formErrors.capacity}</p>
+                  <p className="text-[11px] text-destructive">{formErrors.capacity}</p>
                 )}
               </div>
 
@@ -557,7 +557,7 @@ export function WarehouseListPage() {
                     className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-brand"
                   />
                   {formErrors.vendorId && (
-                    <p className="text-[11px] text-red-400">{formErrors.vendorId}</p>
+                    <p className="text-[11px] text-destructive">{formErrors.vendorId}</p>
                   )}
                 </div>
               )}
@@ -617,8 +617,8 @@ export function WarehouseListPage() {
             </div>
 
             {editError && (
-              <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-                <AlertCircle className="h-4 w-4 text-red-400" />
+              <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+                <AlertCircle className="h-4 w-4 text-destructive" />
                 <AlertTitle>Error al actualizar</AlertTitle>
                 <AlertDescription className="text-xs">{editError}</AlertDescription>
               </Alert>
@@ -636,7 +636,7 @@ export function WarehouseListPage() {
                   className="bg-surface-muted border-border text-foreground text-xs focus:border-brand"
                 />
                 {editErrors.name && (
-                  <p className="text-[11px] text-red-400">{editErrors.name}</p>
+                  <p className="text-[11px] text-destructive">{editErrors.name}</p>
                 )}
               </div>
 
@@ -651,7 +651,7 @@ export function WarehouseListPage() {
                   className="bg-surface-muted border-border text-foreground text-xs focus:border-brand"
                 />
                 {editErrors.location && (
-                  <p className="text-[11px] text-red-400">{editErrors.location}</p>
+                  <p className="text-[11px] text-destructive">{editErrors.location}</p>
                 )}
               </div>
 
@@ -670,7 +670,7 @@ export function WarehouseListPage() {
                   className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-brand"
                 />
                 {editErrors.capacity && (
-                  <p className="text-[11px] text-red-400">{editErrors.capacity}</p>
+                  <p className="text-[11px] text-destructive">{editErrors.capacity}</p>
                 )}
               </div>
 

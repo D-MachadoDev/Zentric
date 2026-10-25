@@ -5,6 +5,7 @@ import {
   usePublishProductMutation,
   useSuspendProductMutation,
 } from '../../application/services/catalog';
+import { getDefaultSession } from '../../application/services';
 import { ProductStatus, ProductType, type Product } from '../../domain';
 import {
   NOMBRES_DE_ESTADO_DE_PRODUCTO,
@@ -33,17 +34,17 @@ import {
   RefreshCw,
 } from 'lucide-react';
 
-
 /**
  * Catálogo Propio del Vendedor (SellerProductsPage - Frontend-Role-Modules §2.3).
- * Muestra productos en estado Published y Suspended con acciones rápidas de cambio de estado
- * comercial y acceso a la creación de productos y variantes.
+ * Consulta el catálogo con `vendorId` del vendedor activo para listar tanto
+ * productos Published como Suspended, con alternancia inmediata de estado comercial.
  */
 export function SellerProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | ProductStatus>('All');
 
-  const { data: products, isLoading, isError, error, refetch, isFetching } = useProductsQuery();
+  const vendorId = getDefaultSession()?.getUserId() ?? undefined;
+  const { data: products, isLoading, isError, error, refetch, isFetching } = useProductsQuery(vendorId);
   const publishMutation = usePublishProductMutation();
   const suspendMutation = useSuspendProductMutation();
 
@@ -79,7 +80,7 @@ export function SellerProductsPage() {
   if (isError) {
     return (
       <div className="p-6 sm:p-10 max-w-4xl mx-auto w-full space-y-4">
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
           <AlertTitle>Error al cargar catálogo propio</AlertTitle>
           <AlertDescription>
             {error instanceof Error ? error.message : 'No fue posible consultar sus productos.'}
@@ -106,7 +107,7 @@ export function SellerProductsPage() {
             </Badge>
           </div>
           <p className="text-sm text-foreground-muted">
-            Catálogo propio comercial. Puede pausar temporalmente productos o crear nuevas referencias con variantes.
+            Catálogo propio comercial. Puede pausar temporalmente productos o crear nuevas referencias con precios por SKU.
           </p>
         </div>
 
@@ -209,6 +210,12 @@ export function SellerProductsPage() {
           <div className="divide-y divide-border">
             {filteredProducts.map((product: Product) => {
               const isPublished = product.status === ProductStatus.Published;
+              const skuPrices = product.variants
+                .map((v) => v.price ?? product.price)
+                .filter((p) => p > 0);
+              const minSkuPrice = skuPrices.length > 0 ? Math.min(...skuPrices) : product.price;
+              const maxSkuPrice = skuPrices.length > 0 ? Math.max(...skuPrices) : product.price;
+              const hasVariableSkuPricing = maxSkuPrice > minSkuPrice;
 
               return (
                 <div
@@ -245,6 +252,12 @@ export function SellerProductsPage() {
 
                     <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-foreground-muted">
                       <span>{product.variants.length} variante(s)</span>
+                      {hasVariableSkuPricing && (
+                        <>
+                          <span>•</span>
+                          <span className="text-brand"> Precios por SKU activos</span>
+                        </>
+                      )}
                       <span>•</span>
                       <span>Creado: {new Date(product.createdAt).toLocaleDateString('es-CO')}</span>
                       <span>•</span>
@@ -254,7 +267,9 @@ export function SellerProductsPage() {
 
                   <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 pt-4 md:pt-0 border-border">
                     <div className="text-left md:text-right">
-                      <span className="text-[10px] uppercase font-mono text-foreground-muted block">Precio Base</span>
+                      <span className="text-[10px] uppercase font-mono text-foreground-muted block">
+                        {hasVariableSkuPricing ? 'Desde (Precio Base)' : 'Precio Base'}
+                      </span>
                       <div className="text-lg font-bold font-mono text-foreground tabular-nums">
                         <MoneyAmount amount={product.price} currency={product.currency} />
                       </div>

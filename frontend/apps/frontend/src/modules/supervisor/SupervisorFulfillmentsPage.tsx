@@ -82,8 +82,8 @@ export function SupervisorFulfillmentsPage() {
   if (isError) {
     return (
       <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5 text-destructive" />
           <AlertTitle>Error al cargar órdenes de despacho</AlertTitle>
           <AlertDescription>
             {error instanceof Error ? error.message : 'Ocurrió un error inesperado al consultar la red logística.'}
@@ -211,7 +211,7 @@ export function SupervisorFulfillmentsPage() {
                               variant="outline"
                               className={
                                 isCancelled
-                                  ? 'border-red-900/60 text-red-400 text-[11px] font-mono'
+                                  ? 'border-destructive/30 text-destructive text-[11px] font-mono'
                                   : 'border-border text-brand text-[11px] font-mono'
                               }
                             >
@@ -268,12 +268,12 @@ export function SupervisorFulfillmentsPage() {
               </div>
 
               {selectedFulfillment.cancellationReason && (
-                <div className="p-3.5 rounded-xl bg-red-950/30 border border-red-900/60 space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-red-400">
+                <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/30 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-destructive">
                     <AlertTriangle className="h-4 w-4" />
                     <span>Incidente de Stock Fantasma</span>
                   </div>
-                  <p className="text-xs font-mono text-red-200">
+                  <p className="text-xs font-mono text-destructive">
                     {selectedFulfillment.cancellationReason}
                   </p>
                 </div>

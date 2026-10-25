@@ -53,7 +53,7 @@ export function HealthStatusPage() {
         );
       default:
         return (
-          <Badge className="bg-red-500/20 text-red-400 border-red-500/40 font-mono flex items-center gap-1.5 px-3 py-1">
+          <Badge className="bg-destructive/15 text-destructive border-destructive/30 font-mono flex items-center gap-1.5 px-3 py-1">
             <XCircle className="h-3.5 w-3.5" />
             FUERA DE LÍNEA (UNHEALTHY)
           </Badge>
@@ -69,7 +69,7 @@ export function HealthStatusPage() {
         className={`font-mono text-xs px-2.5 py-0.5 ${
           isUp
             ? 'border-brand/40 text-brand bg-brand/10'
-            : 'border-red-500/40 text-red-400 bg-red-500/10'
+            : 'border-destructive/30 text-destructive bg-destructive/10'
         }`}
       >
         {isUp ? 'CONECTADO (UP)' : 'DESCONECTADO (DOWN)'}
@@ -126,8 +126,8 @@ export function HealthStatusPage() {
             </div>
           </div>
         ) : isError ? (
-          <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-            <XCircle className="h-5 w-5 text-red-400" />
+          <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+            <XCircle className="h-5 w-5 text-destructive" />
             <AlertTitle>Fallo de Conexión con la API</AlertTitle>
             <AlertDescription>
               {error instanceof Error

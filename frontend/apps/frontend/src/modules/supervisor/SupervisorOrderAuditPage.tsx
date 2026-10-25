@@ -94,8 +94,8 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
   if (isError) {
     return (
       <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5 text-destructive" />
           <AlertTitle>Error al cargar el expediente 360° del pedido</AlertTitle>
           <AlertDescription>
             {orderError instanceof Error
@@ -294,7 +294,7 @@ export function SupervisorOrderAuditPage({ orderId: propOrderId }: SupervisorOrd
                       <span>Paquetes: {ful.shipments.length}</span>
                     </div>
                     {ful.cancellationReason && (
-                      <div className="text-[11px] font-mono text-red-400">
+                      <div className="text-[11px] font-mono text-destructive">
                         Motivo Cancelación: {ful.cancellationReason}
                       </div>
                     )}

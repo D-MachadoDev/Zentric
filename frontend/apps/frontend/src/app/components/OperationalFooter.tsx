@@ -21,7 +21,7 @@ export function OperationalFooter({ roleLabel = 'Consola Operativa' }: Operation
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-[11px] font-mono">
-          <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+          <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-success">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />

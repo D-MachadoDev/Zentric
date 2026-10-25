@@ -88,8 +88,8 @@ export function RefundListPage() {
   if (isError) {
     return (
       <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5 text-destructive" />
           <AlertTitle>Error al cargar devoluciones</AlertTitle>
           <AlertDescription>
             {error instanceof Error ? error.message : 'Ocurrió un error inesperado.'}
@@ -146,8 +146,8 @@ export function RefundListPage() {
       )}
 
       {actionError && (
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-4 w-4 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-4 w-4 text-destructive" />
           <AlertTitle>Error en Liquidación</AlertTitle>
           <AlertDescription className="text-xs">{actionError}</AlertDescription>
         </Alert>
@@ -233,7 +233,7 @@ export function RefundListPage() {
                                 Intacto (OK)
                               </Badge>
                             ) : ret.isGoodCondition === false ? (
-                              <Badge variant="outline" className="border-red-900/60 text-red-400 text-[10px]">
+                              <Badge variant="outline" className="border-destructive/30 text-destructive text-[10px]">
                                 Dañado
                               </Badge>
                             ) : (

@@ -5,6 +5,7 @@ import { useFulfillmentsQuery } from '../../application/services/logistics';
 import { useInvoicesQuery } from '../../application/services/billing';
 import { useInventoriesQuery } from '../../application/services/inventory';
 import { useReturnsQuery } from '../../application/services/returns';
+import { getDefaultSession } from '../../application/services';
 import {
   ProductStatus,
   FulfillmentStatus,
@@ -45,7 +46,8 @@ import {
  * Métrica dominante con subtotal neto liquidado en facturas VendorDetail.
  */
 export function SellerDashboardPage() {
-  const { data: products, isLoading: isLoadingProducts, isError: isErrorProducts } = useProductsQuery();
+  const vendorId = getDefaultSession()?.getUserId() ?? undefined;
+  const { data: products, isLoading: isLoadingProducts, isError: isErrorProducts } = useProductsQuery(vendorId);
   const { data: orders, isLoading: isLoadingOrders } = useOrdersQuery();
   const { data: fulfillments } = useFulfillmentsQuery();
   const { data: invoices } = useInvoicesQuery();
@@ -128,8 +130,8 @@ export function SellerDashboardPage() {
       </div>
 
       {isErrorProducts && (
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5 text-destructive" />
           <AlertTitle>Aviso del Catálogo</AlertTitle>
           <AlertDescription className="text-xs font-mono">
             No fue posible conectar con el inventario del vendedor. Reintente más tarde.

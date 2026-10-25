@@ -183,8 +183,8 @@ export function SellerFulfillmentsPage() {
   if (isError) {
     return (
       <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5 text-destructive" />
           <AlertTitle>Error al cargar despachos</AlertTitle>
           <AlertDescription>
             {error instanceof Error
@@ -445,8 +445,8 @@ export function SellerFulfillmentsPage() {
                 )}
 
                 {selectedFulfillment.status === FulfillmentStatus.Cancelled && (
-                  <div className="rounded-xl border border-red-900/40 bg-red-950/20 p-4 space-y-1">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-red-400">
+                  <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-destructive">
                       <Ban className="h-4 w-4" /> Despacho Cancelado
                     </div>
                     {selectedFulfillment.cancellationReason && (
@@ -463,7 +463,7 @@ export function SellerFulfillmentsPage() {
                     <Button
                       variant="outline"
                       onClick={() => setShowGhostModal(true)}
-                      className="w-full border-red-900/50 text-red-400 hover:bg-red-950/40 hover:text-red-300 text-xs"
+                      className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive text-xs"
                     >
                       <AlertTriangle className="h-3.5 w-3.5 mr-1.5" />
                       Reportar Quiebre de Stock Fantasma
@@ -473,9 +473,9 @@ export function SellerFulfillmentsPage() {
 
               {/* Formulario / Modal para CancelGhostStock */}
               {showGhostModal && (
-                <div className="rounded-xl border border-red-900/60 bg-red-950/30 p-4 space-y-3">
+                <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-red-400 uppercase tracking-wider">
+                    <span className="text-xs font-bold text-destructive uppercase tracking-wider">
                       Reporte de Stock Fantasma
                     </span>
                     <button
@@ -491,7 +491,7 @@ export function SellerFulfillmentsPage() {
                   </p>
 
                   {ghostError && (
-                    <p className="text-xs text-red-300 font-medium">{ghostError}</p>
+                    <p className="text-xs text-destructive font-medium">{ghostError}</p>
                   )}
 
                   <form onSubmit={handleCancelGhostStock} noValidate className="space-y-3">
@@ -504,7 +504,7 @@ export function SellerFulfillmentsPage() {
                           value={ghostVariantId}
                           onChange={(e) => setGhostVariantId(e.target.value)}
                           aria-label="Seleccionar variante de producto"
-                          className="w-full bg-surface border border-red-900/60 text-foreground text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-red-500"
+                          className="w-full bg-surface border border-destructive/30 text-foreground text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-destructive"
                         >
                           <option value="">-- Seleccionar del catálogo o ingresar UUID --</option>
                           {sellerVariants.map((v) => (
@@ -519,7 +519,7 @@ export function SellerFulfillmentsPage() {
                         placeholder="UUID de la variante"
                         value={ghostVariantId}
                         onChange={(e) => setGhostVariantId(e.target.value)}
-                        className="bg-surface border-red-900/60 text-foreground font-mono text-xs focus:border-red-500"
+                        className="bg-surface border-destructive/30 text-foreground font-mono text-xs focus:border-destructive"
                       />
                     </div>
 
@@ -531,7 +531,7 @@ export function SellerFulfillmentsPage() {
                         value={ghostWarehouseId}
                         onChange={(e) => setGhostWarehouseId(e.target.value)}
                         aria-label="Seleccionar bodega física del quiebre"
-                        className="w-full bg-surface border border-red-900/60 text-foreground text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:border-red-500"
+                        className="w-full bg-surface border border-destructive/30 text-foreground text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:border-destructive"
                       >
                         <option value="">-- Seleccionar Bodega --</option>
                         {allWarehouses.map((w: Warehouse) => (
@@ -553,7 +553,7 @@ export function SellerFulfillmentsPage() {
                         onChange={(e) =>
                           setGhostQuantity(parseInt(e.target.value, 10) || 0)
                         }
-                        className="bg-surface border-red-900/60 text-foreground font-mono text-xs focus:border-red-500"
+                        className="bg-surface border-destructive/30 text-foreground font-mono text-xs focus:border-destructive"
                       />
                     </div>
 
@@ -571,7 +571,7 @@ export function SellerFulfillmentsPage() {
                         type="submit"
                         disabled={cancelGhostStockMutation.isPending}
                         size="sm"
-                        className="flex-1 bg-red-600 hover:bg-red-700 text-foreground text-xs font-semibold"
+                        className="flex-1 bg-destructive hover:bg-destructive text-foreground text-xs font-semibold"
                       >
                         {cancelGhostStockMutation.isPending ? 'Confirmando...' : 'Confirmar Quiebre'}
                       </Button>

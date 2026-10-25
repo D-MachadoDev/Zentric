@@ -196,8 +196,8 @@ export function SupervisorDashboardPage() {
 
       {/* ── Alerta de Fallo Parcial en Telemetría ───────────────────────── */}
       {hasAnyError && (
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-4 w-4 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-4 w-4 text-destructive" />
           <AlertTitle>Fallo parcial en telemetría de fiscalización</AlertTitle>
           <AlertDescription className="flex items-center justify-between gap-4">
             <span>
@@ -207,7 +207,7 @@ export function SupervisorDashboardPage() {
               variant="outline"
               size="sm"
               onClick={handleRefreshAll}
-              className="border-red-800 text-red-200 hover:bg-red-900/40 shrink-0"
+              className="border-destructive text-destructive hover:bg-destructive/10 shrink-0"
             >
               Reintentar
             </Button>
@@ -455,7 +455,7 @@ export function SupervisorDashboardPage() {
               <div className="flex items-center gap-1.5">
                 <span
                   className={`h-2 w-2 rounded-full ${
-                    isHealthy && !isErrorHealth ? 'bg-brand' : 'bg-red-400 animate-pulse'
+                    isHealthy && !isErrorHealth ? 'bg-brand' : 'bg-destructive animate-pulse'
                   }`}
                 />
                 <span className="text-xs font-mono text-foreground">

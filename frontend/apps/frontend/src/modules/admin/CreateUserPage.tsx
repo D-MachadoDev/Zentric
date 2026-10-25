@@ -168,8 +168,8 @@ export function CreateUserPage() {
           ) : (
             <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 space-y-6">
               {serverError && (
-                <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-                  <AlertCircle className="h-4 w-4 text-red-400" />
+                <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+                  <AlertCircle className="h-4 w-4 text-destructive" />
                   <AlertTitle>Error al registrar usuario</AlertTitle>
                   <AlertDescription>{serverError}</AlertDescription>
                 </Alert>
@@ -190,7 +190,7 @@ export function CreateUserPage() {
                     className="bg-surface-muted border-border text-foreground font-mono text-sm placeholder:text-foreground-muted focus:border-brand"
                   />
                   {formErrors.identityDocument && (
-                    <p className="text-[11px] text-red-400">{formErrors.identityDocument}</p>
+                    <p className="text-[11px] text-destructive">{formErrors.identityDocument}</p>
                   )}
                 </div>
 
@@ -208,7 +208,7 @@ export function CreateUserPage() {
                     className="bg-surface-muted border-border text-foreground text-sm placeholder:text-foreground-muted focus:border-brand"
                   />
                   {formErrors.fullName && (
-                    <p className="text-[11px] text-red-400">{formErrors.fullName}</p>
+                    <p className="text-[11px] text-destructive">{formErrors.fullName}</p>
                   )}
                 </div>
 
@@ -226,7 +226,7 @@ export function CreateUserPage() {
                     className="bg-surface-muted border-border text-foreground text-sm placeholder:text-foreground-muted focus:border-brand"
                   />
                   {formErrors.email && (
-                    <p className="text-[11px] text-red-400">{formErrors.email}</p>
+                    <p className="text-[11px] text-destructive">{formErrors.email}</p>
                   )}
                 </div>
 
@@ -244,7 +244,7 @@ export function CreateUserPage() {
                     className="bg-surface-muted border-border text-foreground text-sm placeholder:text-foreground-muted focus:border-brand"
                   />
                   {formErrors.password && (
-                    <p className="text-[11px] text-red-400">{formErrors.password}</p>
+                    <p className="text-[11px] text-destructive">{formErrors.password}</p>
                   )}
                 </div>
 
@@ -267,7 +267,7 @@ export function CreateUserPage() {
                     <option value={UserRole.Buyer}>Comprador (Buyer)</option>
                   </select>
                   {formErrors.role && (
-                    <p className="text-[11px] text-red-400">{formErrors.role}</p>
+                    <p className="text-[11px] text-destructive">{formErrors.role}</p>
                   )}
                 </div>
 

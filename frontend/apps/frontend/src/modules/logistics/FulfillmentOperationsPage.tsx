@@ -105,8 +105,8 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
   if (isError || !fulfillment) {
     return (
       <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5 text-destructive" />
           <AlertTitle>Error al cargar el despacho</AlertTitle>
           <AlertDescription>
             {error instanceof Error ? error.message : 'No se encontró el despacho solicitado.'}
@@ -173,8 +173,8 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
       )}
 
       {actionError && (
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-4 w-4 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-4 w-4 text-destructive" />
           <AlertTitle>Error en la Operación</AlertTitle>
           <AlertDescription className="text-xs">{actionError}</AlertDescription>
         </Alert>
@@ -201,7 +201,7 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
                     ? 'border-brand/40 text-brand bg-brand/10'
                     : fulfillment.status === FulfillmentStatus.Delivered
                     ? 'border-emerald-400/40 text-emerald-300 bg-emerald-500/10'
-                    : 'border-red-400/40 text-red-400 bg-red-400/10'
+                    : 'border-destructive/30 text-destructive bg-destructive/10'
                 }`}
               >
                 {NOMBRES_DE_ESTADO_DE_DESPACHO[fulfillment.status] ?? fulfillment.status}
@@ -331,13 +331,13 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
             )}
 
             {isCancelled && (
-              <div className="p-4 rounded-xl bg-red-950/30 border border-red-900/40 text-center space-y-1">
-                <Ban className="h-6 w-6 text-red-400 mx-auto" />
-                <h4 className="text-xs font-bold text-red-400 uppercase tracking-wider">
+              <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-center space-y-1">
+                <Ban className="h-6 w-6 text-destructive mx-auto" />
+                <h4 className="text-xs font-bold text-destructive uppercase tracking-wider">
                   Despacho Cancelado
                 </h4>
                 {fulfillment.cancellationReason && (
-                  <p className="text-[11px] text-red-300 font-mono">
+                  <p className="text-[11px] text-destructive font-mono">
                     {fulfillment.cancellationReason}
                   </p>
                 )}
@@ -353,7 +353,7 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
                 >
                   <Button
                     variant="outline"
-                    className="w-full border-red-900/60 text-red-400 hover:bg-red-950/40 hover:text-red-300 text-xs"
+                    className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive text-xs"
                   >
                     <AlertTriangle className="h-3.5 w-3.5 mr-1.5" />
                     Reportar Quiebre de Stock Fantasma

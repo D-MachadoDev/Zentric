@@ -114,7 +114,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Reporte de Stock Fantasma
             </h1>
-            <Badge variant="outline" className="border-red-900/60 text-red-400 font-mono text-xs">
+            <Badge variant="outline" className="border-destructive/30 text-destructive font-mono text-xs">
               ADR-0014 / ADR-0022
             </Badge>
           </div>
@@ -143,9 +143,9 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
           </Link>
         </div>
       ) : (
-        <div className="rounded-2xl border border-red-900/50 bg-surface p-6 sm:p-8 space-y-6">
-          <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-            <AlertTriangle className="h-4 w-4 text-red-400" />
+        <div className="rounded-2xl border border-destructive/30 bg-surface p-6 sm:p-8 space-y-6">
+          <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
             <AlertTitle>Acción Crítica e Irreversible</AlertTitle>
             <AlertDescription className="text-xs">
               Al reportar este quiebre, se cancelará inmediatamente el despacho físico y se desencadenará la anulación de comprobantes y devolución de dinero al cliente (ADR-0022).
@@ -153,8 +153,8 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
           </Alert>
 
           {serverError && (
-            <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-              <AlertCircle className="h-4 w-4 text-red-400" />
+            <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+              <AlertCircle className="h-4 w-4 text-destructive" />
               <AlertTitle>Error en el reporte</AlertTitle>
               <AlertDescription className="text-xs">{serverError}</AlertDescription>
             </Alert>
@@ -171,10 +171,10 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
                 placeholder="UUID del despacho"
                 value={formData.fulfillmentOrderId}
                 onChange={(e) => handleFieldChange('fulfillmentOrderId', e.target.value)}
-                className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-red-500"
+                className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-destructive"
               />
               {formErrors.fulfillmentOrderId && (
-                <p className="text-[11px] text-red-400">{formErrors.fulfillmentOrderId}</p>
+                <p className="text-[11px] text-destructive">{formErrors.fulfillmentOrderId}</p>
               )}
             </div>
 
@@ -188,7 +188,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
                   value={formData.variantId}
                   onChange={(e) => handleFieldChange('variantId', e.target.value)}
                   aria-label="Seleccionar variante con quiebre"
-                  className="w-full bg-surface-muted border border-border text-foreground text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-red-500"
+                  className="w-full bg-surface-muted border border-border text-foreground text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-destructive"
                 >
                   <option value="">-- Seleccionar variante del catálogo o ingresar UUID --</option>
                   {catalogVariants.map((v) => (
@@ -203,10 +203,10 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
                 placeholder="UUID de la variante que no se encuentra en bodega"
                 value={formData.variantId}
                 onChange={(e) => handleFieldChange('variantId', e.target.value)}
-                className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-red-500"
+                className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-destructive"
               />
               {formErrors.variantId && (
-                <p className="text-[11px] text-red-400">{formErrors.variantId}</p>
+                <p className="text-[11px] text-destructive">{formErrors.variantId}</p>
               )}
             </div>
 
@@ -220,7 +220,7 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
                   value={formData.warehouseId}
                   onChange={(e) => handleFieldChange('warehouseId', e.target.value)}
                   aria-label="Seleccionar bodega del quiebre"
-                  className="w-full bg-surface-muted border border-border text-foreground text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-red-500"
+                  className="w-full bg-surface-muted border border-border text-foreground text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-destructive"
                 >
                   <option value="">-- Seleccionar bodega física o ingresar UUID --</option>
                   {warehouses.map((w: Warehouse) => (
@@ -235,10 +235,10 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
                 placeholder="UUID de la bodega donde ocurrió el faltante"
                 value={formData.warehouseId}
                 onChange={(e) => handleFieldChange('warehouseId', e.target.value)}
-                className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-red-500"
+                className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-destructive"
               />
               {formErrors.warehouseId && (
-                <p className="text-[11px] text-red-400">{formErrors.warehouseId}</p>
+                <p className="text-[11px] text-destructive">{formErrors.warehouseId}</p>
               )}
             </div>
 
@@ -254,17 +254,17 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
                 onChange={(e) =>
                   handleFieldChange('quantityToCancel', parseInt(e.target.value, 10) || 0)
                 }
-                className="bg-surface-muted border-border text-foreground font-mono text-sm focus:border-red-500"
+                className="bg-surface-muted border-border text-foreground font-mono text-sm focus:border-destructive"
               />
               {formErrors.quantityToCancel && (
-                <p className="text-[11px] text-red-400">{formErrors.quantityToCancel}</p>
+                <p className="text-[11px] text-destructive">{formErrors.quantityToCancel}</p>
               )}
             </div>
 
             <Button
               type="submit"
               disabled={cancelGhostMutation.isPending}
-              className="w-full bg-red-600 hover:bg-red-700 text-foreground font-semibold text-xs mt-2 transition-all active:scale-[0.98]"
+              className="w-full bg-destructive hover:bg-destructive text-foreground font-semibold text-xs mt-2 transition-all active:scale-[0.98]"
             >
               {cancelGhostMutation.isPending ? (
                 <>

@@ -375,7 +375,7 @@ export function LoginPage() {
                 className="border-border bg-surface font-mono text-sm text-foreground focus:border-brand"
               />
               {fieldErrors.email && (
-                <p id="email-error" className="text-xs text-red-400">
+                <p id="email-error" className="text-xs text-destructive">
                   {fieldErrors.email}
                 </p>
               )}
@@ -423,7 +423,7 @@ export function LoginPage() {
               </button>
             </div>
               {fieldErrors.password && (
-                <p id="password-error" className="text-xs text-red-400">
+                <p id="password-error" className="text-xs text-destructive">
                   {fieldErrors.password}
                 </p>
               )}
