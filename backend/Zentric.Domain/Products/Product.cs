@@ -20,8 +20,8 @@ namespace Zentric.Domain.Products
 
         public bool IsDeleted => DeletedAt.HasValue;
 
-        // ADR-0003: un producto Fisico siempre tiene al menos una
-        // variante; los Digitales (CAT-02: sin logistica ni inventario) pueden no tenerla.
+        // Un producto físico siempre tiene al menos una variante; los digitales
+        // (sin logística ni inventario) pueden no tenerla.
         public bool HasVariant => _variants.Any(variant => !variant.IsDeleted);
 
         public bool HasSellableVariant => _variants.Any(variant => variant.CanBeSold);

@@ -1,4 +1,5 @@
 using Zentric.Application.Common.Messaging;
+using Zentric.Application.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
@@ -90,20 +91,22 @@ namespace Zentric.Api.Controllers
         /// El reparto por rol es el mismo que en el listado por pedido (ADDENDUM Dominio 9).
         /// El filtro no es un parametro: no hay forma de pedir las de otro.
         /// </remarks>
+        /// <param name="page">P�gina (1-based).</param>
+        /// <param name="size">Tama�o de p�gina.</param>
         /// <response code="200">Listado de facturas visibles para el llamante.</response>
         /// <response code="401">Token ausente o inválido.</response>
         [HttpGet("invoices")]
         [Authorize(Policy = AuthorizationPolicies.BillingRead)]
-        [ProducesResponseType(typeof(IReadOnlyList<Zentric.Application.Billing.Queries.InvoiceDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(Zentric.Application.Common.Models.PagedResult<Zentric.Application.Billing.Queries.InvoiceDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetInvoices()
+        public async Task<IActionResult> GetInvoices([FromQuery] int page = 1, [FromQuery] int size = 20)
         {
             var userId = _currentUser.UserId;
             var role = User.GetUserRole();
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
             var result = await _mediator.Send(
-                new Zentric.Application.Billing.Queries.GetInvoicesQuery(userId.Value, role.Value));
+                new Zentric.Application.Billing.Queries.GetInvoicesQuery(userId.Value, role.Value, page - 1, size));
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
@@ -117,22 +120,24 @@ namespace Zentric.Api.Controllers
         /// Supervisor ven todas (incluido el Detalle Zentric de plataforma).
         /// </remarks>
         /// <param name="orderId">Identificador único (Guid) del pedido pagado.</param>
-        /// <response code="200">Lista de facturas visibles para el llamante.</response>
+        /// <param name="page">Página basada en cero (primera página = 0).</param>
+        /// <param name="size">Tamaño de página (1..100, por defecto 20).</param>
+        /// <response code="200">Página de facturas con metadatos de paginación.</response>
         /// <response code="401">Token ausente o inválido.</response>
         /// <response code="404">Pedido no encontrado o ajeno al llamante (RFC 7807 ProblemDetails).</response>
         [HttpGet("invoices/order/{orderId}")]
         [Authorize(Policy = AuthorizationPolicies.BillingRead)]
-        [ProducesResponseType(typeof(IReadOnlyList<InvoiceDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PagedResult<InvoiceDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetInvoicesByOrder(Guid orderId)
+        public async Task<IActionResult> GetInvoicesByOrder(Guid orderId, [FromQuery] int page = 0, [FromQuery] int size = 20)
         {
             var userId = _currentUser.UserId;
             var role = User.GetUserRole();
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
             // La visibilidad de cada factura depende del rol (ver el handler).
-            var result = await _mediator.Send(new GetInvoicesByOrderQuery(orderId, userId.Value, role.Value));
+            var result = await _mediator.Send(new GetInvoicesByOrderQuery(orderId, userId.Value, role.Value, page, size));
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
@@ -143,3 +148,6 @@ namespace Zentric.Api.Controllers
     /// </summary>
     public sealed record AnnullMasterInvoiceRequest(string Reason);
 }
+
+
+

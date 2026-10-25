@@ -16,6 +16,7 @@ using Zentric.Api.Controllers;
 using Zentric.Api.Security;
 using Zentric.Application.Billing.Queries;
 using Zentric.Application.Common.Messaging;
+using Zentric.Application.Common.Models;
 using Zentric.Domain.Billing;
 using Zentric.Domain.Billing.Ports;
 using Zentric.Domain.Buyers.Ports;
@@ -209,7 +210,8 @@ namespace Zentric.Tests.Presentation
             var actionResult = await controller.GetInvoices();
 
             var okResult = Assert.IsType<OkObjectResult>(actionResult);
-            var dtos = Assert.IsAssignableFrom<IReadOnlyList<InvoiceDto>>(okResult.Value);
+            var pagedResult = Assert.IsType<PagedResult<InvoiceDto>>(okResult.Value);
+            var dtos = pagedResult.Items;
             var singleDto = Assert.Single(dtos);
             Assert.Equal(expectedAllowedType, singleDto.Type);
             Assert.NotEqual("ZentricDetail", singleDto.Type);
@@ -231,7 +233,8 @@ namespace Zentric.Tests.Presentation
             var actionResult = await controller.GetInvoicesByOrder(orderId);
 
             var okResult = Assert.IsType<OkObjectResult>(actionResult);
-            var dtos = Assert.IsAssignableFrom<IReadOnlyList<InvoiceDto>>(okResult.Value);
+            var pagedResult = Assert.IsType<PagedResult<InvoiceDto>>(okResult.Value);
+            var dtos = pagedResult.Items;
             var singleDto = Assert.Single(dtos);
             Assert.Equal(expectedAllowedType, singleDto.Type);
             Assert.NotEqual("ZentricDetail", singleDto.Type);
@@ -251,13 +254,15 @@ namespace Zentric.Tests.Presentation
 
             var listAction = await controller.GetInvoices();
             var listOk = Assert.IsType<OkObjectResult>(listAction);
-            var listDtos = Assert.IsAssignableFrom<IReadOnlyList<InvoiceDto>>(listOk.Value);
+            var listPaged = Assert.IsType<PagedResult<InvoiceDto>>(listOk.Value);
+            var listDtos = listPaged.Items;
             Assert.Equal(3, listDtos.Count);
             Assert.Contains(listDtos, d => d.Type == "ZentricDetail" && d.TotalAmount == 5_000m);
 
             var byOrderAction = await controller.GetInvoicesByOrder(orderId);
             var byOrderOk = Assert.IsType<OkObjectResult>(byOrderAction);
-            var byOrderDtos = Assert.IsAssignableFrom<IReadOnlyList<InvoiceDto>>(byOrderOk.Value);
+            var byOrderPaged = Assert.IsType<PagedResult<InvoiceDto>>(byOrderOk.Value);
+            var byOrderDtos = byOrderPaged.Items;
             Assert.Equal(3, byOrderDtos.Count);
             Assert.Contains(byOrderDtos, d => d.Type == "ZentricDetail" && d.TotalAmount == 5_000m);
         }

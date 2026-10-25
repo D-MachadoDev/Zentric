@@ -111,36 +111,6 @@ namespace Zentric.Api.Controllers
             return Ok();
         }
 
-        /// <summary>
-        /// Obtiene el catálogo de productos registrados, con filtro opcional por vendedor.
-        /// </summary>
-        /// <remarks>
-        /// El catálogo comercial sólo muestra productos <c>Published</c>. La única
-        /// excepción es el Vendedor que pide su propio <c>VendorId</c>: esa es su vista de
-        /// gestión y sí refleja los suspendidos, porque si no no podría reactivarlos con
-        /// <c>publish</c>.
-        /// </remarks>
-        /// <param name="vendorId">Filtro opcional por identificador único del vendedor.</param>
-        /// <param name="category">Filtro opcional por categoría del producto.</param>
-        /// <response code="200">Lista de productos obtenida exitosamente.</response>
-        [HttpGet("products")]
-        [HttpGet("/api/products")]
-        [Authorize(Policy = AuthorizationPolicies.AnyAuthenticatedUser)]
-        [ProducesResponseType(typeof(IReadOnlyList<ProductDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetProducts(
-            [FromQuery] Guid? vendorId = null,
-            [FromQuery] string? category = null)
-        {
-            // La identidad viene del token y decide qué se ve. Pedir el
-            // propio vendorId es la vista de gestión del dueno; cualquier otro filtro
-            // (incluido ninguno) es el catálogo comercial, sólo Published.
-            var userId = _currentUser.UserId;
-            if (userId is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
-
-            var result = await _mediator.Send(new GetProductsQuery(vendorId, userId.Value, category));
-            return Ok(result.Value);
-        }
-
 
         /// <summary>
         /// Lista el catalogo por paginas. Es la variante recomendada para el

@@ -25,7 +25,7 @@ namespace Zentric.Domain.Inventories
     {
         public Guid Id { get; init; }
 
-        // VariantId (SKU): clave del inventario segun ADR-0002. Cada variante de un
+        // VariantId (SKU): clave del inventario. Cada variante de un
         // producto tiene su propio control de stock por bodega.
         public Guid VariantId { get; private set; }
         public Guid WarehouseId { get; private set; }

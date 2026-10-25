@@ -9,9 +9,9 @@ namespace Zentric.Api.Security
     ///
     /// ANTES: <c>HeaderBuyerAccessor</c> leia el identificador de la cabecera
     /// `X-Buyer-Id`, que el cliente escribe libremente. Cualquiera que enviara un
-    /// GUID obtenia la identidad de ese comprador, con lo que RG-01 ("toda
+    /// GUID obtenia la identidad de ese comprador, con lo que toda
     /// operacion debe ejecutarse por un usuario autenticado") no se cumplia.
-    /// ADR-0009 elimina esa cabecera.
+    /// Se elimina esa cabecera.
     ///
     /// La identidad se toma UNICAMENTE de los claims de un token ya validado por
     /// el middleware. No hay ninguna via alternativa: si el token falta o es

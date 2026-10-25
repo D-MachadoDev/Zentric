@@ -68,7 +68,6 @@ namespace Zentric.Tests.Presentation
                 ["CatalogController.CreateProduct"] = AuthorizationPolicies.ProductManagement,
                 ["CatalogController.PublishProduct"] = AuthorizationPolicies.ProductManagement,
                 ["CatalogController.SuspendProduct"] = AuthorizationPolicies.ProductManagement,
-                ["CatalogController.GetProducts"] = AuthorizationPolicies.AnyAuthenticatedUser,
                 ["CatalogController.GetProductsPaged"] = AuthorizationPolicies.AnyAuthenticatedUser,
                 ["CatalogController.GetProductById"] = AuthorizationPolicies.AnyAuthenticatedUser,
                 ["CatalogController.GetCategories"] = AuthorizationPolicies.AnyAuthenticatedUser,

@@ -245,7 +245,7 @@ namespace Zentric.Tests.Application.Queries
             var result = await handler.Handle(new GetInvoicesByOrderQuery(order.Id, buyer, UserRole.Buyer), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            var invoice = Assert.Single(result.Value);
+            var invoice = Assert.Single(result.Value.Items);
             Assert.Equal("Master", invoice.Type);
         }
 
@@ -282,7 +282,7 @@ namespace Zentric.Tests.Application.Queries
             var result = await handler.Handle(new GetInvoicesByOrderQuery(order.Id, vendorA, UserRole.Seller), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            var invoice = Assert.Single(result.Value);
+            var invoice = Assert.Single(result.Value.Items);
             Assert.Equal(vendorA, invoice.VendorId);
         }
 
@@ -302,7 +302,7 @@ namespace Zentric.Tests.Application.Queries
             var result = await handler.Handle(new GetInvoicesByOrderQuery(order.Id, Guid.NewGuid(), UserRole.Administrator), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            Assert.Equal(3, result.Value.Count);
+            Assert.Equal(3, result.Value.Items.Count);
         }
         // ---- Devoluciones por rol ----
 

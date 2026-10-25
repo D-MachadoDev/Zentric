@@ -191,8 +191,8 @@ namespace Zentric.Tests.Application
             var result = await handler.Handle(new GetOrdersQuery(buyerId, UserRole.Buyer, null), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            Assert.Single(result.Value);
-            var listItem = result.Value[0];
+            Assert.Single(result.Value.Items);
+            var listItem = result.Value.Items[0];
             Assert.Equal(order.CreatedAt.AddMinutes(15), listItem.ExpiresAt);
             Assert.Single(listItem.Items);
             Assert.Equal("Mouse Logitech MX Master", listItem.Items[0].ProductName);
@@ -210,7 +210,7 @@ namespace Zentric.Tests.Application
             currentUserMock.Setup(c => c.UserId).Returns(buyerId);
 
             mediatorMock.Setup(m => m.Send(It.Is<GetOrdersQuery>(q => q.CallerId == buyerId && q.CallerRole == UserRole.Buyer), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(Result<IReadOnlyList<OrderListItemDto>>.Success(new List<OrderListItemDto>()));
+                .ReturnsAsync(Result<PagedResult<OrderListItemDto>>.Success(new PagedResult<OrderListItemDto>(new List<OrderListItemDto>(), 1, 20, 0)));
 
             var controller = new OrdersController(mediatorMock.Object, currentUserMock.Object);
 
