@@ -1,15 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CreateWarehouseInput, UpdateWarehouseInput, Warehouse, ZentricApiPort } from '../../domain';
+import type { CreateWarehouseInput, ListWarehousesPagedParams, PagedResult, UpdateWarehouseInput, Warehouse, ZentricApiPort } from '../../domain';
 import { queryKeys } from './queryKeys';
 import { resolveApi } from './apiContext';
 
 /**
- * Hook de consulta para listar bodegas físicas.
+ * Hook de consulta para listar bodegas físicas (sin paginar - legacy).
  */
 export function useWarehousesQuery(vendorId?: string, api?: ZentricApiPort) {
   return useQuery({
     queryKey: queryKeys.warehouses.list({ vendorId }),
     queryFn: () => resolveApi(api).listWarehouses(vendorId),
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Hook de consulta para listar bodegas paginadas (server-side).
+ * El backend pagina; el frontend solo renderiza.
+ */
+export function useWarehousesPagedQuery(
+  params?: ListWarehousesPagedParams,
+  api?: ZentricApiPort,
+) {
+  return useQuery({
+    queryKey: queryKeys.warehouses.listPaged(params),
+    queryFn: () => resolveApi(api).listWarehousesPaged(params),
     staleTime: 60_000,
   });
 }

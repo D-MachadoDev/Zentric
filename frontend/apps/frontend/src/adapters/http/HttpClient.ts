@@ -323,6 +323,15 @@ export class HttpClient implements ZentricApiPort {
     return this.#json<Warehouse[]>(`/api/Warehouses${query}`, { method: 'GET' });
   }
 
+  listWarehousesPaged(params?: ListWarehousesPagedParams): Promise<PagedResult<Warehouse>> {
+    const queryParams = new URLSearchParams();
+    if (params?.vendorId) queryParams.set('vendorId', params.vendorId);
+    if (params?.page !== undefined) queryParams.set('page', String(params.page));
+    if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.#json<PagedResult<Warehouse>>(`/api/Warehouses${query}`, { method: 'GET' });
+  }
+
   getWarehouseById(id: string): Promise<Warehouse> {
     return this.#json<Warehouse>(`/api/Warehouses/${encodeURIComponent(id)}`, { method: 'GET' });
   }

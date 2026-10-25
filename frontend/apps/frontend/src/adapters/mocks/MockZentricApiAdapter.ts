@@ -292,6 +292,26 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     return vendorId ? this.warehouses.filter((w) => w.vendorId === vendorId) : [...this.warehouses];
   }
 
+  async listWarehousesPaged(params?: { vendorId?: string; page?: number; size?: number }): Promise<PagedResult<Warehouse>> {
+    const page = params?.page ?? 0;
+    const size = params?.size ?? 20;
+    let filtered = this.warehouses;
+    if (params?.vendorId) {
+      filtered = filtered.filter((w) => w.vendorId === params.vendorId);
+    }
+    const start = page * size;
+    const items = filtered.slice(start, start + size);
+    return {
+      items,
+      page,
+      size,
+      totalItems: filtered.length,
+      totalPages: Math.ceil(filtered.length / size),
+      hasPrevious: page > 0,
+      hasNext: start + items.length < filtered.length,
+    };
+  }
+
   async getWarehouseById(id: string): Promise<Warehouse> {
     const wh = this.warehouses.find((w) => w.id === id);
     if (!wh) {
