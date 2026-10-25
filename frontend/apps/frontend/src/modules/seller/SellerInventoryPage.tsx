@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearch } from '@tanstack/react-router';
 import { useInventoriesQuery, useAddStockMutation } from '../../application/services/inventory';
 import { useWarehousesQuery } from '../../application/services/warehouses';
 import { useProductsQuery } from '../../application/services/catalog';
@@ -30,13 +31,15 @@ import {
  * Muestra existencias divididas en available, reserved, used y damaged en Geist Mono tabular-nums.
  */
 export function SellerInventoryPage() {
+  const search = useSearch({ strict: false }) as { variantId?: string };
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('All');
 
   // Formulario AddStock
   const [targetVariantId, setTargetVariantId] = useState('');
   const [targetWarehouseId, setTargetWarehouseId] = useState('');
-  const [stockQuantity, setStockQuantity] = useState<number>(1);
+  const [stockQuantity, setStockQuantity] = useState<string>('1');
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
@@ -56,6 +59,19 @@ export function SellerInventoryPage() {
   const allInventories = inventories ?? [];
   const allWarehouses = warehouses ?? [];
   const allProducts = products ?? [];
+
+  // Prefill desde la URL (botón "Abastecer" de la ficha de producto)
+  useEffect(() => {
+    if (search.variantId) {
+      setTargetVariantId(search.variantId);
+    }
+  }, [search.variantId]);
+
+  useEffect(() => {
+    if (allWarehouses.length === 1 && !targetWarehouseId && allWarehouses[0]) {
+      setTargetWarehouseId(allWarehouses[0].id);
+    }
+  }, [allWarehouses, targetWarehouseId]);
 
   // Mapeos auxiliares para nombres y SKUs
   const warehouseMap = new Map<string, Warehouse>(allWarehouses.map((w: Warehouse) => [w.id, w]));
@@ -102,7 +118,9 @@ export function SellerInventoryPage() {
       return;
     }
 
-    if (stockQuantity <= 0) {
+    const quantity = parseInt(stockQuantity, 10) || 0;
+
+    if (quantity <= 0) {
       setFormError('La cantidad a ingresar debe ser mayor que cero (INV-01).');
       return;
     }
@@ -111,11 +129,11 @@ export function SellerInventoryPage() {
       await addStockMutation.mutateAsync({
         variantId: targetVariantId.trim(),
         warehouseId: targetWarehouseId.trim(),
-        quantity: stockQuantity,
+        quantity,
       });
 
-      setFormSuccess(`Ingreso de ${stockQuantity} unidades registrado exitosamente.`);
-      setStockQuantity(1);
+      setFormSuccess(`Ingreso de ${quantity} unidades registrado exitosamente.`);
+      setStockQuantity('1');
     } catch (err) {
       setFormError(
         err instanceof Error ? err.message : 'Error al registrar existencias en la bodega.'
@@ -138,8 +156,8 @@ export function SellerInventoryPage() {
   if (isErrorInventories) {
     return (
       <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5 text-destructive" />
           <AlertTitle>Error al cargar el inventario</AlertTitle>
           <AlertDescription>
             {errorInventories instanceof Error
@@ -264,15 +282,15 @@ export function SellerInventoryPage() {
                                 SKU: {variantInfo?.sku ?? inv.variantId.substring(0, 8)}
                               </span>
                               {inv.availableQuantity === 0 ? (
-                                <Badge className="bg-rose-500/15 text-rose-400 border-rose-500/30 text-[10px] font-mono">
+                                <Badge className="bg-destructive/15 text-destructive border-destructive/30 text-[10px] font-mono">
                                   Agotado
                                 </Badge>
                               ) : inv.availableQuantity <= 5 ? (
-                                <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-[10px] font-mono">
+                                <Badge className="bg-warning/15 text-warning border-warning/30 text-[10px] font-mono">
                                   Bajo Stock
                                 </Badge>
                               ) : (
-                                <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px] font-mono">
+                                <Badge className="bg-success/15 text-success border-success/30 text-[10px] font-mono">
                                   En Stock
                                 </Badge>
                               )}
@@ -299,7 +317,7 @@ export function SellerInventoryPage() {
                           <td className="py-4 px-4 text-right font-mono text-foreground-muted tabular-nums">
                             {inv.usedQuantity}
                           </td>
-                          <td className="py-4 px-4 text-right font-mono text-red-400 tabular-nums">
+                          <td className="py-4 px-4 text-right font-mono text-destructive tabular-nums">
                             {inv.damagedQuantity}
                           </td>
                         </tr>
@@ -328,8 +346,8 @@ export function SellerInventoryPage() {
             </div>
 
             {formError && (
-              <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-                <AlertCircle className="h-4 w-4 text-red-400" />
+              <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+                <AlertCircle className="h-4 w-4 text-destructive" />
                 <AlertDescription className="text-xs">{formError}</AlertDescription>
               </Alert>
             )}
@@ -400,7 +418,7 @@ export function SellerInventoryPage() {
                   type="number"
                   min={1}
                   value={stockQuantity}
-                  onChange={(e) => setStockQuantity(parseInt(e.target.value, 10) || 0)}
+                  onChange={(e) => setStockQuantity(e.target.value)}
                   className="bg-surface-muted border-border text-foreground font-mono text-sm focus:border-brand"
                 />
                 <p className="text-[11px] text-foreground-muted">
