@@ -742,6 +742,22 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     return [...this.invoices];
   }
 
+  async listInvoicesPaged(params?: { page?: number; size?: number }): Promise<PagedResult<Invoice>> {
+    const page = params?.page ?? 0;
+    const size = params?.size ?? 20;
+    const start = page * size;
+    const items = this.invoices.slice(start, start + size);
+    return {
+      items,
+      page,
+      size,
+      totalItems: this.invoices.length,
+      totalPages: Math.ceil(this.invoices.length / size),
+      hasPrevious: page > 0,
+      hasNext: start + items.length < this.invoices.length,
+    };
+  }
+
   async getInvoicesByOrder(orderId: string): Promise<Invoice[]> {
     return this.invoices.filter((i) => i.customerOrderId === orderId);
   }

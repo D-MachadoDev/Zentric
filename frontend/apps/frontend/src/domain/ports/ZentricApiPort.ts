@@ -19,6 +19,7 @@ import type {
   InspectReturnInput,
   Invoice,
   Inventory,
+  ListInvoicesPagedParams,
   ListProductsPagedParams,
   LoginInput,
   Order,
@@ -148,5 +149,7 @@ export interface ZentricApiPort {
   generateInvoices(orderId: string): Promise<boolean>;
   annulInvoices(orderId: string, input: AnnulInvoiceInput): Promise<void>;
   listInvoices(): Promise<Invoice[]>;
+  /** Listado paginado de facturas (backend: GET /api/Billing/invoices?page&size). */
+  listInvoicesPaged(params?: ListInvoicesPagedParams): Promise<PagedResult<Invoice>>;
   getInvoicesByOrder(orderId: string): Promise<Invoice[]>;
 }

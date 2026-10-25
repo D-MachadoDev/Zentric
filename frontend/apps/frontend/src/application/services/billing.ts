@@ -1,15 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { AnnulInvoiceInput, Invoice, ZentricApiPort } from '../../domain';
+import type { AnnulInvoiceInput, Invoice, ListInvoicesPagedParams, PagedResult, ZentricApiPort } from '../../domain';
 import { queryKeys } from './queryKeys';
 import { resolveApi } from './apiContext';
 
 /**
- * Hook de consulta para listar facturas emitidas.
+ * Hook de consulta para listar facturas emitidas (sin paginar - legacy).
  */
 export function useInvoicesQuery(api?: ZentricApiPort) {
   return useQuery({
     queryKey: queryKeys.invoices.list(),
     queryFn: () => resolveApi(api).listInvoices(),
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Hook de consulta para listar facturas paginadas (server-side).
+ * El backend pagina; el frontend solo renderiza.
+ */
+export function useInvoicesPagedQuery(
+  params?: ListInvoicesPagedParams,
+  api?: ZentricApiPort,
+) {
+  return useQuery({
+    queryKey: queryKeys.invoices.listPaged(params),
+    queryFn: () => resolveApi(api).listInvoicesPaged(params),
     staleTime: 60_000,
   });
 }

@@ -1,5 +1,6 @@
 import type {
   FulfillmentStatus,
+  ListInvoicesPagedParams,
   ListOrdersPagedParams,
   ListProductsPagedParams,
   OrderStatus,
@@ -76,6 +77,7 @@ export const queryKeys = {
   invoices: {
     all: ['invoices'] as const,
     list: () => ['invoices', 'list'] as const,
+    listPaged: (params?: ListInvoicesPagedParams) => ['invoices', 'paged', params ?? {}] as const,
     order: (orderId: string) => ['invoices', 'order', orderId] as const,
   },
 } as const;

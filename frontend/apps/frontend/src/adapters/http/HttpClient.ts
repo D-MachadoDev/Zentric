@@ -555,6 +555,14 @@ export class HttpClient implements ZentricApiPort {
     return this.#json<Invoice[]>('/api/Billing/invoices', { method: 'GET' });
   }
 
+  listInvoicesPaged(params?: ListInvoicesPagedParams): Promise<PagedResult<Invoice>> {
+    const queryParams = new URLSearchParams();
+    if (params?.page !== undefined) queryParams.set('page', String(params.page));
+    if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.#json<PagedResult<Invoice>>(`/api/Billing/invoices${query}`, { method: 'GET' });
+  }
+
   getInvoicesByOrder(orderId: string): Promise<Invoice[]> {
     return this.#json<Invoice[]>(
       `/api/Billing/invoices/order/${encodeURIComponent(orderId)}`,
