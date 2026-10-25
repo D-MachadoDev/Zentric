@@ -38,34 +38,33 @@ import type {
 } from '../models';
 import type { FulfillmentStatus, OrderStatus, ReturnStatus, UserRole } from '../enums';
 
-/** Parámetros para listado paginado de pedidos. */
+/** ParÃ¡metros para listado paginado de pedidos. */
 export interface ListOrdersPagedParams {
   status?: OrderStatus | string;
   page?: number;
   size?: number;
-}
-
-/**
- * Puerto de salida unificado hacia la API de Zentric (Frontend-Architecture §5.1).
+}\r\n\r\n/** Parámetros para listado paginado de usuarios. */\r\nexport interface ListUsersPagedParams {\r\n  role?: UserRole;\r\n  page?: number;\r\n  size?: number;\r\n}\r\n\r\n/**\r\n * Puerto de salida unificado hacia la API de Zentric (Frontend-Architecture Â§5.1).
  *
- * Contiene los métodos canónicos en inglés (Decision A2) que orquestan los endpoints
+ * Contiene los mÃ©todos canÃ³nicos en inglÃ©s (Decision A2) que orquestan los endpoints
  * REST de negocio de backendSDD/Presentation/01-endpoints.md + 1 sonda /health.
  *
  * Se proporcionan alias compatibles para firmas previas (ej. `getUser` para `getUserById`).
  */
 export interface ZentricApiPort {
-  // ── Módulo 9: Sonda de Disponibilidad (/health) ─────────────────────────
+  // ââ MÃ³dulo 9: Sonda de Disponibilidad (/health) âââââââââââââââââââââââââ
   getHealth(): Promise<HealthStatus>;
 
-  // ── Módulo 0: Autenticación e Identidad (/api/auth) ─────────────────────
+  // ââ MÃ³dulo 0: AutenticaciÃ³n e Identidad (/api/auth) âââââââââââââââââââââ
   login(input: LoginInput): Promise<AuthToken>;
   getCurrentUser(): Promise<CurrentUser>;
   /** Alias compatible para getCurrentUser */
   currentUser(): Promise<CurrentUser>;
 
-  // ── Módulo 1: Usuarios y Gestión de Acceso (/api/users) ─────────────────
+  // ââ MÃ³dulo 1: Usuarios y GestiÃ³n de Acceso (/api/users) âââââââââââââââââ
   createUser(input: CreateUserInput): Promise<string>;
   listUsers(role?: UserRole): Promise<User[]>;
+  /** Listado paginado de usuarios (backend: GET /api/Users?role&page&size). */
+  listUsersPaged(params?: ListUsersPagedParams): Promise<PagedResult<User>>;
   getUserById(id: string): Promise<User>;
   /** Alias compatible para getUserById */
   getUser(id: string): Promise<User>;
@@ -74,19 +73,23 @@ export interface ZentricApiPort {
   getUserProfile(): Promise<UserProfile>;
   updateUserProfile(input: UpdateUserProfileInput): Promise<UserProfile>;
 
-  // ── Módulo 2: Bodegas Físicas (/api/warehouses) ─────────────────────────
+  // ââ MÃ³dulo 2: Bodegas FÃ­sicas (/api/warehouses) âââââââââââââââââââââââââ
   createWarehouse(input: CreateWarehouseInput): Promise<string>;
   updateWarehouse(id: string, input: UpdateWarehouseInput): Promise<void>;
   listWarehouses(vendorId?: string): Promise<Warehouse[]>;
   getWarehouseById(id: string): Promise<Warehouse>;
 
-  // ── Módulo 3: Inventarios y Control de Stock (/api/inventories) ─────────
+  /** Listado paginado de bodegas (backend: GET /api/Warehouses?vendorId&page&size). */
+  listWarehousesPaged(params?: ListWarehousesPagedParams): Promise<PagedResult<Warehouse>>;
+  // ââ MÃ³dulo 3: Inventarios y Control de Stock (/api/inventories) âââââââââ
   addStock(input: AddStockInput): Promise<string>;
   listInventories(): Promise<Inventory[]>;
+  /** Listado paginado de inventarios (backend: GET /api/Inventories?page&size). */
+  listInventoriesPaged(params?: ListInventoriesPagedParams): Promise<PagedResult<Inventory>>;
   listInventoryByVariant(variantId: string): Promise<Inventory[]>;
   adjustInventory(id: string, input: AdjustInventoryInput): Promise<AdjustInventoryResult>;
 
-  // ── Módulo 4: Catálogo de Productos (/api/catalog) ──────────────────────
+  // ââ MÃ³dulo 4: CatÃ¡logo de Productos (/api/catalog) ââââââââââââââââââââââ
   createProduct(input: CreateProductInput): Promise<CreatedProduct>;
   publishProduct(productId: string): Promise<void>;
   suspendProduct(productId: string): Promise<void>;
@@ -95,10 +98,10 @@ export interface ZentricApiPort {
   /** Alias compatible para getProductById */
   getProduct(id: string): Promise<Product>;
   /**
-   * Categorías del marketplace (S1: sólo las que tienen >= 1 producto publicado).
+   * CategorÃ­as del marketplace (S1: sÃ³lo las que tienen >= 1 producto publicado).
    *
-   * Es la ÚNICA fuente de categorías del buyer: chips del catálogo, atajos del
-   * header y enlaces del footer salen de aquí, nunca de una lista hardcodeada.
+   * Es la ÃNICA fuente de categorÃ­as del buyer: chips del catÃ¡logo, atajos del
+   * header y enlaces del footer salen de aquÃ­, nunca de una lista hardcodeada.
    */
   listCategories(): Promise<Category[]>;
   /**
@@ -110,7 +113,7 @@ export interface ZentricApiPort {
    */
   listHeroProducts(count?: number): Promise<Product[]>;
 
-  // ── Módulo 5: Carrito y Pedidos (/api/orders) ───────────────────────────
+  // ââ MÃ³dulo 5: Carrito y Pedidos (/api/orders) âââââââââââââââââââââââââââ
   createCart(): Promise<string>;
   addCartItem(input: AddCartItemInput): Promise<void>;
   removeCartItem(orderId: string, variantId: string): Promise<void>;
@@ -125,7 +128,7 @@ export interface ZentricApiPort {
   /** Alias compatible para getOrderById */
   getOrder(id: string): Promise<Order | SellerOrderView>;
 
-  // ── Módulo 6: Logística y Despacho (/api/logistics) ─────────────────────
+  // ââ MÃ³dulo 6: LogÃ­stica y Despacho (/api/logistics) âââââââââââââââââââââ
   createFulfillment(input: CreateFulfillmentInput): Promise<string>;
   packFulfillment(id: string): Promise<void>;
   dispatchFulfillment(id: string): Promise<void>;
@@ -136,7 +139,7 @@ export interface ZentricApiPort {
   /** Alias compatible para getFulfillmentById */
   getFulfillment(id: string): Promise<FulfillmentOrder>;
 
-  // ── Módulo 7: Devoluciones y Garantías (/api/returns) ───────────────────
+  // ââ MÃ³dulo 7: Devoluciones y GarantÃ­as (/api/returns) âââââââââââââââââââ
   requestReturn(input: RequestReturnInput): Promise<string>;
   inspectReturn(id: string, input: InspectReturnInput): Promise<void>;
   approveReturn(id: string): Promise<void>;
@@ -147,7 +150,7 @@ export interface ZentricApiPort {
   /** Alias compatible para getReturnById */
   getReturn(id: string): Promise<ReturnRequest>;
 
-  // ── Módulo 8: Facturación Split (/api/billing) ──────────────────────────
+  // ââ MÃ³dulo 8: FacturaciÃ³n Split (/api/billing) ââââââââââââââââââââââââââ
   generateInvoices(orderId: string): Promise<boolean>;
   annulInvoices(orderId: string, input: AnnulInvoiceInput): Promise<void>;
   listInvoices(): Promise<Invoice[]>;
@@ -155,3 +158,4 @@ export interface ZentricApiPort {
   listInvoicesPaged(params?: ListInvoicesPagedParams): Promise<PagedResult<Invoice>>;
   getInvoicesByOrder(orderId: string): Promise<Invoice[]>;
 }
+

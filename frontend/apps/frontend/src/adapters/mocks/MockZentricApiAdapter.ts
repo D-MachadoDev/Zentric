@@ -217,6 +217,26 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     return role ? this.users.filter((u) => u.role === role) : [...this.users];
   }
 
+  async listUsersPaged(params?: { role?: UserRole; page?: number; size?: number }): Promise<PagedResult<User>> {
+    const page = params?.page ?? 0;
+    const size = params?.size ?? 20;
+    let filtered = this.users;
+    if (params?.role) {
+      filtered = filtered.filter((u) => u.role === params.role);
+    }
+    const start = page * size;
+    const items = filtered.slice(start, start + size);
+    return {
+      items,
+      page,
+      size,
+      totalItems: filtered.length,
+      totalPages: Math.ceil(filtered.length / size),
+      hasPrevious: page > 0,
+      hasNext: start + items.length < filtered.length,
+    };
+  }
+
   async getUserById(id: string): Promise<User> {
     const user = this.users.find((u) => u.id === id);
     if (!user) {

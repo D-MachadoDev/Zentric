@@ -281,6 +281,15 @@ export class HttpClient implements ZentricApiPort {
     return this.#json<User[]>(`/api/Users${query}`, { method: 'GET' });
   }
 
+  listUsersPaged(params?: ListUsersPagedParams): Promise<PagedResult<User>> {
+    const queryParams = new URLSearchParams();
+    if (params?.role) queryParams.set('role', params.role);
+    if (params?.page !== undefined) queryParams.set('page', String(params.page));
+    if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.#json<PagedResult<User>>(`/api/Users${query}`, { method: 'GET' });
+  }
+
   getUserById(id: string): Promise<User> {
     return this.#json<User>(`/api/Users/${encodeURIComponent(id)}`, { method: 'GET' });
   }

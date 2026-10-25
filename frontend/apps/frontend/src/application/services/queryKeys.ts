@@ -3,6 +3,7 @@ import type {
   ListInvoicesPagedParams,
   ListOrdersPagedParams,
   ListProductsPagedParams,
+  ListUsersPagedParams,
   ListWarehousesPagedParams,
   OrderStatus,
   ReturnStatus,
@@ -26,6 +27,7 @@ export const queryKeys = {
   users: {
     all: ['users'] as const,
     list: (filters?: { role?: UserRole }) => ['users', 'list', filters ?? {}] as const,
+    listPaged: (params?: ListUsersPagedParams) => ['users', 'paged', params ?? {}] as const,
     detail: (id: string) => ['users', 'detail', id] as const,
     profile: () => ['users', 'profile'] as const,
   },

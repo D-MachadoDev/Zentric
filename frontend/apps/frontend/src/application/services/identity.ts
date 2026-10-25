@@ -3,7 +3,9 @@ import type {
   AuthToken,
   CurrentUser,
   CreateUserInput,
+  ListUsersPagedParams,
   LoginInput,
+  PagedResult,
   SessionPort,
   User,
   UserProfile,
@@ -91,7 +93,7 @@ export function useLogoutMutation(session?: SessionPort) {
 }
 
 /**
- * Hook de consulta para listar usuarios (Exclusivo Administrador).
+ * Hook de consulta para listar usuarios (Exclusivo Administrador) - sin paginar (legacy).
  */
 export function useUsersQuery(
   role?: UserRole,
@@ -101,6 +103,23 @@ export function useUsersQuery(
   return useQuery({
     queryKey: queryKeys.users.list({ role }),
     queryFn: () => resolveApi(api).listUsers(role),
+    enabled: options?.enabled,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Hook de consulta para listar usuarios paginados (server-side).
+ * El backend pagina; el frontend solo renderiza.
+ */
+export function useUsersPagedQuery(
+  params?: ListUsersPagedParams,
+  api?: ZentricApiPort,
+  options?: { enabled?: boolean },
+) {
+  return useQuery({
+    queryKey: queryKeys.users.listPaged(params),
+    queryFn: () => resolveApi(api).listUsersPaged(params),
     enabled: options?.enabled,
     staleTime: 30_000,
   });
