@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "radix-vega",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "../../packages/ui/src/styles/theme.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "lucide",
+  "rtl": false,
+  "aliases": {
+    "components": "@zentric/ui/components",
+    "utils": "@zentric/ui/lib",
+    "ui": "@zentric/ui/components/ui",
+    "lib": "@zentric/ui/lib",
+    "hooks": "@zentric/ui/hooks"
+  },
+  "registries": {}
+}

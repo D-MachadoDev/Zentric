@@ -1,0 +1,101 @@
+@import '@zentric/ui/styles/theme.css';
+@source "../";
+
+/* ============================================================================
+   Zentric Marketplace — Utilidades de composición global
+   ----------------------------------------------------------------------------
+   Design System v2 "Porcelana y Grafito" (ADDENDUM §9):
+   TODOS los tokens de color viven exclusivamente en @zentric/ui theme.css.
+   Este fichero NO declara ni pisa un solo color: solo utilidades de layout
+   construidas sobre los tokens runtime (var(--border), var(--brand)...), de
+   modo que heredan modo claro/oscuro e identidad de rol automáticamente.
+   ============================================================================ */
+
+html,
+body,
+#root {
+  height: 100%;
+  scroll-behavior: smooth;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Superficie base con tipografía Geist y tokens runtime */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  margin: 0;
+}
+
+/* Elevación de tarjeta comercial: hairline + sombra susurrada en claro,
+   hairline + brillo superior interior en oscuro (§9.3 elevación). */
+.surface-hairline {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px 0 color-mix(in srgb, var(--foreground) 5%, transparent),
+    0 1px 2px -1px color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+
+.dark .surface-hairline {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* Eyebrow indexical en Geist Mono con marca ✱ en acento de rol (§9.5) */
+.kicker-spike {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.kicker-spike::before {
+  content: '✱';
+  color: var(--brand);
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+/* Encabezado de sección lateral: rótulo mono-caps que agrupa la navegación
+   de los shells operativos (Estudio/Sala de Libros, §9.6). */
+.nav-group-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--foreground-subtle);
+  padding-inline: 0.75rem;
+  display: block;
+}
+
+.nav-group-label:first-child {
+  padding-top: 0.25rem;
+}
+
+/* Scrollbars accesibles según tema */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground-subtle);
+}

@@ -1,0 +1,273 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+/* Escaneo obligatorio del paquete @zentric/ui en Tailwind v4 para que todas las
+   clases utilitarias de primitives/ y composite/ se incluyan en el bundle de apps/frontend. */
+@source "../";
+/* Utilidades y variantes que los componentes shadcn (Q5/Q14) usan. Es el
+   fichero vendored de shadcn/ui (MIT); ver su cabecera por el por que no se
+   depende del paquete npm `shadcn` (arrastraria 237 deps de la CLI por un
+   solo CSS de 16 KB). 0 colores, 0 fuentes, 0 radios: no pisa el tema. */
+@import './shadcn-tailwind.css';
+
+/* Geist (Q8-B): bundle local, sin CDN remota bloqueante (seccion 2.2).
+   Sin estos imports la familia se DECLARA abajo pero nunca se CARGA y el
+   navegador cae a system-ui en silencio. El nombre real que declara el paquete
+   es 'Geist Variable', no 'Geist Sans Variable'. */
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================================
+   ZENTRIC DESIGN SYSTEM v2 — "Porcelana y Grafito" (ADDENDUM §9)
+   ----------------------------------------------------------------------------
+   Arquitectura de tema (decision dictada por Owner en /grill-me):
+   1. UNA sola fuente de verdad de color: ESTE fichero. global.css ya no pisa
+      tokens (el dual theme v1 fallaba por dos fuentes en conflicto).
+   2. Tokens RUNTIME con nombres finales (:root = claro, .dark = oscuro): los
+      componentes y el CSS plano referencian var(--background), var(--brand)...
+      directamente, en cualquier modo.
+   3. `@theme inline` puentea cada token runtime a su utilidad Tailwind v4
+      (bg-brand -> var(--brand)); al ser inline, las utilidades resuelven el
+      valor EN USO, asi .dark y [data-role] funcionan sin recompilar.
+   4. Identidad por rol: cada layout de rol ancla su raiz con data-role="..."
+      y el scope remapea SOLO el eje de acento (--brand/--brand-strong).
+      --primary y --ring derivan de --brand por var(), asi que foco, botones
+      primarios, links y chips de rol cambian de identidad sin tocar componentes.
+   5. Contraste WCAG 2.1 AA verificado programaticamente para AMBOS modos y
+      los 5 acentos (Frontend-Design-System.md §9.4).
+   ========================================================================== */
+
+:root {
+  /* --- Modo Claro "Estudio Porcelana" (default: comercio de grado Stripe/Shopify) --- */
+  --background: #F5F6F8; /* Lienzo porcelana con tinte frio (B > R, nunca gris muerto) */
+  --surface: #FFFFFF; /* Papel nítido de tarjeta. Exención documentada §9.3: blanco puro, no gris desaturado. */
+  --surface-muted: #EEF0F4; /* Zona editorial secundaria (cabeceras, hover, bloques) */
+  --border: #E1E5EB; /* Borde estructural 1px */
+  --border-subtle: #EBEEF2; /* Hairline divisorio interno */
+
+  /* Tinta con matiz azul (B > R): jerarquia 17.04 / 7.61 / 4.96:1 sobre lienzo. */
+  --foreground: #0E1420;
+  --foreground-muted: #454F63;
+  --foreground-subtle: #5F6B82;
+
+  /* --- Estados de dominio (comunes a todos los roles; solo badges/dots de estado) --- */
+  --success: #15803D; /* Confirmado / activo (4.64:1 lienzo, 5.02:1 superficie) */
+  --warning: #B45309; /* Pendiente / checkout 15 minutos (4.64:1) */
+  --danger: #B91C1C; /* Error / destructivo (5.98:1) */
+  --info: #1D4ED8; /* Informativo / transito (6.20:1) */
+
+  /* --- Acento por defecto = identidad Comprador (jade de marca, §9.2) ---
+     Los scopes [data-role] de abajo solo re-declaran este par. */
+  --brand: #0F766E;
+  --brand-strong: #0B5D56; /* Hover/active (paso mas profundo en claro) */
+
+  /* --- Texto sobre relleno de acento (boton primario) --- */
+  --primary-foreground: #FFFFFF;
+
+  /* --- Contrato semantico shadcn (Q5/Q14): shadcn se adapta a Zentric --- */
+  --primary: var(--brand);
+  --secondary: var(--surface-muted);
+  --secondary-foreground: var(--foreground);
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--foreground-muted);
+  --accent: var(--surface-muted);
+  --accent-foreground: var(--foreground);
+  --destructive: var(--danger);
+  --destructive-foreground: #FFFFFF;
+  --input: var(--border);
+  /* Anillo de foco = acento del rol. Un unico anillo visible (spec §5). */
+  --ring: var(--brand);
+
+  color-scheme: light;
+}
+
+.dark {
+  /* --- Modo Oscuro "Bóveda Grafito" (consola operativa, sesiones largas) --- */
+  --background: #0C0F16; /* Grafito-tinta (B > R); sustituye al carbón saturado del v1 */
+  --surface: #131824;
+  --surface-muted: #1A2030;
+  --border: #252D40;
+  --border-subtle: #1D2334;
+
+  --foreground: #EDF1F7; /* Hueso frio: 16.91:1 sobre lienzo */
+  --foreground-muted: #98A2B8; /* 7.48:1 */
+  --foreground-subtle: #7D88A3; /* 5.41:1 (AA verificado) */
+
+  --success: #4ADE80;
+  --warning: #FBBF24;
+  --danger: #F87171;
+  --info: #60A5FA;
+
+  /* Jade luminoso sobre grafito; el boton primario usa tinta oscura encima. */
+  --brand: #2DD4BF;
+  --brand-strong: #5EEAD4; /* Hover/active (paso mas luminoso en oscuro) */
+  --primary-foreground: #0C0F16;
+
+  color-scheme: dark;
+}
+
+/* ============================================================================
+   Identidad de Rol (§9.2): solo el eje de acento. --primary, --ring y todos
+   los tokens derivados siguen a --brand por var(). El scope vive en la raiz
+   del layout de cada rol; sin data-role (paginas publicas) heredan el jade
+   Comprador, que es la identidad de marca por defecto.
+   ========================================================================== */
+[data-role='seller'] {
+  /* Vendedor — Estudio Violeta: gestion de catalogo (5.36-7.10:1 texto en claro) */
+  --brand: #6D28D9;
+  --brand-strong: #5B21B6;
+}
+.dark [data-role='seller'] {
+  --brand: #A78BFA;
+  --brand-strong: #C4B5FD;
+}
+
+[data-role='admin'] {
+  /* Administrador — Índigo de Mando: gobernanza central (7.31:1 texto en claro).
+     NO es el "índigo eléctrico" #4F46E5/#6366F1 rechazado en §8: es un paso
+     más profundo (700), contenido y sin brillo neón. */
+  --brand: #4338CA;
+  --brand-strong: #3730A3;
+}
+.dark [data-role='admin'] {
+  --brand: #818CF8;
+  --brand-strong: #A5B4FC;
+}
+
+[data-role='logistics'] {
+  /* Operador Logístico — Cian Operativo: colas y transito (4.95:1 texto en claro) */
+  --brand: #0E7490;
+  --brand-strong: #0A5C74;
+}
+.dark [data-role='logistics'] {
+  --brand: #22D3EE;
+  --brand-strong: #67E8F9;
+}
+
+[data-role='supervisor'] {
+  /* Supervisor de Auditoría — Fucsia Forense: libro mayor (5.85:1 texto en claro) */
+  --brand: #A21CAF;
+  --brand-strong: #86198F;
+}
+.dark [data-role='supervisor'] {
+  --brand: #E879F9;
+  --brand-strong: #F0ABFC;
+}
+
+/* ============================================================================
+   Puente @theme inline (Tailwind v4): cada utilidad de color resuelve el token
+   runtime EN USO. Asi bg-brand/text-brand/border-brand funcionan con .dark y
+   con [data-role] sin duplicar valores. Fontos/radios/movimiento son estaticos
+   y van en @theme normal (se emiten a :root tal cual).
+   ========================================================================== */
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
+
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+/* ============================================================================
+   Tokens estáticos (se emiten a :root tal cual): radios, fuentes y curvas de
+   movimiento NO conmutan con el tema, asi que viven en @theme normal para que
+   var(--font-sans), var(--radius-*) y var(--ease-out-expo) existan en runtime
+   para el CSS plano y los componentes.
+   ========================================================================== */
+@theme {
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  /* 9999 y no 999: el Owner confirmó §2.3 como fuente de verdad de los radios.
+     9999 asegura círculo real independientemente del tamaño del elemento. */
+  --radius-full: 9999px;
+  /* Derivados: la spec fija 6/8/12/16/9999. Estos tres escalan la misma rampa
+     para que rounded-2xl/3xl/4xl de shadcn no queden sin token. */
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-4xl: 28px;
+
+  /* --- Tipografía (Q8-B) ---
+     El nombre lo dicta el paquete: 'Geist Variable' (verificado contra
+     node_modules/@fontsource-variable/geist/index.css), no 'Geist Sans Variable'. */
+  --font-sans: 'Geist Variable', system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+  --font-heading: var(--font-sans);
+
+  /* --- Movimiento (sección 7): nunca bloquea la lectura --- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    @apply bg-background text-foreground;
+  }
+
+  /* Los titulos grandes aprietan el tracking; el mono conserva su ancho. */
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
+  }
+
+  /* Movimiento reducido: se desactivan transiciones y animaciones (seccion 5). */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

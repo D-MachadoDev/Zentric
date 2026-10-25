@@ -1,0 +1,37 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "globalEnv": ["NODE_ENV"],
+  "globalDependencies": ["packages/config/**"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".turbo/**"],
+      "env": ["VITE_API_BASE_URL", "VITE_MODE"]
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
+    "preview": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**", "TestResults/**", ".turbo/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": [".turbo/**"]
+    },
+    "lint": {
+      "outputs": [".turbo/**"]
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}

@@ -1,0 +1,38 @@
+# Contexto de build: frontend/ (ver frontend/Dockerfile)
+# El monorepo acumula varios node_modules y dist: se ignoran todos, no solo
+# el de la raiz, para que el contexto de build no se lleve artefactos.
+
+# Dependencias y artefactos de compilacion
+node_modules
+**/node_modules
+dist
+**/dist
+dist-ssr
+build
+coverage
+**/coverage
+.vitest
+.turbo
+**/.turbo
+
+# Secretos y entornos
+.env
+.env.*
+!.env.example
+
+# Documentacion
+*.md
+../backendSDD
+../frontendSDD
+
+# Control de versiones y editores
+.git
+.gitignore
+.vscode
+.idea
+.github
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log

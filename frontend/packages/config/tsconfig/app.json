@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Extiende base.json y anade las reglas estrictas de la app (sin ruido de comentarios en los paquetes).",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  }
+}

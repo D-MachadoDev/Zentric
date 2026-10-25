@@ -1,0 +1,6 @@
+@Zentric.Api_HostAddress = http://localhost:15433
+
+GET {{Zentric.Api_HostAddress}}/health
+Accept: application/json
+
+###

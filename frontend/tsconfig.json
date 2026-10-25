@@ -1,0 +1,9 @@
+{
+  "//": "Base compartida de TypeScript. Cada paquete la extiende y solo declara lo propio. El compilador vive en packages/config/tsconfig.",
+  "extends": "./packages/config/tsconfig/base.json",
+  "compilerOptions": {
+    "types": []
+  },
+  "include": [],
+  "exclude": ["node_modules", "**/dist/**", "**/.turbo/**"]
+}
