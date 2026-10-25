@@ -38,8 +38,8 @@ export const IniciarSesionSchema = LoginSchema;
 export const CreateUserSchema: z.ZodType<CreateUserInput, CreateUserInput> = z.object({
   identityDocument: z.string().trim().min(1, 'El documento de identidad es obligatorio'),
   fullName: z.string().trim().min(1, 'El nombre completo es obligatorio'),
-  email: z.string().trim().min(3, 'El correo debe tener al menos 3 caracteres'),
-  password: z.string().min(1, 'La contraseña es obligatoria'),
+  email: z.string().trim().min(3, 'El correo debe tener al menos 3 caracteres').email('Formato de correo inválido'),
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(128, 'La contraseña no puede superar 128 caracteres'),
   role: z.enum([
     UserRole.Buyer,
     UserRole.Seller,
