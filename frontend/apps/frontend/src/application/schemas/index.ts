@@ -97,24 +97,26 @@ export const AdjustInventorySchema: z.ZodType<AdjustInventoryInput, AdjustInvent
 
 // ── 6. CreateProductSchema ──────────────────────────────────────────────────
 export const VariantAttributeSchema = z.object({
-  name: z.string().trim().min(1, 'El nombre del atributo es obligatorio'),
-  value: z.string().trim().min(1, 'El valor del atributo es obligatorio'),
+  name: z.string().trim().min(1, 'El nombre del atributo es obligatorio').max(50, 'El nombre del atributo no puede superar 50 caracteres'),
+  value: z.string().trim().min(1, 'El valor del atributo es obligatorio').max(50, 'El valor del atributo no puede superar 50 caracteres'),
 });
 
-export const CreateProductVariantSchema = z.object({
-  sku: z.string().trim().min(1, 'El SKU es obligatorio'),
-  attributes: z.array(VariantAttributeSchema),
+export const CreateProductVariantInputSchema = z.object({
+  sku: z.string().trim().min(1, 'El SKU es obligatorio').max(100, 'El SKU no puede superar 100 caracteres'),
+  attributes: z.array(VariantAttributeSchema).optional(),
+  priceAmount: z.number().nonnegative('El precio no puede ser negativo').optional(),
 });
 
 export const CreateProductSchema: z.ZodType<CreateProductInput, CreateProductInput> = z
   .object({
-    name: z.string().trim().min(1, 'El nombre del producto es obligatorio'),
-    description: z.string().trim().max(2000, 'La descripción no puede exceder 2000 caracteres'),
-    priceAmount: z.number().positive('El precio debe ser mayor a cero'),
-    priceCurrency: z.string().trim().length(3, 'La moneda debe tener exactamente 3 caracteres ISO (ej. COP, USD)'),
+    name: z.string().trim().min(1, 'El nombre del producto es obligatorio').max(200, 'El nombre no puede superar 200 caracteres'),
+    description: z.string().trim().min(1, 'La descripción es obligatoria').max(2000, 'La descripción no puede superar 2000 caracteres'),
+    priceAmount: z.number().nonnegative('El precio no puede ser negativo'),
+    priceCurrency: z.string().trim().min(3, 'La moneda debe tener 3 caracteres (ISO-4217)').max(3, 'La moneda debe tener 3 caracteres (ISO-4217)'),
     type: z.enum([ProductType.Physical, ProductType.Digital]),
-    variants: z.array(CreateProductVariantSchema).optional(),
-    imageUrl: z.string().trim().url('Debe ser una URL válida').optional().nullable(),
+    variants: z.array(CreateProductVariantInputSchema).optional(),
+    imageUrl: z.string().url('La imagen debe ser una URL válida').nullable().optional(),
+    category: z.string().trim().optional(),
   })
   .refine(
     (val) =>
