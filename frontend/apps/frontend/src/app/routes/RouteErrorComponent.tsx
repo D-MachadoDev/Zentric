@@ -27,7 +27,15 @@ export function RouteErrorComponent({ error, reset }: ErrorComponentProps) {
           Tu sesión sigue iniciada: sólo esta sección no corresponde a tu rol.
         </p>
         <div>
-          <Button variant="outline" onClick={reset}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              reset();
+              if (typeof window !== 'undefined' && window.history.length > 1) {
+                window.history.back();
+              }
+            }}
+          >
             Volver
           </Button>
         </div>
