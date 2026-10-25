@@ -37,14 +37,14 @@ import {
 
 /**
  * Formatea una variante en un título y subtítulo amigables para el comprador,
- * priorizando los atributos definidos por el vendedor (Color, Talla, Capacidad, etc.)
+ * priorizando los atributos definidos por el vendedor (Color, Talla, Capacidad, Presentación, etc.)
  * y usando traducción semántica de SKU como respaldo.
  */
 function formatVariantDisplay(
   variant: ProductVariant,
   index: number,
 ): { title: string; subtitle?: string; attributePills: Array<{ name: string; value: string }> } {
-  const attrs = variant.attributes ?? [];
+  const attrs = (variant.attributes ?? []).filter((a) => a.name !== '__price__');
   if (attrs.length > 0) {
     const primaryTitle = attrs.map((a) => `${a.name}: ${a.value}`).join(' · ');
     return {
@@ -158,9 +158,9 @@ function formatVariantDisplay(
 
 /**
  * Ficha Técnica y Detalle del Producto para el Comprador (Frontend-Role-Modules §2.4).
- * Diseñado con referencias de alta conversión (Amazon / Mercado Libre / Temu):
+ * Diseñado con referencias de alta conversión (Amazon / Mercado Libre / Éxito):
  * - Selector de variantes arriba en el Buy Box antes de los botones de compra.
- * - Botón "Comprar Ahora" con icono armónico en la paleta del sistema.
+ * - Precio dinámico por SKU (`activeVariant?.price ?? product.price`) actualizado en tiempo real.
  * - Soporte de Modo Invitado: permite agregar al carrito sin sesión y sólo solicita
  *   iniciar sesión al confirmar la compra / pagar ahora.
  */
@@ -204,6 +204,8 @@ export function BuyerProductDetailPage() {
     }
   }, [product]);
 
+  const unitPrice = activeVariant?.price ?? product?.price ?? 0;
+
   const handleAddToCart = async () => {
     if (!activeVariant || !activeVariant.canBeSold || !product) return;
 
@@ -225,21 +227,20 @@ export function BuyerProductDetailPage() {
 
     setFeedback(null);
 
-    // En navegador real sin sesión activa: guardar en el carrito de invitado sin pedir login aún
     if (!isTestEnvironment && !hasActiveSession) {
       addGuestCartItem({
         variantId: activeVariant.id,
         productId: product.id,
         productName: product.name,
         sku: activeVariant.sku,
-        unitPrice: product.price,
+        unitPrice,
         currency: product.currency ?? 'COP',
         quantity,
         imageUrl: getProductImageUrl(product),
       });
       setFeedback({
         type: 'success',
-        message: `¡${quantity} unidad(es) de ${product.name} agregada(s) a tu carrito! Solo te pediremos iniciar sesión cuando decidas pagar.`,
+        message: `¡${quantity} unidad(es) de ${product.name} (${activeVariant.sku}) agregada(s) a tu carrito! Solo te pediremos iniciar sesión cuando decidas pagar.`,
       });
       return;
     }
@@ -292,14 +293,13 @@ export function BuyerProductDetailPage() {
     setFeedback(null);
 
     try {
-      // Si es visitante sin sesión en navegador real: guardar en carrito invitado y pedir login para confirmar compra
       if (!isTestEnvironment && !hasActiveSession) {
         addGuestCartItem({
           variantId: activeVariant.id,
           productId: product.id,
           productName: product.name,
           sku: activeVariant.sku,
-          unitPrice: product.price,
+          unitPrice,
           currency: product.currency ?? 'COP',
           quantity,
           imageUrl: getProductImageUrl(product),
@@ -374,7 +374,6 @@ export function BuyerProductDetailPage() {
     );
   }
 
-  const unitPrice = product.price;
   const totalPrice = unitPrice * quantity;
   const activeVariantMeta = activeVariant
     ? formatVariantDisplay(
@@ -544,12 +543,12 @@ export function BuyerProductDetailPage() {
                 ${totalPrice.toLocaleString('es-CO', { minimumFractionDigits: 2 })}
               </div>
               <p className="text-xs text-foreground-muted">
-                Precio unitario: ${unitPrice.toLocaleString('es-CO', { minimumFractionDigits: 2 })}{' '}
+                Precio SKU seleccionado: ${unitPrice.toLocaleString('es-CO', { minimumFractionDigits: 2 })}{' '}
                 COP · Impuestos incluidos
               </p>
             </div>
 
-            {/* 2. Selector de Variantes Arriba en el Buy Box (Estilo Amazon / Mercado Libre / Temu) */}
+            {/* 2. Selector de Variantes Arriba en el Buy Box con Precio Individual por SKU */}
             <div className="space-y-2.5 pt-3 border-t border-border">
               <div className="flex items-center justify-between">
                 <h2 className="flex items-center gap-1.5 text-xs uppercase font-mono tracking-wider text-foreground font-bold">
@@ -557,7 +556,7 @@ export function BuyerProductDetailPage() {
                   Elige tu Variante ({variants.length})
                 </h2>
                 <span className="font-mono text-[10px] text-foreground-muted">
-                   Selección instantánea
+                  Precio por SKU
                 </span>
               </div>
 
@@ -567,6 +566,7 @@ export function BuyerProductDetailPage() {
                   const vStock = v.availableStock;
                   const vHasStock = v.canBeSold && (vStock === undefined || vStock > 0);
                   const variantMeta = formatVariantDisplay(v, idx);
+                  const variantPrice = v.price ?? product.price;
 
                   return (
                     <div
@@ -616,7 +616,10 @@ export function BuyerProductDetailPage() {
                         </span>
                       </div>
 
-                      <div className="text-right shrink-0">
+                      <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
+                        <span className="font-mono text-xs font-bold text-brand tabular-nums">
+                          ${variantPrice.toLocaleString('es-CO')}
+                        </span>
                         <span
                           className={`inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold ${
                             isSelected
@@ -715,7 +718,7 @@ export function BuyerProductDetailPage() {
               )}
             </div>
 
-            {/* 5. Acciones Comerciales Arriba: Comprar Ahora (con ícono armónico) y Agregar al Carrito */}
+            {/* 5. Acciones Comerciales Arriba: Comprar Ahora y Agregar al Carrito */}
             <div className="pt-2 space-y-2.5">
               <Button
                 type="button"

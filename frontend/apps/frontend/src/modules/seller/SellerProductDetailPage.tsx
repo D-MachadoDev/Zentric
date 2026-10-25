@@ -29,7 +29,7 @@ import {
 
 /**
  * Ficha Técnica y Estado Comercial de Producto para Vendedor (SellerProductDetailPage).
- * Permite auditar variantes SKU, disponibilidad de venta y alternar estado comercial.
+ * Permite auditar variantes SKU, precio individual por SKU, disponibilidad de venta y alternar estado comercial.
  */
 export function SellerProductDetailPage() {
   const { productId } = useParams({ strict: false }) as { productId?: string };
@@ -64,8 +64,8 @@ export function SellerProductDetailPage() {
             <ArrowLeft className="h-4 w-4 mr-1.5" /> Volver a Mis Productos
           </Button>
         </Link>
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5 text-destructive" />
           <AlertTitle>Error al cargar el producto</AlertTitle>
           <AlertDescription>
             {error instanceof Error ? error.message : 'El producto solicitado no fue encontrado.'}
@@ -162,36 +162,61 @@ export function SellerProductDetailPage() {
               </h2>
 
               <div className="divide-y divide-border border border-border rounded-xl overflow-hidden bg-surface-muted/40">
-                {product.variants.map((v: ProductVariant) => (
-                  <div key={v.id} className="p-4 flex items-center justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-foreground">
-                          SKU: {v.sku}
+                {product.variants.map((v: ProductVariant) => {
+                  const skuPrice = v.price ?? product.price;
+                  return (
+                    <div key={v.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-mono font-bold text-foreground">
+                            SKU: {v.sku}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className={
+                              v.canBeSold
+                                ? 'border-brand/30 text-brand text-[10px] font-mono'
+                                : 'border-destructive/30 text-destructive text-[10px] font-mono'
+                            }
+                          >
+                            {v.canBeSold ? 'Disponible para Venta' : 'Sin Existencias'}
+                          </Badge>
+                        </div>
+                        {v.attributes && v.attributes.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {v.attributes.map((attr, idx) => (
+                              <span
+                                key={`${v.id}-${attr.name}-${idx}`}
+                                className="rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[10px] text-foreground-muted"
+                              >
+                                {attr.name}: {attr.value}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <span className="text-[11px] font-mono text-foreground-muted block">
+                          ID: {v.id}
                         </span>
-                        <Badge
-                          variant="outline"
-                          className={
-                            v.canBeSold
-                              ? 'border-brand/30 text-brand text-[10px] font-mono'
-                              : 'border-red-500/30 text-red-400 text-[10px] font-mono'
-                          }
-                        >
-                          {v.canBeSold ? 'Disponible para Venta' : 'Sin Existencias'}
-                        </Badge>
                       </div>
-                      <span className="text-[11px] font-mono text-foreground-muted block">
-                        ID: {v.id}
-                      </span>
-                    </div>
 
-                    <Link to="/seller/inventory">
-                      <Button variant="outline" size="sm" className="border-border text-brand text-xs font-mono">
-                        Abastecer
-                      </Button>
-                    </Link>
-                  </div>
-                ))}
+                      <div className="flex items-center gap-4">
+                        <div className="text-right font-mono">
+                          <span className="text-[10px] uppercase text-foreground-muted block">
+                            Precio SKU
+                          </span>
+                          <span className="text-sm font-bold text-brand tabular-nums">
+                            <MoneyAmount amount={skuPrice} currency={product.currency} />
+                          </span>
+                        </div>
+                        <Link to="/seller/inventory" search={{ variantId: v.id } as never}>
+                          <Button variant="outline" size="sm" className="border-border text-brand text-xs font-mono">
+                            Abastecer
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -203,7 +228,7 @@ export function SellerProductDetailPage() {
               Condiciones Comerciales
             </h3>
             <p className="text-xs text-foreground-muted leading-relaxed">
-              La disponibilidad comercial de una variante se activa automáticamente cuando se abastece inventario positivo en alguna bodega física.
+              La disponibilidad comercial de una variante se activa automáticamente cuando se abastece inventario positivo en alguna bodega física. Cada SKU mantiene su propio precio al agregar al carrito.
             </p>
           </div>
         </div>

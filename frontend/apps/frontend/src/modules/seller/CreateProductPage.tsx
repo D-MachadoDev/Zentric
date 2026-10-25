@@ -29,21 +29,22 @@ interface VariantDraft {
   attrValue: string;
   attr2Name?: string;
   attr2Value?: string;
+  priceAmount?: number;
 }
 
 const ATTRIBUTE_PRESETS: Array<{ name: string; sampleValue: string }> = [
   { name: 'Color', sampleValue: 'Negro Carbón' },
-  { name: 'Capacidad', sampleValue: '1TB NVMe' },
-  { name: 'Memoria RAM', sampleValue: '32GB DDR5' },
-  { name: 'Talla', sampleValue: 'M / Estándar' },
-  { name: 'Switch', sampleValue: 'Red Lineal' },
-  { name: 'Licencia', sampleValue: 'Empresarial 5 Usuarios' },
+  { name: 'Talla', sampleValue: 'M / 40 EU' },
+  { name: 'Presentación', sampleValue: '1 kg / Doble Cesta' },
+  { name: 'Capacidad', sampleValue: '1TB NVMe / 7.6 Litros' },
+  { name: 'Material', sampleValue: 'Acero Inoxidable' },
+  { name: 'Plan / Licencia', sampleValue: 'Anual Familiar' },
 ];
 
 /**
- * Alta de Producto con Constructor de Variantes (CreateProductPage - Frontend-Role-Modules §2.3).
+ * Alta de Producto con Constructor de Variantes y Precio por SKU (CreateProductPage - Frontend-Role-Modules §2.3).
  * Split-Frame Asimétrico (60% Formulario / 40% Ficha Técnica en Vivo).
- * Cumple con ADR-0003: exige al menos una variante para productos físicos.
+ * Cumple con ADR-0003: exige al menos una variante para productos físicos y permite fijar precio específico por SKU.
  */
 export function CreateProductPage() {
   const createProductMutation = useCreateProductMutation();
@@ -72,7 +73,11 @@ export function CreateProductPage() {
     setVariants((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleVariantChange = (index: number, field: keyof VariantDraft, value: string) => {
+  const handleVariantChange = (
+    index: number,
+    field: keyof VariantDraft,
+    value: string | number | undefined,
+  ) => {
     setVariants((prev) =>
       prev.map((v, i) => (i === index ? { ...v, [field]: value } : v))
     );
@@ -113,6 +118,7 @@ export function CreateProductPage() {
           }
           return {
             sku: v.sku.trim(),
+            priceAmount: v.priceAmount && v.priceAmount > 0 ? v.priceAmount : undefined,
             attributes: attrs,
           };
         });
@@ -150,14 +156,14 @@ export function CreateProductPage() {
             </h1>
           </div>
           <p className="text-sm font-mono text-foreground-muted">
-            Definición de catálogo comercial e inicialización de variantes SKU para inventario.
+            Publica cualquier producto (Hogar, Moda, Supermercado, Deportes, Tecnología o Digital) con precios específicos por SKU.
           </p>
         </div>
       </div>
 
       {errorMsg && (
-        <Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200">
-          <AlertCircle className="h-5 w-5 text-red-400" />
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5 text-destructive" />
           <AlertTitle>Validación Requerida</AlertTitle>
           <AlertDescription className="text-xs font-mono mt-1">{errorMsg}</AlertDescription>
         </Alert>
@@ -185,7 +191,7 @@ export function CreateProductPage() {
                   <Package className="h-5 w-5 text-brand" />
                   <div>
                     <span className="text-sm font-mono font-bold block">Físico</span>
-                    <span className="text-[11px] text-foreground-muted">Requiere SKU y bodega</span>
+                    <span className="text-[11px] text-foreground-muted">Hogar, Moda, Despensa, Deporte, Tech</span>
                   </div>
                 </div>
 
@@ -200,7 +206,7 @@ export function CreateProductPage() {
                   <FileCode className="h-5 w-5 text-blue-400" />
                   <div>
                     <span className="text-sm font-mono font-bold block">Digital</span>
-                    <span className="text-[11px] text-foreground-muted">Entrega electrónica</span>
+                    <span className="text-[11px] text-foreground-muted">Membresías y licencias</span>
                   </div>
                 </div>
               </div>
@@ -212,7 +218,7 @@ export function CreateProductPage() {
                 Nombre del Producto
               </label>
               <Input
-                placeholder="Ej. Monitor Curvo UltraWide 34''"
+                placeholder="Ej. Monitor Curvo 34'' / Cafetera Espresso / Tenis Running"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="bg-surface-muted border-border text-foreground"
@@ -225,7 +231,7 @@ export function CreateProductPage() {
               </label>
               <textarea
                 rows={3}
-                placeholder="Especificaciones técnicas y detalles del fabricante..."
+                placeholder="Características principales, materiales, dimensiones o contenido..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full rounded-lg border border-border bg-surface-muted p-3 text-sm text-foreground placeholder-foreground-muted focus:border-brand focus:outline-none"
@@ -270,6 +276,9 @@ export function CreateProductPage() {
                 onChange={(e) => setPriceAmount(Number(e.target.value))}
                 className="bg-surface-muted border-border font-mono text-foreground"
               />
+              <p className="text-[11px] text-foreground-muted">
+                Precio de referencia del producto. Abajo puedes asignar un precio distinto a cada SKU.
+              </p>
             </div>
 
             {/* Constructor de Variantes */}
@@ -277,12 +286,12 @@ export function CreateProductPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xs uppercase font-mono tracking-wider text-foreground-muted">
-                    Variantes del Producto (SKU)
+                    Variantes del Producto (SKU) y Precios Individuales
                   </h3>
                   <p className="text-[11px] text-foreground-muted">
                     {type === ProductType.Physical
-                      ? 'Obligatorio definir al menos un SKU para abastecer existencias.'
-                      : 'Opcional para productos digitales sin partición física.'}
+                      ? 'Cada SKU puede tener su propio precio, talla, presentación o capacidad.'
+                      : 'Define planes o licencias con precios diferenciados.'}
                   </p>
                 </div>
 
@@ -310,7 +319,7 @@ export function CreateProductPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveVariant(index)}
-                          className="text-red-400 hover:text-red-300 h-7 px-2"
+                          className="text-destructive hover:text-destructive h-7 px-2"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -338,7 +347,7 @@ export function CreateProductPage() {
                       ))}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                       <div>
                         <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
                           Código SKU
@@ -352,7 +361,26 @@ export function CreateProductPage() {
                       </div>
                       <div>
                         <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
-                          Atributo Principal (ej. Color)
+                          Precio SKU (COP)
+                        </label>
+                        <Input
+                          type="number"
+                          min={0}
+                          placeholder={priceAmount > 0 ? String(priceAmount) : 'Igual a base'}
+                          value={variant.priceAmount ?? ''}
+                          onChange={(e) =>
+                            handleVariantChange(
+                              index,
+                              'priceAmount',
+                              e.target.value ? Number(e.target.value) : undefined,
+                            )
+                          }
+                          className="bg-surface border-border font-mono text-xs text-foreground"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
+                          Atributo Principal
                         </label>
                         <Input
                           placeholder="Nombre"
@@ -363,7 +391,7 @@ export function CreateProductPage() {
                       </div>
                       <div>
                         <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
-                          Valor (ej. Negro Carbón)
+                          Valor
                         </label>
                         <Input
                           placeholder="Valor"
@@ -377,10 +405,10 @@ export function CreateProductPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-border/50">
                       <div>
                         <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
-                          2° Atributo Opcional (ej. Capacidad / RAM)
+                          2° Atributo Opcional (ej. Talla / Presentación / Garantía)
                         </label>
                         <Input
-                          placeholder="Ej. Capacidad"
+                          placeholder="Ej. Presentación"
                           value={variant.attr2Name ?? ''}
                           onChange={(e) => handleVariantChange(index, 'attr2Name', e.target.value)}
                           className="bg-surface border-border text-xs text-foreground"
@@ -388,10 +416,10 @@ export function CreateProductPage() {
                       </div>
                       <div>
                         <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
-                          Valor 2° Atributo (ej. 1TB NVMe)
+                          Valor 2° Atributo
                         </label>
                         <Input
-                          placeholder="Ej. 1TB NVMe"
+                          placeholder="Ej. Edición Especial"
                           value={variant.attr2Value ?? ''}
                           onChange={(e) => handleVariantChange(index, 'attr2Value', e.target.value)}
                           className="bg-surface border-border text-xs text-foreground"
@@ -481,10 +509,10 @@ export function CreateProductPage() {
                   {name || 'Nombre del Producto'}
                 </span>
                 <p className="text-xs text-foreground-muted">
-                  {description || 'Aquí aparecerá la descripción técnica...'}
+                  {description || 'Aquí aparecerá la descripción del producto...'}
                 </p>
                 <div className="text-lg font-bold font-mono text-foreground tabular-nums pt-2 border-t border-border">
-                  ${priceAmount.toLocaleString('es-CO', { minimumFractionDigits: 2 })} COP
+                  Desde ${priceAmount.toLocaleString('es-CO', { minimumFractionDigits: 2 })} COP
                 </div>
 
                 {/* Vista previa de cómo verá el Comprador las variantes en el Buy Box */}
@@ -498,6 +526,8 @@ export function CreateProductPage() {
                         v.attrName && v.attrValue ? `${v.attrName}: ${v.attrValue}` : null,
                         v.attr2Name && v.attr2Value ? `${v.attr2Name}: ${v.attr2Value}` : null,
                       ].filter(Boolean);
+                      const effectivePrice =
+                        v.priceAmount && v.priceAmount > 0 ? v.priceAmount : priceAmount;
                       return (
                         <div
                           key={i}
@@ -511,9 +541,14 @@ export function CreateProductPage() {
                               SKU: {v.sku || 'PENDIENTE'}
                             </div>
                           </div>
-                          <span className="rounded bg-brand/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-brand">
-                            Opción #{i + 1}
-                          </span>
+                          <div className="text-right">
+                            <span className="block font-mono text-xs font-bold text-brand tabular-nums">
+                              ${effectivePrice.toLocaleString('es-CO')} COP
+                            </span>
+                            <span className="font-mono text-[10px] text-foreground-muted">
+                              Opción #{i + 1}
+                            </span>
+                          </div>
                         </div>
                       );
                     })}
