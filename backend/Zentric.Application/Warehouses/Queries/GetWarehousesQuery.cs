@@ -24,9 +24,9 @@ namespace Zentric.Application.Warehouses.Queries
     /// propias: el filtro pedido y el aplicado serian distintos, y responder como
     /// si nada oculta el limite.
     /// </summary>
-    public record GetWarehousesQuery(Guid? VendorId, Guid CallerId, UserRole CallerRole) : IRequest<Result<IReadOnlyList<WarehouseDto>>>;
+    public record GetWarehousesQuery(Guid? VendorId, Guid CallerId, UserRole CallerRole, int Page = 0, int Size = PageRequest.DefaultPageSize) : IRequest<Result<PagedResult<WarehouseDto>>>;
 
-    public class GetWarehousesQueryHandler : IRequestHandler<GetWarehousesQuery, Result<IReadOnlyList<WarehouseDto>>>
+    public class GetWarehousesQueryHandler : IRequestHandler<GetWarehousesQuery, Result<PagedResult<WarehouseDto>>>
     {
         private readonly IWarehouseRepository _warehouseRepository;
 
@@ -35,24 +35,32 @@ namespace Zentric.Application.Warehouses.Queries
             _warehouseRepository = warehouseRepository;
         }
 
-        public async Task<Result<IReadOnlyList<WarehouseDto>>> Handle(GetWarehousesQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedResult<WarehouseDto>>> Handle(GetWarehousesQuery request, CancellationToken cancellationToken)
         {
             if (request.CallerRole == UserRole.Seller)
             {
                 if (request.VendorId.HasValue && request.VendorId.Value != request.CallerId)
                 {
-                    return Result<IReadOnlyList<WarehouseDto>>.Failure(
+                    return Result<PagedResult<WarehouseDto>>.Failure(
                         "A seller can only list their own warehouses.");
                 }
 
                 // [ADDENDUM 2026-10-17]: el Vendedor lista sus bodegas propias y las bodegas centrales activas de Zentric (Marketplace)
-                var list = await _warehouseRepository.GetForSellerAsync(request.CallerId, cancellationToken);
-                return Result<IReadOnlyList<WarehouseDto>>.Success(list.Select(WarehouseMapper.ToDto).ToList());
+                var sellerList = await _warehouseRepository.GetForSellerAsync(request.CallerId, cancellationToken);
+                var sellerDtos = sellerList.Select(WarehouseMapper.ToDto).ToList();
+                var sellerPage = new PageRequest(request.Page, request.Size);
+                var sellerPaged = sellerDtos.Skip(sellerPage.Skip).Take(sellerPage.Take).ToList();
+                return Result<PagedResult<WarehouseDto>>.Success(
+                    new PagedResult<WarehouseDto>(sellerPaged, sellerPage.Page, sellerPage.Size, sellerDtos.Count));
             }
 
             // Operador y Administrador: sin restriccion de dueno.
             var all = await _warehouseRepository.GetAllAsync(request.VendorId, cancellationToken);
-            return Result<IReadOnlyList<WarehouseDto>>.Success(all.Select(WarehouseMapper.ToDto).ToList());
+            var allDtos = all.Select(WarehouseMapper.ToDto).ToList();
+            var page = new PageRequest(request.Page, request.Size);
+            var paged = allDtos.Skip(page.Skip).Take(page.Take).ToList();
+            return Result<PagedResult<WarehouseDto>>.Success(
+                new PagedResult<WarehouseDto>(paged, page.Page, page.Size, allDtos.Count));
         }
     }
 

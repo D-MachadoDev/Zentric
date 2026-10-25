@@ -42,8 +42,8 @@ namespace Zentric.Tests.Application.Queries
             var result = await handler.Handle(new GetUsersQuery(UserRole.Seller), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            Assert.Single(result.Value);
-            Assert.Equal("123456", result.Value[0].IdentityDocument);
+            Assert.Single(result.Value.Items);
+            Assert.Equal("123456", result.Value.Items[0].IdentityDocument);
         }
 
         [Fact]
@@ -72,8 +72,8 @@ namespace Zentric.Tests.Application.Queries
                 new GetWarehousesQuery(null, Guid.NewGuid(), UserRole.Administrator), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            Assert.Single(result.Value);
-            Assert.Equal("Principal", result.Value[0].Name);
+            Assert.Single(result.Value.Items);
+            Assert.Equal("Principal", result.Value.Items[0].Name);
         }
 
         [Fact]

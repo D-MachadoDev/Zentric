@@ -1,4 +1,5 @@
 using Zentric.Application.Common.Messaging;
+using Zentric.Application.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
@@ -96,13 +97,16 @@ namespace Zentric.Api.Controllers
         /// Permite al Administrador consultar todos los usuarios del sistema o filtrar por roles específicos como Vendor o Buyer.
         /// </remarks>
         /// <param name="role">Filtro opcional por rol de usuario (Buyer, Vendor, Admin, LogisticsOperator, Supervisor).</param>
+        /// <param name="page">Página (1-based).</param>
+        /// <param name="size">Tamaño de página.</param>
         /// <response code="200">Lista de usuarios obtenida exitosamente.</response>
         [HttpGet]
         [Authorize(Policy = AuthorizationPolicies.UserAdministration)]
-        [ProducesResponseType(typeof(IReadOnlyList<UserDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetUsers([FromQuery] UserRole? role = null)
+        [ProducesResponseType(typeof(PagedResult<UserDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetUsers([FromQuery] UserRole? role = null, [FromQuery] int page = 1, [FromQuery] int size = 20)
         {
-            var result = await _mediator.Send(new GetUsersQuery(role));
+            var result = await _mediator.Send(new GetUsersQuery(role, page - 1, size));
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
 

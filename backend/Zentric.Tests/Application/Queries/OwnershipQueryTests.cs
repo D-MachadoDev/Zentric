@@ -505,7 +505,7 @@ namespace Zentric.Tests.Application.Queries
                 new GetWarehousesQuery(null, vendorId, UserRole.Seller), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            var warehouse = Assert.Single(result.Value);
+            var warehouse = Assert.Single(result.Value.Items);
             Assert.Equal("Mia", warehouse.Name);
         }
 
@@ -538,7 +538,7 @@ namespace Zentric.Tests.Application.Queries
                 new GetWarehousesQuery(null, Guid.NewGuid(), UserRole.LogisticsOperator), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            Assert.Equal(2, result.Value.Count);
+            Assert.Equal(2, result.Value.TotalItems);
         }
 
         [Fact]

@@ -8,9 +8,9 @@ namespace Zentric.Application.Users.Queries
 {
     public record UserDto(Guid Id, string Name, string Email, string Role, string IdentityDocument, bool IsActive, DateTime CreatedAt);
 
-    public record GetUsersQuery(UserRole? Role = null) : IRequest<Result<IReadOnlyList<UserDto>>>;
+    public record GetUsersQuery(UserRole? Role = null, int Page = 0, int Size = PageRequest.DefaultPageSize) : IRequest<Result<PagedResult<UserDto>>>;
 
-    public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, Result<IReadOnlyList<UserDto>>>
+    public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, Result<PagedResult<UserDto>>>
     {
         private readonly IUserRepository _userRepository;
 
@@ -19,7 +19,7 @@ namespace Zentric.Application.Users.Queries
             _userRepository = userRepository;
         }
 
-        public async Task<Result<IReadOnlyList<UserDto>>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedResult<UserDto>>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
         {
             var users = await _userRepository.GetAllAsync(request.Role, cancellationToken);
             var dtos = users.Select(u => new UserDto(
@@ -32,7 +32,10 @@ namespace Zentric.Application.Users.Queries
                 u.CreatedAt
             )).ToList();
 
-            return Result<IReadOnlyList<UserDto>>.Success(dtos);
+            var page = new PageRequest(request.Page, request.Size);
+            var paged = dtos.Skip(page.Skip).Take(page.Take).ToList();
+            return Result<PagedResult<UserDto>>.Success(
+                new PagedResult<UserDto>(paged, page.Page, page.Size, dtos.Count));
         }
     }
 
