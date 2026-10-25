@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useOrdersQuery, useCancelOrderMutation } from '../../application/services/orders';
 import { useProductsQuery } from '../../application/services/catalog';
@@ -49,20 +49,11 @@ export function BuyerOrdersPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
-  const [nowMs, setNowMs] = useState(() => Date.now());
   const { data: orders, isLoading, isError, error, refetch, isFetching } = useOrdersQuery();
   const { data: products } = useProductsQuery();
   const { data: returns } = useReturnsQuery();
   const cancelOrderMutation = useCancelOrderMutation();
   const buyerReturns = returns ?? [];
-
-  // Actualizar reloj cada 15s para retirar automáticamente pedidos cuyo checkout de 15 min expiró
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setNowMs(Date.now());
-    }, 15_000);
-    return () => clearInterval(timer);
-  }, []);
 
   const handleCopyOrderId = (id: string) => {
     try {
@@ -88,8 +79,9 @@ export function BuyerOrdersPage() {
 
   const isPendingPaymentActive = (o: OrderListItem): boolean => {
     if (o.status !== OrderStatus.PendingPayment) return false;
+    // El backend es la autoridad sobre la ventana de 15 min (expiresAt/canStillPay).
+    // El frontend solo refleja ese veredicto para evitar desfases por reloj del cliente.
     if (o.canStillPay === false) return false;
-    if (o.expiresAt && new Date(o.expiresAt).getTime() <= nowMs) return false;
     return true;
   };
 

@@ -77,6 +77,16 @@ export function BuyerOrderPaymentPage() {
     setIsExpired(initialSeconds <= 0);
   }
 
+  const canPay = (orderData as Order | undefined)?.canStillPay !== false;
+
+  // El backend es la autoridad sobre la ventana de 15 min: si canStillPay es false,
+  // bloqueamos el pago aunque el reloj del cliente aún muestre tiempo restante.
+  useEffect(() => {
+    if (!canPay) {
+      setIsExpired(true);
+    }
+  }, [canPay]);
+
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [renewalSuccess, setRenewalSuccess] = useState<string | null>(null);
 
@@ -611,7 +621,7 @@ export function BuyerOrderPaymentPage() {
         {/* Botón de Acción de Pago */}
         <Button
           onClick={handlePay}
-          disabled={isExpired || payOrderMutation.isPending}
+          disabled={isExpired || !canPay || payOrderMutation.isPending}
           className="w-full h-14 bg-brand hover:bg-brand-strong text-primary-foreground font-bold text-base shadow-xl shadow-brand/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
         >
           {payOrderMutation.isPending ? (
