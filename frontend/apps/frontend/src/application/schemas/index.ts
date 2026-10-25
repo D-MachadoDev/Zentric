@@ -15,6 +15,7 @@ import type {
   LoginInput,
   RemoveCartItemInput,
   RequestReturnInput,
+  UpdateCartItemQuantityInput,
   UpdateUserProfileInput,
 } from '../../domain';
 
@@ -143,6 +144,14 @@ export const RemoveCartItemSchema: z.ZodType<RemoveCartItemInput, RemoveCartItem
   variantId: z.string().min(1, 'El identificador de variante es obligatorio'),
 });
 export const EliminarDelCarritoSchema = RemoveCartItemSchema;
+
+// ── 8b. UpdateCartItemQuantitySchema ──────────────────────────────────────────
+export const UpdateCartItemQuantitySchema: z.ZodType<UpdateCartItemQuantityInput, UpdateCartItemQuantityInput> = z.object({
+  orderId: z.string().min(1, 'El identificador de pedido es obligatorio'),
+  variantId: z.string().min(1, 'El identificador de variante es obligatorio'),
+  quantity: z.number().int('La cantidad debe ser un entero').min(1, 'La cantidad debe ser al menos 1'),
+});
+export const ActualizarCantidadCarritoSchema = UpdateCartItemQuantitySchema;
 
 // ── 9. CreateFulfillmentSchema ──────────────────────────────────────────────
 export const CreateFulfillmentSchema: z.ZodType<CreateFulfillmentInput, CreateFulfillmentInput> = z.object({
