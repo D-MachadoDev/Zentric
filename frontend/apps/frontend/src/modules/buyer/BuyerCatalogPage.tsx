@@ -52,10 +52,6 @@ function readPageParam(value: string | number | undefined): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 }
 
-/**
- * El movimiento del carrusel respeta `prefers-reduced-motion`; ademas jsdom no
- * implementa `matchMedia`, asi que la comprobacion es defensiva.
- */
 function resolveScrollBehavior(): ScrollBehavior {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
     return 'smooth';
@@ -65,12 +61,6 @@ function resolveScrollBehavior(): ScrollBehavior {
 
 /**
  * Catalogo comercial del comprador (S1 + S2 + S3).
- *
- * Toda la seccion consume el backend: las categorias salen de
- * `GET api/catalog/categories`, el hero de `GET api/catalog/products/hero` y la
- * grilla de `GET api/catalog/products/paged` con `search`, `sort`, `type`,
- * `category` y `page` resueltos en el servidor. No hay filtrado local sobre la
- * pagina activa ni datos inventados.
  */
 export function BuyerCatalogPage() {
   const search = useSearch({ strict: false }) as CatalogSearch;
@@ -82,10 +72,6 @@ export function BuyerCatalogPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>(search?.cat ?? ALL_CATEGORIES);
   const [sort, setSort] = useState<CatalogSort>('relevance');
 
-  // El URL (?cat, ?q, ?page) es una fuente externa: cuando cambia por un
-  // shortcut del header o por el boton atras del navegador, el estado local se
-  // ajusta durante el render (patron de React: "adjusting state when props
-  // change"), sin efectos que encadenen renders.
   const urlCategory = search?.cat;
   const urlQuery = search?.q;
   const urlPage = readPageParam(search?.page);
@@ -111,7 +97,6 @@ export function BuyerCatalogPage() {
     }
   }
 
-  // Solo viaja al servidor lo que el comprador ya termino de escribir.
   const debouncedSearch = useDebounce(searchInput.trim(), SEARCH_DEBOUNCE_MS);
 
   const {
@@ -143,7 +128,6 @@ export function BuyerCatalogPage() {
 
   const recentlyViewed = useMemo(() => getRecentlyViewedProducts(), []);
 
-  // El carrusel reutiliza la pagina activa; con menos de 3 productos seria ruido.
   const popularProducts = useMemo(
     () => (products.length > 2 ? products.slice(0, 6) : []),
     [products],
@@ -164,7 +148,8 @@ export function BuyerCatalogPage() {
   const carouselRef = useRef<HTMLDivElement>(null);
 
   const scrollToProductGrid = useCallback(() => {
-    document.getElementById('product-grid')?.scrollIntoView({
+    const target = document.getElementById('product-grid') ?? document.getElementById('catalogo');
+    target?.scrollIntoView({
       behavior: resolveScrollBehavior(),
       block: 'start',
     });
@@ -200,13 +185,6 @@ export function BuyerCatalogPage() {
     [popularProducts.length, scrollCarouselTo],
   );
 
-  /**
-   * Avance automatico del carrusel.
-   *
-   * Se detiene al pasar el puntero y al enfocar el carrusel (para que quien
-   * navega con teclado pueda detenerlo), y no corre si el sistema pide menos
-   * movimiento. El temporizador no se reinicia con cada cambio de indice.
-   */
   useEffect(() => {
     if (!isAutoPlaying || !hasPopularProducts || resolveScrollBehavior() === 'auto') {
       return;
@@ -223,13 +201,6 @@ export function BuyerCatalogPage() {
     return () => clearInterval(interval);
   }, [hasPopularProducts, isAutoPlaying, popularProducts.length, scrollCarouselTo]);
 
-  /**
-   * Navegacion por teclado del carrusel.
-   *
-   * El manejador vive en el propio carrusel (y el carrusel es enfocable) en
-   * lugar de `document`: asi las flechas siguen moviendo el cursor de texto en
-   * los campos de busqueda de la pagina.
-   */
   const handleCarouselKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
       return;
@@ -245,10 +216,6 @@ export function BuyerCatalogPage() {
     scrollCarouselBy(delta);
   };
 
-  /**
-   * Refleja en el URL los filtros navegables (`?cat`, `?page`): la vista se
-   * puede compartir y el boton atras del navegador devuelve al estado previo.
-   */
   const buildSearchParams = useCallback(
     (overrides: { cat?: string | null; page?: number | null; q?: string | null }) => {
       const next: Record<string, unknown> = { ...(search ?? {}) };
@@ -306,10 +273,13 @@ export function BuyerCatalogPage() {
 
   return (
     <div className="space-y-10 py-2 sm:py-4">
-      {/* ── 1. Primera impresion: mosaico de productos reales (S2) ── */}
-      <CatalogHero onExploreAll={scrollToProductGrid} />
+      {/* ── 1. Primera impresion: mosaico de productos reales y accesos a departamentos (S2) ── */}
+      <CatalogHero
+        onExploreAll={scrollToProductGrid}
+        onSelectCategory={handleSelectCategory}
+      />
 
-      {/* ── 2. Franja de garantías (banda editorial, no 4 tarjetas clonadas) ── */}
+      {/* ── 2. Franja de garantías ── */}
       <CatalogTrustStrip />
 
       {/* ── 3. Carrusel: Productos Populares & Tendencias (Visible con >2 productos) ── */}
@@ -374,10 +344,6 @@ export function BuyerCatalogPage() {
                 aria-selected={index === carouselIndex}
                 aria-label={`Ir a producto ${index + 1}`}
                 onClick={() => goToCarouselIndex(index)}
-                // WCAG 2.2 SC 2.5.8 (Target Size Minimum): el area tactil
-                // medible del boton es de 24x24 CSS px. El punto visible sigue
-                // siendo pequeno (8px) porque lo dibuja el pseudo-elemento
-                // `after`, que no cuenta como area interactiva.
                 className={`relative flex h-6 w-6 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:outline-none after:content-[''] after:h-2 after:w-2 after:rounded-full after:transition-[width,background-color] after:duration-200 ${
                   index === carouselIndex
                     ? 'after:w-6 after:bg-brand'

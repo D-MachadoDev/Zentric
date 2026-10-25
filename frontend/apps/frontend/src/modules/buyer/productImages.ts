@@ -3,10 +3,30 @@ import { ProductType } from '../../domain';
 
 /**
  * Catálogo curado de fotografía de producto real de alta resolución (Unsplash Commercial).
- * Evita la apariencia genérica de IA o tarjetas sin imagen, proporcionando
- * una experiencia visual idéntica a los principales e-commerce de tecnología.
+ * Cubre múltiples categorías de marketplace generalista (Hogar, Moda, Supermercado,
+ * Deportes, Tecnología, Audio y Suscripciones Digitales).
  */
 const CURATED_CATEGORY_IMAGES = {
+  cafetera:
+    'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&w=900&q=80',
+  freidora:
+    'https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&w=900&q=80',
+  aspiradora:
+    'https://images.unsplash.com/photo-1558317374-067fb5f30001?auto=format&fit=crop&w=900&q=80',
+  tenis:
+    'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80',
+  morral:
+    'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=900&q=80',
+  cafe:
+    'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=900&q=80',
+  aceite:
+    'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=900&q=80',
+  mancuerna:
+    'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=900&q=80',
+  bicicleta:
+    'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=900&q=80',
+  tv:
+    'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=900&q=80',
   keyboard:
     'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=900&q=80',
   mechanical:
@@ -57,22 +77,52 @@ export function getProductImageUrl(product: {
 
   const normalized = product.name.toLowerCase();
 
+  if (normalized.includes('cafetera') || normalized.includes('espresso') || normalized.includes('barista')) {
+    return CURATED_CATEGORY_IMAGES.cafetera;
+  }
+  if (normalized.includes('freidora') || normalized.includes('airfryer') || normalized.includes('cocina')) {
+    return CURATED_CATEGORY_IMAGES.freidora;
+  }
+  if (normalized.includes('aspiradora') || normalized.includes('robot')) {
+    return CURATED_CATEGORY_IMAGES.aspiradora;
+  }
+  if (normalized.includes('tenis') || normalized.includes('calzado') || normalized.includes('zapatilla')) {
+    return CURATED_CATEGORY_IMAGES.tenis;
+  }
+  if (normalized.includes('morral') || normalized.includes('mochila') || normalized.includes('bolso')) {
+    return CURATED_CATEGORY_IMAGES.morral;
+  }
+  if (normalized.includes('café') || normalized.includes('cafe') || normalized.includes('origen')) {
+    return CURATED_CATEGORY_IMAGES.cafe;
+  }
+  if (normalized.includes('aceite') || normalized.includes('oliva') || normalized.includes('gourmet')) {
+    return CURATED_CATEGORY_IMAGES.aceite;
+  }
+  if (normalized.includes('mancuerna') || normalized.includes('pesa') || normalized.includes('gym')) {
+    return CURATED_CATEGORY_IMAGES.mancuerna;
+  }
+  if (normalized.includes('bicicleta') || normalized.includes('spinning') || normalized.includes('fitness')) {
+    return CURATED_CATEGORY_IMAGES.bicicleta;
+  }
+  if (normalized.includes('smart tv') || normalized.includes('oled') || normalized.includes('televisor')) {
+    return CURATED_CATEGORY_IMAGES.tv;
+  }
   if (normalized.includes('teclado') || normalized.includes('keyboard')) {
     return CURATED_CATEGORY_IMAGES.keyboard;
   }
   if (normalized.includes('mouse') || normalized.includes('raton')) {
     return CURATED_CATEGORY_IMAGES.mouse;
   }
-  if (normalized.includes('laptop') || normalized.includes('portatil') || normalized.includes('notebook')) {
+  if (normalized.includes('laptop') || normalized.includes('portatil') || normalized.includes('notebook') || normalized.includes('macbook')) {
     return CURATED_CATEGORY_IMAGES.laptop;
   }
   if (normalized.includes('monitor') || normalized.includes('pantalla')) {
     return CURATED_CATEGORY_IMAGES.monitor;
   }
-  if (normalized.includes('audio') || normalized.includes('auricular') || normalized.includes('headphone') || normalized.includes('diadema')) {
+  if (normalized.includes('audio') || normalized.includes('auricular') || normalized.includes('headphone') || normalized.includes('diadema') || normalized.includes('audífono') || normalized.includes('audifono')) {
     return CURATED_CATEGORY_IMAGES.audio;
   }
-  if (normalized.includes('licencia') || normalized.includes('software') || normalized.includes('cloud')) {
+  if (normalized.includes('licencia') || normalized.includes('software') || normalized.includes('cloud') || normalized.includes('membresía') || normalized.includes('membresia')) {
     return CURATED_CATEGORY_IMAGES.software;
   }
   if (normalized.includes('disco') || normalized.includes('ssd') || normalized.includes('memoria')) {
