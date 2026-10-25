@@ -478,3 +478,8 @@ skills-lock.json
 
 # Salida de Lighthouse CI (runs locales/CI); solo el config lighthouserc.json va versionado.
 .lighthouseci/
+
+# --- Scratch de agentes (scripts one-off y salidas de depuración) ---
+# Nunca forman parte del producto: se generan para parchear y se descartan.
+/*.py
+/debug.txt
