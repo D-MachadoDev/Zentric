@@ -1,7 +1,9 @@
 import type { ErrorComponentProps } from '@tanstack/react-router';
 import { Button } from '@zentric/ui/components/ui/button';
 import { isApiError } from '../../domain';
-import { RolNoAutorizadoError } from './guards';
+import { appServices } from '../providers/appServices';
+import { getRoleHomePath, RolNoAutorizadoError } from './guards';
+import { navegarA } from './navegacion';
 
 /**
  * Estado de error de ruta.
@@ -12,6 +14,11 @@ import { RolNoAutorizadoError } from './guards';
  *   `/entrar` destruiría una sesión perfectamente válida sólo porque el usuario
  *   pulsó un enlace que no le corresponde — y así actúa también el servidor: un
  *   `403` no cierra la sesión.
+ *   `Volver` lleva a la home canónica del rol activo (`getRoleHomePath`), no a
+ *   `/entrar`. Usa navegación de página completa porque la sesión se rehidrata
+ *   desde `localStorage`; `history.back()` se descartó: en una pestaña nueva no
+ *   hay historial y el botón quedaba muerto, y desde un enlace externo sacaba al
+ *   usuario de la aplicación.
  * - **Cualquier otro fallo:** mensaje genérico con `traceId` cuando lo hay. El
  *   `error.message` de una excepción inesperada NO se pinta: puede arrastrar
  *   detalles técnicos que no deben exponerse al usuario.
@@ -29,12 +36,7 @@ export function RouteErrorComponent({ error, reset }: ErrorComponentProps) {
         <div>
           <Button
             variant="outline"
-            onClick={() => {
-              reset();
-              if (typeof window !== 'undefined' && window.history.length > 1) {
-                window.history.back();
-              }
-            }}
+            onClick={() => navegarA(getRoleHomePath(appServices.session.getRole()))}
           >
             Volver
           </Button>

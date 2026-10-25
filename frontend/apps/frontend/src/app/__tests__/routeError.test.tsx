@@ -1,15 +1,32 @@
 import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserRole } from '../../domain';
 import { ApiError } from '../../domain/models/ApiError';
 import { RolNoAutorizadoError } from '../guards/routeGuards';
 import { RouteErrorComponent } from '../routes/RouteErrorComponent';
 
+const sesion = vi.hoisted(() => ({ rol: null as string | null }));
+const navegacion = vi.hoisted(() => ({ navegarA: vi.fn() }));
+
+vi.mock('../providers/appServices', () => ({
+  appServices: { session: { getRole: () => sesion.rol } },
+}));
+
+vi.mock('../routes/navegacion', () => ({
+  navegarA: navegacion.navegarA,
+}));
+
+beforeEach(() => {
+  sesion.rol = null;
+  navegacion.navegarA.mockReset();
+});
+
 describe('RouteErrorComponent', () => {
   it('renderiza pantalla 403 ante RolNoAutorizadoError preservando mensaje explicativo', () => {
     const error = new RolNoAutorizadoError(UserRole.Administrator);
     const reset = vi.fn();
+    sesion.rol = UserRole.Buyer;
 
     render(<RouteErrorComponent error={error} reset={reset} info={{ componentStack: '' }} />);
 
@@ -21,10 +38,43 @@ describe('RouteErrorComponent', () => {
     expect(
       screen.getByText('Tu sesión sigue iniciada: sólo esta sección no corresponde a tu rol.'),
     ).toBeInTheDocument();
+  });
 
-    const volverBtn = screen.getByRole('button', { name: 'Volver' });
-    fireEvent.click(volverBtn);
-    expect(reset).toHaveBeenCalledOnce();
+  it('Volver navega a la home del rol activo, no reintenta la ruta prohibida', () => {
+    const reset = vi.fn();
+    sesion.rol = UserRole.Buyer;
+
+    render(
+      <RouteErrorComponent
+        error={new RolNoAutorizadoError(UserRole.Administrator)}
+        reset={reset}
+        info={{ componentStack: '' }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Volver' }));
+
+    expect(navegacion.navegarA).toHaveBeenCalledTimes(1);
+    expect(navegacion.navegarA).toHaveBeenCalledWith('/buyer');
+    expect(reset).not.toHaveBeenCalled();
+  });
+
+  it('Volver cae a /login cuando no hay rol en sesión', () => {
+    const reset = vi.fn();
+    sesion.rol = null;
+
+    render(
+      <RouteErrorComponent
+        error={new RolNoAutorizadoError(UserRole.Seller)}
+        reset={reset}
+        info={{ componentStack: '' }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Volver' }));
+
+    expect(navegacion.navegarA).toHaveBeenCalledTimes(1);
+    expect(navegacion.navegarA).toHaveBeenCalledWith('/login');
   });
 
   it('renderiza pantalla 500 genérica ante excepción inesperada sin exponer detalles técnicos', () => {
