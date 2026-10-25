@@ -1,4 +1,5 @@
 using Zentric.Application.Common.Messaging;
+using Zentric.Application.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
@@ -65,20 +66,22 @@ namespace Zentric.Api.Controllers
         /// productos aunque esten en cualquier bodega, y el Operador ve la red completa. El filtro
         /// no es un parametro: no hay forma de pedir el stock de otro.
         /// </remarks>
+        /// <param name="page">Página (1-based).</param>
+        /// <param name="size">Tamaño de página.</param>
         /// <response code="200">Listado de existencias visibles para el llamante.</response>
         /// <response code="401">Token ausente o invÃ¡lido.</response>
         [HttpGet]
         [Authorize(Policy = AuthorizationPolicies.InventoryRead)]
-        [ProducesResponseType(typeof(IReadOnlyList<Zentric.Application.Inventories.Queries.InventoryDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(Zentric.Application.Common.Models.PagedResult<Zentric.Application.Inventories.Queries.InventoryDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetInventories()
+        public async Task<IActionResult> GetInventories([FromQuery] int page = 1, [FromQuery] int size = 20)
         {
             var userId = _currentUser.UserId;
             var role = User.GetUserRole();
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
             var result = await _mediator.Send(
-                new Zentric.Application.Inventories.Queries.GetInventoriesQuery(userId.Value, role.Value));
+                new Zentric.Application.Inventories.Queries.GetInventoriesQuery(userId.Value, role.Value, page - 1, size));
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
@@ -152,3 +155,5 @@ namespace Zentric.Api.Controllers
         public sealed record AdjustInventoryRequest(int CountedQuantity, string Reason);
     }
 }
+
+

@@ -14,18 +14,17 @@ namespace Zentric.Application.Logistics.Queries
     /// fila aparte a proposito: el mismo dato no debe tener dos formas segun venga de una pantalla
     /// o de otra, porque el frontend acabaria pidiendo una conversion en cada pantalla.
     /// </summary>
-    public record GetFulfillmentsQuery(Guid CallerId, UserRole CallerRole, FulfillmentStatus? Status)
-        : IRequest<Result<IReadOnlyList<FulfillmentOrderDto>>>;
+    public record GetFulfillmentsQuery(Guid CallerId, UserRole CallerRole, FulfillmentStatus? Status, int Page = 0, int Size = PageRequest.DefaultPageSize) : IRequest<Result<PagedResult<FulfillmentOrderDto>>>;
 
     public class GetFulfillmentsQueryHandler
-        : IRequestHandler<GetFulfillmentsQuery, Result<IReadOnlyList<FulfillmentOrderDto>>>
+        : IRequestHandler<GetFulfillmentsQuery, Result<PagedResult<FulfillmentOrderDto>>>
     {
         private readonly IFulfillmentOrderRepository _fulfillmentRepository;
 
         public GetFulfillmentsQueryHandler(IFulfillmentOrderRepository fulfillmentRepository)
             => _fulfillmentRepository = fulfillmentRepository;
 
-        public async Task<Result<IReadOnlyList<FulfillmentOrderDto>>> Handle(
+        public async Task<Result<PagedResult<FulfillmentOrderDto>>> Handle(
             GetFulfillmentsQuery request, CancellationToken cancellationToken)
         {
             // Cada rol se queda en lo suyo. El Comprador ve los despachos de SUS pedidos, el
@@ -64,7 +63,10 @@ namespace Zentric.Application.Logistics.Queries
                     order.CreatedAt))
                 .ToList();
 
-            return Result<IReadOnlyList<FulfillmentOrderDto>>.Success(items);
+            var page = new PageRequest(request.Page, request.Size);
+            var paged = items.Skip(page.Skip).Take(page.Take).ToList();
+            return Result<PagedResult<FulfillmentOrderDto>>.Success(new PagedResult<FulfillmentOrderDto>(paged, page.Page, page.Size, items.Count));
         }
     }
 }
+

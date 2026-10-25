@@ -1,4 +1,5 @@
 using Zentric.Application.Common.Messaging;
+using Zentric.Application.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
@@ -51,15 +52,17 @@ namespace Zentric.Api.Controllers
         /// continuar la compra.
         /// </remarks>
         /// <param name="status">Filtro opcional por estado del pedido.</param>
+        /// <param name="page">Página (1-based).</param>
+        /// <param name="size">Tamaño de página.</param>
         /// <response code="200">Listado de pedidos visibles para el llamante.</response>
         /// <response code="400">El estado indicado no es un <c>OrderStatus</c> vÃ¡lido (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o invÃ¡lido.</response>
         [HttpGet]
         [Authorize(Policy = AuthorizationPolicies.OrderRead)]
-        [ProducesResponseType(typeof(IReadOnlyList<OrderListItemDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(Zentric.Application.Common.Models.PagedResult<OrderListItemDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetOrders([FromQuery] string? status)
+        public async Task<IActionResult> GetOrders([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int size = 20)
         {
             var userId = _currentUser.UserId;
             var role = User.GetUserRole();
@@ -85,7 +88,7 @@ namespace Zentric.Api.Controllers
                 parsed = value;
             }
 
-            var result = await _mediator.Send(new GetOrdersQuery(userId.Value, role.Value, parsed));
+            var result = await _mediator.Send(new GetOrdersQuery(userId.Value, role.Value, parsed, page - 1, size));
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
@@ -98,15 +101,17 @@ namespace Zentric.Api.Controllers
         /// (nombre de producto, SKU, URL de imagen, vendedor) y tiempo de expiraciÃ³n.
         /// </remarks>
         /// <param name="status">Filtro opcional por estado de la orden.</param>
+        /// <param name="page">Página (1-based).</param>
+        /// <param name="size">Tamaño de página.</param>
         /// <response code="200">Listado de Ã³rdenes del comprador autenticado.</response>
         /// <response code="400">Estado de orden invÃ¡lido (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o invÃ¡lido.</response>
         [HttpGet("buyer")]
         [Authorize(Policy = AuthorizationPolicies.OrderRead)]
-        [ProducesResponseType(typeof(IReadOnlyList<OrderListItemDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(Zentric.Application.Common.Models.PagedResult<OrderListItemDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetBuyerOrders([FromQuery] string? status)
+        public async Task<IActionResult> GetBuyerOrders([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int size = 20)
         {
             var userId = _currentUser.UserId;
             if (userId is null) return MissingIdentity();
@@ -126,7 +131,7 @@ namespace Zentric.Api.Controllers
                 parsed = value;
             }
 
-            var result = await _mediator.Send(new GetOrdersQuery(userId.Value, UserRole.Buyer, parsed));
+            var result = await _mediator.Send(new GetOrdersQuery(userId.Value, UserRole.Buyer, parsed, page - 1, size));
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
@@ -395,3 +400,7 @@ namespace Zentric.Api.Controllers
             Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
     }
 }
+
+
+
+

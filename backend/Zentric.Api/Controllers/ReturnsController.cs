@@ -1,4 +1,5 @@
 using Zentric.Application.Common.Messaging;
+using Zentric.Application.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
@@ -176,15 +177,17 @@ namespace Zentric.Api.Controllers
         /// un parametro: no hay forma de pedir las de otro.
         /// </remarks>
         /// <param name="status">Filtro opcional por estado de la devolucion, por nombre (ADR-0012).</param>
+        /// <param name="page">Página (1-based).</param>
+        /// <param name="size">Tamaño de página.</param>
         /// <response code="200">Listado de devoluciones visibles para el llamante.</response>
         /// <response code="400">El estado indicado no es un <c>ReturnStatus</c> valido (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o invÃ¡lido.</response>
         [HttpGet]
         [Authorize(Policy = AuthorizationPolicies.ReturnRead)]
-        [ProducesResponseType(typeof(IReadOnlyList<Zentric.Application.Returns.Queries.ReturnRequestDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(Zentric.Application.Common.Models.PagedResult<Zentric.Application.Returns.Queries.ReturnRequestDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetReturns([FromQuery] string? status)
+        public async Task<IActionResult> GetReturns([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int size = 20)
         {
             var userId = _currentUser.UserId;
             var role = User.GetUserRole();
@@ -210,7 +213,7 @@ namespace Zentric.Api.Controllers
             }
 
             var result = await _mediator.Send(
-                new Zentric.Application.Returns.Queries.GetReturnsQuery(userId.Value, role.Value, parsed));
+                new Zentric.Application.Returns.Queries.GetReturnsQuery(userId.Value, role.Value, parsed, page - 1, size));
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
@@ -251,3 +254,6 @@ namespace Zentric.Api.Controllers
     /// <param name="IsGoodCondition">Indica si el producto se encuentra en condiciones Ã³ptimas para retorno a inventario.</param>
     public record InspectReturnRequestDto(bool IsGoodCondition);
 }
+
+
+

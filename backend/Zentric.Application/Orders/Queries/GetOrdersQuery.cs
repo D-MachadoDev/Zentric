@@ -43,9 +43,9 @@ namespace Zentric.Application.Orders.Queries
     /// repositorio recibe identificadores ya resueltos, nunca el rol. Si el filtro viviera en el
     /// repositorio, bastaria un endpoint nuevo que lo olvidara para abrir una via de fuga.
     /// </summary>
-    public record GetOrdersQuery(Guid CallerId, UserRole CallerRole, OrderStatus? Status) : IRequest<Result<IReadOnlyList<OrderListItemDto>>>;
+    public record GetOrdersQuery(Guid CallerId, UserRole CallerRole, OrderStatus? Status, int Page = 0, int Size = PageRequest.DefaultPageSize) : IRequest<Result<PagedResult<OrderListItemDto>>>;
 
-    public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, Result<IReadOnlyList<OrderListItemDto>>>
+    public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, Result<PagedResult<OrderListItemDto>>>
     {
         private readonly ICustomerOrderRepository _orderRepository;
         private readonly IProductRepository? _productRepository;
@@ -77,7 +77,7 @@ namespace Zentric.Application.Orders.Queries
         {
         }
 
-        public async Task<Result<IReadOnlyList<OrderListItemDto>>> Handle(
+        public async Task<Result<PagedResult<OrderListItemDto>>> Handle(
             GetOrdersQuery request, CancellationToken cancellationToken)
         {
             Guid? buyerId = null;
@@ -198,7 +198,10 @@ namespace Zentric.Application.Orders.Queries
                     canStillPay));
             }
 
-            return Result<IReadOnlyList<OrderListItemDto>>.Success(items);
+            var page = new PageRequest(request.Page, request.Size);
+            var paged = items.Skip(page.Skip).Take(page.Take).ToList();
+            return Result<PagedResult<OrderListItemDto>>.Success(new PagedResult<OrderListItemDto>(paged, page.Page, page.Size, items.Count));
         }
     }
 }
+

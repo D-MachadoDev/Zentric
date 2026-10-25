@@ -6,30 +6,19 @@ using Zentric.Domain.Users.Enums;
 
 namespace Zentric.Application.Inventories.Queries
 {
-    /// <summary>
-    /// Listado de existencias.
-    ///
-    /// Devuelve el MISMO <see cref="InventoryDto"/> que el detalle por variante. El reparto por rol
-    /// es identico al de ahi: el Vendedor ve el stock de SUS productos, el Operador ve la
-    /// red completa porque el stock de la red es su trabajo, y el resto sin filtro.
-    /// </summary>
-    public record GetInventoriesQuery(Guid CallerId, UserRole CallerRole) : IRequest<Result<IReadOnlyList<InventoryDto>>>;
+    public record GetInventoriesQuery(Guid CallerId, UserRole CallerRole, int Page = 0, int Size = PageRequest.DefaultPageSize) : IRequest<Result<PagedResult<InventoryDto>>>;
 
-    public class GetInventoriesQueryHandler : IRequestHandler<GetInventoriesQuery, Result<IReadOnlyList<InventoryDto>>>
+    public class GetInventoriesQueryHandler : IRequestHandler<GetInventoriesQuery, Result<PagedResult<InventoryDto>>>
     {
         private readonly IInventoryRepository _inventoryRepository;
 
         public GetInventoriesQueryHandler(IInventoryRepository inventoryRepository) => _inventoryRepository = inventoryRepository;
 
-        public async Task<Result<IReadOnlyList<InventoryDto>>> Handle(
+        public async Task<Result<PagedResult<InventoryDto>>> Handle(
             GetInventoriesQuery request, CancellationToken cancellationToken)
         {
-            // Solo el Vendedor queda encerrado en su stock. El Comprador no es un rol de esta
-            // pantalla: su stock lo ve a traves del catalogo, no de la tabla de existencias.
             var vendorId = request.CallerRole == UserRole.Seller ? request.CallerId : (Guid?)null;
-
             var inventories = await _inventoryRepository.GetListAsync(vendorId, cancellationToken);
-
             var dtos = inventories
                 .Select(i => new InventoryDto(
                     i.Id,
@@ -41,7 +30,10 @@ namespace Zentric.Application.Inventories.Queries
                     i.DamagedQuantity))
                 .ToList();
 
-            return Result<IReadOnlyList<InventoryDto>>.Success(dtos);
+            var page = new PageRequest(request.Page, request.Size);
+            var paged = dtos.Skip(page.Skip).Take(page.Take).ToList();
+            return Result<PagedResult<InventoryDto>>.Success(
+                new PagedResult<InventoryDto>(paged, page.Page, page.Size, dtos.Count));
         }
     }
 }
