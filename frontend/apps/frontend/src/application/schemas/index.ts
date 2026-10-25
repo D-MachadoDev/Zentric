@@ -179,7 +179,13 @@ export const AnnulInvoiceSchema: z.ZodType<AnnulInvoiceInput, AnnulInvoiceInput>
 
 // ── 14. UpdateUserProfileSchema ─────────────────────────────────────────────
 export const UpdateUserProfileSchema: z.ZodType<UpdateUserProfileInput, UpdateUserProfileInput> = z.object({
-  fullName: z.string().trim().min(1, 'El nombre completo es obligatorio'),
+  fullName: z
+    .string()
+    .trim()
+    .min(1, 'El nombre completo es obligatorio')
+    .refine((val) => val.trim().split(/\s+/).filter(Boolean).length >= 2, {
+      message: 'El nombre completo debe incluir nombre y apellido',
+    }),
   phone: z.string().trim().nullable().optional(),
   documentNumber: z.string().trim().nullable().optional(),
   address: z
@@ -188,7 +194,7 @@ export const UpdateUserProfileSchema: z.ZodType<UpdateUserProfileInput, UpdateUs
       city: z.string().trim().min(1, 'La ciudad es obligatoria'),
       state: z.string().trim().min(1, 'El departamento es obligatorio'),
       zipCode: z.string().trim().min(1, 'El código postal es obligatorio'),
-      country: z.string().trim().optional(),
+      country: z.string().trim().min(1, 'El país es obligatorio'),
     })
     .nullable()
     .optional(),
