@@ -29,7 +29,7 @@ import type {
 
 // ── 1. LoginSchema ──────────────────────────────────────────────────────────
 export const LoginSchema: z.ZodType<LoginInput, LoginInput> = z.object({
-  email: z.string().trim().min(1, 'El correo electrónico es obligatorio'),
+  email: z.string().trim().min(1, 'El correo electrónico es obligatorio').email('Formato de correo inválido'),
   password: z.string().min(1, 'La contraseña es obligatoria'),
 });
 export const IniciarSesionSchema = LoginSchema;
