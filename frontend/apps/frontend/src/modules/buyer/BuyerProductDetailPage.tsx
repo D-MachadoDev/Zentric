@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from '@tanstack/react-router';
-import { useProductQuery } from '../../application/services/catalog';
+import { useProductQuery, useTrackProductViewMutation } from '../../application/services/catalog';
 import {
   useOrdersQuery,
   useCreateCartMutation,
@@ -89,11 +89,17 @@ export function BuyerProductDetailPage() {
     (availableStock !== undefined && availableStock <= 0);
   const isExceedingStock = quantity > maxStock;
 
+  const trackProductView = useTrackProductViewMutation();
+
   useEffect(() => {
     if (product) {
-      saveRecentlyViewedProduct(product);
+      if (hasActiveSession) {
+        trackProductView.mutate(product.id);
+      } else {
+        saveRecentlyViewedProduct(product);
+      }
     }
-  }, [product]);
+  }, [product, hasActiveSession, trackProductView]);
 
   const unitPrice = activeVariant?.price ?? product?.price ?? 0;
 

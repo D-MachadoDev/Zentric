@@ -539,7 +539,19 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     return this.products.filter((p) => p.status === 'Published').slice(0, count);
   }
 
-  // ── Orders ───────────────────────────────────────────────────────────────
+  async getRecentlyViewed(maxItems = 20): Promise<Product[]> {
+    const clamped = Math.max(1, Math.min(50, maxItems));
+    return this.products
+      .filter((p) => p.status === 'Published')
+      .slice(0, clamped);
+  }
+
+  async trackProductView(productId: string): Promise<void> {
+    // En mock, no hacemos nada; solo para satisfacer la interfaz
+    return;
+  }
+
+  // ── Orders ──────────────────────────────────────────────────────────────
   async createCart(): Promise<string> {
     const id = `order-${Date.now()}`;
     this.orders.push({

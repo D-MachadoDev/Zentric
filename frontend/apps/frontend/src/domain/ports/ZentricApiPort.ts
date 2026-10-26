@@ -52,13 +52,13 @@ export interface ListUsersPagedParams {
   size?: number;
 }
 
-/** Par�metros para listado paginado de inventarios. */
+/** Par�metros para listado paginado de inventarios. */
 export interface ListInventoriesPagedParams {
   page?: number;
   size?: number;
 }
 
-/** Par�metros para listado paginado de despachos. */
+/** Par�metros para listado paginado de despachos. */
 export interface ListFulfillmentsPagedParams {
   status?: FulfillmentStatus | string;
   page?: number;
@@ -128,13 +128,17 @@ export interface ZentricApiPort {
    */
   listCategories(): Promise<Category[]>;
   /**
-   * Productos destacados para el hero/mosaico (S2).
-   *
-   * El backend devuelve productos publicados en orden aleatorio y sin repetir;
-   * el hero no debe depender de un rubro fijo.
-   * @param count Cantidad solicitada (por defecto 6 en el backend).
+   * Productos vistos recientemente por el usuario autenticado (máx 20).
+   * Backend: GET /api/Catalog/products/recently-viewed?maxItems=20
+   * Requiere autenticación (token JWT).
    */
-  listHeroProducts(count?: number): Promise<Product[]>;
+  getRecentlyViewed(maxItems?: number): Promise<Product[]>;
+
+  /**
+   * Registra la visualización de un producto (backend: POST /api/Catalog/products/{id}/track-view).
+   * Solo para usuarios autenticados.
+   */
+  trackProductView(productId: string): Promise<void>;
 
   // ── Módulo 5: Carrito y Pedidos (/api/orders) ───────────────────────────
   createCart(): Promise<string>;

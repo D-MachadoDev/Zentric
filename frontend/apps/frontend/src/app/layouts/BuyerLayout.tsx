@@ -17,6 +17,7 @@ import { useCategoriesQuery } from '../../application/services/catalog';
 import { Button, Logo, SearchInput, Skeleton } from '@zentric/ui';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { BuyerFooter } from '../components/BuyerFooter';
+import { RecentlyViewedCarousel } from '../../modules/buyer/components/RecentlyViewedCarousel';
 import { UserRole } from '../../domain';
 import { getGuestCartCount, subscribeGuestCart } from '../../modules/buyer/guestCart';
 
@@ -375,6 +376,9 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
           </div>
         </nav>
       </header>
+
+        {/* ── Carrusel: Vistos recientemente ── */}
+        <RecentlyViewedCarousel maxItems={10} />
 
       {/* ── 4. Navegación Móvil Inferior ── */}
       <nav

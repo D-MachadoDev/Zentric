@@ -418,6 +418,16 @@ export class HttpClient implements ZentricApiPort {
     return this.#json<Product[]>(`/api/Catalog/products/hero${query}`, { method: 'GET' });
   }
 
+  getRecentlyViewed(maxItems?: number): Promise<Product[]> {
+    const max = maxItems ?? 20;
+    const clamped = Math.max(1, Math.min(50, max));
+    return this.#json<Product[]>(`/api/Catalog/products/recently-viewed?maxItems=${clamped}`, { method: 'GET' });
+  }
+
+  trackProductView(productId: string): Promise<void> {
+    return this.#json<void>(`/api/Catalog/products/${encodeURIComponent(productId)}/track-view`, this.#post({}));
+  }
+
   getProductById(id: string): Promise<Product> {
     return this.#json<Product>(`/api/Catalog/products/${encodeURIComponent(id)}`, { method: 'GET' });
   }
