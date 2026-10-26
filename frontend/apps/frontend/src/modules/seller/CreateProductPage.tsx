@@ -1,7 +1,7 @@
-﻿import { useState } from 'react';
-import { Link } from '@tanstack/react-router';
-import { useCreateProductMutation } from '../../application/services/catalog';
-import { ProductType, type Product, type ProductVariant, type CreatedProduct, ProductStatus } from '../../domain';
+﻿import { useState, useCallback } from 'react';
+import { useParams } from '@tanstack/react-router';
+import { useCreateProductMutation, useUpdateProductMutation, useProductQuery } from '../../application/services/catalog';
+import { ProductType, type Product, type ProductVariant, type CreatedProduct, ProductStatus, type UpdateProductInput } from '../../domain';
 import { ProductCard } from '../buyer/components/ProductCard';
 import {
   Button,
@@ -47,15 +47,44 @@ const ATTRIBUTE_PRESETS: Array<{ name: string; sampleValue: string }> = [
  * Split-Frame Asimétrico (60% Formulario / 40% Ficha Técnica en Vivo).
  * Cumple con ADexige al menos una variante para productos físicos y permite fijar precio específico por SKU.
  */
-export function CreateProductPage() {
+export function CreateProductPage({ productId }: { productId?: string }) {
   const createProductMutation = useCreateProductMutation();
+  const updateProductMutation = useUpdateProductMutation();
+  const navigate = useParams({ strict: false });
+  const mode: CreateProductPageMode = productId ? 'edit' : 'create';
+
+  // Para modo edición: cargar datos del producto
+  const { data: productData, isLoading: isProductLoading, isError, error } = productId
+    ? useProductQuery(productId)
+    : { data: null, isLoading: false, isError: false, error: null };
+
+  // Estado inicial del formulario - modo creación o edición
+  const initialName = productId ? (productData?.name ?? '') : '';
+  const initialDescription = productId ? (productData?.description ?? '') : '';
+  const initialImageUrl = productId ? (productData?.imageUrl ?? '') : '';
+  const initialPriceAmount = productId ? (productData?.price ?? 0) : 0;
+  const initialType = productId ? (productData?.type ?? ProductType.Physical) : ProductType.Physical;
+
+  const [variants, setVariants] = useState<VariantDraft[]>(() => {
+    if (productId && productData?.variants) {
+      return productData.variants.map((v: any) => ({
+        sku: v.sku ?? '',
+        attrName: v.attr?.[0]?.name ?? '',
+        attrValue: v.attr?.[0]?.value ?? '',
+      }));
+    }
+    return [{ sku: '', attrName: 'Color', attrValue: 'Negro' }];
+  });
+
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [createdResult, setCreatedResult] = useState<CreatedProduct | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [priceAmount, setPriceAmount] = useState<number>(0);
-  const [type, setType] = useState<ProductType>(ProductType.Physical);
+  const [name, setName] = useState(initialName);
+  const [description, setDescription] = useState(initialDescription);
+  const [imageUrl, setImageUrl] = useState(initialImageUrl);
+  const [priceAmount, setPriceAmount] = useState(initialPriceAmount);
+  const [type, setType] = useState(initialType);
 
   const [variants, setVariants] = useState<VariantDraft[]>([
     { sku: '', attrName: 'Color', attrValue: 'Negro' },

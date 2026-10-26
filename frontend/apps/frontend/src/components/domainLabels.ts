@@ -116,7 +116,7 @@ export const TONOS_DE_COMPROBANTE: Record<InvoiceType, TonoDeEstado> = {
 /** Estados de un pedido de compra. Origen: `ZENTRIC.md` Dominio 6 / OrderStatus.cs */
 export const NOMBRES_DE_ESTADO_DE_PEDIDO: Record<OrderStatus, string> = {
   [OrderStatus.Cart]: 'Carrito',
-  [OrderStatus.PendingPayment]: 'Pendiente de Pago',
+  [OrderStatus.PendingPayment]: 'Pago Pendiente',
   [OrderStatus.Paid]: 'Pagado',
   [OrderStatus.Dispatched]: 'Despachado',
   [OrderStatus.Delivered]: 'Entregado',

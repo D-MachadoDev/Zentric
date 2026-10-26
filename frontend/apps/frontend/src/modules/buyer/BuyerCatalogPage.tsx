@@ -4,7 +4,7 @@ import {
   useCategoriesQuery,
   useProductsPagedQuery,
 } from '../../application/services/catalog';
-import { type Product } from '../../domain';
+import { type Product, type ProductType } from '../../domain';
 import {
   Alert,
   AlertTitle,
@@ -58,7 +58,7 @@ function resolveScrollBehavior(): ScrollBehavior {
 }
 
 /**
- * Catalogo comercial del comprador (S1 + S2 + S3).
+ * Tienda del comprador (S1 + S2 + S3).
  */
 export function BuyerCatalogPage() {
   const search = useSearch({ strict: false }) as CatalogSearch;
@@ -66,7 +66,7 @@ export function BuyerCatalogPage() {
 
   const [page, setPage] = useState(() => readPageParam(search?.page));
   const [searchInput, setSearchInput] = useState(search?.q ?? '');
-  const [typeFilter, setTypeFilter] = useState<CatalogTypeFilter>('All');
+  const [typeFilter, setTypeFilter] = useState<CatalogTypeFilter>('Todos');
   const [selectedCategory, setSelectedCategory] = useState<string>(search?.cat ?? ALL_CATEGORIES);
   const [sort, setSort] = useState<CatalogSort>('relevance');
 
@@ -117,7 +117,7 @@ export function BuyerCatalogPage() {
     category: selectedCategory !== ALL_CATEGORIES ? selectedCategory : undefined,
     search: debouncedSearch !== '' ? debouncedSearch : undefined,
     sort,
-    type: typeFilter !== 'All' ? typeFilter : undefined,
+    type: typeFilter !== 'Todos' ? typeFilter : undefined as ProductType | undefined,
   });
 
   const products: Product[] = pagedData?.items ?? [];
@@ -137,7 +137,7 @@ export function BuyerCatalogPage() {
   }, [categories, selectedCategory]);
 
   const hasActiveFilters =
-    searchInput.trim() !== '' || typeFilter !== 'All' || selectedCategory !== ALL_CATEGORIES;
+    searchInput.trim() !== '' || typeFilter !== 'Todos' || selectedCategory !== ALL_CATEGORIES;
 
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -261,7 +261,7 @@ export function BuyerCatalogPage() {
 
   const handleClearFilters = useCallback(() => {
     setSearchInput('');
-    setTypeFilter('All');
+    setTypeFilter('Todos');
     setSelectedCategory(ALL_CATEGORIES);
     setSort('relevance');
     setPage(1);

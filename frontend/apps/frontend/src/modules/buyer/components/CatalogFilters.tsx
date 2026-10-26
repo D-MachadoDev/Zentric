@@ -4,7 +4,7 @@ import { ProductType, type Category } from '../../../domain';
 import { CategoryChips } from './CategoryChips';
 
 export type CatalogSort = 'relevance' | 'price-asc' | 'price-desc';
-export type CatalogTypeFilter = 'All' | ProductType;
+export type CatalogTypeFilter = 'Todos' | ProductType;
 
 interface CatalogFiltersProps {
   searchTerm: string;
@@ -26,7 +26,7 @@ interface CatalogFiltersProps {
 }
 
 const TYPE_OPTIONS: { value: CatalogTypeFilter; label: string }[] = [
-  { value: 'All', label: 'Todos' },
+  { value: 'Todos', label: 'Todos' },
   { value: ProductType.Physical, label: 'Físicos' },
   { value: ProductType.Digital, label: 'Digitales' },
 ];
@@ -142,7 +142,7 @@ export function CatalogFilters({
                   Categoría: {selectedCategoryName}
                 </li>
               )}
-              {typeFilter !== 'All' && (
+              {typeFilter !== 'Todos' && (
                 <li className="rounded-md border border-border bg-surface-muted px-2 py-0.5 text-foreground-muted">
                   Tipo: {typeFilter === ProductType.Physical ? 'Físicos' : 'Digitales'}
                 </li>
