@@ -6,6 +6,8 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   Alert,
@@ -15,9 +17,10 @@ import {
   Button,
   Input,
   Skeleton,
+  Pagination,
 } from '@zentric/ui';
-import { useInvoicesQuery } from '../../application/services';
-import type { Invoice } from '../../domain';
+import { useInvoicesPagedQuery } from '../../application/services';
+import type { Invoice, ListInvoicesPagedParams, PagedResult } from '../../domain';
 import { InvoiceType } from '../../domain';
 
 /**
@@ -27,20 +30,24 @@ import { InvoiceType } from '../../domain';
  * Consume `GET /api/billing/invoices` en modo estricto de sólo lectura.
  * Desglosa Facturas Maestras (`Master`), comisiones de plataforma (`ZentricDetail` 5%)
  * y liquidaciones a vendedores (`VendorDetail` 95%). Cero botones de emisión o anulación.
+ * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
  */
 export function SupervisorInvoicesPage() {
   const [typeFilter, setTypeFilter] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
-  const {
-    data: invoices = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useInvoicesQuery();
+  // Pagination params for server-side pagination
+  const params: ListInvoicesPagedParams = {
+    page: page - 1, // backend uses 0-based
+    size: 20,
+  };
+
+  const { data: pagedResult, isLoading, isError, error, refetch, isFetching } = useInvoicesPagedQuery(params);
+  const invoices = pagedResult?.items ?? [];
+  const totalItems = pagedResult?.totalItems ?? 0;
+  const totalPages = pagedResult?.totalPages ?? 0;
 
   const filteredInvoices = invoices.filter((inv: Invoice) => {
     const matchesSearch =
@@ -250,7 +257,18 @@ export function SupervisorInvoicesPage() {
               </div>
             </div>
           )}
+          </div>
         </section>
+
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={setPage}
+            className="mt-6"
+          />
+        )}
 
         {/* Lado Derecho (35%): Resumen Contable Split y Ficha de Factura ── */}
         <section className="lg:col-span-4 space-y-6">
