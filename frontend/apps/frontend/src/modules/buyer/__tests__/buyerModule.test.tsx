@@ -471,6 +471,29 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       expect(screen.getByText(/Aún no hay categorías publicadas/i)).toBeInTheDocument();
     });
 
+    it('con sesión activa no cae al historial local si el backend falla (S6)', async () => {
+      const tokenSpy = vi
+        .spyOn(appServices.session, 'getAccessToken')
+        .mockReturnValue('token-de-prueba');
+      sessionStorage.setItem(
+        'zentric_recently_viewed_products',
+        JSON.stringify([mockDigitalProduct]),
+      );
+      vi.spyOn(appServices.api, 'getRecentlyViewed').mockRejectedValue(
+        new Error('servidor no disponible'),
+      );
+      mockPagedFromFixtures([mockPhysicalProduct]);
+
+      renderWithClient(<BuyerCatalogPage />);
+
+      const rail = await screen.findByRole('region', { name: 'Vistos Recientemente por Ti' });
+      expect(await within(rail).findByText('No pudimos cargar tu historial')).toBeInTheDocument();
+      expect(within(rail).queryByText(mockDigitalProduct.name)).not.toBeInTheDocument();
+
+      sessionStorage.clear();
+      tokenSpy.mockRestore();
+    });
+
     it('informa el error de categorías y permite reintentar (S1)', async () => {
       const categoriesSpy = vi
         .spyOn(appServices.api, 'listCategories')

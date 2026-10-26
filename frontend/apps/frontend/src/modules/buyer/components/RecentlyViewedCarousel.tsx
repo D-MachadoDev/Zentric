@@ -33,9 +33,13 @@ export function RecentlyViewedCarousel({
   });
   const localHistory = useMemo(() => getRecentlyViewedProducts(), []);
 
+  // Con sesion el historial es del backend. Si la API falla se muestra el error
+  // y nunca el historial local: hacerlo pasar por datos reales confunde y, con
+  // el servidor caido, dejaria la banda como lo unico "vivo" de la pagina.
   const products = useMemo<Product[]>(() => {
-    const source = hasActiveSession && !isError && data ? data : localHistory;
-    return source.slice(0, maxItems);
+    if (!hasActiveSession) return localHistory.slice(0, maxItems);
+    if (isError || !data) return [];
+    return data.slice(0, maxItems);
   }, [data, hasActiveSession, isError, localHistory, maxItems]);
 
   const railRef = useRef<HTMLDivElement>(null);
