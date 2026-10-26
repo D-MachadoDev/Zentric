@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useOrdersQuery, useOrderQuery } from '../../application/services/orders';
+import { useOrdersPagedQuery, useOrderQuery } from '../../application/services/orders';
 import { useProductsPagedQuery } from '../../application/services/catalog';
-import {
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Pagination } from '@zentric/ui';
   OrderStatus,
   type OrderListItem,
   type OrderItem,
@@ -40,20 +41,27 @@ import {
  * Split-Frame Asimétrico (65% Listado de Pedidos / 35% Detalle SellerOrderView).
  * Garantiza cumplimiento de ADR-0013: Muestra exclusivamente líneas propias y vendorSubtotal,
  * ocultando datos del comprador (PII) y márgenes de otros comerciantes.
+ * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
  */
 export function SellerOrdersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | OrderStatus>('All');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
-  const {
-    data: orders,
-    isLoading: isLoadingOrders,
-    isError: isErrorOrders,
-    error: errorOrders,
-    refetch: refetchOrders,
-    isFetching: isFetchingOrders,
-  } = useOrdersQuery();
+  const parsedStatus = statusFilter === 'All' ? undefined : (statusFilter as OrderStatus);
+
+  // Pagination params for server-side pagination
+  const params: ListOrdersPagedParams = {
+    status: parsedStatus,
+    page: page - 1, // backend uses 0-based
+    size: 20,
+  };
+
+  const { data: pagedResult, isLoading: isLoadingOrders, isError: isErrorOrders, error: errorOrders, refetch: refetchOrders, isFetching: isFetchingOrders } = useOrdersPagedQuery(params);
+  const orders = pagedResult?.items ?? [];
+  const totalItems = pagedResult?.totalItems ?? 0;
+  const totalPages = pagedResult?.totalPages ?? 0;
 
   const {
     data: selectedOrderDetail,
@@ -253,6 +261,17 @@ export function SellerOrdersPage() {
               })}
             </div>
           )}
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={setPage}
+              className="mt-6"
+            />
+          )}
+
         </section>
 
         {/* Lado Derecho (35%): Ficha SellerOrderView (ADR-0013) ──────── */}
