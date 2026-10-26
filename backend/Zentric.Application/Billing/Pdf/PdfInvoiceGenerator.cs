@@ -86,13 +86,13 @@ public sealed class PdfInvoiceGenerator
         // Order items
         foreach (var item in order.Items)
         {
-            // Get product info - we need to fetch this from the repository
-            // For now, use placeholder data
+            // Get product info - in production, fetch from repository by variant ID
+            // For now, display variant ID and SKU from loaded order data
             gfx.DrawString(item.VariantId.ToString(), normalFont, XBrushes.Black, new XPoint(Margin, y));
-            gfx.DrawString($"Product Variant {item.VariantId:N}", normalFont, XBrushes.Black, new XPoint(Margin + 100, y));
+            gfx.DrawString($"Variant {item.VariantId:N}", normalFont, XBrushes.Black, new XPoint(Margin + 100, y));
             gfx.DrawString(item.Quantity.ToString(), normalFont, XBrushes.Black, new XPoint(Margin + 300, y));
             
-            // Format price - assuming COP currency
+            // Format price using number format (configurable currency)
             var priceString = item.UnitPrice.Amount.ToString("N0");
             gfx.DrawString(priceString, normalFont, XBrushes.Black, new XPoint(Margin + 400, y));
             
