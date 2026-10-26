@@ -127,9 +127,11 @@ namespace Zentric.Application.Orders.Commands
                 var pdfGenerator = new PdfInvoiceGenerator();
                 var invoicePdf = pdfGenerator.GenerateInvoice(orderForPdf!, buyerEmail);
 
-                // TODO: Save PDF to persistent storage (file system, blob storage, etc.)
+                // Save PDF to persistent storage (file system, blob storage, etc.)
                 // and return a download URL. For now, we log the PDF bytes count.
-                // In a production system, this would be stored and a URL returned.
+                var pdfBytes = invoicePdf.Length;
+                _ = pdfBytes; // TODO: Implement PDF storage in blob storage and return download URL
+                // In a production system, this would be stored in a blob container and a URL returned.
 
                 return Result<bool>.Success(true);
             }
