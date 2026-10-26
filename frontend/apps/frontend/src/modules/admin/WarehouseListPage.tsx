@@ -430,7 +430,6 @@ export function WarehouseListPage() {
               </div>
             </div>
           )}
-          </div>
         </section>
 
         {totalPages > 1 && (

@@ -9,7 +9,7 @@ using Zentric.Tests.Security;
 namespace Zentric.Tests.Orders
 {
     /// <summary>
-    /// Criterios de aceptacion de la caducidad del carrito (T-004; H-06/R-06).
+    /// Criterios de aceptacion de la caducidad del carrito (; /).
     ///
     /// La regla "un carrito vive 15 minutos" se prueba moviendo un
     /// reloj falso, nunca esperando de verdad: si esta suite tardara 15 minutos

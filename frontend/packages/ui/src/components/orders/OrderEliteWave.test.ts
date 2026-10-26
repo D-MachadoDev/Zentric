@@ -5,7 +5,7 @@
  * [CONFIRMADO] Tests sourcing de:
  * - OrderEliteWave.tsx componente y types
  * - ZENTRIC.md DOMÍNIO 8 estados de pedido
- * - ADR-0016 pruebas E2E con Testcontainers PostgreSQL
+ * - ADpruebas E2E con Testcontainers PostgreSQL
  * - backend state machine orders + RFC 7807 error handling
  * - DOMÍNIO 4 stock restoration en checkout
  * ✅ [CONFIRMADO] - Source exact provided for each assertion

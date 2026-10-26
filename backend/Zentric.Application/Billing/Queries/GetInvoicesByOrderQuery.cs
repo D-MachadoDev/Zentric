@@ -45,7 +45,7 @@ namespace Zentric.Application.Billing.Queries
                 case UserRole.Buyer:
                     // El Comprador solo ve la Factura Maestra de un pedido
                     // propio. El ZentricDetail es control interno de plataforma y
-                    // las facturas de vendedor no son suyas (ADDENDUM Dominio 9).
+                    // las facturas de vendedor no son suyas .
                     var order = await _customerOrderRepository.GetByIdForBuyerAsync(
                         request.OrderId, request.CallerId, cancellationToken);
                     if (order == null)

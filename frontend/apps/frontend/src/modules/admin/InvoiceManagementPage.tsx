@@ -44,7 +44,7 @@ import {
  * a la izquierda; a la derecha dos estaciones de acción —emitir facturación y
  * anular la factura del comprador—.
  *
- * [ADDENDUM - DICTADO POR OWNER, 2026-10-18]: el Administrador opera con
+ * [- DICTADO POR OWNER, 2026-10-18]: el Administrador opera con
  * "Número de pedido" (formato corto #XXXXXXXX), no con UUIDs, y el
  * vocabulario es de negocio: Factura Comprador, Comisión Plataforma (5%) y
  * Liquidación Vendedor (95%). El párrafo técnico del invariante de split se
@@ -117,10 +117,6 @@ export function InvoiceManagementPage() {
   const totalPages = pagedResult?.totalPages ?? 0;
 
   const { data: orders = [], isError: isErrorOrders, refetch: refetchOrders } = useOrdersQuery();
-  const generateMutation = useGenerateInvoicesMutation();
-  const annulMutation = useAnnulInvoicesMutation();
-  } = useOrdersQuery();
-
   const generateMutation = useGenerateInvoicesMutation();
   const annulMutation = useAnnulInvoicesMutation();
 

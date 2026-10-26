@@ -41,7 +41,7 @@ namespace Zentric.Tests.Presentation
     /// Verificación explícita de las compuertas transversales de cierre (W5-S02):
     /// - Gate (d): Confidencialidad de la factura de comisión del 5% (ZentricDetail) en BillingController,
     ///   garantizando que jamás se serialice hacia Buyer ni Seller, y solo sea visible para Administrator y Supervisor
-    ///   (ZENTRIC.md ADDENDUM Dominio 9, AD, AD).
+    ///   (ZENTRIC.md Dominio 9, AD, AD).
     /// - Gate (e): Auditoría Anti-Amnesia de los 14 DbSets en ZentricDbContext, los 11 repositorios y las 15 migraciones.
     /// </summary>
     public sealed class TransversalGatesVerificationTests
@@ -153,7 +153,7 @@ namespace Zentric.Tests.Presentation
             var order = new CustomerOrder(buyerId);
             order.AddItem(Guid.NewGuid(), sellerId, 1, new Money(100_000m, "COP"));
 
-            // Split de facturación (ZENTRIC.md ADDENDUM Dominio 9 y AD):
+            // Split de facturación (ZENTRIC.md Dominio 9 y AD):
             // - Master: 100.000 COP (100% para el comprador)
             // - ZentricDetail: 5.000 COP (5% comisión confidencial de plataforma)
             // - VendorDetail: 95.000 COP (95% liquidación neta del vendedor)

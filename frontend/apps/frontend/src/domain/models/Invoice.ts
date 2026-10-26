@@ -1,7 +1,7 @@
 import type { InvoiceType } from '../enums';
 
 /**
- * Factura emitida por un pedido pagado (`InvoiceDto`, Q-18 split de facturación).
+ * Factura emitida por un pedido pagado (`InvoiceDto`, split de facturación).
  *
  * Origen: `backend/Zentric.Application/Billing/Queries/GetInvoicesByOrderQuery.cs`.
  * `vendorId` es `Guid?`: la Factura Maestra y la Detalle Zentric no tienen

@@ -39,7 +39,7 @@ namespace Zentric.Api.Controllers
         /// </summary>
         /// <remarks>
         /// <para>
-        /// Excepcion justificada a RG-01, y la unica. Sin ella no existiria la
+        /// Excepcion justificada a , y la unica. Sin ella no existiria la
         /// primera cuenta: no se puede autenticar lo que todavia no se ha
         /// registrado. La excepcion se limita a lo que la propia Ley permite
         /// (auto-registro), no abre el registro general.
@@ -54,10 +54,10 @@ namespace Zentric.Api.Controllers
         /// incorporados por el Administrador", y la Matriz de Responsabilidades
         /// asigna "Registro Vendedores" solo al Admin. Extenderlo a
         /// Supervisor y LogisticsOperator es la lectura coherente de "ningun
-        /// participante administrara informacion fuera de su rol" (RG-03).
+        /// participante administrara informacion fuera de su rol" .
         /// </para>
         /// </remarks>
-        /// <param name="command">Datos de creación del usuario. La contraseña viaja en claro y la calcula el servidor (ADR-0009).</param>
+        /// <param name="command">Datos de creación del usuario. La contraseña viaja en claro y la calcula el servidor (AD).</param>
         /// <response code="200">Usuario registrado con éxito. Retorna el identificador único (Guid) generado.</response>
         /// <response code="400">Error de validación o conflicto por correo/documento duplicado (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Rol distinto de Buyer sin token de Administrador.</response>
@@ -70,7 +70,7 @@ namespace Zentric.Api.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand command)
         {
-            // La unica excepcion a RG-01 es el auto-registro del comprador.
+            // La unica excepcion a es el auto-registro del comprador.
             if (command.Role != UserRole.Buyer && !IsAdministrator())
             {
                 return Problem(
@@ -128,7 +128,7 @@ namespace Zentric.Api.Controllers
         }
 
         /// <summary>
-        /// Bloquea un usuario y le cierra el acceso a la plataforma (INV-05).
+        /// Bloquea un usuario y le cierra el acceso a la plataforma .
         /// </summary>
         /// <remarks>
         /// <para>
@@ -141,7 +141,7 @@ namespace Zentric.Api.Controllers
         /// <para>
         /// Ademas cierra el login: <c>User.CanAuthenticate</c> exige <c>Active</c> y no
         /// borrado, asi que un usuario bloqueado no obtiene token (ZENTRIC.md, Dominio 1).
-        /// Los pedidos ya pagados y sus despachos no se tocan (RG-11).
+        /// Los pedidos ya pagados y sus despachos no se tocan .
         /// </para>
         /// </remarks>
         /// <param name="id">Identificador único (Guid) del usuario a bloquear.</param>
@@ -163,7 +163,7 @@ namespace Zentric.Api.Controllers
         }
 
         /// <summary>
-        /// Devuelve el acceso a un usuario bloqueado (INV-05).
+        /// Devuelve el acceso a un usuario bloqueado .
         /// </summary>
         /// <remarks>
         /// Es la inversa de <c>POST {id}/block</c>: sin ella un error del

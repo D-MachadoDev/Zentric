@@ -155,9 +155,9 @@ namespace Zentric.Tests.Application.Catalog
             string? category = null,
             ProductType type = ProductType.Physical)
         {
-            // Un producto fisico exige al menos una variante (ADR-0003), y el
+            // Un producto fisico exige al menos una variante (AD), y el
             // constructor la valida, asi que se pasa desde el inicio. Un Digital
-            // puede nacer sin ninguna (CAT-02).
+            // puede nacer sin ninguna (CA).
             var seeds = type == ProductType.Physical
                 ? new (string Sku, IEnumerable<VariantAttribute> Attributes)[]
                 {

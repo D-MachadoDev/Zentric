@@ -12,7 +12,7 @@ using Zentric.Domain.Users.Enums;
 namespace Zentric.Application.Returns.Commands
 {
     /// <summary>
-    /// Reembolsa una devolucion aprobada (ADDENDUM Dominio 10, estado "Reembolsada").
+    /// Reembolsa una devolucion aprobada (Dominio 10, estado "Reembolsada").
     ///
     /// Este estado existia en el enum y en <c>ReturnRequest.MarkAsRefunded()</c>, pero no habia
     /// comando ni endpoint. Ademas, <c>PaymentReceipt.Refund()</c> estaba implementado en el
@@ -27,7 +27,7 @@ namespace Zentric.Application.Returns.Commands
     /// Quien lo ejecuta (dictamen del Owner, 2026-10-01): solo el **Administrador**. Es dinero que
     /// sale de la plataforma y la separacion de poderes mas simple: quien aprueba el reingreso del
     /// producto (Vendedor) no es quien libera el dinero (Administrador). Es ademas el mismo criterio
-    /// de la emision de facturas, que ADR-0014 ya dejo en manos del Administrador.
+    /// de la emision de facturas, que ADya dejo en manos del Administrador.
     /// </summary>
     public record RefundReturnCommand(
         Guid ReturnRequestId,
@@ -38,7 +38,7 @@ namespace Zentric.Application.Returns.Commands
     {
         /// <summary>
         /// Identificador estable de la regla que se aplico, escrito en cada
-        /// <see cref="Zentric.Domain.Payments.RefundCredit"/>. ADR-0020 decision 7
+        /// <see cref="Zentric.Domain.Payments.RefundCredit"/>. ADdecision 7
         /// exige registrar la "regla aplicada": en un string por credito y no en una
         /// columna de version, para que no dependa de tablas y responda exactamente
         /// cual regla se aplico en ese momento. Credito = precio congelado de la linea
@@ -89,7 +89,7 @@ namespace Zentric.Application.Returns.Commands
 
             try
             {
-                // ADR-0020: el credito es el precio CONGELADO de la linea por la cantidad devuelta,
+                // ADel credito es el precio CONGELADO de la linea por la cantidad devuelta,
                 // no el total del comprobante. Conceder el total a cambio de una sola unidad
                 // devuelta es la misma clase de fallo que el 'if (Status == Refunded) return;'
                 // anterior, una capa mas arriba: el sistema responde 200 y el dinero sale.
@@ -108,7 +108,7 @@ namespace Zentric.Application.Returns.Commands
                 // "Reembolsada" sin dinero entregado.
                 //
                 // Se pasa el REGISTRO y no un Money suelto: acreditar sin dejar traza romperia
-                // ADR-0020 decision 7, que exige poder responder de cada credito por separado.
+                // ADdecision 7, que exige poder responder de cada credito por separado.
                 receipt.Refund(credit);
                 returnReq.MarkAsRefunded();
 

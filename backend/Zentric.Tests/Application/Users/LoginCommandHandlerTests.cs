@@ -14,7 +14,7 @@ using Zentric.Tests.Application.Users;
 namespace Zentric.Tests.Application.Users
 {
     /// <summary>
-    /// Criterios de aceptacion de <c>POST /api/auth/login</c> (ADR-0009).
+    /// Criterios de aceptacion de <c>POST /api/auth/login</c> (AD).
     /// </summary>
     public class LoginCommandHandlerTests
     {

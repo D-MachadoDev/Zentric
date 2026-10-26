@@ -301,7 +301,6 @@ export function UserListPage() {
               </div>
             </div>
           )}
-          </div>
         </section>
 
         {totalPages > 1 && (

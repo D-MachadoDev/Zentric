@@ -32,7 +32,7 @@ namespace Zentric.Infrastructure.Persistence.Models
         public MoneyDbModel UnitPrice { get; set; } = null!;
         
         /// <summary>
-        /// Fecha de entrega para productos digitales (CAT-02).
+        /// Fecha de entrega para productos digitales (CA).
         /// </summary>
         public DateTime? DeliveredAt { get; set; }
 

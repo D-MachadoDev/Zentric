@@ -10,7 +10,7 @@ using Zentric.Domain.Users.Enums;
 namespace Zentric.Tests.Presentation;
 
 /// <summary>
-/// ADR-0012: el contrato publico de los enum del cuerpo JSON es por nombre y solo por
+/// ADel contrato publico de los enum del cuerpo JSON es por nombre y solo por
 /// nombre (dictado del Owner el 2026-09-29, forma estricta).
 ///
 /// <remarks>

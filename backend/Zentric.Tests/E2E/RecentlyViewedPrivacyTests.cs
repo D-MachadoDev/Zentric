@@ -9,7 +9,7 @@ using Zentric.Tests.E2E;
 namespace Zentric.Tests.E2E
 {
     /// <summary>
-    /// Tests de aislamiento de privacidad para "Vistos recientemente" (ADR-0013, Q-27).
+    /// Tests de aislamiento de privacidad para "Vistos recientemente" (AD, ).
     /// Verifica que el historial de un usuario no se filtre a otro usuario.
     /// </summary>
     [Collection(ApiCollection.Name)]
@@ -80,7 +80,7 @@ namespace Zentric.Tests.E2E
                 priceAmount = 1000,
                 priceCurrency = "COP",
                 type = "Physical",
-                variants = new[] { new { sku = $"PRIV-{Guid.NewGuid():N}", attributes = Array.Empty<object>() } }
+                variants = new[] { new { sku = $"PRIV-{Guid.NewGuid():N}", attributes = new[] { new { name = "Default", value = "Standard" } } } }
             });
             var response = await client.SendAsync(request);
             response.EnsureSuccessStatusCode();

@@ -45,7 +45,7 @@ namespace Zentric.Application.Warehouses.Queries
                         "A seller can only list their own warehouses.");
                 }
 
-                // [ADDENDUM 2026-10-17]: el Vendedor lista sus bodegas propias y las bodegas centrales activas de Zentric (Marketplace)
+                // el Vendedor lista sus bodegas propias y las bodegas centrales activas de Zentric (Marketplace)
                 var sellerList = await _warehouseRepository.GetForSellerAsync(request.CallerId, cancellationToken);
                 var sellerDtos = sellerList.Select(WarehouseMapper.ToDto).ToList();
                 var sellerPage = new PageRequest(request.Page, request.Size);
@@ -87,7 +87,7 @@ namespace Zentric.Application.Warehouses.Queries
                 return Result<WarehouseDto>.NotFound("Warehouse not found.");
             }
 
-            // [ADDENDUM 2026-10-17]: la bodega de otro vendedor se trata como inexistente;
+            // la bodega de otro vendedor se trata como inexistente;
             // pero las bodegas centrales Marketplace de Zentric son accesibles para el Vendedor.
             if (request.CallerRole == UserRole.Seller)
             {

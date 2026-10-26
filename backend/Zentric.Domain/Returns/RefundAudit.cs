@@ -6,7 +6,7 @@ using Zentric.Domain.Users.Enums;
 namespace Zentric.Domain.Returns
 {
     /// <summary>
-    /// Registro de auditoría de una decisión de reembolso (ADR-0020).
+    /// Registro de auditoría de una decisión de reembolso (AD).
     /// Cada intento de reembolso deja traza de qué regla se aplicó, quién decidió
     /// (sistema o Administrador) y el resultado.
     /// </summary>
@@ -19,7 +19,7 @@ namespace Zentric.Domain.Returns
         public Guid PaymentReceiptId { get; private set; }
 
         /// <summary>
-        /// Texto libre que identifica la regla aplicada (ej. "EXC-02: frozen line price x returned units").
+        /// Texto libre que identifica la regla aplicada (ej. "frozen line price x returned units").
         /// </summary>
         public string RuleApplied { get; private set; }
 
@@ -132,7 +132,7 @@ namespace Zentric.Domain.Returns
     }
 
     /// <summary>
-    /// Tipo de decisión de reembolso (ADR-0020).
+    /// Tipo de decisión de reembolso (AD).
     /// </summary>
     public enum RefundDecisionType
     {

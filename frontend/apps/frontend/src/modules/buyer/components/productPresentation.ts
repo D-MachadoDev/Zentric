@@ -42,7 +42,7 @@ export function formatVariantCount(count: number): string {
 
 /**
  * SKU de la primera variante (el identificador util para stock y carrito es el
- * de la VARIANTE, no el del producto — riesgo FR-03). Se muestra en Geist Mono
+ * de la VARIANTE, no el del producto — riesgo F). Se muestra en Geist Mono
  * con `tabular-nums` porque es un codigo legible literal, no una cifra.
  */
 export function resolvePrimarySku(product: Product): string | null {

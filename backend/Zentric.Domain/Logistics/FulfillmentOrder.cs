@@ -31,7 +31,7 @@ namespace Zentric.Domain.Logistics
             Id = Guid.NewGuid();
             CustomerOrderId = customerOrderId;
             VendorId = vendorId;
-            Status = FulfillmentStatus.PendingPack; // ADDENDUM: Nace en Pendiente de Empaque
+            Status = FulfillmentStatus.PendingPack; // Nace en Pendiente de Empaque
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = CreatedAt;
         }

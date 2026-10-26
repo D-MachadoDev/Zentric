@@ -102,7 +102,7 @@ namespace Zentric.Tests.Application.Users
         }
 
         /// <summary>
-        /// ADR-0009: el cliente ya no envia el hash, envia la contrasena. El
+        /// ADel cliente ya no envia el hash, envia la contrasena. El
         /// servidor es quien deriva el valor, asi que lo persistido nunca puede
         /// ser la contrasena en claro.
         /// </summary>

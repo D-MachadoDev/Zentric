@@ -10,7 +10,7 @@ namespace Zentric.Tests.Security
 {
     /// <summary>
     /// Pruebas para ClaimsUserAccessor y ClaimsPrincipalExtensions.
-    /// Valida la extracción segura de identidad (claim 'sub' / NameIdentifier) y rol único (RG-01, RG-02).
+    /// Valida la extracción segura de identidad (claim 'sub' / NameIdentifier) y rol único (, ).
     /// </summary>
     public sealed class ClaimsSecurityTests
     {

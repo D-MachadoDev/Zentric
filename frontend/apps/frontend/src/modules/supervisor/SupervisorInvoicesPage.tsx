@@ -257,7 +257,6 @@ export function SupervisorInvoicesPage() {
               </div>
             </div>
           )}
-          </div>
         </section>
 
         {totalPages > 1 && (

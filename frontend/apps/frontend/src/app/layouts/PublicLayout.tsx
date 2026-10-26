@@ -18,7 +18,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   return (
     <div className="relative flex min-h-screen flex-col bg-background text-foreground">
       {/* Cabecera institucional limpia */}
-      <header className="relative z-10 flex h-16 items-center justify-between border-b border-border bg-background/85 px-6 backdrop-blur-md">
+      <header className="relative z-10 flex h-16 items-center justify-between border-b border-border bg-background/85 px-6 backdrop-blur-md overscroll-contain">
         <div className="flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2.5" aria-label="Zentric - Inicio">
             <Logo className="size-7 shrink-0" />

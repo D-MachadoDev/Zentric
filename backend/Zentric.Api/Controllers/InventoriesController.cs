@@ -116,7 +116,7 @@ namespace Zentric.Api.Controllers
         }
 
         /// <summary>
-        /// Ajusta el inventario fisico por conteo (ADR-0021).
+        /// Ajusta el inventario fisico por conteo .
         /// </summary>
         /// <remarks>
         /// Permite al Administrador o Supervisor corregir el stock disponible tras un conteo fisico.

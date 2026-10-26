@@ -9,6 +9,7 @@ import { useWarehousesQuery } from '../../application/services/warehouses';
 import { useProductsPagedQuery } from '../../application/services/catalog';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Pagination } from '@zentric/ui';
+import {
   FulfillmentStatus,
   type FulfillmentOrder,
   type Shipment,
@@ -477,7 +478,7 @@ export function SellerFulfillmentsPage() {
                   </div>
                 )}
 
-                {/* Reportar Quiebre de Stock Fantasma (ADR-0014) */}
+                {/* Reportar Quiebre de Stock Fantasma (AD) */}
                 {selectedFulfillment.status !== FulfillmentStatus.Delivered &&
                   selectedFulfillment.status !== FulfillmentStatus.Cancelled && (
                     <Button

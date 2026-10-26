@@ -29,14 +29,14 @@ namespace Zentric.Api.Controllers
         }
 
         /// <summary>
-        /// Crea una nueva ficha técnica de producto que nace publicada (auto-publicación, CAT-01).
+        /// Crea una nueva ficha técnica de producto que nace publicada (auto-publicación, CA).
         /// </summary>
         /// <remarks>
         /// Permite a un vendedor registrado definir el SKU, nombre comercial, dimensiones físicas (alto, ancho, largo, peso)
         /// y precio unitario base para su posterior comercialización en el Marketplace.
         /// </remarks>
         /// <param name="command">Datos descriptivos, dimensionales y precio del producto. El VendorId ya no lo decide el cliente: lo fija el token, y un valor en el cuerpo se descarta.</param>
-        /// <response code="200">Ficha de producto creada en estado Published (CAT-01, sin aprobación previa). Retorna el productId y los variantIds creados, para que el vendedor pueda dar de alta stock sin releer el producto.</response>
+        /// <response code="200">Ficha de producto creada en estado Published (CA, sin aprobación previa). Retorna el productId y los variantIds creados, para que el vendedor pueda dar de alta stock sin releer el producto.</response>
         /// <response code="400">Error de validación si faltan dimensiones o el precio es inválido (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
         [HttpPost("products")]
@@ -61,7 +61,7 @@ namespace Zentric.Api.Controllers
         /// Reactiva un producto suspendido devolviéndolo al estado Published.
         /// </summary>
         /// <remarks>
-        /// Un producto recién creado ya nace Published (auto-publicación, CAT-01): este endpoint
+        /// Un producto recién creado ya nace Published (auto-publicación, CA): este endpoint
         /// deshace una suspensión, volviendo a hacerlo visible en las búsquedas de los compradores
         /// y admitiendo su incorporación a carritos de compra. Publicar uno que ya está publicado
         /// responde 400.

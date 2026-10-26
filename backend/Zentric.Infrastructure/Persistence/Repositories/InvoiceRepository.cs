@@ -26,7 +26,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
 
             if (buyerId.HasValue)
             {
-                // El Comprador solo ve la Factura Maestra de SUS pedidos (ADDENDUM Dominio 9): el
+                // El Comprador solo ve la Factura Maestra de SUS pedidos: el
                 // ZentricDetail es control interno de plataforma y las facturas de vendedor no son
                 // suyas. Los dos filtros se aplican de una vez, en la consulta, para que la
                 // factura ajena ni siquiera llegue a materializarse.
@@ -57,7 +57,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
         public async Task<Invoice?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             // AsNoTracking, igual que el listado por pedido de este repositorio y
-            // por el mismo motivo que en los demas (H-15).
+            // por el mismo motivo que en los demas .
             var dbModel = await _dbContext.Invoices
                 .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);

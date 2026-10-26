@@ -7,7 +7,7 @@ using Zentric.Domain.Users.ValueObjects;
 namespace Zentric.Api.Bootstrap
 {
     /// <summary>
-    /// Alta del primer Administrador (ADR-0009).
+    /// Alta del primer Administrador (AD).
     ///
     /// Sin esto el sistema no arranca de forma utilizable: el auto-registro anonimo solo permite
     /// crear Compradores (ZENTRIC.md, Dominio 3), y un Comprador no puede crear al Administrador.
@@ -24,7 +24,7 @@ namespace Zentric.Api.Bootstrap
     public static class AdministratorBootstrapper
     {
         /// <summary>
-        /// Identificador canónico y determinista para la vendedora Valeria Mendoza (ADR-0009 / R1).
+        /// Identificador canónico y determinista para la vendedora Valeria Mendoza (AD/ R1).
         /// Requerido por frontend y contratos para evitar discrepancias de sesión.
         /// </summary>
         public static readonly Guid CanonicalSellerId = Guid.Parse("0b01129d-c0a9-4325-8394-4b9e636a4e88");

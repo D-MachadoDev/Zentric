@@ -9,7 +9,7 @@ import type { RouterContext } from '../routes/routerContext';
  * - Se resuelven ANTES de hidratar el componente o descargar el bundle del módulo.
  * - Son guardas de presentación para evitar renders innecesarios.
  * - Las 21 políticas del backend en `AuthorizationPolicies.cs` garantizan la seguridad real.
- * - Un 403 en presentación jamás cierra la sesión en memoria (ADR-0009).
+ * - Un 403 en presentación jamás cierra la sesión en memoria (AD).
  */
 
 /**

@@ -5,11 +5,11 @@ import type { UserRole } from '../enums';
  *
  * Origen: `AuthTokenResponse` en `backend/Zentric.Application/
  * Users/Commands/LoginCommand.cs`. `userId` es un Guid serializado como texto
- * (JSON no tiene tipo Guid) y `role` viaja como nombre de enum (ADR-0012).
+ * (JSON no tiene tipo Guid) y `role` viaja como nombre de enum (AD).
  */
 export interface AuthToken {
   token: string;
-  /** ISO-8601 (DateTimeOffset). El token vive 60 minutos y NO hay refresh (ADR-0009). */
+  /** ISO-8601 (DateTimeOffset). El token vive 60 minutos y NO hay refresh (AD). */
   expiresAt: string;
   userId: string;
   email: string;

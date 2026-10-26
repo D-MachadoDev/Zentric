@@ -30,8 +30,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             // reintento de cobro no oculte el historial.
             // AsNoTracking NO rellena colecciones por convencion: sin Include, la
             // lista de creditos vuelve vacia aunque en la base haya filas, y el
-            // comprobante pareceria sin historial cada vez que se lee. ADR-0020
-            // decision 7 pide poder responder de cada credito, y eso solo es
+            // comprobante pareceria sin historial cada vez que se lee. AD            // decision 7 pide poder responder de cada credito, y eso solo es
             // cierto si el lector los ve.
             var dbModel = await _dbContext.PaymentReceipts
                 .AsNoTracking()

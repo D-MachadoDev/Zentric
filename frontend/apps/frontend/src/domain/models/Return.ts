@@ -13,7 +13,7 @@ export interface ReturnRequest {
   warehouseId: string;
   quantity: number;
   status: ReturnStatus;
-  /** Dictamen de inspección del Operador logístico (ADR-0018). */
+  /** Dictamen de inspección del Operador logístico (AD). */
   isGoodCondition: boolean;
   /** Aprobación del Vendedor. */
   vendorApproved: boolean;
@@ -24,9 +24,9 @@ export interface ReturnRequest {
 /**
  * Alta de devolución (`RequestReturnCommand`).
  *
- * Q-21b: `BuyerId` lo inyecta el servidor y verifica que el pedido sea del
+ * `BuyerId` lo inyecta el servidor y verifica que el pedido sea del
  * llamante, así que el cuerpo NO lo lleva. Prohibido para productos digitales
- * (ADDENDUM Dominio 10): `admiteDevolucion` lo decide en presentación.
+ * : `admiteDevolucion` lo decide en presentación.
  */
 export interface RequestReturnInput {
   customerOrderId: string;

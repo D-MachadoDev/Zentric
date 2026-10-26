@@ -10,7 +10,7 @@ namespace Zentric.Tests.E2E
     ///
     /// Aqui lo que se comprueba no es solo que el listado exista, sino que respete la regla que
     /// hace que este endpoint sea delicado: el Comprador NO debe ver la Factura Maestra de
-    /// plataforma ni las facturas de vendedor (ADDENDUM Dominio 9). Si las viera, tendria acceso
+    /// plataforma ni las facturas de vendedor . Si las viera, tendria acceso
     /// al detalle de la comision y a la facturacion interna de la competencia.
     /// </summary>
     [Collection(ApiCollection.Name)]
@@ -41,7 +41,7 @@ namespace Zentric.Tests.E2E
             Assert.Contains("Master", types);
 
             // Y nada mas. El ZentricDetail es control interno de plataforma y las facturas de
-            // vendedor no son suyas (ADDENDUM Dominio 9).
+            // vendedor no son suyas .
             Assert.DoesNotContain("ZentricDetail", types);
             Assert.DoesNotContain("VendorDetail", types);
         }
@@ -151,7 +151,7 @@ namespace Zentric.Tests.E2E
 
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
-            return document.RootElement.EnumerateArray()
+            return document.RootElement.GetProperty("items").EnumerateArray()
                 .Select(row => row.GetProperty("type").GetString()!)
                 .ToList();
         }
@@ -160,7 +160,7 @@ namespace Zentric.Tests.E2E
         {
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
-            return document.RootElement.EnumerateArray()
+            return document.RootElement.GetProperty("items").EnumerateArray()
                 .Select(row => row.GetProperty("id").GetGuid())
                 .ToList();
         }

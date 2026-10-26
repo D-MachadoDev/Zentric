@@ -1,7 +1,7 @@
 namespace Zentric.Infrastructure.Security
 {
     /// <summary>
-    /// Configuracion de emision y validacion de tokens (ADR-0009).
+    /// Configuracion de emision y validacion de tokens (AD).
     ///
     /// No hay valores por defecto: <see cref="SigningKey"/> no se inicializa a
     /// proposito, de modo que una API que arranque sin clave de firma falla de

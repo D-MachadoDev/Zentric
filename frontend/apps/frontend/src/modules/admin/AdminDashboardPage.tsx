@@ -48,7 +48,7 @@ import {
  * actividad reciente de pedidos a la izquierda; salud operativa y accesos de
  * gestión a la derecha.
  *
- * [ADDENDUM - DICTADO POR OWNER, 2026-10-18]: cero telemetría técnica de
+ * [- DICTADO POR OWNER, 2026-10-18]: cero telemetría técnica de
  * servidor (motor, versiones, DbSets, matriz de políticas); ese detalle vive
  * en la página pública `/health`. Aquí sólo se habla el negocio del
  * marketplace.

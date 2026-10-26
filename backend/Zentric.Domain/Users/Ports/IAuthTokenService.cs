@@ -8,7 +8,7 @@ namespace Zentric.Domain.Users.Ports
     /// el sistema (representar a un usuario autenticado) sin afirmar COMO se
     /// firma ni se transporta.
     ///
-    /// ADR-0009 fija JWT con HS256, pero el Dominio no depende de ese formato:
+    /// ADfija JWT con HS256, pero el Dominio no depende de ese formato:
     /// el caso de uso solo pide "el token de este usuario".
     /// </summary>
     public interface IAuthTokenService
@@ -17,7 +17,7 @@ namespace Zentric.Domain.Users.Ports
         /// <param name="userId">Identidad que viajará en el claim <c>sub</c>.</param>
         /// <param name="email">Correo, para trazabilidad.</param>
         /// <param name="fullName">Nombre completo, para presentación.</param>
-        /// <param name="role">Rol único del usuario (RG-02).</param>
+        /// <param name="role">Rol único del usuario .</param>
         AuthToken Issue(Guid userId, string email, string fullName, UserRole role);
     }
 

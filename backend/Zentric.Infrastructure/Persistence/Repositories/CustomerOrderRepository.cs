@@ -197,7 +197,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
                 }
             }
 
-            // Reconciliar la coleccion de entregas digitales (CAT-02).
+            // Reconciliar la coleccion de entregas digitales (CA).
             var incomingDd = order.DigitalDeliveries
                 .Select(dd => new DigitalDeliveryRecordDbModel
                 {

@@ -68,7 +68,7 @@ namespace Zentric.Tests.E2E
             response.EnsureSuccessStatusCode();
 
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            var row = document.RootElement.EnumerateArray()
+            var row = document.RootElement.GetProperty("items").EnumerateArray()
                 .First(o => o.GetProperty("id").GetGuid() == mine.OrderId);
 
             Assert.Equal(20000m, row.GetProperty("totalAmount").GetDecimal());
@@ -147,7 +147,7 @@ namespace Zentric.Tests.E2E
         {
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
-            return document.RootElement.EnumerateArray()
+            return document.RootElement.GetProperty("items").EnumerateArray()
                 .Select(order => order.GetProperty("id").GetGuid())
                 .ToList();
         }

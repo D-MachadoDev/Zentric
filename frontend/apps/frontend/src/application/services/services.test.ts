@@ -61,7 +61,7 @@ function wrapperFactory() {
 const queryWrapper = wrapperFactory();
 const mutationWrapper = wrapperFactory();
 
-/** Sesión en memoria real: el access token vive sólo ahí (ADR-0009). */
+/** Sesión en memoria real: el access token vive sólo ahí (AD). */
 function crearSesion(): SessionPort {
   let token: string | null = null;
   let role: UserRoleType | null = null;
@@ -187,7 +187,7 @@ describe('Alta de producto (§2.2, FR-03) — camino moderno (hooks)', () => {
 
     const created = await result.current.mutateAsync(entradaProducto());
 
-    // FR-03: los identificadores de variante vienen del alta, no de releer.
+    // Flos identificadores de variante vienen del alta, no de releer.
     expect(created).toEqual({ productId: 'p-1', variantIds: ['v-1', 'v-2'] });
     expect(getProduct).not.toHaveBeenCalled();
   });

@@ -12,7 +12,7 @@ namespace Zentric.Application.Orders.Commands
     /// <summary>
     /// Agrega una linea al carrito.
     ///
-    /// El contrato **no admite precio ni vendedor** (ADR-0020). Ambos los
+    /// El contrato **no admite precio ni vendedor** (AD). Ambos los
     /// pone el servidor con lo que hay en el catalogo (<c>Product.Price</c> o
     /// <c>ProductVariant.PriceAmount</c> y <c>Product.VendorId</c>), de modo que la linea
     /// queda con un precio congelado que el cliente no puede negociar y el reparto de la
@@ -64,7 +64,7 @@ namespace Zentric.Application.Orders.Commands
                 return Result.Failure("Items can only be added while the order is in the Cart status.");
             }
 
-            // ADR-0020: el precio y el vendedor los pone el servidor. El contrato ya
+            // ADel precio y el vendedor los pone el servidor. El contrato ya
             // no los admite, asi que no queda nada del cliente que validar contra el
             // catalogo: la comprobacion "el vendedor coincide" que antes hacia falta
             // desaparece porque el vendedor nunca viene de la peticion.

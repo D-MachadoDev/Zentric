@@ -5,7 +5,7 @@ namespace Zentric.Domain.Inventories
     using Zentric.Domain.Common.Models;
     using Zentric.Domain.Inventories.Events;
 
-    // Registro de auditoria de un ajuste por conteo fisico (ADR-0021). Inmutable:
+    // Registro de auditoria de un ajuste por conteo fisico. Inmutable:
     // un registro que se pudiera editar no serviria para auditar reincidentes.
     public sealed record StockAdjustmentRecord(
         int SystemQuantity,
@@ -18,8 +18,8 @@ namespace Zentric.Domain.Inventories
     /// Agregado raíz que controla las existencias físicas y reservas de un SKU en una bodega determinada.
     /// </summary>
     /// <remarks>
-    /// ZENTRIC.md Dominio 6 y ADR-0002: El inventario se particiona por variante (SKU) y bodega (WarehouseId).
-    /// Protege la invariante de existencias no negativas (INV-01) y separa el disponible real del stock comprometido en carritos/pedidos.
+    /// ZENTRIC.md Dominio 6 y ADEl inventario se particiona por variante (SKU) y bodega (WarehouseId).
+    /// Protege la invariante de existencias no negativas y separa el disponible real del stock comprometido en carritos/pedidos.
     /// </remarks>
     public sealed class Inventory : Entity
     {
@@ -36,7 +36,7 @@ namespace Zentric.Domain.Inventories
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
         public DateTime? DeletedAt { get; private set; }
-        // Historial de ajustes por conteo fisico (ADR-0021, decision 5: actor,
+        // Historial de ajustes por conteo fisico (actor,
         // motivo escrito, fecha, siempre). Privado y perezoso: la fila puede
         // reconstruirse sin constructor (ver Entity.cs) y el inicializador no
         // correria. Solo crece por ApplyPhysicalCount.
@@ -110,7 +110,7 @@ namespace Zentric.Domain.Inventories
         /// Bloquea temporalmente unidades disponibles para un carrito o pedido en curso.
         /// </summary>
         /// <remarks>
-        /// Invariante INV-01: No permite sobreventa. Las unidades pasan a <see cref="ReservedQuantity"/>
+        /// No permite sobreventa. Las unidades pasan a <see cref="ReservedQuantity"/>
         /// impidiendo que otros compradores adquieran el mismo producto simultáneamente.
         /// </remarks>
         public void ReserveStock(int quantity)
@@ -171,9 +171,9 @@ namespace Zentric.Domain.Inventories
 
         public void ReturnToAvailable(int quantity)
         {
-            // INV-01 / invariante 1: AvailableQuantity nunca puede
-            // ser negativo. Sin esta guarda, una cantidad no positiva (p. ej. -100)
-            // reducia AvailableQuantity por debajo de cero. Correccion T-003 (H-08).
+            // Invariante: AvailableQuantity nunca puede ser negativo.
+            // Sin esta validación, una cantidad no positiva (p. ej. -100)
+            // reducía AvailableQuantity por debajo de cero.
             if (quantity <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity to return must be greater than zero.");
@@ -231,7 +231,7 @@ namespace Zentric.Domain.Inventories
 
         public void ApplyPhysicalCount(int countedQuantity, Guid countedBy, string reason)
         {
-            // Ajuste a la baja con evidencia (ADR-0021): un conteo fisico del
+            // Ajuste a la baja con evidencia: un conteo fisico del
             // Operador Logistico corrige el disponible sin autorizacion previa.
             if (countedQuantity < 0)
             {
@@ -248,7 +248,7 @@ namespace Zentric.Domain.Inventories
                 throw new ArgumentException("Adjustment reason is required.", nameof(reason));
             }
 
-            // Al alza no hay ajuste: es el Ingreso normal del Vendedor (ADR-0021,
+            // Al alza no hay ajuste: es el Ingreso normal del Vendedor (
             // decision 3). Un conteo no puede inventar stock.
             if (countedQuantity > AvailableQuantity)
             {

@@ -5,9 +5,9 @@ using Xunit;
 namespace Zentric.Tests.E2E
 {
     /// <summary>
-    /// Matriz de autorizacion ejecutada contra HTTP real (RG-03, ADR-0011).
+    /// Matriz de autorizacion ejecutada contra HTTP real (, AD).
     ///
-    /// Antes de T-032 esta matriz vivia solo en <c>authorization-smoke.ps1</c>, que se lanzaba a mano
+    /// Antes de esta matriz vivia solo en <c>authorization-smoke.ps1</c>, que se lanzaba a mano
     /// contra el contenedor. Consecuencia: la puerta de seguridad que mas caro salio no la
     /// comprobaba nadie de forma automatica. Aqui es codigo de produccion que nadie puede saltarse
     /// sin que se rompa el pipeline.
@@ -29,7 +29,7 @@ namespace Zentric.Tests.E2E
 
         public static TheoryData<string, string, string, string> Matrix => new()
         {
-            // Sin token: RG-01. La politica de reserva exige identidad en todos los endpoints.
+            // Sin token: . La politica de reserva exige identidad en todos los endpoints.
             { "GET", "/api/Catalog/products", "Anonymous", "401" },
 
             // Usuarios: solo Administrador.
@@ -123,7 +123,7 @@ namespace Zentric.Tests.E2E
         }
 
         /// <summary>
-        /// La unica excepcion a RG-01 es el auto-registro de Comprador (ZENTRIC.md, Dominio 3). Se
+        /// La unica excepcion a es el auto-registro de Comprador (ZENTRIC.md, Dominio 3). Se
         /// comprueba aqui su contra-prueba: el mismo endpoint abierto NO admite auto-registrarse
         /// como Vendedor, porque eso seria una escalada de privilegios sin token.
         /// </summary>

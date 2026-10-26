@@ -48,7 +48,7 @@ namespace Zentric.Tests.E2E
             var scenario = await _factory.PaidOrder.GetAsync();
 
             using var client = _factory.Actors.ClientFor("Operator");
-            using var response = await client.GetAsync("/api/Inventories");
+            using var response = await client.GetAsync("/api/Inventories?size=100");
             response.EnsureSuccessStatusCode();
 
             var variantIds = await ReadVariantIdsAsync(response);
@@ -74,7 +74,7 @@ namespace Zentric.Tests.E2E
 
             var detailIds = await ReadIdsAsync(detail);
 
-            var listedIds = await ReadIdsAsync(list);
+            var listedIds = await ReadPagedIdsAsync(list);
             Assert.NotEmpty(detailIds);
             Assert.All(detailIds, id => Assert.Contains(id, listedIds));
         }
@@ -93,7 +93,7 @@ namespace Zentric.Tests.E2E
         {
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
-            return document.RootElement.EnumerateArray()
+            return document.RootElement.GetProperty("items").EnumerateArray()
                 .Select(row => row.GetProperty("variantId").GetGuid())
                 .ToList();
         }
@@ -103,6 +103,15 @@ namespace Zentric.Tests.E2E
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
             return document.RootElement.EnumerateArray()
+                .Select(row => row.GetProperty("id").GetGuid())
+                .ToList();
+        }
+
+        private static async Task<List<Guid>> ReadPagedIdsAsync(HttpResponseMessage response)
+        {
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+            return document.RootElement.GetProperty("items").EnumerateArray()
                 .Select(row => row.GetProperty("id").GetGuid())
                 .ToList();
         }

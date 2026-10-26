@@ -253,7 +253,6 @@ export function SupervisorReturnsPage() {
               </div>
             </div>
           )}
-          </div>
         </section>
 
         {totalPages > 1 && (

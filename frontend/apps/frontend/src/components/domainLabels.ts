@@ -76,7 +76,7 @@ export const NOMBRES_DE_TIPO_DE_BODEGA: Record<WarehouseType, string> = {
   [WarehouseType.Vendor]: 'Vendedor',
 };
 
-/** Tipos de factura (Q-18). Origen: `ZENTRIC.md` Dominio 9 / ADR-0023. */
+/** Tipos de factura . Origen: `ZENTRIC.md` Dominio 9 / AD. */
 export const NOMBRES_DE_TIPO_DE_FACTURA: Record<InvoiceType, string> = {
   [InvoiceType.Master]: 'Factura Maestra',
   [InvoiceType.ZentricDetail]: 'Detalle Zentric',
@@ -86,7 +86,7 @@ export const NOMBRES_DE_TIPO_DE_FACTURA: Record<InvoiceType, string> = {
 /**
  * Rótulos de negocio del comprobante para la Consola de Facturación.
  *
- * [ADDENDUM - DICTADO POR OWNER, 2026-10-18]: el Administrador opera en
+ * [- DICTADO POR OWNER, 2026-10-18]: el Administrador opera en
  * lenguaje de negocio —qué recibe el comprador, qué retiene la plataforma,
  * qué se liquida al vendedor—, no en el vocabulario tributario interno
  * (`Factura Maestra` / `Detalle Zentric`). Los porcentajes 5%/95% son la

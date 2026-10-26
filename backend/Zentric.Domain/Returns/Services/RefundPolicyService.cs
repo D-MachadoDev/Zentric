@@ -42,7 +42,7 @@ namespace Zentric.Domain.Returns.Services
 
     /// <summary>
     /// Servicio que decide si un reembolso es AUTOMÁTICO (regla clara) o EXCEPCIÓN
-    /// (requiere dictamen de Administrador), según ADR-0020.
+    /// (requiere dictamen de Administrador), según AD.
     ///
     /// Reglas automáticas actuales:
     /// - Devolución por quiebre de stock (PartialFulfillmentCancelledDomainEvent):
@@ -90,7 +90,7 @@ namespace Zentric.Domain.Returns.Services
             // Regla 2: Devolución estándar aprobada por Vendedor → EXCEPCIÓN
             // Hoy TODA devolución aprobada por el Vendedor requiere dictamen del Administrador
             // para liberar el dinero (separación de poderes: Vendedor aprueba reingreso stock,
-            // Administrador libera dinero). Ver ADR-0014.
+            // Administrador libera dinero). Ver AD.
             if (context.Reason == "vendor_approved_return")
             {
                 return RefundDecision.Exception("Standard vendor-approved return requires Administrator dictamen (separation of powers, ADR-0014)");

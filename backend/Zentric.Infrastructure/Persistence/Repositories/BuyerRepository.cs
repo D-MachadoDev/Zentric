@@ -20,7 +20,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
 
         public async Task<Buyer?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            // AsNoTracking por el mismo motivo que en los demas repositorios (H-15).
+            // AsNoTracking por el mismo motivo que en los demas repositorios .
             var dbModel = await _dbContext.Buyers
                 .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.UserId == id, cancellationToken);

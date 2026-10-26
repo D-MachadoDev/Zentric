@@ -262,7 +262,7 @@ describe.skipIf(!shouldRunLive)('ZentricHttpClient contra el backend real', () =
       const invoices = await paso('getInvoicesByOrder', () => api.getInvoicesByOrder(estado.orderId));
       estado.invoiceCount = invoices.length;
 
-      // Factura Maestra + Detalle Zentric (Q-18): una por cada rol que factura.
+      // Factura Maestra + Detalle Zentric (): una por cada rol que factura.
       expect(invoices.length).toBeGreaterThanOrEqual(2);
     });
   });

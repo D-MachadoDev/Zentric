@@ -6,17 +6,17 @@ using Zentric.Domain.Users.Enums;
 namespace Zentric.Api.Security
 {
     /// <summary>
-    /// Matriz de autorizacion por rol (cierra RG-03 a nivel de endpoint).
+    /// Matriz de autorizacion por rol a nivel de endpoint.
     ///
     /// Que es este archivo. Es el UNICO punto de verdad de quien puede llamar a que. No es
     /// detalle tecnico de ASP.NET: es la Matriz de Responsabilidades de <c>ZENTRIC.md</c>
-    /// seccion 12, mas el ADDENDUM, escrita una sola vez. De aqui sale el registro de
+    /// seccion 12, mas el addendum de dominio, escrita una sola vez. De aqui sale el registro de
     /// politicas de <c>Program.cs</c>, la decoracion de los controladores y la matriz que
     /// asertan <c>EndpointAuthorizationMatrixTests</c>. Cambiar una regla aqui cambia las tres.
     ///
     /// Como se lee cada regla:
-    /// [CONFIRMADO] la Ley o el ADDENDUM lo dicen textual.
-    /// [INFERIDO]   la Ley no lo explicita; se deduce de una definicion de rol de la seccion 5.
+    /// [CONFIRMADO] la especificacion lo dice textual.
+    /// [INFERIDO]   la especificacion no lo explicita; se deduce de una definicion de rol de la seccion 5.
     /// [ABIERTO] hace falta dictamen del Owner; mientras tanto la politica es fail-closed
     ///                (el conjunto mas chico que la Ley sostiene).
     ///
@@ -25,20 +25,20 @@ namespace Zentric.Api.Security
     /// pedidos, despachos, devoluciones y facturas. La propiedad por recurso (que un comprador
     /// vea solo SUS pedidos) no se cubre aqui: sigue abierta.
     ///
-    /// RG-03 dice "ningun participante podra administrar informacion fuera de su rol", asi que
+    /// Ningun participante podra administrar informacion fuera de su rol, asi que
     /// lo que no esta en la matriz queda denegado: la politica de reserva de <c>Program.cs</c>
     /// exige token en todo endpoint, y una politica denegada responde 403.
     /// </summary>
     public static class AuthorizationPolicies
     {
         /// <summary>
-        /// Basta estar autenticado. No habilita privilegio alguno: es la traduccion de RG-01
+        /// Basta estar autenticado. No habilita privilegio alguno: es la traduccion de la regla
         /// ("toda operacion debe ejecutarse por un usuario autenticado") para los recursos que
-        /// la Ley describe sin restringirlos a un actor.
+        /// la especificacion describe sin restringirlos a un actor.
         ///
         /// [CONFIRMADO] ZENTRIC.md seccion 6.1 paso 4: "Publicacion: los productos se hacen
         /// visibles en el catalogo publico". Publico en el sentido de visible para todos los
-        /// participantes, no anonimo: RG-01 sigue exigiendo token.
+        /// participantes, no anonimo: sigue exigiendo token.
         /// </summary>
         public const string AnyAuthenticatedUser = "Zentric.AnyAuthenticatedUser";
 
@@ -92,13 +92,13 @@ namespace Zentric.Api.Security
 
         /// <summary>
         /// Consulta de existencias de una variante.
-        /// [ADDENDUM 2026-10-17]: Abierto a Administrador y Supervisor para auditoria
+        /// Abierto a Administrador y Supervisor para auditoria
         /// y gestion de existencias (conteo fisico y monitoreo global de red).
         /// </summary>
         public const string InventoryRead = "Zentric.InventoryRead";
 
         /// <summary>
-        /// Ajuste fisico de inventario por conteo (ADR-0021).
+        /// Ajuste fisico de inventario por conteo (AD).
         ///
         /// [DICTADO Owner 2026-10-07]: el ajuste por conteo fisico (ApplyPhysicalCount)
         /// es operacion de auditoria, no operacion comercial. Quién cuenta no vende ni despacha.
@@ -121,7 +121,7 @@ namespace Zentric.Api.Security
         /// <summary>
         /// Creacion de la orden de preparacion y despacho fisico.
         ///
-        /// [CONFIRMADO] ADDENDUM Dominio 8: el fulfillment "deriva del pedido del cliente para
+        /// [CONFIRMADO] el fulfillment "deriva del pedido del cliente para
         /// organizar la entrega fisica por parte de cada vendedor", y sus estados (Pendiente de
         /// Empaque, Empacado, Despachado) son operacion de bodega. Vendedor y Operador Logistico
         /// son los dos actores de "Gestion de Pedidos" que tocan la entrega fisica.
@@ -133,7 +133,7 @@ namespace Zentric.Api.Security
         ///
         /// [DICTADO POR OWNER 2026-10-01] Solo el Operador Logistico.
         ///
-        /// El ADDENDUM Dominio 8 estado 4 define el estado ("Entregado: Recibido por el
+        /// El Dominio 8 estado 4 define el estado ("Entregado: Recibido por el
         /// comprador") pero no dice quien lo marca, asi que es una pregunta y no una traduccion.
         /// Se decide el Operador porque el cierre de la entrega es, igual que el despacho, trabajo
         /// fisico de bodega: es quien ve salir la transportadora. El Comprador queda como solo
@@ -149,11 +149,11 @@ namespace Zentric.Api.Security
         /// <summary>
         /// Cancelacion por quiebre de stock fantasma.
         ///
-        /// [CONFIRMADO] ADDENDUM Dominio 8 estado 5: "Cancelado por Quiebre: cancelacion
+        /// [CONFIRMADO] Dominio 8 estado 5: "Cancelado por Quiebre: cancelacion
         /// unilateral DEL VENDEDOR por falta fisica de stock".
         ///
         /// [DICTADO POR OWNER 2026-09-29] Se abre al Operador Logistico. El
-        /// ADDENDUM asigna la cancelacion al Vendedor como responsable comercial, pero
+        /// La cancelacion se asigna al Vendedor como responsable comercial, pero
         /// el faltante lo detecta quien esta en la bodega. Leer al Operador como quien
         /// obra en nombre del vendedor alli es lo unico que deja la regla operable: el
         /// Operador ya crea despachos, ingresa stock, inspecciona devoluciones y
@@ -178,14 +178,14 @@ namespace Zentric.Api.Security
         /// Radicacion de una solicitud de devolucion.
         ///
         /// [CONFIRMADO] ZENTRIC.md seccion 12: "Gestion Reembolsos" con palomita en Comprador;
-        /// el ADDENDUM Dominio 10 abre el flujo con la solicitud.
+        /// se abre el flujo con la solicitud.
         /// </summary>
         public const string ReturnRequest = "Zentric.ReturnRequest";
 
         /// <summary>
         /// Dictamen de la inspeccion fisica en bodega.
         ///
-        /// [CONFIRMADO] ADDENDUM Dominio 10, flujo fisico: "El operador logistico inspecciona
+        /// [CONFIRMADO] "El operador logistico inspecciona
         /// que el producto este en buen estado".
         /// </summary>
         public const string ReturnInspect = "Zentric.ReturnInspect";
@@ -193,11 +193,11 @@ namespace Zentric.Api.Security
         /// <summary>
         /// Aprobacion comercial de la devolucion.
         ///
-        /// [CONFIRMADO] ADDENDUM Dominio 10: la inspeccion favorable "requiere la aprobacion del
+        /// [CONFIRMADO] la inspeccion favorable "requiere la aprobacion del
         /// Vendedor". El Dominio ya lo modela asi: <c>ReturnRequest.ApproveByVendor</c>.
         ///
         /// Contra la Matriz: la seccion 12 pone la palomita de "Gestion Reembolsos" en el Admin.
-        /// ADR-0006 resuelve la colision a favor del ADDENDUM, asi que el Admin NO aprueba. Se
+        /// ADresuelve la colision a favor del  asi que el Admin NO aprueba. Se
         /// corrijo ademas la documentacion de modulos de rol del frontend, que heredaba la lectura
         /// equivocada de la Matriz.
         /// </summary>
@@ -208,11 +208,11 @@ namespace Zentric.Api.Security
         ///
         /// [DICTADO POR OWNER 2026-10-01] Solo el Administrador.
         ///
-        /// El ADDENDUM Dominio 10 lista "Reembolsada" como estado, pero no dice quien lo ejecuta. Se
+        /// El Dominio 10 lista "Reembolsada" como estado, pero no dice quien lo ejecuta. Se
         /// decide el Administrador por separacion de poderes: el Vendedor es quien aprueba que el
         /// producto vuelva al stock, y si ademas liberara el dinero concentraria las dos decisiones
         /// sobre la misma operacion. Ademas es dinero que sale de la plataforma, que es exactamente
-        /// el criterio con el que ADR-0014 dejo la emision de facturas.
+        /// el criterio con el que ADdejo la emision de facturas.
         ///
         /// Deliberadamente distinta de <see cref="ReturnApprove"/>, que sigue siendo solo-Seller.
         /// </summary>
@@ -231,7 +231,7 @@ namespace Zentric.Api.Security
         /// <summary>
         /// Emision de las facturas de un pedido.
         ///
-        /// [ABIERTO] ADDENDUM Dominio 9 describe los tres documentos (Factura Maestra,
+        /// [ABIERTO] Se describen los tres documentos (Factura Maestra,
         /// Detalle Zentric, Factura de Vendedor) pero no dice quien los emite, y la seccion 12
         /// no tiene fila de facturacion. Fail-closed en Administrador: es el unico actor de la
         /// seccion 5 que representa a la plataforma, y el Detalle Zentric es documento de la
@@ -242,7 +242,7 @@ namespace Zentric.Api.Security
         /// <summary>
         /// Consulta de las facturas emitidas de un pedido.
         ///
-        /// [CONFIRMADO] ADDENDUM Dominio 9 asigna un destinatario a cada documento: "Factura
+        /// [CONFIRMADO] Se asigna un destinatario a cada documento: "Factura
         /// Maestra: entregada al cliente" (Comprador) y "Factura de Vendedor: monto que le
         /// corresponde al Vendedor". Admin y Supervisor por el dictamen de lectura operativa. El
         /// Operador Logistico queda fuera: la facturacion no es operacion fisica.
@@ -320,7 +320,7 @@ namespace Zentric.Api.Security
 
                     [FulfillmentOperate] = new[] { Role(UserRole.Seller), Role(UserRole.LogisticsOperator) },
 
-                    // Cierre de la entrega (ADDENDUM Dominio 8, estado 4). Deliberadamente mas
+                    // Cierre de la entrega . Deliberadamente mas
                     // estrecha que FulfillmentOperate: solo el Operador confirma la entrega
                     // (dictamen del Owner 2026-10-01). El Vendedor puede empacar y despachar su
                     // paquete, pero no cerrar su propia entrega.
@@ -344,13 +344,12 @@ namespace Zentric.Api.Security
                     [ReturnApprove] = new[] { Role(UserRole.Seller) },
 
                     // Rechazo: reutiliza ReturnApprove a proposito. Quien puede aprobar puede
-                    // rechazar; separarlos no aporta nada porque es la misma decision (ADDENDUM
-                    // Dominio 10 asigna la decision al Vendedor).
+                    // rechazar; separarlos no aporta nada porque es la misma decision (                    // Dominio 10 asigna la decision al Vendedor).
 
                     // Reembolso: dinero que sale de la plataforma, solo Administrador.
                     // [DICTADO POR OWNER 2026-10-01] Separacion de poderes: el Vendedor aprueba
                     // el reingreso del producto pero no libera el dinero. Mismo criterio que la
-                    // emision de facturas, que ADR-0014 dejo en el Administrador.
+                    // emision de facturas, que ADdejo en el Administrador.
                     [ReturnRefund] = new[] { Role(UserRole.Administrator) },
 
                     [ReturnRead] = new[]

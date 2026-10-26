@@ -92,7 +92,7 @@ namespace Zentric.Tests.Payments
         [Fact]
         public void Refund_OnApprovedReceipt_SetsCreditAndTimestamp()
         {
-            // ADDENDUM del Owner: el reembolso es credito a favor y el comprobante
+            // del Owner: el reembolso es credito a favor y el comprobante
             // queda saldado, sin revertir el pedido.
             var receipt = PaymentReceipt.Create(Guid.NewGuid(), Amount(100_000m));
             receipt.Approve("TX-1");
@@ -157,7 +157,7 @@ namespace Zentric.Tests.Payments
         [Fact]
         public void Refund_Twice_KeepsOriginalCredit()
         {
-            // Los creditos se ACUMULAN (ADR-0021): el primer reembolso de 50.000 deja el
+            // Los creditos se ACUMULAN (AD): el primer reembolso de 50.000 deja el
             // comprobante a medio acreditar y el segundo completa el saldo. Antes este test
             // defendia lo contrario: `if (Status == Refunded) return;` impedia el segundo credito y
             // lo ocultaba como si fuera idempotencia, cuando en realidad era un techo artificial

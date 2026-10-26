@@ -9,7 +9,7 @@ using Zentric.Domain.Users.Ports;
 namespace Zentric.Application.Users.Commands
 {
     /// <summary>
-    /// Cierra el acceso de un usuario a la plataforma (INV-05).
+    /// Cierra el acceso de un usuario a la plataforma .
     /// </summary>
     /// <param name="Id">Identificador del usuario que se bloquea.</param>
     public record BlockUserCommand(Guid Id) : IRequest<Result>;
@@ -37,7 +37,7 @@ namespace Zentric.Application.Users.Commands
             {
                 user.Block();
             }
-            // INV-05: las guardas del agregado (ya bloqueado, usuario borrado) son
+            // las guardas del agregado (ya bloqueado, usuario borrado) son
             // reglas de negocio predecibles, no fallos de infraestructura. Se traducen
             // a Result para que salgan como 400 y no lleguen al middleware.
             catch (InvalidOperationException ex)

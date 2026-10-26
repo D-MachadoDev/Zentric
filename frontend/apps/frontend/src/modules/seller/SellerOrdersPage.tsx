@@ -3,6 +3,7 @@ import { useOrdersPagedQuery, useOrderQuery } from '../../application/services/o
 import { useProductsPagedQuery } from '../../application/services/catalog';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Pagination } from '@zentric/ui';
+import {
   OrderStatus,
   type OrderListItem,
   type OrderItem,
@@ -39,7 +40,7 @@ import {
 /**
  * Vista de Pedidos para el Vendedor (SellerOrdersPage - Frontend-Role-Modules §2.3).
  * Split-Frame Asimétrico (65% Listado de Pedidos / 35% Detalle SellerOrderView).
- * Garantiza cumplimiento de ADR-0013: Muestra exclusivamente líneas propias y vendorSubtotal,
+ * Garantiza cumplimiento de ADMuestra exclusivamente líneas propias y vendorSubtotal,
  * ocultando datos del comprador (PII) y márgenes de otros comerciantes.
  * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
  */
@@ -274,7 +275,7 @@ export function SellerOrdersPage() {
 
         </section>
 
-        {/* Lado Derecho (35%): Ficha SellerOrderView (ADR-0013) ──────── */}
+        {/* Lado Derecho (35%): Ficha SellerOrderView (AD) ──────── */}
         <aside className="lg:col-span-4 space-y-6">
           {isLoadingDetail ? (
             <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
@@ -357,7 +358,7 @@ export function SellerOrdersPage() {
                 </p>
               </div>
 
-              {/* Cumplimiento ADR-0013 */}
+              {/* Cumplimiento AD*/}
               <div className="flex items-start gap-2.5 rounded-xl border border-border bg-surface-muted/30 p-3.5">
                 <ShieldCheck className="h-4 w-4 text-brand shrink-0 mt-0.5" />
                 <p className="text-[11px] text-foreground-muted leading-relaxed">

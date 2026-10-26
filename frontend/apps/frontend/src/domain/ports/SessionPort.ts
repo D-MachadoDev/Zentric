@@ -4,7 +4,7 @@ import type { UserRole } from '../enums';
 /**
  * Puerto de sesión.
  *
- * El backend NO tiene token de refresco (ADR-0009). El access token vive
+ * El backend NO tiene token de refresco (AD). El access token vive
  * SOLO en memoria RAM; al recargar la página se pierde y toca volver a autenticarse.
  * Por eso ninguna operación usa `localStorage` ni `sessionStorage`.
  */

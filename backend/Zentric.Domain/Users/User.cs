@@ -27,7 +27,7 @@ namespace Zentric.Domain.Users
         /// <summary>
         /// Tasa de stock fantasma del vendedor (0.0 a 1.0).
         /// Se incrementa cuando se detecta stock fantasma en sus productos.
-        /// Se usa en INV-05 para bloquear ventas de vendedores reincidentes.
+        /// Se usa en para bloquear ventas de vendedores reincidentes.
         /// </summary>
         public decimal StockFantasmaRate { get; private set; }
         
@@ -234,7 +234,7 @@ namespace Zentric.Domain.Users
 
         /// <summary>
         /// Incrementa la tasa de stock fantasma del vendedor.
-        /// Se invoca cuando se detecta stock fantasma en sus productos (ADR-0021).
+        /// Se invoca cuando se detecta stock fantasma en sus productos (AD).
         /// El incremento es fijo (0.1 = 10%) y se cap en 1.0 (100%).
         /// </summary>
         public void IncrementStockFantasmaRate()

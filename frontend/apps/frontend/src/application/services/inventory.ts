@@ -65,7 +65,7 @@ export function useAddStockMutation(api?: ZentricApiPort) {
 }
 
 /**
- * Hook de mutación para ajuste físico de inventario (ADR-0021).
+ * Hook de mutación para ajuste físico de inventario (AD).
  */
 export function useAdjustInventoryMutation(api?: ZentricApiPort) {
   const queryClient = useQueryClient();

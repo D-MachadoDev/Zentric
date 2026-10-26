@@ -5,7 +5,7 @@ import type { SessionPort, ZentricApiPort } from '../../domain';
  * Contrato de contexto inyectado al router en beforeLoad y loaders.
  *
  * Contiene dependencias inyectadas para resolución determinista:
- * - `session`: Puerto de sesión en memoria RAM (ADR-0009).
+ * - `session`: Puerto de sesión en memoria RAM (AD).
  * - `api`: Puerto de cliente API central Zentric.
  * - `queryClient`: Gestor de caché TanStack Query para invalidación y prefetching.
  */

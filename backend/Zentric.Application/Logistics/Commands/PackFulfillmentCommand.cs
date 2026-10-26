@@ -8,7 +8,7 @@ namespace Zentric.Application.Logistics.Commands
     /// <summary>
     /// Marca un paquete como empacado (<c>PendingPack → Packed</c>).
     ///
-    /// ADDENDUM Dominio 8, estado 2: "Empacado: Listo para recolección". El dominio ya tenia
+    /// "Empacado: Listo para recolección". El dominio ya tenia
     /// <c>Pack()</c> y su invariante, pero no existia comando ni endpoint: el paquete se quedaba
     /// en Pendiente de Empaque para siempre, y <c>Dispatch()</c> exigia estar Packed. Es decir, el
     /// ciclo de despacho no se podia completar por HTTP.

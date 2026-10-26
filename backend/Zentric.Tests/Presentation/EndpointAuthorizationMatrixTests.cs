@@ -33,8 +33,8 @@ namespace Zentric.Tests.Presentation
 
         /// <summary>
         /// La matriz dictada, endpoint por endpoint. Es la traduccion de la Matriz de
-        /// Responsabilidades (ZENTRIC.md seccion 12) mas el ADDENDUM, con la preferencia del
-        /// ADDENDUM que fija AD.
+        /// Responsabilidades (ZENTRIC.md seccion 12) mas el  con la preferencia del
+        /// que fija AD.
         /// </summary>
         private static readonly IReadOnlyDictionary<string, string> ExpectedPolicyByEndpoint =
             new Dictionary<string, string>
@@ -93,7 +93,7 @@ namespace Zentric.Tests.Presentation
                 ["OrdersController.GetOrderById"] = AuthorizationPolicies.OrderRead,
                 ["OrdersController.UpdateCartItemQuantity"] = AuthorizationPolicies.Checkout,
 
-                // 6. Logistica (ADDENDUM Dominio 8).
+                // 6. Logistica .
                 ["LogisticsController.CreateFulfillment"] = AuthorizationPolicies.FulfillmentOperate,
                 ["LogisticsController.PackFulfillment"] = AuthorizationPolicies.FulfillmentOperate,
                 ["LogisticsController.DispatchFulfillment"] = AuthorizationPolicies.FulfillmentOperate,
@@ -102,7 +102,7 @@ namespace Zentric.Tests.Presentation
                 ["LogisticsController.GetFulfillments"] = AuthorizationPolicies.FulfillmentRead,
                 ["LogisticsController.GetFulfillmentById"] = AuthorizationPolicies.FulfillmentRead,
 
-                // 7. Devoluciones (ADDENDUM Dominio 10).
+                // 7. Devoluciones .
                 ["ReturnsController.RequestReturn"] = AuthorizationPolicies.ReturnRequest,
                 ["ReturnsController.InspectReturn"] = AuthorizationPolicies.ReturnInspect,
                 ["ReturnsController.ApproveReturn"] = AuthorizationPolicies.ReturnApprove,
@@ -111,7 +111,7 @@ namespace Zentric.Tests.Presentation
                 ["ReturnsController.GetReturns"] = AuthorizationPolicies.ReturnRead,
                 ["ReturnsController.GetReturnById"] = AuthorizationPolicies.ReturnRead,
 
-                // 8. Facturacion (ADDENDUM Dominio 9).
+                // 8. Facturacion .
                 ["BillingController.GenerateInvoices"] = AuthorizationPolicies.BillingGenerate,
                 ["BillingController.AnnullMasterInvoice"] = AuthorizationPolicies.BillingGenerate,
                 ["BillingController.GetInvoices"] = AuthorizationPolicies.BillingRead,
@@ -158,9 +158,9 @@ namespace Zentric.Tests.Presentation
         }
 
         /// <summary>
-        /// Criterio (ADDENDUM Dominio 10 + AD): la aprobacion de una devolucion es del
+        /// Criterio (Dominio 10 + AD): la aprobacion de una devolucion es del
         /// Vendedor. El Administrador NO aprueba, aunque la Matriz de Responsabilidades de la
-        /// seccion 12 lo dibujara asi: el ADDENDUM tiene la ultima palabra. El Dominio ya lo
+        /// seccion 12 lo dibujara asi: el tiene la ultima palabra. El Dominio ya lo
         /// modela con ese nombre, en <c>ReturnRequest.ApproveByVendor</c>.
         /// </summary>
         [Fact]
@@ -219,7 +219,7 @@ namespace Zentric.Tests.Presentation
         /// <summary>
         /// Criterio del dictamen (Owner, 2026-09-29): el Operador Logistico
         /// detecta el faltante en bodega, asi que puede reportarlo. El Vendedor sigue
-        /// dentro porque el ADDENDUM Dominio 8 le asigna la cancelacion. Sin esta
+        /// dentro porque el Dominio 8 le asigna la cancelacion. Sin esta
         /// asercion, quitar al Operador devolveria al flujo a un estado que la Ley
         /// describe pero que nadie podria ejecutar.
         /// </summary>

@@ -66,7 +66,7 @@ namespace Zentric.Application.Orders.Commands
                 }
 
                 // Agrupar por vendedor ANTES de reservar: la reserva ya escribe en la
-                // base (ADR-0025), asi que cualquier validacion que pueda fallar
+                // base (AD), asi que cualquier validacion que pueda fallar
                 // (producto inexistente) debe llegar antes de tocar stock o dejaria
                 // reservas confirmadas de un pedido que ni siquiera se guarda.
                 var itemsByVendor = new Dictionary<Guid, List<Domain.Orders.Entities.OrderItem>>();
@@ -78,7 +78,7 @@ namespace Zentric.Application.Orders.Commands
                         return Result<bool>.NotFound($"Product for variant {item.VariantId} not found.");
                     }
 
-                    // CAT-02: un producto digital no genera despacho (entrega inmediata
+                    // CAun producto digital no genera despacho (entrega inmediata
                     // tras el pago). Antes abria un FulfillmentOrder que nadie empacaba.
                     if (product.Type == Zentric.Domain.Products.Enums.ProductType.Digital)
                     {
@@ -92,7 +92,7 @@ namespace Zentric.Application.Orders.Commands
                     itemsByVendor[product.VendorId].Add(item);
                 }
 
-                // INV-05 (decision del Owner 2026-10-04): el checkout rechaza cualquier
+                // (decision del Owner 2026-10-04): el checkout rechaza cualquier
                 // carrito que contenga un producto de un Vendedor bloqueado o desactivado.
                 // Los productos del Vendedor siguen Published (no hay cascada), asi que la
                 // unica barrera es esta. Se comprueba ANTES de reservar stock, porque la
@@ -108,7 +108,7 @@ namespace Zentric.Application.Orders.Commands
                             $"Vendor {vendorId} is blocked and cannot sell.");
                     }
 
-                    // INV-05 + ADR-0021: rechazar si el vendedor supera el umbral de stock fantasma
+                    // + ADrechazar si el vendedor supera el umbral de stock fantasma
                     if (vendor is not null && vendor.ExceedsStockFantasmaThreshold())
                     {
                         return Result<bool>.Failure(

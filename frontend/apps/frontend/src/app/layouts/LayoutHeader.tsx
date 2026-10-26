@@ -24,7 +24,7 @@ interface LayoutHeaderProps {
  * - Título del módulo o sección.
  * - Chip de rol con el isotipo Z coloreado por el acento del rol.
  * - Identidad del usuario (nombre / correo) en Geist Sans y Geist Mono.
- * - Selector de tema dual y cierre de sesión en RAM (ADR-0009).
+ * - Selector de tema dual y cierre de sesión en RAM (AD).
  */
 export function LayoutHeader({ title, onToggleSidebar, dense = false, children }: LayoutHeaderProps) {
   const { user, role, logout } = useAuth();
@@ -46,7 +46,7 @@ export function LayoutHeader({ title, onToggleSidebar, dense = false, children }
   return (
     <header
       aria-label="Cabecera operativa principal"
-      className={`sticky top-0 z-20 flex w-full items-center justify-between border-b border-border bg-surface/95 px-4 backdrop-blur-md sm:px-6 ${
+      className={`sticky top-0 z-20 flex w-full items-center justify-between border-b border-border bg-surface/95 px-4 backdrop-blur-md sm:px-6 overscroll-contain ${
         dense ? 'h-14' : 'h-16'
       }`}
     >

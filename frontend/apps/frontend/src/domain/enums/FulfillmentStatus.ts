@@ -1,8 +1,8 @@
 /**
- * Estados de la orden de fulfillment logístico (ADDENDUM Dominio 8).
+ * Estados de la orden de fulfillment logístico .
  *
  * Origen: `backend/Zentric.Domain/Logistics/Enums/FulfillmentStatus.cs`.
- * El backend les asigna valores enteros explícitos (1..5), pero ADR-0012 establece
+ * El backend les asigna valores enteros explícitos (1..5), pero ADestablece
  * que en el JSON viaja el NOMBRE; el cliente jamás usa el índice.
  */
 export const FulfillmentStatus = {

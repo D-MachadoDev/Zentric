@@ -103,7 +103,7 @@ namespace Zentric.Tests.UseCases
                     type: Zentric.Domain.Products.Enums.ProductType.Physical,
                     variants: new (string, IEnumerable<Zentric.Domain.Products.ValueObjects.VariantAttribute>)[]
                     {
-                        // Una variante debe declarar al menos un atributo (CAT-03).
+                        // Una variante debe declarar al menos un atributo (CA).
                         ("SKU-1", new[]
                         {
                             new Zentric.Domain.Products.ValueObjects.VariantAttribute("Color", "Negro")
@@ -253,7 +253,7 @@ public Task<IReadOnlyList<FulfillmentOrder>> GetByCustomerOrderIdAsync(
         [Fact]
         public async Task Send_AddOrderItemCommandWhenOrderIsNotInCart_ReturnsBusinessFailureWithoutThrowing()
         {
-            // Regresión H-09: antes, la excepción del agregado se capturaba con un
+            // Regresión antes, la excepción del agregado se capturaba con un
             // catch (Exception) genérico; ahora el fallo previsible se informa como Result.
             var (mediator, orders) = BuildMediator();
             var buyerId = Guid.NewGuid();
@@ -284,7 +284,7 @@ public Task<IReadOnlyList<FulfillmentOrder>> GetByCustomerOrderIdAsync(
             Assert.Equal(1, orders.UpdateCalls);
             Assert.Single(order.Items);
             Assert.Equal(variantId, order.Items.First().VariantId);
-            // ADR-0020: el total sale del precio del catalogo (10.00 x 2), no del
+            // ADel total sale del precio del catalogo (10.00 x 2), no del
             // cuerpo de la peticion, que ya no admite precio.
             Assert.Equal(new Money(20m, "COP"), order.TotalAmount);
         }

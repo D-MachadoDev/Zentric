@@ -2,7 +2,7 @@
  * Estados del ciclo de vida de un pedido de compra.
  *
  * Origen: `backend/Zentric.Domain/Orders/Enums/OrderStatus.cs`.
- * ADR-0012: en el JSON viaja el NOMBRE, nunca el índice numérico.
+ * ADen el JSON viaja el NOMBRE, nunca el índice numérico.
  */
 export const OrderStatus = {
   Cart: 'Cart',

@@ -1,7 +1,7 @@
 /**
  * Formateadores de dinero.
  *
- * El backend es la autoridad (Q-15/Q16): la moneda viene SIEMPRE del servidor
+ * El backend es la autoridad (/Q16): la moneda viene SIEMPRE del servidor
  * en el DTO, y la lista blanca habilita hoy sólo "COP". Por eso aquí no se
  * decide la divisa, sólo se pinta la que llega.
  */

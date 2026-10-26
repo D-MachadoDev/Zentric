@@ -25,7 +25,7 @@ namespace Zentric.Domain.Orders.Entities
         /// <summary>
         /// Fecha de entrega del producto digital. Solo se establece para
         /// <see cref="ProductType.Digital"/> tras la aprobacion del pago
-        /// (CAT-02: entrega inmediata tras el pago). Para fisicos, la entrega
+        /// (CAentrega inmediata tras el pago). Para fisicos, la entrega
         /// se rastrea via <see cref="FulfillmentOrder"/>.
         /// </summary>
         public DateTime? DeliveredAt { get; private set; }
@@ -78,7 +78,7 @@ namespace Zentric.Domain.Orders.Entities
         }
 
         /// <summary>
-        /// Marca la linea como entregada (CAT-02: producto digital).
+        /// Marca la linea como entregada (CAproducto digital).
         /// </summary>
         public void MarkDelivered()
         {

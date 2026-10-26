@@ -28,7 +28,7 @@ namespace Zentric.Domain.Orders
         public DateTime? CheckoutStartedAt { get; private set; }
 
         /// <summary>
-        /// Por que quedo cancelado el pedido (ADR-0022 decision 2). Antes de este
+        /// Por que quedo cancelado el pedido (ADdecision 2). Antes de este
         /// ADR el campo no existia, aunque el ADR lo daba por hecho: el pedido no
         /// distinguia un caducado de un liquidado.
         /// </summary>
@@ -169,7 +169,7 @@ namespace Zentric.Domain.Orders
         }
 
         /// <summary>
-        /// Registra la entrega de un producto digital (CAT-02).
+        /// Registra la entrega de un producto digital (CA).
         /// Se invoca desde el handler de pago cuando este es aprobado.
         /// </summary>
         public void AddDigitalDelivery(DigitalDeliveryRecord record)
@@ -200,7 +200,7 @@ namespace Zentric.Domain.Orders
                 throw new InvalidOperationException("Cannot checkout an empty cart.");
             }
 
-            // T-004 (H-06/R-06): la caducidad es una regla de negocio y vive aqui, no
+            // (/): la caducidad es una regla de negocio y vive aqui, no
             // en el lector del carrito. La ventana reglamentaria dura 15 minutos:
             // el umbral lo calcula quien llama con un IClock (ver
             // CheckoutTimeoutService) y Checkout solo decide si ya expiro con el
@@ -287,13 +287,13 @@ namespace Zentric.Domain.Orders
         }
 
         /// <summary>
-        /// ADR-0022: un pedido totalmente resuelto pasa a <c>Cancelled</c>.
+        /// ADun pedido totalmente resuelto pasa a <c>Cancelled</c>.
         ///
         /// No es lo mismo que "entregado": no llego nada y el dinero volvio entero.
         /// Por eso el estado es <c>Cancelled</c> y no <c>Delivered</c> (decision 3).
         ///
         /// La precondicion es de DOS condiciones a la vez (decision 4): todos los
-        /// despachos cancelados POR EXC-01 y el comprobante con credito acumulado
+        /// despachos cancelados POR y el comprobante con credito acumulado
         /// igual a lo cobrado (invariante 14). Con una sola el pedido mentiria:
         /// cancelado con dinero sin devolver sigue siendo un debe, y acreditado con
         /// algo por entregar no esta resuelto.

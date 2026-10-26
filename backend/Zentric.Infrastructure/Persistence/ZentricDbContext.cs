@@ -21,6 +21,9 @@ namespace Zentric.Infrastructure.Persistence
         public DbSet<StockAdjustmentDbModel> StockAdjustments => Set<StockAdjustmentDbModel>();
         public DbSet<WarehouseDbModel> Warehouses => Set<WarehouseDbModel>();
         public DbSet<UserRecentlyViewedDbModel> UserRecentlyViewed => Set<UserRecentlyViewedDbModel>();
+        public DbSet<IdempotencyKeyDbModel> IdempotencyKeys => Set<IdempotencyKeyDbModel>();
+        public DbSet<OutboxMessageDbModel> OutboxMessages => Set<OutboxMessageDbModel>();
+        public DbSet<AuditLogDbModel> AuditLogs => Set<AuditLogDbModel>();
 
         public ZentricDbContext(DbContextOptions<ZentricDbContext> options) : base(options)
         {
@@ -113,7 +116,7 @@ namespace Zentric.Infrastructure.Persistence
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Credito a favor individual (ADR-0020 decision 7). El comprobante
+            // Credito a favor individual (ADdecision 7). El comprobante
             // guarda el acumulado; esta tabla dice de quien, de que linea y bajo
             // que regla. Un registro por credito y no uno por comprobante.
             modelBuilder.Entity<RefundCreditDbModel>(b =>
@@ -128,7 +131,7 @@ namespace Zentric.Infrastructure.Persistence
                 });
             });
 
-            // Registro de ajuste a la baja (ADR-0021 decision 5). El inventario
+            // Registro de ajuste a la baja (ADdecision 5). El inventario
             // guarda los contadores; esta tabla dice cuanto habia, cuanto hay,
             // quien conto y por que. Un registro por ajuste, inmutable.
             modelBuilder.Entity<StockAdjustmentDbModel>(b =>
@@ -138,7 +141,7 @@ namespace Zentric.Infrastructure.Persistence
                 b.HasIndex(c => c.CountedBy);
             });
 
-            // Auditoría de reembolso (ADR-0020 decision 7). Cada intento de reembolso
+            // Auditoría de reembolso (ADdecision 7). Cada intento de reembolso
             // deja traza: regla aplicada, tipo de decisión (auto/manual), actor, resultado.
             modelBuilder.Entity<RefundAuditDbModel>(b =>
             {
@@ -176,6 +179,32 @@ namespace Zentric.Infrastructure.Persistence
                 b.HasIndex(x => x.UserId);
                 b.HasIndex(x => x.ViewedAt);
             });
+
+            modelBuilder.Entity<IdempotencyKeyDbModel>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.HasIndex(x => x.Key).IsUnique();
+                b.HasIndex(x => x.ExpiresAt);
+            });
+
+            modelBuilder.Entity<OutboxMessageDbModel>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.HasIndex(x => x.ProcessedAt);
+                b.HasIndex(x => x.OccurredAt);
+                b.Property(x => x.EventType).HasMaxLength(200);
+                b.Property(x => x.Payload).HasColumnType("text");
+            });
+
+            modelBuilder.Entity<AuditLogDbModel>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.HasIndex(x => x.EntityName);
+                b.HasIndex(x => x.EntityId);
+                b.HasIndex(x => x.OccurredAt);
+                b.Property(x => x.EntityName).HasMaxLength(200);
+                b.Property(x => x.Action).HasMaxLength(50);
+            });
             
             modelBuilder.Entity<ProductDbModel>(b =>
             {
@@ -204,6 +233,26 @@ namespace Zentric.Infrastructure.Persistence
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
+            // Capture audit entries before saving.
+            var auditEntries = ChangeTracker.Entries()
+                .Where(e => e.State == EntityState.Added ||
+                            e.State == EntityState.Modified ||
+                            e.State == EntityState.Deleted)
+                .Select(e => new AuditLogDbModel
+                {
+                    Id = Guid.NewGuid(),
+                    EntityName = e.Entity.GetType().Name,
+                    EntityId = e.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey())?.CurrentValue?.ToString() ?? "",
+                    Action = e.State.ToString(),
+                    OccurredAt = DateTime.UtcNow
+                })
+                .ToList();
+
+            foreach (var audit in auditEntries)
+            {
+                AuditLogs.Add(audit);
+            }
+
             return await base.SaveChangesAsync(cancellationToken);
         }
     }

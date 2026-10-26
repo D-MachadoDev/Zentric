@@ -13,9 +13,9 @@ namespace Zentric.Domain.Inventories.Services
     /// </summary>
     /// <remarks>
     /// En DDD, cuando una regla de negocio abarca múltiples agregados (<see cref="Inventory"/>, <see cref="CustomerOrder"/> y productos),
-    /// no debe forzarse dentro de una sola entidad. Este servicio orquesta la reserva atómica multialmacén (ADR-0025)
-    /// y ejecuta transacciones de compensación (liberación inversa) si algún ítem falla a mitad del checkout (ADR-0001).
-    /// Omite productos digitales automáticamente (CAT-02).
+    /// no debe forzarse dentro de una sola entidad. Este servicio orquesta la reserva atómica multialmacén (AD)
+    /// y ejecuta transacciones de compensación (liberación inversa) si algún ítem falla a mitad del checkout (AD).
+    /// Omite productos digitales automáticamente (CA).
     /// </remarks>
     public class InventoryReservationService
     {
@@ -38,17 +38,17 @@ namespace Zentric.Domain.Inventories.Services
         /// <exception cref="InvalidOperationException">Se lanza si no hay suficiente stock consolidado, disparando compensación.</exception>
         public async Task ReserveForOrderAsync(CustomerOrder order, CancellationToken cancellationToken = default)
         {
-            // ADR-0025: la decision de reserva ya no es un calculo en memoria que
+            // ADla decision de reserva ya no es un calculo en memoria que
             // SaveChanges persiste al final, sino un UPDATE condicional ATOMICO en la
             // base. Por eso se lleva la cuenta de lo aplicado: la reserva escribe de
             // inmediato y un fallo en una linea posterior debe liberar explicitamente
-            // los parciales (ADR-0001, fallo y compensacion), que antes hacia el
+            // los parciales (AD, fallo y compensacion), que antes hacia el
             // rollback diferido de SaveChanges.
             var applied = new List<(Guid InventoryId, int Quantity)>();
 
             foreach (var item in order.Items)
             {
-                // CAT-02 / H-16: los productos digitales no pasan por almacen. Sin esta
+                // CA/ los productos digitales no pasan por almacen. Sin esta
                 // comprobacion el checkout exigia existencias para un ebook y fallaba
                 // con "Not enough stock" (o consumia stock de una bodega).
                 var product = await _productRepository.GetByVariantIdAsync(item.VariantId, cancellationToken);
@@ -64,9 +64,9 @@ namespace Zentric.Domain.Inventories.Services
                 // stock disponible y NO distingue entre bodega Marketplace y bodega
                 // del Vendedor. Ese invariante se retiro: `Inventory` no transporta el
                 // tipo de bodega, y con `VendorId = User.Id` el dueno del
-                // stock es el dueno del producto, no el de la bodega. Ver ADR-0001.
+                // stock es el dueno del producto, no el de la bodega. Ver AD.
                 // No se ordena por cercania geografica porque el sistema no modela
-                // ubicacion y la Ley no la define (ADR-0008).
+                // ubicacion y la Ley no la define (AD).
                 // Desempate estable por Id para que dos ejecuciones con los mismos
                 // datos reserven en el mismo orden.
                 var ordered = inventories
@@ -82,10 +82,10 @@ namespace Zentric.Domain.Inventories.Services
 
                     var toReserve = Math.Min(inventory.AvailableQuantity, remainingToReserve);
 
-                    // La garantia INV-01 vive en la sentencia, no en este bucle: si otra
+                    // La garantia vive en la sentencia, no en este bucle: si otra
                     // peticion se adelanto, el WHERE disponible >= n afecta cero filas,
                     // la base se niega y esta bodega queda descartada sin dejar jamas
-                    // la fila negativa (ADR-0025).
+                    // la fila negativa (AD).
                     var reserved = await _inventoryRepository.TryReserveStockAsync(inventory.Id, toReserve, cancellationToken);
                     if (!reserved)
                     {
@@ -94,7 +94,7 @@ namespace Zentric.Domain.Inventories.Services
 
                     // El guard del dominio se mantiene como defensa en profundidad y
                     // como documentacion de la regla, pero NO es la garantia
-                    // (ADR-0025, decision 3): valida el plan contra la copia en memoria
+                    // (AD, decision 3): valida el plan contra la copia en memoria
                     // justo tras confirmarlo la base.
                     inventory.ReserveStock(toReserve);
                     applied.Add((inventory.Id, toReserve));
@@ -110,7 +110,7 @@ namespace Zentric.Domain.Inventories.Services
         }
 
         /// <summary>
-        /// Compensacion de ADR-0001: libera en orden inverso las reservas ya
+        /// Compensacion de ADlibera en orden inverso las reservas ya
         /// confirmadas para que un fallo a mitad de la orden no deje parciales.
         /// Equivale al rollback que antes hacia el SaveChanges diferido, pero en el
         /// mismo estilo atomico que la reserva.

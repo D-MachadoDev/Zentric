@@ -12,7 +12,7 @@ import type { AuthValue } from './authContext';
  *
  * **Context no es almacenamiento persistente:** el access token vive sólo en
  * `SessionPort`, que a su vez sólo usa memoria. Al recargar la página se pierde
- * y no hay refresh que lo evite (`ADR-0009` / Q15-B), así que la única vía para
+ * y no hay refresh que lo evite (`AD` / Q15-B), así que la única vía para
  * identificarse de nuevo es volver a entrar por `/entrar`.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {

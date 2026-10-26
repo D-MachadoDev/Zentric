@@ -11,7 +11,7 @@ export interface Shipment {
  * Orden de fulfillment logístico (`FulfillmentOrderDto`).
  *
  * Origen: `backend/Zentric.Application/Logistics/Queries/GetFulfillmentByIdQuery.cs`.
- * `cancellationReason` es `string?`: sólo se llena al cancelar por quiebre (ADR-0014).
+ * `cancellationReason` es `string?`: sólo se llena al cancelar por quiebre (AD).
  */
 export interface FulfillmentOrder {
   id: string;
@@ -28,7 +28,7 @@ export interface FulfillmentOrder {
  * Alta de despacho (`CreateFulfillmentOrderCommand`).
  *
  * `vendorId` SÍ va en el cuerpo: el Vendedor crea despachos a su nombre y el
- * Operador puede crearlos para cualquier vendedor. Q-21b: `CallerId` y
+ * Operador puede crearlos para cualquier vendedor. `CallerId` y
  * `CallerRole` los inyecta el servidor, así que no viajan.
  */
 export interface CreateFulfillmentInput {
@@ -39,7 +39,7 @@ export interface CreateFulfillmentInput {
 /**
  * Cancelación por stock fantasma (`CancelFulfillmentOrderDueToNoStockCommand`).
  * Exige confirmación previa en la UI (Frontend-Domain-Services §2.6).
- * `CallerId`/`CallerRole` los inyecta el servidor (Q-21b).
+ * `CallerId`/`CallerRole` los inyecta el servidor .
  */
 export interface CancelGhostStockInput {
   fulfillmentOrderId: string;

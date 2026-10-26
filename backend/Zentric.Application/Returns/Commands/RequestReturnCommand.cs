@@ -50,7 +50,7 @@ namespace Zentric.Application.Returns.Commands
                 return Result<Guid>.NotFound("Order not found.");
             }
 
-            // ADR-0018: el tipo del producto no lo declara el cliente. Sale del producto
+            // ADel tipo del producto no lo declara el cliente. Sale del producto
             // que tiene el servidor, y con el la Ley: un digital no se devuelve (el
             // cliente no puede "declararlo fisico" para esquivarlo).
             var product = await _productRepository.GetByVariantIdAsync(request.VariantId, cancellationToken);

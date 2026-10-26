@@ -50,7 +50,7 @@ namespace Zentric.Infrastructure.BackgroundServices
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var dispatcher = _domainEventDispatcher ?? scope.ServiceProvider.GetService<IDomainEventDispatcher>();
 
-            // T-004 (H-06/R-06): el umbral sale del reloj inyectado, no de
+            // (/): el umbral sale del reloj inyectado, no de
             // DateTime.UtcNow, para que el barrido sea determinista en pruebas.
             // FIX: El timeout de 15 minutos empieza en CheckoutStartedAt, no en CreatedAt.
             var threshold = _clock.UtcNow.AddMinutes(-15).UtcDateTime;
@@ -67,7 +67,7 @@ namespace Zentric.Infrastructure.BackgroundServices
             {
                 try
                 {
-                    // Restitucion de inventario multialmacen (ADR-0001 / ADR-0025):
+                    // Restitucion de inventario multialmacen (AD/ AD):
                     // No asume una sola bodega; busca y casa las cantidades reservadas
                     // entre todas las bodegas asociadas a la variante.
                     foreach (var item in order.Items)
@@ -96,7 +96,7 @@ namespace Zentric.Infrastructure.BackgroundServices
                     order.CancelDueToTimeout();
                     await orderRepo.UpdateAsync(order, stoppingToken);
 
-                    // ADR-0020: notificacion y despacho de evento CartExpiredDomainEvent
+                    // ADnotificacion y despacho de evento CartExpiredDomainEvent
                     var expiredEvent = new CartExpiredDomainEvent(order.Id, _clock.UtcNow);
                     if (dispatcher != null)
                     {

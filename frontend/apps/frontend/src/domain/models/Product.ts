@@ -4,7 +4,7 @@ import type { ProductStatus, ProductType } from '../enums';
  * Variante de un producto (`ProductVariantDto`).
  *
  * El identificador útil para inventario y carrito es el de la VARIANTE, no el
- * del producto (riesgo FR-03, Frontend-Adapters §3.3).
+ * del producto (riesgo F, Frontend-Adapters §3.3).
  */
 export interface ProductVariant {
   id: string;
@@ -20,7 +20,7 @@ export interface ProductVariant {
  *
  * Origen: `backend/Zentric.Application/Catalog/Queries/GetProductsQuery.cs`.
  * `price` es un decimal con dos decimales (§3.5) y `type`/`status` viajan como
- * nombre de enum (ADR-0012).
+ * nombre de enum (AD).
  */
 export interface Product {
   id: string;
@@ -56,8 +56,8 @@ export interface CreateProductVariantInput {
 /**
  * Alta de producto (`CreateProductCommand`).
  *
- * Q-21b: el Vendedor es el llamante y un `vendorId` en el cuerpo se descarta
- * (registrar a nombre de otro corrompería el split de facturación, Q-18), así
+ * el Vendedor es el llamante y un `vendorId` en el cuerpo se descarta
+ * (registrar a nombre de otro corrompería el split de facturación, ), así
  * que el cliente NO lo envía.
  */
 export interface CreateProductInput {
@@ -74,11 +74,11 @@ export interface CreateProductInput {
 }
 
 /**
- * Identificadores devueltos por el alta (`CreatedProductDto`, CAT-01).
+ * Identificadores devueltos por el alta (`CreatedProductDto`, CA).
  *
  * El backend entrega también los `variantIds` para que el Vendedor dé de alta
  * stock sin releer el producto; el identificador para inventario/carrito es el
- * de la variante (FR-03).
+ * de la variante (F).
  */
 export interface CreatedProduct {
   productId: string;
@@ -94,7 +94,7 @@ export interface CreatedProduct {
  * previo (ausente = sin filtro / orden actual `CreatedAt` asc).
  *
  * `sort` y `type` viajan con los valores exactos que espera el backend
- * (`relevance | price-asc | price-desc` y `Physical | Digital`; ADR-0012 envía
+ * (`relevance | price-asc | price-desc` y `Physical | Digital`; ADenvía
  * el NOMBRE del enum, nunca el índice).
  */
 export interface ListProductsPagedParams {

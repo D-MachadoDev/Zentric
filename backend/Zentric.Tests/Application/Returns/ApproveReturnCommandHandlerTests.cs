@@ -52,7 +52,7 @@ namespace Zentric.Tests.Application.Returns
         public Task UpdateAsync(Product product, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
     /// <summary>
-    /// Bodegas en memoria: ADR-0018 exige que el lugar de recepcion se compruebe
+    /// Bodegas en memoria: ADexige que el lugar de recepcion se compruebe
     /// contra datos del servidor, no contra lo que declare el cliente.
     /// </summary>
     public class FakeWarehouseRepositoryForReturns : IWarehouseRepository
@@ -157,7 +157,7 @@ namespace Zentric.Tests.Application.Returns
         }
 
         /// <summary>
-        /// ADR-0018: la devolucion sin inspeccion se aprueba SOLO si se recibe en una
+        /// ADla devolucion sin inspeccion se aprueba SOLO si se recibe en una
         /// bodega del propio vendedor (quien recibe responde por la mercancia). El
         /// cliente ya no manda el flag: lo deduce el servidor.
         /// </summary>

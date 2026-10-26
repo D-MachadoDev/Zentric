@@ -2,7 +2,7 @@
  * Estados de una solicitud de devolución.
  *
  * Origen: `backend/Zentric.Domain/Returns/Enums/ReturnStatus.cs`. Los literales
- * que viajan por JSON (ADR-0012) son `Requested | Approved | Rejected |
+ * que viajan por JSON (AD) son `Requested | Approved | Rejected |
  * Refunded`; «Solicitada» es el nombre en español de la Ley para el mismo estado,
  * no un valor del enum.
  */

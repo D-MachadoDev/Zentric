@@ -44,7 +44,7 @@ const ATTRIBUTE_PRESETS: Array<{ name: string; sampleValue: string }> = [
 /**
  * Alta de Producto con Constructor de Variantes y Precio por SKU (CreateProductPage - Frontend-Role-Modules §2.3).
  * Split-Frame Asimétrico (60% Formulario / 40% Ficha Técnica en Vivo).
- * Cumple con ADR-0003: exige al menos una variante para productos físicos y permite fijar precio específico por SKU.
+ * Cumple con ADexige al menos una variante para productos físicos y permite fijar precio específico por SKU.
  */
 export function CreateProductPage() {
   const createProductMutation = useCreateProductMutation();
@@ -97,7 +97,7 @@ export function CreateProductPage() {
       return;
     }
 
-    // Regla ADR-0003: Al menos 1 variante con SKU no vacío si es producto físico
+    // Regla ADAl menos 1 variante con SKU no vacío si es producto físico
     if (type === ProductType.Physical) {
       if (variants.length === 0 || !variants.some((v) => v.sku.trim().length > 0)) {
         setErrorMsg('Los productos físicos deben contener al menos una variante con SKU definido (ADR-0003).');

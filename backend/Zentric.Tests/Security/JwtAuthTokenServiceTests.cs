@@ -8,7 +8,7 @@ using Zentric.Infrastructure.Security;
 namespace Zentric.Tests.Security
 {
     /// <summary>
-    /// Emision del token (ADR-0009). El reloj se inyecta, de modo que la
+    /// Emision del token (AD). El reloj se inyecta, de modo que la
     /// caducidad se comprueba sin esperar una hora.
     /// </summary>
     public class JwtAuthTokenServiceTests

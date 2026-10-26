@@ -18,13 +18,13 @@ export interface Inventory {
 /**
  * Alta de existencias (`AddStockCommand`).
  *
- * Q-21b: `CallerId` y `CallerRole` los inyecta el servidor desde el token
+ * `CallerId` y `CallerRole` los inyecta el servidor desde el token
  * (`command with { CallerId, CallerRole }`), así que el cuerpo NO los lleva.
  */
 export interface AddStockInput {
   variantId: string;
   warehouseId: string;
-  /** INV-01: el cliente valida cantidad > 0 como feedback; la autoridad es el servidor. */
+  /** el cliente valida cantidad > 0 como feedback; la autoridad es el servidor. */
   quantity: number;
 }
 
@@ -37,7 +37,7 @@ export interface AdjustInventoryInput {
 }
 
 /**
- * Resultado de un conteo físico (`AdjustInventoryResult`, ADR-0021).
+ * Resultado de un conteo físico (`AdjustInventoryResult`, AD).
  * Devuelve el antes y el después para que la UI pueda mostrar la diferencia.
  */
 export interface AdjustInventoryResult {

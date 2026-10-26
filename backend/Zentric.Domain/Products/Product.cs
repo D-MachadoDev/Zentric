@@ -45,7 +45,7 @@ namespace Zentric.Domain.Products
         }
 
         /// <summary>
-        /// Crea el producto. Segun ADR-0003 un producto
+        /// Crea el producto. Un producto
         /// <see cref="ProductType.Physical"/> exige al menos una variante; un
         /// <see cref="ProductType.Digital"/> puede nacer sin ninguna.
         /// Cada semilla se compone del SKU y de sus atributos, con la misma forma que
@@ -85,8 +85,8 @@ namespace Zentric.Domain.Products
             var variantSeeds = variants?.ToList()
                 ?? new List<(string Sku, IEnumerable<VariantAttribute> Attributes)>();
 
-            // ADR-0003: Un producto Fisico no puede existir sin variante
-            // porque la variante es la unidad de stock (INV-03): sin ella no hay inventario
+            // Un producto fisico no puede existir sin variante
+            // porque la variante es la unidad de stock: sin ella no hay inventario
             // ni reserva posible, y ese estado bloqueaba al InventoryReservationService.
             if (type == ProductType.Physical && variantSeeds.Count == 0)
             {
@@ -115,7 +115,7 @@ namespace Zentric.Domain.Products
         /// <summary>
         /// Crea y agrega una variante (SKU) al producto. El VariantId resultante es
         /// la clave con la que el inventario identifica el stock.
-        /// Referencia: ADR-0002.
+        /// Referencia: clave de inventario por variante.
         /// </summary>
         public ProductVariant AddVariant(string sku, IEnumerable<VariantAttribute> attributes, decimal? priceAmount = null)
         {
@@ -131,7 +131,7 @@ namespace Zentric.Domain.Products
 
             var normalizedSku = sku.Trim().ToUpperInvariant();
 
-            // El SKU identifica el stock (ADR-0002), por lo que no puede repetirse
+            // El SKU identifica el stock, por lo que no puede repetirse
             // dentro del mismo producto (frontera de consistencia del agregado).
             if (_variants.Any(variant => string.Equals(variant.Sku, normalizedSku, StringComparison.OrdinalIgnoreCase)))
             {
@@ -160,7 +160,7 @@ namespace Zentric.Domain.Products
                 throw new InvalidOperationException("Variant not found in this product.");
             }
 
-            // ADR-0003: un producto Fisico no puede quedarse sin variantes.
+            // Un producto fisico no puede quedarse sin variantes.
             if (Type == ProductType.Physical
                 && _variants.Count(v => !v.IsDeleted && v.Id != variantId) == 0)
             {
@@ -251,7 +251,7 @@ namespace Zentric.Domain.Products
                 throw new ArgumentOutOfRangeException(nameof(newType), "Invalid product type.");
             }
 
-            // ADR-0003: un producto no puede convertirse en Fisico si no
+            // Un producto no puede convertirse en fisico si no
             // tiene variantes, porque quedaria sin unidad de stock.
             if (newType == ProductType.Physical && !HasVariant)
             {

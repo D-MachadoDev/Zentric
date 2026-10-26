@@ -3,7 +3,7 @@ import { formatMoney, formatMoneyAmount, isFree } from './money';
 
 describe('formatMoney', () => {
   it('pinta COP con el locale del backend', () => {
-    // El backend es la autoridad (Q-16): la moneda llega en el DTO.
+    // El backend es la autoridad : la moneda llega en el DTO.
     expect(formatMoney({ amount: 36000, currency: 'COP' })).toContain('36.000');
     expect(formatMoney({ amount: 36000, currency: 'COP' })).toContain('$');
   });

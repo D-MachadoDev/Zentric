@@ -55,7 +55,7 @@ namespace Zentric.Application.Inventories.Commands
                 }
 
                 var warehouse = await _warehouseRepository.GetByIdAsync(request.WarehouseId, cancellationToken);
-                // [ADDENDUM 2026-10-17]: el Vendedor puede abastecer sus propias bodegas
+                // el Vendedor puede abastecer sus propias bodegas
                 // o cualquier bodega central activa de Zentric (Marketplace).
                 var isOwnWarehouse = warehouse != null && warehouse.VendorId == request.CallerId;
                 var isMarketplaceWarehouse = warehouse != null && warehouse.Type == Zentric.Domain.Warehouses.Enum.WarehouseType.Marketplace && warehouse.IsActive;

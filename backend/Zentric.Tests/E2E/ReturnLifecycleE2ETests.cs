@@ -7,7 +7,7 @@ using Xunit;
 namespace Zentric.Tests.E2E
 {
     /// <summary>
-    /// Ciclo de devoluciones completo por HTTP: los cuatro estados del ADDENDUM Dominio 10.
+    /// Ciclo de devoluciones completo por HTTP: los cuatro estados del Dominio 10.
     ///
     /// Antes de esto, dos de los cuatro estados eran INALCANZABLES por API: <c>Reject()</c> y
     /// <c>MarkAsRefunded()</c> existian en el dominio, pero ningun comando ni endpoint los
@@ -249,7 +249,7 @@ namespace Zentric.Tests.E2E
         }
 
         /// <summary>
-        /// Aprueba con el cuerpo que exige el endpoint. ADR-0018: el cuerpo ya no lleva
+        /// Aprueba con el cuerpo que exige el endpoint. ADel cuerpo ya no lleva
         /// isSameWarehouseAndVendor; el servidor deduce si la devolucion vuelve a una
         /// bodega del propio vendedor.
         /// </summary>

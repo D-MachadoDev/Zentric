@@ -22,7 +22,7 @@ export function esPedidoModificable(estado: OrderStatus): boolean {
 /**
  * ¿Un producto admite devolución?
  *
- * ADDENDUM Dominio 10: los productos digitales no se pueden devolver.
+ * los productos digitales no se pueden devolver.
  */
 export function admiteDevolucion(tipo: ProductType): boolean {
   return tipo === ProductType.Physical;

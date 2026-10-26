@@ -30,7 +30,7 @@ import { FulfillmentStatus } from '../../domain';
  * Frontend-Role-Modules.md §2.6:
  * Supervisión en modo sólo lectura de todas las órdenes de fulfillment en la red
  * logística (`GET /api/logistics/fulfillments`), incluyendo guías y motivos de
- * cancelación por stock fantasma (ADR-0014 / ADR-0021). Cero botones de mutación.
+ * cancelación por stock fantasma (AD/ AD). Cero botones de mutación.
  * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
  */
 export function SupervisorFulfillmentsPage() {
@@ -237,7 +237,6 @@ export function SupervisorFulfillmentsPage() {
               </div>
             </div>
           )}
-          </div>
         </section>
 
         {totalPages > 1 && (

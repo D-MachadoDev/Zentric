@@ -17,10 +17,9 @@ using Zentric.Domain.Orders.Ports;
 namespace Zentric.Application.Returns.EventHandlers
 {
     /// <summary>
-    /// Consumidor de <see cref="PartialFulfillmentCancelledDomainEvent"/> (ADR-0020).
+    /// Consumidor de <see cref="PartialFulfillmentCancelledDomainEvent"/> (AD).
     ///
-    /// Cuando un despacho se cancela por quiebre de stock ("Stock Fantasma"), el ADDENDUM
-    /// Dominio 8 exige una devolución obligatoria con reembolso. Este handler aplica la
+    /// Cuando un despacho se cancela por quiebre de stock ("Stock Fantasma"), el     /// Dominio 8 exige una devolución obligatoria con reembolso. Este handler aplica la
     /// política de reembolso automático (RefundPolicyService → Auto para "stock_breakage"),
     /// acredita el comprobante y registra la auditoría (RefundAudit).
     ///
@@ -86,7 +85,7 @@ namespace Zentric.Application.Returns.EventHandlers
                 return;
             }
 
-            // 4. Decidir política (ADR-0020)
+            // 4. Decidir política (AD)
             var context = new RefundContext(
                 CustomerOrderId: fulfillment.CustomerOrderId,
                 ReturnRequestId: returnReq.Id,
@@ -118,7 +117,7 @@ namespace Zentric.Application.Returns.EventHandlers
                 attemptedAmount = 0;
             }
 
-            // 6. Registrar auditoría (ADR-0020 decision 7)
+            // 6. Registrar auditoría (ADdecision 7)
             var audit = RefundAudit.CreateAuto(
                 returnRequestId: returnReq.Id,
                 customerOrderId: fulfillment.CustomerOrderId,

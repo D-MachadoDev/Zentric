@@ -344,7 +344,7 @@ export function FulfillmentOperationsPage({ fulfillmentId }: FulfillmentOperatio
               </div>
             )}
 
-            {/* Acción de Quiebre por Stock Fantasma (ADR-0014) */}
+            {/* Acción de Quiebre por Stock Fantasma (AD) */}
             {!isDelivered && !isCancelled && (
               <div className="pt-3 border-t border-border">
                 <Link

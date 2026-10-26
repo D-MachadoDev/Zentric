@@ -8,7 +8,7 @@ namespace Zentric.Domain.Users.Ports
     /// afirmar COMO se deriva la clave.
     ///
     /// La elección del algoritmo es una decisión técnica registrada en
-    /// ADR-0009: PBKDF2-HMAC-SHA256, 600 000 iteraciones. El Dominio no conoce
+    /// ADPBKDF2-HMAC-SHA256, 600 000 iteraciones. El Dominio no conoce
     /// el algoritmo porque el adaptador es intercambiable: cambiar a Argon2id
     /// exige otro adaptador, no tocar los casos de uso.
     /// </summary>

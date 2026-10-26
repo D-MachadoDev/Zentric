@@ -5,7 +5,7 @@ import { cn } from '../lib/cn';
  * Importe monetario con disciplina OpenType (Frontend-Design-System §4.2 y §5.3).
  *
  * El servidor C# es la única autoridad financiera: la moneda y el total vienen
- * siempre del backend en el DTO (ZENTRIC.md / ADR-0012). Aquí sólo se formatea
+ * siempre del backend en el DTO (ZENTRIC.md / AD). Aquí sólo se formatea
  * con cifras tabulares (font-variant-numeric: tabular-nums) y versalitas para
  * el código ISO de la divisa (font-variant-caps: all-small-caps).
  */

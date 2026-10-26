@@ -14,7 +14,7 @@ namespace Zentric.Infrastructure.Persistence
     /// esta rastreada en este mismo <see cref="ZentricDbContext"/> (mismo
     /// ambito, por ejemplo tras un <c>Add</c> seguido de un <c>Update</c>),
     /// EF Core rechaza el segundo <c>Update</c> con "another instance with the
-    /// same key value is already being tracked" (H-15).
+    /// same key value is already being tracked" .
     /// </para>
     ///
     /// <para>
@@ -37,7 +37,7 @@ namespace Zentric.Infrastructure.Persistence
     {
         /// <summary>
         /// Sustituye la fila persistida de <paramref name="dbModel"/> por su
-        /// estado actual, resolviendo el choque de rastreo (H-15).
+        /// estado actual, resolviendo el choque de rastreo .
         /// </summary>
         /// <typeparam name="TEntity">Tipo de la raiz de agregado.</typeparam>
         /// <param name="dbContext">Contexto de la unidad de trabajo.</param>

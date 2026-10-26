@@ -88,7 +88,7 @@ namespace Zentric.Api.Controllers
         /// de antemano el pedido. Sin este listado no hay "mis facturas": ni el Comprador puede ver
         /// sus facturas maestras, ni el Vendedor las suyas, ni el Supervisor puede auditar.
         ///
-        /// El reparto por rol es el mismo que en el listado por pedido (ADDENDUM Dominio 9).
+        /// El reparto por rol es el mismo que en el listado por pedido .
         /// El filtro no es un parametro: no hay forma de pedir las de otro.
         /// </remarks>
         /// <param name="page">P�gina (1-based).</param>

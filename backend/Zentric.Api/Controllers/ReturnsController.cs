@@ -34,7 +34,7 @@ namespace Zentric.Api.Controllers
         /// Valida que el pedido se encuentre debidamente entregado y que la solicitud est茅 dentro
         /// del per铆odo legal de garant铆a del producto seg煤n las reglas de negocio de ZENTRIC.md.
         /// </remarks>
-        /// <param name="command">Datos de la devoluci贸n (CustomerOrderId, VariantId, WarehouseId de recepci贸n, Quantity). El tipo de producto NO viaja: el servidor lo deduce (ADR-0018), igual que la identidad.</param>
+        /// <param name="command">Datos de la devoluci贸n (CustomerOrderId, VariantId, WarehouseId de recepci贸n, Quantity). El tipo de producto NO viaja: el servidor lo deduce , igual que la identidad.</param>
         /// <response code="200">Solicitud de devoluci贸n radicada con 茅xito. Retorna el identificador (Guid).</response>
         /// <response code="400">Error si el plazo de garant铆a ha expirado, el producto no corresponde a la orden o el pedido no pertenece al llamante (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inv谩lido.</response>
@@ -86,7 +86,7 @@ namespace Zentric.Api.Controllers
         /// el inventario usado (UsedQuantity) en la bodega correspondiente.
         /// </remarks>
         /// <param name="id">Identificador de la solicitud en la ruta URL.</param>
-        /// <param name="command">Solo el ReturnRequestId: si la devoluci贸n vuelve a una bodega del propio vendedor (la exenci贸n de inspecci贸n) lo deduce el servidor (ADR-0018), no el cliente.</param>
+        /// <param name="command">Solo el ReturnRequestId: si la devoluci贸n vuelve a una bodega del propio vendedor (la exenci贸n de inspecci贸n) lo deduce el servidor , no el cliente.</param>
         /// <response code="200">Devoluci贸n aprobada y reingreso a stock ejecutado exitosamente.</response>
         /// <response code="400">Error si los identificadores no coinciden o la solicitud no es aprobable (RFC 7807 ProblemDetails).</response>
         [HttpPost("{id}/approve")]
@@ -111,7 +111,7 @@ namespace Zentric.Api.Controllers
         /// Rechaza una solicitud de devoluci贸n (estado Rechazada).
         /// </summary>
         /// <remarks>
-        /// ADDENDUM Dominio 10. Lo decide el mismo Vendedor que aprueba, porque es la misma decisi贸n
+        /// Lo decide el mismo Vendedor que aprueba, porque es la misma decisi贸n
         /// negada y la Ley le asigna esa decisi贸n. Una devoluci贸n no solicitada, ya aprobada o ya
         /// reembolsada no se puede rechazar: el ciclo solo avanza hacia adelante.
         /// </remarks>
@@ -139,7 +139,7 @@ namespace Zentric.Api.Controllers
         /// Emite el reembolso de una devoluci贸n ya aprobada (estado Reembolsada).
         /// </summary>
         /// <remarks>
-        /// ADDENDUM Dominio 10. Solo el Administrador (dictamen del Owner 2026-10-01). No basta con
+        /// Solo el Administrador (dictamen del Owner 2026-10-01). No basta con
         /// cambiar el estado: el caso de uso acredita tambi茅n el comprobante de pago del pedido, en
         /// la misma transacci贸n, para que nunca exista una devoluci贸n "Reembolsada" sin dinero
         /// entregado al comprador.
@@ -176,7 +176,7 @@ namespace Zentric.Api.Controllers
         /// Vendedor por variante, y Operador, Administrador y Supervisor sin filtro. El filtro no es
         /// un parametro: no hay forma de pedir las de otro.
         /// </remarks>
-        /// <param name="status">Filtro opcional por estado de la devolucion, por nombre (ADR-0012).</param>
+        /// <param name="status">Filtro opcional por estado de la devolucion, por nombre .</param>
         /// <param name="page">P醙ina (1-based).</param>
         /// <param name="size">Tama駉 de p醙ina.</param>
         /// <response code="200">Listado de devoluciones visibles para el llamante.</response>
@@ -195,7 +195,7 @@ namespace Zentric.Api.Controllers
 
             Zentric.Domain.Returns.Enums.ReturnStatus? parsed = null;
 
-            // Estado por nombre (ADR-0012). Un valor desconocido es 400 explicito y NO un filtro
+            // Estado por nombre . Un valor desconocido es 400 explicito y NO un filtro
             // ignorado: devolver la bandeja completa mientras el usuario cree estar filtrando seria
             // el peor fallo posible de este endpoint.
             if (!string.IsNullOrWhiteSpace(status))

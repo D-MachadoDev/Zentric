@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Zentric.Application.Common.Messaging;
+using Zentric.Application.Common.Ports;
 using Zentric.Application.Common.Models;
 using Zentric.Domain.Products;
 using Zentric.Domain.Products.Enums;
@@ -15,13 +16,16 @@ namespace Zentric.Application.Catalog.Commands
     {
         private readonly IProductRepository _productRepository;
         private readonly IUserRecentlyViewedRepository _recentlyViewedRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
         public TrackProductViewCommandHandler(
             IProductRepository productRepository,
-            IUserRecentlyViewedRepository recentlyViewedRepository)
+            IUserRecentlyViewedRepository recentlyViewedRepository,
+            IUnitOfWork unitOfWork)
         {
             _productRepository = productRepository;
             _recentlyViewedRepository = recentlyViewedRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<Result> Handle(TrackProductViewCommand request, CancellationToken cancellationToken)
@@ -44,6 +48,8 @@ namespace Zentric.Application.Catalog.Commands
                 request.ProductId,
                 DateTime.UtcNow,
                 cancellationToken);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return Result.Success();
         }

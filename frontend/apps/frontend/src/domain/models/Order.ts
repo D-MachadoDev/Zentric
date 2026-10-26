@@ -6,7 +6,7 @@ import type { OrderStatus } from '../enums';
  */
 export interface OrderItem {
   id: string;
-  /** Identificador de la VARIANTE, no del producto (riesgo FR-03). */
+  /** Identificador de la VARIANTE, no del producto (riesgo F). */
   variantId: string;
   productId?: string;
   quantity: number;
@@ -22,7 +22,7 @@ export interface OrderItem {
  * Pedido de compra (`OrderDto`).
  *
  * Origen: `backend/Zentric.Application/Orders/Queries/GetOrderByIdQuery.cs`.
- * `status` viaja como nombre de enum (ADR-0012).
+ * `status` viaja como nombre de enum (AD).
  */
 export interface Order {
   id: string;
@@ -33,7 +33,7 @@ export interface Order {
   items: OrderItem[];
   /** ISO-8601 (DateTime). */
   createdAt: string;
-  /** ISO-8601 (DateTime) que marca el fin de la ventana atómica de 15 minutos (PED-01). */
+  /** ISO-8601 (DateTime) que marca el fin de la ventana atómica de 15 minutos . */
   expiresAt?: string;
   /** Indica si el pedido aún cuenta con existencias disponibles para completar el pago. */
   canStillPay?: boolean;
@@ -41,7 +41,7 @@ export interface Order {
 
 /**
  * Fila de listado de pedidos (`OrderListItemDto`).
- * `buyerId` es `Guid?`: se oculta a quien no tiene por qué verlo (Q-21b).
+ * `buyerId` es `Guid?`: se oculta a quien no tiene por qué verlo .
  */
 export interface OrderListItem {
   id: string;
@@ -61,7 +61,7 @@ export interface OrderListItem {
 
 /**
  * Vista de un pedido para el Vendedor (`SellerOrderViewDto`).
- * No expone `buyerId` y añade `vendorSubtotal` (Q-18: split de facturación).
+ * No expone `buyerId` y añade `vendorSubtotal` (split de facturación).
  */
 export interface SellerOrderView {
   id: string;
@@ -76,7 +76,7 @@ export interface SellerOrderView {
 /**
  * Añadir una línea al carrito (`AddOrderItemCommand`).
  *
- * Q-21b: `BuyerId` lo inyecta el servidor desde el token y verifica la propiedad
+ * `BuyerId` lo inyecta el servidor desde el token y verifica la propiedad
  * del pedido, así que el cuerpo NO lo lleva.
  */
 export interface AddCartItemInput {

@@ -7,7 +7,7 @@ namespace Zentric.Tests.Products;
 /// <summary>
 /// Pruebas de caracterización de la entidad hija ProductVariant.
 /// Regla clave: el Id de la variante (VariantId) es la clave del inventario (SKU),
-/// según ADR-0002.
+/// según AD.
 /// </summary>
 public sealed class ProductVariantTests
 {

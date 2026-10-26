@@ -20,7 +20,7 @@ export interface User {
 /**
  * Alta de usuario (`CreateUserCommand`).
  *
- * Q-21b: la identidad la fija el token, no el cuerpo. `CreateUserCommand` no
+ * la identidad la fija el token, no el cuerpo. `CreateUserCommand` no
  * lleva identidad del llamante, así que el cuerpo es completo aquí.
  * La unicidad de documento y correo la valida el servidor; el cliente sólo da
  * feedback inmediato (Frontend-Domain-Services §1).

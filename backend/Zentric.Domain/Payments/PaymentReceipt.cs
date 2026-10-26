@@ -30,7 +30,7 @@ namespace Zentric.Domain.Payments
         public DateTime? RefundedAt { get; private set; }
 
         /// <summary>
-        /// Un registro por cada credito acreditado (ADR-0020 decision 7). El
+        /// Un registro por cada credito acreditado (ADdecision 7). El
         /// acumulado de <see cref="RefundedAmount"/> dice cuanto se devolvio en
         /// total; esto dice a quien, por que linea y bajo que regla. Son cosas
         /// distintas y se necesitan las dos para responder una disputa.
@@ -107,7 +107,7 @@ namespace Zentric.Domain.Payments
         /// <summary>
         /// Salda el comprobante con un credito a favor del comprador.
         ///
-        /// ADDENDUM - DICTADO POR OWNER (2026-09-27): el reembolso se
+        ///  el reembolso se
         /// materializa como credito a favor dentro de la plataforma, porque el
         /// sistema no custodia dinero. El pedido NO se revierte: ya fue
         /// entregado y facturado, y reabrirlo obligaria a deshacer logistica y
@@ -123,7 +123,7 @@ namespace Zentric.Domain.Payments
         /// <summary>
         /// Acredita un importe dejando traza de a quien, por que linea y bajo que
         /// regla. Es la via que usa el caso de uso real: el reembolso que no deja
-        /// registro no es auditable, y ADR-0020 lo prohibe expresamente.
+        /// registro no es auditable, y ADlo prohibe expresamente.
         /// </summary>
         public void Refund(RefundCredit credit)
         {
@@ -167,7 +167,7 @@ namespace Zentric.Domain.Payments
                 throw new ArgumentException("Refund must be greater than zero.", nameof(creditAmount));
             }
 
-            // Invariante 14 (EXC-02): el credito se ACUMULA y la suma de todos los
+            // Invariante 14 : el credito se ACUMULA y la suma de todos los
             // creditos nunca supera lo cobrado. La comparacion es contra el SALDO
             // pendiente, no contra el total: comparar contra el total permitiria
             // acreditar dos veces la misma parte del dinero.

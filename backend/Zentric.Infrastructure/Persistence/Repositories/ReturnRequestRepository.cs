@@ -77,7 +77,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             // Si la fila quedara rastreada, el Update posterior (que adjunta un
             // DbModel nuevo con la misma clave) fallaria con "another instance
             // with the same key value is already being tracked" y la devolucion
-            // no se podria aprobar. Verificado en Docker el 2026-09-29 (H-15).
+            // no se podria aprobar. Verificado en Docker el 2026-09-29 .
             var dbModel = await _dbContext.ReturnRequests
                 .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);

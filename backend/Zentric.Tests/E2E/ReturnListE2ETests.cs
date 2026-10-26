@@ -140,7 +140,7 @@ namespace Zentric.Tests.E2E
         {
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
-            return document.RootElement.EnumerateArray()
+            return document.RootElement.GetProperty("items").EnumerateArray()
                 .Select(row => row.GetProperty("id").GetGuid())
                 .ToList();
         }

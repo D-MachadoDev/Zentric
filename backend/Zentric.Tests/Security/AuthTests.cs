@@ -7,7 +7,7 @@ using Zentric.Infrastructure.Security;
 namespace Zentric.Tests.Security
 {
     /// <summary>
-    /// Criterios de aceptacion de ADR-0009 sobre la credencial del usuario.
+    /// Criterios de aceptacion de ADsobre la credencial del usuario.
     ///
     /// El coste se baja a 1000 iteraciones solo en estas pruebas: verificar
     /// PBKDF2-HMAC-SHA256 con 600 000 iteraciones cuesta cientos de
@@ -73,7 +73,7 @@ namespace Zentric.Tests.Security
 
         /// <summary>
         /// Formatos de hash que el sistema debe rechazar sin lanzar excepcion.
-        /// Antes de ADR-0009 el cliente escribia el hash, asi que pueden existir
+        /// Antes de ADel cliente escribia el hash, asi que pueden existir
         /// valores con otra forma: es un fallo de credencial, no un fallo tecnico.
         /// </summary>
         [Theory]

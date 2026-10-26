@@ -30,8 +30,7 @@ import type { AdjustInventoryResult, Inventory, ListInventoriesPagedParams, Page
 /**
  * Estación de Auditoría Física de Existencias (/supervisor/inventory-audit).
  *
- * Frontend-Role-Modules.md §2.6 y ADR-0021:
- * ÚNICA acción de mutación autorizada para el rol Supervisor (`InventoryAdjust`).
+ * Frontend-Role-Modules.md §2.6 y AD * ÚNICA acción de mutación autorizada para el rol Supervisor (`InventoryAdjust`).
  * Registra ajustes verificados por conteo físico con motivo obligatorio y ventana
  * de idempotencia de 5 minutos, mostrando `AdjustInventoryResult` en `Geist Mono`.
  * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.

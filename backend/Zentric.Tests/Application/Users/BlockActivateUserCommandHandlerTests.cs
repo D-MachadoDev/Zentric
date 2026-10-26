@@ -10,7 +10,7 @@ using Zentric.Domain.Users.ValueObjects;
 namespace Zentric.Tests.Application.Users
 {
     /// <summary>
-    /// Criterios de aceptacion de INV-05 (bloqueo y reactivacion de usuario).
+    /// Criterios de aceptacion de (bloqueo y reactivacion de usuario).
     ///
     /// La Ley (ZENTRIC.md, Dominio 1) dice que el estado del usuario es "Activo,
     /// Bloqueado, etc." pero no dice quien lo bloquea ni si es reversible: el dictamen
@@ -46,7 +46,7 @@ namespace Zentric.Tests.Application.Users
         }
 
         /// <summary>
-        /// INV-05: bloquear cierra el acceso. El cambio tiene que persistirse, porque
+        /// bloquear cierra el acceso. El cambio tiene que persistirse, porque
         /// es lo que hace que <c>User.CanAuthenticate</c> falle y por tanto que el
         /// login rechace al usuario (LoginCommandHandler).
         /// </summary>
@@ -88,7 +88,7 @@ namespace Zentric.Tests.Application.Users
         }
 
         /// <summary>
-        /// INV-05, decision del Owner 2026-10-04: bloquear no cascadea. Los productos
+        /// , decision del Owner 2026-10-04: bloquear no cascadea. Los productos
         /// del Vendedor siguen Published y lo unico que cambia es su propio acceso.
         /// </summary>
         [Fact]

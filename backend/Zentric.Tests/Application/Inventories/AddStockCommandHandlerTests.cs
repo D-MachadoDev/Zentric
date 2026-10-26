@@ -77,7 +77,7 @@ namespace Zentric.Tests.Application.Inventories
         }
 
         /// <summary>
-        /// Reserva condicional atomica (ADR-0025): solo comprueba, porque la
+        /// Reserva condicional atomica (AD): solo comprueba, porque la
         /// mutacion la aplica el servicio con ReserveStock sobre la misma copia.
         /// </summary>
         public Task<bool> TryReserveStockAsync(Guid inventoryId, int quantity, CancellationToken cancellationToken = default)

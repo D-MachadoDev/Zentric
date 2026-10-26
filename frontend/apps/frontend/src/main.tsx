@@ -13,7 +13,7 @@ import './styles/global.css';
 // 1. React.StrictMode (detección de efectos secundarios en React 19)
 // 2. GlobalErrorBoundary (captura fallos de renderizado y reinicio limpio)
 // 3. AppQueryClientProvider (TanStack Query v5 caché e interceptores)
-// 4. AuthProvider (sesión en RAM sin refresh tokens según ADR-0009)
+// 4. AuthProvider (sesión en RAM sin refresh tokens según AD)
 // 5. ThemeProvider (soporte dual Light / Dark persistente)
 // 6. AppRouterProvider (TanStack Router con contexto inyectado)
 // 7. AlertHost (cola accesible de toasts y modales de confirmación)

@@ -3,7 +3,7 @@ namespace Zentric.Infrastructure.Persistence.Models
     /// <summary>
     /// Un registro de auditoria por cada ajuste a la baja.
     ///
-    /// ADR-0021 decision 5: todo ajuste deja actor, motivo escrito y fecha,
+    /// ADdecision 5: todo ajuste deja actor, motivo escrito y fecha,
     /// siempre. Inmutable por construccion, igual que su contraparte de
     /// dominio: un registro de auditoria editable no audita nada.
     /// </summary>

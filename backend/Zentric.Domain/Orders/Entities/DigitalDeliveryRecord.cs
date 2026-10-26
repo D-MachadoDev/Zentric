@@ -3,7 +3,7 @@ using Zentric.Domain.Products.ValueObjects;
 namespace Zentric.Domain.Orders.Entities
 {
     /// <summary>
-    /// Registro de entrega de un producto digital (CAT-02).
+    /// Registro de entrega de un producto digital (CA).
     /// Se crea cuando el pago es aprobado y el producto no requiere logistica.
     /// </summary>
     public sealed class DigitalDeliveryRecord

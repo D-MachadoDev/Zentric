@@ -336,9 +336,6 @@ export function SellerInventoryPage() {
               </div>
             </div>
           )}
-              </div>
-            </div>
-          )}
 
           {totalPages > 1 && (
             <Pagination

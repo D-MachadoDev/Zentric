@@ -48,7 +48,7 @@ namespace Zentric.Api.Controllers
             var role = User.GetUserRole();
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
-            // [ADDENDUM 2026-10-17]: el Vendedor registra bodegas Vendor propias forzando su VendorId.
+            // el Vendedor registra bodegas Vendor propias forzando su VendorId.
             // El Administrador registra bodegas centrales Marketplace o asignadas a vendedores.
             var cmd = role.Value == Zentric.Domain.Users.Enums.UserRole.Seller
                 ? command with { Type = Zentric.Domain.Warehouses.Enum.WarehouseType.Vendor, VendorId = userId.Value }

@@ -71,7 +71,7 @@ namespace Zentric.Tests.Application.Orders
     }
 
     /// <summary>
-    /// Repositorio de productos en memoria para tests de pago digital (CAT-02).
+    /// Repositorio de productos en memoria para tests de pago digital (CA).
     /// </summary>
     public sealed class FakeProductRepositoryForPay : IProductRepository
     {

@@ -11,7 +11,7 @@ import {
 } from './enums';
 import { ApiError, DomainError, ProblemDetailsError, isApiError, isProblemDetailsError } from './models';
 
-// Estos tests fijan el contrato de ADR-0012 como red de seguridad. Un enum
+// Estos tests fijan el contrato de ADcomo red de seguridad. Un enum
 // publicado con índices numéricos en vez de nombres, o con un valor de menos,
 // no falla en compilación: el backend responde 400 o, peor, se da de alta el
 // rol equivocado en silencio. Aquí el fallo es inmediato y evidente.

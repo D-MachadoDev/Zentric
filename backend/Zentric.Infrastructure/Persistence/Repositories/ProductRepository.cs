@@ -25,7 +25,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
         {
             // AsNoTracking por el mismo motivo que los listados de este repositorio
             // y que CustomerOrderRepository: el Update posterior adjunta un DbModel
-            // nuevo y chocaria con la fila rastreada (H-15).
+            // nuevo y chocaria con la fila rastreada .
             var dbModel = await _dbContext.Products
                 .AsNoTracking()
                 .Include(p => p.Variants)

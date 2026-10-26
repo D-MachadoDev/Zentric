@@ -47,7 +47,7 @@ namespace Zentric.Api.Controllers
         /// que tienen alguna línea suya, y Administrador, Operador y Supervisor ven todos.
         /// Un cliente no puede pedir "los de otro" porque no hay por dónde decirlo.
         ///
-        /// <c>status</c> es un filtro opcional y va por nombre (ADR-0012). Sin él también
+        /// <c>status</c> es un filtro opcional y va por nombre . Sin él también
         /// devuelve los carritos: el comprador tiene que ver su carrito abierto para poder
         /// continuar la compra.
         /// </remarks>
@@ -71,7 +71,7 @@ namespace Zentric.Api.Controllers
             OrderStatus? parsed = null;
 
             // El estado llega como texto porque el contrato de enums va solo por nombre
-            // (ADR-0012). Un valor desconocido es un 400 explicito y no un filtro silencioso que
+            // . Un valor desconocido es un 400 explicito y no un filtro silencioso que
             // devuelve la lista completa: seria el peor fallo posible, porque el usuario creeria
             // estar filtrando y estaria viendo de todo.
             if (!string.IsNullOrWhiteSpace(status))
@@ -171,7 +171,7 @@ namespace Zentric.Api.Controllers
         /// Valida en tiempo real la disponibilidad de existencias físicas en el inventario antes de admitir el ítem.
         /// Previene la sobreventa bloqueando la adición si la cantidad requerida supera el stock disponible.
         /// </remarks>
-        /// <param name="command">Identificador del carrito, variante y cantidad. El precio y el vendedor NO viajan: los pone el servidor con el catálogo (ADR-0020). Un BuyerId en el cuerpo se descarta: la identidad la fija el token.</param>
+        /// <param name="command">Identificador del carrito, variante y cantidad. El precio y el vendedor NO viajan: los pone el servidor con el catálogo . Un BuyerId en el cuerpo se descarta: la identidad la fija el token.</param>
         /// <response code="200">Ítem añadido satisfactoriamente al carrito.</response>
         /// <response code="400">Error si el carrito no está en estado Cart, si no hay stock suficiente o si el carrito no pertenece al llamante (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>

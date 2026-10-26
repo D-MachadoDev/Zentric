@@ -85,7 +85,7 @@ namespace Zentric.Api.Controllers
         /// Marca la orden de fulfillment como empacada (PendingPack â†’ Packed).
         /// </summary>
         /// <remarks>
-        /// ADDENDUM Dominio 8, estado 2: "Empacado: Listo para recolecciÃ³n". Sin este paso el ciclo
+        /// "Empacado: Listo para recolecciÃ³n". Sin este paso el ciclo
         /// no avanzaba: <c>Dispatch()</c> exige estar Packed, de modo que un paquete creado
         /// directamente en Pendiente de Empaque no podia despacharse por HTTP.
         /// </remarks>
@@ -114,7 +114,7 @@ namespace Zentric.Api.Controllers
         /// Confirma la entrega de la orden de fulfillment (Dispatched â†’ Delivered).
         /// </summary>
         /// <remarks>
-        /// ADDENDUM Dominio 8, estado 4: "Entregado: Recibido por el comprador". Solo el Operador
+        /// "Entregado: Recibido por el comprador". Solo el Operador
         /// Logistico puede ejecutarla (dictamen del Owner 2026-10-01); el Comprador y el Vendedor
         /// la consultan pero no la cierran.
         /// </remarks>
@@ -159,7 +159,7 @@ namespace Zentric.Api.Controllers
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
             // El despacho ajeno se trata como inexistente. El Operador tambien puede
-            // reportar el faltante: la regla esta DICTADA (ADR-0014) y abre la politica
+            // reportar el faltante: la regla esta DICTADA  y abre la politica
             // al Operador, no solo al Vendedor.
             var result = await _mediator.Send(command with { CallerId = userId.Value, CallerRole = role.Value });
             if (result.IsFailure) return result.ToProblem();
@@ -177,9 +177,9 @@ namespace Zentric.Api.Controllers
         /// Operador, Administrador y Supervisor ven la cola completa, que es su pantalla de trabajo.
         /// El filtro no es un parametro: no hay forma de pedir los de otro.
         /// </remarks>
-        /// <param name="status">Filtro opcional por estado del despacho, por nombre (ADR-0012).</param>
-        /// <param name="page">Página (1-based).</param>
-        /// <param name="size">Tamaño de página.</param>
+        /// <param name="status">Filtro opcional por estado del despacho, por nombre .</param>
+        /// <param name="page">Pï¿½gina (1-based).</param>
+        /// <param name="size">Tamaï¿½o de pï¿½gina.</param>
         /// <response code="200">Listado de despachos visibles para el llamante.</response>
         /// <response code="400">El estado indicado no es un <c>FulfillmentStatus</c> valido (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o invÃ¡lido.</response>
@@ -196,7 +196,7 @@ namespace Zentric.Api.Controllers
 
             Zentric.Domain.Logistics.Enums.FulfillmentStatus? parsed = null;
 
-            // Estado por nombre (ADR-0012). Un valor desconocido es 400 explicito y NO un filtro
+            // Estado por nombre . Un valor desconocido es 400 explicito y NO un filtro
             // ignorado: devolver la cola completa mientras el usuario cree estar filtrando seria el
             // peor fallo posible de este endpoint.
             if (!string.IsNullOrWhiteSpace(status))

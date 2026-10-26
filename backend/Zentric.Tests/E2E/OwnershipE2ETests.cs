@@ -6,7 +6,7 @@ using Xunit;
 namespace Zentric.Tests.E2E
 {
     /// <summary>
-    /// Propiedad del recurso verificada por HTTP real (ADR-0013).
+    /// Propiedad del recurso verificada por HTTP real (AD).
     ///
     /// La regla es una sola y ya estaba dictada: un recurso ausente o de otro responde 404, nunca
     /// 403. La distincion importa por una razon concreta: un 403 confirmaria que el recurso EXISTE,
@@ -146,7 +146,7 @@ namespace Zentric.Tests.E2E
             response.EnsureSuccessStatusCode();
 
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            return document.RootElement.GetArrayLength();
+            return document.RootElement.GetProperty("items").GetArrayLength();
         }
     }
 }

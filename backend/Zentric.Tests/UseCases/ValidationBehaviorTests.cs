@@ -7,7 +7,7 @@ using Zentric.Application.Orders.Validators;
 namespace Zentric.Tests.UseCases
 {
     /// <summary>
-    /// Comportamiento del pipeline de validación del dispatcher propio (ADR-0007): una entrada inválida devuelve un
+    /// Comportamiento del pipeline de validación del dispatcher propio (AD): una entrada inválida devuelve un
     /// fallo de negocio y **no** invoca el handler; una entrada válida lo invoca.
     /// </summary>
     public class ValidationBehaviorTests

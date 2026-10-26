@@ -77,7 +77,7 @@ namespace Zentric.Application.Orders.Commands
                 receipt.Approve(charge.TransactionId!);
                 order.MarkAsPaid();
 
-                // CAT-02: registrar entrega inmediata de productos digitales
+                // CAregistrar entrega inmediata de productos digitales
                 foreach (var item in order.Items)
                 {
                     var product = await _productRepository.GetByVariantIdAsync(item.VariantId, cancellationToken);

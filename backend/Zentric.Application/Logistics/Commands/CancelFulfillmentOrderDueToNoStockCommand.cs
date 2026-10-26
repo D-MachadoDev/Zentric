@@ -20,7 +20,7 @@ using Zentric.Domain.Users.Ports;
 namespace Zentric.Application.Logistics.Commands
 {
     /// <summary>
-    /// Cancela un despacho por quiebre de stock fantasma (ADR-0014):
+    /// Cancela un despacho por quiebre de stock fantasma (AD):
     /// el quiebre lo reporta Vendedor u Operador. Un Vendedor solo cancela su
     /// propio despacho (el ajeno responde 404); el Operador no exige
     /// comprobacion de propiedad (rol transversal).
@@ -84,7 +84,7 @@ namespace Zentric.Application.Logistics.Commands
                 var returnReq = new ReturnRequest(order.CustomerOrderId, request.VariantId, request.WarehouseId, request.QuantityToCancel, ProductType.Physical);
                 await _returnRepository.AddAsync(returnReq, cancellationToken);
 
-                // 4. Incrementar tasa de stock fantasma del vendedor (ADR-0021, INV-05)
+                // 4. Incrementar tasa de stock fantasma del vendedor (AD, )
                 var vendor = await _userRepository.GetByIdAsync(order.VendorId);
                 if (vendor != null)
                 {
@@ -107,7 +107,7 @@ namespace Zentric.Application.Logistics.Commands
         }
 
         /// <summary>
-        /// EXC-01: cancelar un despacho por quiebre de stock lo deja en
+        /// cancelar un despacho por quiebre de stock lo deja en
         /// Cancelled, un estado del que nunca saldra. Sin esta sincronizacion, el pedido
         /// maestro se quedaria en Paid para siempre en cuanto un solo producto se perdiera,
         /// aunque el resto se entregara. El servicio de dominio excluye los cancelados del

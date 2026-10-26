@@ -146,10 +146,10 @@ namespace Zentric.Infrastructure.Persistence.Repositories
 
         public async Task<bool> TryReserveStockAsync(Guid inventoryId, int quantity, CancellationToken cancellationToken = default)
         {
-            // ADR-0025: leer-comprobar-escribir es UNA sola sentencia. La condicion
+            // ADleer-comprobar-escribir es UNA sola sentencia. La condicion
             // available >= quantity vive en el WHERE, asi que la base garantiza sola
             // que dos reservas simultaneas sobre la misma fila no pueden dejar el
-            // contador negativo ni perder actualizaciones (INV-01). Cero filas
+            // contador negativo ni perder actualizaciones . Cero filas
             // afectadas = no habia stock = se rechaza; no hay nada que reintentar.
             if (quantity <= 0)
             {
@@ -168,7 +168,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
 
         public async Task ReleaseReservedStockAsync(Guid inventoryId, int quantity, CancellationToken cancellationToken = default)
         {
-            // Compensacion de ADR-0001 en el mismo estilo atomico que la reserva:
+            // Compensacion de ADen el mismo estilo atomico que la reserva:
             // el WHERE reservado >= quantity impide que la liberacion deje la
             // columna reservado en negativo si otra peticion toco la fila.
             if (quantity <= 0)

@@ -4,7 +4,7 @@ namespace Zentric.Tests.Inventories;
 
 /// <summary>
 /// Pruebas de caracterización del agregado de inventario.
-/// Invariante protegida: INV-01 / invariante 1 ("AvailableQuantity nunca puede
+/// Invariante protegida: / invariante 1 ("AvailableQuantity nunca puede
 /// ser negativo bajo ninguna circunstancia").
 /// </summary>
 public sealed class InventoryTests
@@ -159,10 +159,9 @@ public sealed class InventoryTests
     }
 
     /// <summary>
-    /// Regresión del hallazgo H-08:
-    /// ReturnToAvailable no validaba cantidades no positivas como el resto de las
+    /// Regresión del hallazgo     /// ReturnToAvailable no validaba cantidades no positivas como el resto de las
     /// operaciones, lo que permitía dejar AvailableQuantity por debajo de cero y
-    /// violar INV-01. Prueba asociada a la corrección T-003.
+    /// violar . Prueba asociada a la corrección .
     /// </summary>
     [Theory]
     [InlineData(0)]

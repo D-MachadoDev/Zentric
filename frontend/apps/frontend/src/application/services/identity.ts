@@ -19,7 +19,7 @@ import { resolveApi, resolveSession } from './apiContext';
 /**
  * Hook de mutación para inicio de sesión.
  *
- * Guarda el token y el perfil en SessionPort en memoria RAM (ADR-0009) y
+ * Guarda el token y el perfil en SessionPort en memoria RAM (AD) y
  * actualiza la clave ['auth', 'me'] en TanStack Query.
  */
 export function useLoginMutation(api?: ZentricApiPort, session?: SessionPort) {
@@ -77,7 +77,7 @@ export function useCurrentUserQuery(
 }
 
 /**
- * Hook de mutación local para cierre de sesión (ADR-0009).
+ * Hook de mutación local para cierre de sesión (AD).
  * Purga la memoria RAM y limpia la caché completa del QueryClient.
  */
 export function useLogoutMutation(session?: SessionPort) {
@@ -138,7 +138,7 @@ export function useUserQuery(id: string, api?: ZentricApiPort) {
 
 /**
  * Hook de mutación para dar de alta un usuario.
- * No altera la sesión del llamante (INV-APP-01).
+ * No altera la sesión del llamante .
  */
 export function useCreateUserMutation(api?: ZentricApiPort) {
   const queryClient = useQueryClient();

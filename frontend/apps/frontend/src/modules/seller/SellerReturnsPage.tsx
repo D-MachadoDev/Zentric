@@ -8,6 +8,7 @@ import { useWarehousesQuery } from '../../application/services/warehouses';
 import { useProductsPagedQuery } from '../../application/services/catalog';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Pagination } from '@zentric/ui';
+import {
   ReturnStatus,
   type ReturnRequest,
   type Warehouse,
@@ -47,8 +48,7 @@ import {
  * Resolución Comercial de Devoluciones del Vendedor (SellerReturnsPage - Frontend-Role-Modules §2.3).
  * Split-Frame Asimétrico (65% Bandeja de Devoluciones / 35% Estación de Decisión Comercial).
  *
- * Cumplimiento de ADR-0006:
- * Exhibe el veredicto de inspección física (isGoodCondition) emitido por el operador logístico
+ * Cumplimiento de AD * Exhibe el veredicto de inspección física (isGoodCondition) emitido por el operador logístico
  * y permite al vendedor aprobar comercialmente (reingresando a usedQuantity) o rechazar la solicitud.
  * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
  */
@@ -335,7 +335,7 @@ export function SellerReturnsPage() {
                 </p>
               </div>
 
-              {/* Dictamen de Inspección Física (ADR-0018) */}
+              {/* Dictamen de Inspección Física (AD) */}
               <div className="space-y-3">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
                   Inspección Física en Bodega
@@ -462,7 +462,7 @@ export function SellerReturnsPage() {
                 </div>
               )}
 
-              {/* Nota ADR-0006 */}
+              {/* Nota AD*/}
               <div className="rounded-xl border border-border bg-surface-muted/30 p-3.5">
                 <p className="text-[11px] text-foreground-muted leading-relaxed">
                   <strong>ADR-0006:</strong> Al aprobar una devolución sobre producto físico en buen estado,

@@ -13,7 +13,7 @@ namespace Zentric.Domain.Payments.Enums
 
         /// <summary>
         /// Comprobante saldado por devolucion.
-        /// ADDENDUM - DICTADO POR OWNER (2026-09-27): la devolucion se
+        ///  la devolucion se
         /// materializa como credito a favor y el pedido NO se revierte, porque
         /// ya fue entregado y facturado. El sistema no custodia dinero.
         /// </summary>

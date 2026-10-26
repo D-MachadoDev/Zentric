@@ -3,7 +3,7 @@ import { useTheme } from '../providers/ThemeProvider';
 import { Button } from '@zentric/ui/components/ui/button';
 
 /**
- * Selector de tema dual accesible (ADDENDUM §9 "Porcelana y Grafito").
+ * Selector de tema dual accesible (§9 "Porcelana y Grafito").
  * Alterna entre modo claro "Estudio Porcelana" (por defecto) y modo oscuro
  * "Bóveda Grafito". La persistencia y la clase .dark las gobierna ThemeProvider.
  *

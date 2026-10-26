@@ -29,7 +29,7 @@ using Zentric.Api.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ADR-0012: el contrato de los enum va por nombre y solo por nombre. El Owner dicto la
+// ADel contrato de los enum va por nombre y solo por nombre. El Owner dicto la
 // forma estricta, asi que un cuerpo con "role": 2 responde 400 en lugar de colarse como
 // Administrador. Las salidas ya devolvian nombres y la query ya los aceptaba; el cuerpo era lo
 // unico que hablaba en numeros. Todo el contrato vive en EnumJsonContract.
@@ -86,7 +86,7 @@ builder.Services.AddOpenApi();
 // Mapeo de errores a RFC 7807 (Problem Details).
 builder.Services.AddProblemDetails();
 
-// Identidad del llamante y autenticacion (ADR-0009, cierra RG-01).
+// Identidad del llamante y autenticacion (AD, cierra ).
 //
 // La API NO acepta la cabecera X-Buyer-Id: la identidad sale unicamente de un
 // token verificado. JwtOptions.Validate() hace fallar el arranque si falta la
@@ -120,7 +120,7 @@ builder.Services
 
 builder.Services.AddAuthorization(options =>
 {
-    // RG-01: "toda operacion debe ejecutarse por un usuario autenticado". La
+    // "toda operacion debe ejecutarse por un usuario autenticado". La
     // politica de reserva hace que TODO endpoint exija token sin tener que
     // decorar los 30 controladores. Quien necesite excepcion lo declara con
     // [AllowAnonymous], como hacen POST /api/auth/login y GET /health.
@@ -128,7 +128,7 @@ builder.Services.AddAuthorization(options =>
         .RequireAuthenticatedUser()
         .Build();
 
-    // RG-03 (ADR-0011): las politicas por rol se generan recorriendo la matriz de
+    // (AD): las politicas por rol se generan recorriendo la matriz de
     // AuthorizationPolicies, que es la Matriz de Responsabilidades de ZENTRIC.md escrita una
     // sola vez. No se agrega ninguna politica a mano: ponerla en el diccionario la registra
     // aqui, la exige el [Authorize] del controlador y la aserta EndpointAuthorizationMatrixTests.
@@ -154,7 +154,7 @@ builder.Services.AddScoped<Zentric.Api.Security.ICurrentUserAccessor, Zentric.Ap
 // Puerto de credenciales y emision de token. Los adaptadores son
 // intercambiables: cambiar el algoritmo de hash o el formato del token no exige
 // tocar Dominio ni los casos de uso. La caducidad del token se calcula con el
-// mismo IClock registrado abajo (H-06): un Func<DateTimeOffset> suelto habria
+// mismo IClock registrado abajo : un Func<DateTimeOffset> suelto habria
 // dejado el reloj sin contrato trazable en la arquitectura.
 builder.Services.AddSingleton<Zentric.Domain.Users.Ports.IPasswordHasher, Zentric.Infrastructure.Security.Pbkdf2PasswordHasher>();
 builder.Services.AddSingleton<Zentric.Domain.Users.Ports.IAuthTokenService>(sp =>
@@ -162,11 +162,11 @@ builder.Services.AddSingleton<Zentric.Domain.Users.Ports.IAuthTokenService>(sp =
     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Zentric.Infrastructure.Security.JwtOptions>>();
     var clock = sp.GetRequiredService<Zentric.Domain.Common.Ports.IClock>();
     // Reloj inyectado para que la caducidad del token sea comprobable en pruebas
-    // sin esperar una hora. ADR-0009.
+    // sin esperar una hora. AD.
     return new Zentric.Infrastructure.Security.JwtAuthTokenService(options, () => clock.UtcNow);
 });
 
-// H-06/R-06: el reloj del sistema se registra como IClock (singleton sin
+// /el reloj del sistema se registra como IClock (singleton sin
 // estado). Los adaptadores que toman decisiones con "ahora" (caducidad de
 // tokens, barrido de carritos vencidos) consumen este puerto y NO
 // DateTime.UtcNow directamente: asi la suite puede congelar el tiempo con un
@@ -200,6 +200,7 @@ builder.Services.AddScoped<Zentric.Domain.Returns.Ports.IRefundAuditRepository, 
 
 // Register Background Services
 builder.Services.AddHostedService<Zentric.Infrastructure.BackgroundServices.CheckoutTimeoutService>();
+builder.Services.AddHostedService<Zentric.Infrastructure.BackgroundServices.OutboxProcessor>();
 
 // Registro de la capa Application: dispatcher propio, validacion de entrada
 // (FluentValidation) y handlers. El dispatcher propio sustituye a AddMediatR.
@@ -230,7 +231,7 @@ builder.Services.AddScoped<Zentric.Domain.Payments.Ports.IPaymentGatewayService,
 
 // CORS: habilita que el frontend (Vite, otro puerto) llame a la API. La lista de
 // origenes viene de configuracion y NO se usa el comodin: un comodin con
-// credenciales esta prohibido por el protocolo, y la API emite JWT desde ADR-0009,
+// credenciales esta prohibido por el protocolo, y la API emite JWT desde AD,
 // asi que los origenes deben quedar declarados de forma explicita.
 var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Value;
 var allowedOrigins = string.IsNullOrWhiteSpace(configuredOrigins)
@@ -303,6 +304,9 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Return cached response for duplicate POST/PATCH requests.
+app.UseMiddleware<Zentric.Api.Security.IdempotencyMiddleware>();
+
 // Health checks endpoints para Docker, balanceadores y orquestadores.
 // /health  -> liveness (proceso vivo)
 // /ready   -> readiness (DB disponible, listo para servir tráfico)
@@ -359,7 +363,7 @@ app.Lifetime.ApplicationStarted.Register(() =>
 app.MapControllers();
 app.Run();
 
-// T-032: WebApplicationFactory solo puede reutilizar este arranque si la clase Program es
+// WebApplicationFactory solo puede reutilizar este arranque si la clase Program es
 // visible desde fuera del ensamblado. No cambia el comportamiento: solo abre la puerta a las
 // pruebas E2E HTTP, que levantan la API real contra un PostgreSQL efimero (Testcontainers).
 public partial class Program { }
