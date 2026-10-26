@@ -692,8 +692,8 @@ describe('ADVERSARIAL CHALLENGE SUITE (W2-S01)', () => {
       await expect(mock.suspendProduct(createdProd.productId)).resolves.toBeUndefined();
       await expect(mock.publishProduct(createdProd.productId)).resolves.toBeUndefined();
       expect((await mock.getProduct(createdProd.productId)).status).toBe('Published');
-      expect((await mock.listProducts(mock.currentUserData.userId)).length).toBeGreaterThanOrEqual(1);
-      expect((await mock.listProducts()).length).toBeGreaterThanOrEqual(2);
+      expect((await mock.listProductsPaged({ vendorId: mock.currentUserData.userId })).items.length).toBeGreaterThanOrEqual(1);
+      expect((await mock.listProductsPaged()).items.length).toBeGreaterThanOrEqual(2);
       expect((await mock.listProductsPaged()).items.length).toBeGreaterThanOrEqual(1);
       expect(
         (await mock.listProductsPaged({ vendorId: mock.currentUserData.userId })).items.length,

@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from '@tanstack/react-router';
 import { useOrderQuery, useCancelOrderMutation } from '../../application/services/orders';
-import { useProductsQuery } from '../../application/services/catalog';
+import { useProductsPagedQuery } from '../../application/services/catalog';
 import { useInvoicesByOrderQuery } from '../../application/services/billing';
 import { useFulfillmentsQuery } from '../../application/services/logistics';
 import { useReturnsQuery } from '../../application/services/returns';
@@ -70,7 +70,8 @@ export function BuyerOrderDetailPage() {
 
   const { data: orderData, isLoading: isLoadingOrder, isError: isErrorOrder, error: orderError } =
     useOrderQuery(orderId ?? '');
-  const { data: products } = useProductsQuery();
+  const { data: productsResult } = useProductsPagedQuery();
+  const products = productsResult?.items ?? [];
   const cancelOrderMutation = useCancelOrderMutation();
 
   const { data: invoices, isLoading: isLoadingInvoices } = useInvoicesByOrderQuery(orderId ?? '');

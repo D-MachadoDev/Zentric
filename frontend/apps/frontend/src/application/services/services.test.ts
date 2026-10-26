@@ -42,7 +42,7 @@ import {
   setDefaultApi,
   setDefaultSession,
 } from './index';
-import { useCreateProductMutation, useProductsQuery } from './catalog';
+import { useCreateProductMutation, useProductsPagedQuery } from './catalog';
 import { queryKeys } from './queryKeys';
 
 /** Envoltura de React Query para probar hooks sin montar la app. */
@@ -219,26 +219,26 @@ describe('Casos de uso que no deben llevar identidad (Q-21b)', () => {
   });
 });
 
-describe('Listado de catalogo (§2.2, Q-27) — camino moderno (hooks)', () => {
+describe('Listado de catalogo paginado (§2.2, Q-27) — camino moderno (hooks)', () => {
   it('con vendorId consulta la vista de gestión del dueño', async () => {
-    const listProducts = vi.fn().mockResolvedValue([]);
-    const api = crearApi({ listProducts });
+    const listProductsPaged = vi.fn().mockResolvedValue({ Items: [], TotalItems: 0, TotalPages: 0, Page: 0, Size: 20 });
+    const api = crearApi({ listProductsPaged });
 
-    renderHook(() => useProductsQuery('vendedor-1', api), { wrapper: queryWrapper });
+    renderHook(() => useProductsPagedQuery({ vendorId: 'vendedor-1' }, api), { wrapper: queryWrapper });
 
     await waitFor(() => {
-      expect(listProducts).toHaveBeenCalledWith('vendedor-1');
+      expect(listProductsPaged).toHaveBeenCalledWith({ vendorId: 'vendedor-1' });
     });
   });
 
   it('sin vendorId es el catálogo comercial', async () => {
-    const listProducts = vi.fn().mockResolvedValue([]);
-    const api = crearApi({ listProducts });
+    const listProductsPaged = vi.fn().mockResolvedValue({ Items: [], TotalItems: 0, TotalPages: 0, Page: 0, Size: 20 });
+    const api = crearApi({ listProductsPaged });
 
-    renderHook(() => useProductsQuery(undefined, api), { wrapper: queryWrapper });
+    renderHook(() => useProductsPagedQuery({}, api), { wrapper: queryWrapper });
 
     await waitFor(() => {
-      expect(listProducts).toHaveBeenCalledWith(undefined);
+      expect(listProductsPaged).toHaveBeenCalledWith({});
     });
   });
 });

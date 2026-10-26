@@ -18,7 +18,7 @@ import {
 } from '@zentric/ui';
 import {
   useCancelGhostStockMutation,
-  useProductsQuery,
+  useProductsPagedQuery,
   useWarehousesQuery,
 } from '../../application/services';
 import { CancelGhostStockSchema } from '../../application/schemas';
@@ -44,7 +44,8 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
   const [serverError, setServerError] = useState<string | null>(null);
 
   const cancelGhostMutation = useCancelGhostStockMutation();
-  const { data: products = [] } = useProductsQuery();
+  const { data: productsResult } = useProductsPagedQuery();
+  const products = productsResult?.items ?? [];
   const { data: warehouses = [] } = useWarehousesQuery();
   const catalogVariants = products.flatMap((p: Product) =>
     (p.variants ?? []).map((v) => ({

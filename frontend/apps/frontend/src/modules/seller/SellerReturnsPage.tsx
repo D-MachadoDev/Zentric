@@ -5,7 +5,7 @@ import {
   useRejectReturnMutation,
 } from '../../application/services/returns';
 import { useWarehousesQuery } from '../../application/services/warehouses';
-import { useProductsQuery } from '../../application/services/catalog';
+import { useProductsPagedQuery } from '../../application/services/catalog';
 import {
   ReturnStatus,
   type ReturnRequest,
@@ -66,13 +66,14 @@ export function SellerReturnsPage() {
   } = useReturnsQuery();
 
   const { data: warehouses } = useWarehousesQuery();
-  const { data: products } = useProductsQuery();
+  const { data: productsResult } = useProductsPagedQuery();
+  const products = productsResult?.items ?? [];
   const approveMutation = useApproveReturnMutation();
   const rejectMutation = useRejectReturnMutation();
 
   const allReturns = returns ?? [];
   const allWarehouses = warehouses ?? [];
-  const allProducts = products ?? [];
+  const allProducts = products;
 
   const warehouseMap = new Map<string, Warehouse>(allWarehouses.map((w: Warehouse) => [w.id, w]));
   const variantMap = new Map<string, { sku: string; name: string }>();

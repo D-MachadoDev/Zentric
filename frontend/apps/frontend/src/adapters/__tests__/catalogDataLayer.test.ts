@@ -35,7 +35,7 @@ describe('Capa de datos del catálogo (S1/S2/S3) — transporte HttpClient', () 
       if (url.includes('categories')) return new Response(JSON.stringify([]), { status: 200 });
       if (url.includes('hero')) return new Response(JSON.stringify([]), { status: 200 });
       return new Response(
-        JSON.stringify({ items: [], page: 0, size: 10, totalItems: 0, totalPages: 0 }),
+        JSON.stringify({ items: [], page: 0, size: 10, totalitems: 0, totalPages: 0 }),
         { status: 200 },
       );
     }) as typeof fetch;

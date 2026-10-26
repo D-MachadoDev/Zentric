@@ -144,7 +144,7 @@ describe('HttpClient', () => {
     await client.listInventories();
     await client.listInventoryByVariant('var-1');
 
-    await client.listProducts('v-1');
+    await client.listProductsPaged({ vendorId: 'v-1' });
     await client.listProductsPaged({ page: 1, size: 5, vendorId: 'v-1' });
     await client.getProductById('prod-1');
     await client.publishProduct('prod-1');

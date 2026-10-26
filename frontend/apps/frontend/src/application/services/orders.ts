@@ -5,7 +5,6 @@ import type {
   Order,
   OrderListItem,
   OrderStatus,
-  PagedResult,
   SellerOrderView,
   UpdateCartItemQuantityInput,
   ZentricApiPort,

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import {
-  useProductsQuery,
+  useProductsPagedQuery,
   usePublishProductMutation,
   useSuspendProductMutation,
 } from '../../application/services/catalog';
@@ -44,11 +44,11 @@ export function SellerProductsPage() {
   const [statusFilter, setStatusFilter] = useState<'All' | ProductStatus>('All');
 
   const vendorId = getDefaultSession()?.getUserId() ?? undefined;
-  const { data: products, isLoading, isError, error, refetch, isFetching } = useProductsQuery(vendorId);
+  const { data: productsResult, isLoading, isError, error, refetch, isFetching } = useProductsPagedQuery({ vendorId });
   const publishMutation = usePublishProductMutation();
   const suspendMutation = useSuspendProductMutation();
 
-  const allProducts = products ?? [];
+  const allProducts = productsResult?.items ?? [];
 
   const filteredProducts = allProducts.filter((product: Product) => {
     const matchesSearch =

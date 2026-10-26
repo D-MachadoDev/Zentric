@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { useProductsQuery } from '../../application/services/catalog';
+import { useProductsPagedQuery } from '../../application/services/catalog';
 import { useOrdersQuery } from '../../application/services/orders';
 import { useFulfillmentsQuery } from '../../application/services/logistics';
 import { useInvoicesQuery } from '../../application/services/billing';
@@ -47,14 +47,15 @@ import {
  */
 export function SellerDashboardPage() {
   const vendorId = getDefaultSession()?.getUserId() ?? undefined;
-  const { data: products, isLoading: isLoadingProducts, isError: isErrorProducts } = useProductsQuery(vendorId);
+  const { data: productsResult, isLoading: isLoadingProducts, isError: isErrorProducts } = useProductsPagedQuery({ vendorId });
+  const products = productsResult?.items ?? [];
   const { data: orders, isLoading: isLoadingOrders } = useOrdersQuery();
   const { data: fulfillments } = useFulfillmentsQuery();
   const { data: invoices } = useInvoicesQuery();
   const { data: inventories } = useInventoriesQuery();
   const { data: returns } = useReturnsQuery();
 
-  const allProducts = products ?? [];
+  const allProducts = products;
   const publishedCount = allProducts.filter((p: Product) => p.status === ProductStatus.Published).length;
   const suspendedCount = allProducts.filter((p: Product) => p.status === ProductStatus.Suspended).length;
 

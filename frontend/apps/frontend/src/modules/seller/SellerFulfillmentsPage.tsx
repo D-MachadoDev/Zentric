@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import {
-  useFulfillmentsQuery,
+  useFulfillmentsPagedQuery,
   usePackFulfillmentMutation,
   useDispatchFulfillmentMutation,
   useCancelGhostStockMutation,
 } from '../../application/services/logistics';
 import { useWarehousesQuery } from '../../application/services/warehouses';
-import { useProductsQuery } from '../../application/services/catalog';
-import {
+import { useProductsPagedQuery } from '../../application/services/catalog';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Pagination } from '@zentric/ui';
   FulfillmentStatus,
   type FulfillmentOrder,
   type Shipment,
@@ -51,11 +52,13 @@ import {
  * Invariante de Seguridad Estricta:
  * El vendedor puede empacar (pack), despachar (dispatch) o reportar quiebre (cancel-ghost-stock).
  * La certificación de entrega (deliver) está estrictamente oculta y reservada al Operador Logístico.
+ * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
  */
 export function SellerFulfillmentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | FulfillmentStatus>('All');
   const [selectedFulfillmentId, setSelectedFulfillmentId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   // Modal / Formulario Cancel Ghost Stock
   const [showGhostModal, setShowGhostModal] = useState(false);
@@ -65,24 +68,30 @@ export function SellerFulfillmentsPage() {
   const [ghostError, setGhostError] = useState<string | null>(null);
   const [ghostSuccess, setGhostSuccess] = useState<string | null>(null);
 
-  const {
-    data: fulfillments,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useFulfillmentsQuery();
+  const parsedStatus = statusFilter === 'All' ? undefined : (statusFilter as FulfillmentStatus);
+
+  // Pagination params for server-side pagination
+  const params: ListFulfillmentsPagedParams = {
+    status: parsedStatus,
+    page: page - 1, // backend uses 0-based
+    size: 20,
+  };
+
+  const { data: pagedResult, isLoading, isError, error, refetch, isFetching } = useFulfillmentsPagedQuery(params);
+  const fulfillments = pagedResult?.items ?? [];
+  const totalItems = pagedResult?.totalItems ?? 0;
+  const totalPages = pagedResult?.totalPages ?? 0;
 
   const { data: warehouses } = useWarehousesQuery();
-  const { data: products } = useProductsQuery();
+  const { data: productsResult } = useProductsPagedQuery();
+  const products = productsResult?.items ?? [];
   const packMutation = usePackFulfillmentMutation();
   const dispatchMutation = useDispatchFulfillmentMutation();
   const cancelGhostStockMutation = useCancelGhostStockMutation();
 
   const allFulfillments = fulfillments ?? [];
   const allWarehouses = warehouses ?? [];
-  const sellerVariants = (products ?? []).flatMap((p: Product) =>
+  const sellerVariants = products.flatMap((p: Product) =>
     (p.variants ?? []).map((v) => ({
       id: v.id,
       sku: v.sku,
@@ -327,6 +336,17 @@ export function SellerFulfillmentsPage() {
               })}
             </div>
           )}
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={setPage}
+              className="mt-6"
+            />
+          )}
+
         </section>
 
         {/* Lado Derecho (35%): Estación de Operación Logística ───────── */}

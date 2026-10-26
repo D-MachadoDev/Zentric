@@ -31,7 +31,6 @@ import {
   usePackFulfillmentMutation,
   usePayOrderMutation,
   useProductsPagedQuery,
-  useProductsQuery,
   useRequestReturnMutation,
   useReturnsQuery,
   useUsersQuery,
@@ -195,17 +194,15 @@ describe('TanStack Query Hooks & queryKeys (Decision A2)', () => {
   });
 
   describe('Catálogo Hooks', () => {
-    it('useProductsQuery, useProductsPagedQuery y useCreateProductMutation', async () => {
+    it('useProductsPagedQuery y useCreateProductMutation', async () => {
       const { wrapper } = createWrapper();
       const mockApi = new MockZentricApiAdapter();
-
-      const { result: prodRes } = renderHook(() => useProductsQuery(undefined, mockApi), { wrapper });
-      await waitFor(() => expect(prodRes.current.isSuccess).toBe(true));
-      expect(prodRes.current.data?.length).toBeGreaterThanOrEqual(1);
 
       const { result: pagedRes } = renderHook(() => useProductsPagedQuery({ page: 0, size: 5 }, mockApi), {
         wrapper,
       });
+      await waitFor(() => expect(pagedRes.current.isSuccess).toBe(true));
+      expect(pagedRes.current.data?.items.length).toBeGreaterThanOrEqual(1);
       await waitFor(() => expect(pagedRes.current.isSuccess).toBe(true));
       expect(pagedRes.current.data?.items.length).toBeGreaterThanOrEqual(1);
 

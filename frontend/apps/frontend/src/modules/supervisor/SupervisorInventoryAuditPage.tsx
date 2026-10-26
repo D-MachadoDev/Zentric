@@ -18,7 +18,7 @@ import {
 import {
   useAdjustInventoryMutation,
   useInventoriesQuery,
-  useProductsQuery,
+  useProductsPagedQuery,
   useWarehousesQuery,
 } from '../../application/services';
 import { AdjustInventorySchema } from '../../application/schemas';
@@ -49,7 +49,8 @@ export function SupervisorInventoryAuditPage() {
     refetch,
     isFetching,
   } = useInventoriesQuery();
-  const { data: products = [] } = useProductsQuery();
+  const { data: productsResult } = useProductsPagedQuery();
+  const products = productsResult?.items ?? [];
   const { data: warehouses = [] } = useWarehousesQuery();
 
   const variantLabelMap = new Map<string, string>();

@@ -182,10 +182,10 @@ describe.skipIf(!shouldRunLive)('ZentricHttpClient contra el backend real', () =
       expect(product.status).toBe('Published');
     });
 
-    it('listProducts con vendorId es la vista de gestión del dueño (Q-27)', async () => {
-      const own = await paso('listProducts(vendorId)', () => api.listProducts(estado.sellerId));
+    it('listProductsPaged con vendorId es la vista de gestión del dueño (Q-27)', async () => {
+      const own = await paso('listProductsPaged(vendorId)', () => api.listProductsPaged({ vendorId: estado.sellerId }));
 
-      expect(own.some((product) => product.id === estado.productId)).toBe(true);
+      expect(own.items.some((product) => product.id === estado.productId)).toBe(true);
     });
 
     it('publishProduct llega a su endpoint: un producto ya publicado recibe 400', async () => {

@@ -102,11 +102,11 @@ describe('ZentricHttpClient — cabeceras (§1)', () => {
   });
 
   it('pasa el vendorId opcional como query string', async () => {
-    const { impl, llamadas } = crearFetch(() => json([]));
+    const { impl, llamadas } = crearFetch(() => json({ items: [], totalItems: 0, totalPages: 0, page: 0, size: 20 }));
 
-    await clienteCon(impl).listProducts('vendedor 1');
+    await clienteCon(impl).listProductsPaged({ vendorId: 'vendedor 1' });
 
-    expect(primera(llamadas).url).toBe(`${BASE_URL}/api/Catalog/products?vendorId=vendedor%201`);
+    expect(primera(llamadas).url).toBe(`${BASE_URL}/api/Catalog/products/paged?vendorId=vendedor%201`);
   });
 });
 

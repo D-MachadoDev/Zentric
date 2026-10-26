@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useOrdersQuery, useOrderQuery } from '../../application/services/orders';
-import { useProductsQuery } from '../../application/services/catalog';
+import { useProductsPagedQuery } from '../../application/services/catalog';
 import {
   OrderStatus,
   type OrderListItem,
@@ -60,11 +60,12 @@ export function SellerOrdersPage() {
     isLoading: isLoadingDetail,
   } = useOrderQuery(selectedOrderId ?? '');
 
-  const { data: products } = useProductsQuery();
+  const { data: productsResult } = useProductsPagedQuery();
+  const products = productsResult?.items ?? [];
 
   // Mapeo auxiliar SKU / nombre de producto
   const variantNameMap = new Map<string, { sku: string; name: string }>();
-  (products ?? []).forEach((p: Product) => {
+  products.forEach((p: Product) => {
     (p.variants ?? []).forEach((v: ProductVariant) => {
       variantNameMap.set(v.id, { sku: v.sku, name: p.name });
     });
