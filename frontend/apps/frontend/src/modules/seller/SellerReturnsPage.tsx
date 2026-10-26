@@ -301,6 +301,17 @@ export function SellerReturnsPage() {
               })}
             </div>
           )}
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={setPage}
+              className="mt-6"
+            />
+          )}
+
         </section>
 
         {/* Lado Derecho (35%): Ficha de Dictamen y Decisión Comercial ──── */}
