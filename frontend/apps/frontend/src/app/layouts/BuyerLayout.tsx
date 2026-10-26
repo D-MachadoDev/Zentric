@@ -219,8 +219,8 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
               value={headerSearch}
               onChange={setHeaderSearch}
               onSearch={handleHeaderSearch}
-              placeholder={activeCategoryId 
-                ? \`Buscar en \${(categories ?? []).find(c => c.id === activeCategoryId)?.name || activeCategoryId}...\`
+              placeholder={activeCategoryId
+                ? `Buscar en ${(categories ?? []).find(c => c.id === activeCategoryId)?.name ?? activeCategoryId}...`
                 : "Buscar productos, hardware, periféricos, licencias cloud..."}
               showRecentSearches
               maxRecentSearches={5}
