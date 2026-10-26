@@ -99,6 +99,23 @@ export function SellerInventoryPage() {
     }
   }, [targetVariantId, page, inventories.length]);
 
+  // Navega a la página de la variante en foco si es necesario, sin perder el contexto de página
+  useEffect(() => {
+    if (!targetVariantId) return;
+
+    const focusedVariantIndex = inventories.findIndex(
+      (inv: Inventory) => inv.variantId === targetVariantId
+    );
+
+    if (focusedVariantIndex >= 0) {
+      const focusedVariantPage = Math.floor(focusedVariantIndex / 20) + 1; // 20 items por página
+
+      if (page !== focusedVariantPage) {
+        setPage(focusedVariantPage);
+      }
+    }
+  }, [targetVariantId, page, inventories.length]);
+
   // Mapeos auxiliares para nombres y SKUs
   const warehouseMap = new Map<string, Warehouse>(allWarehouses.map((w: Warehouse) => [w.id, w]));
   const variantInfoMap = new Map<string, { sku: string; productName: string }>();
