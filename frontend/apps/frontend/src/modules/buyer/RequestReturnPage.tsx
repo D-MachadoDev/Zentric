@@ -1,10 +1,8 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useSearch, Link, useNavigate } from '@tanstack/react-router';
 import { useOrdersQuery, useOrderQuery } from '../../application/services/orders';
-import { useFulfillmentsQuery } from '../../application/services/logistics';
-import { useWarehousesQuery } from '../../application/services/warehouses';
 import { useRequestReturnMutation } from '../../application/services/returns';
-import { OrderStatus, type Order, type OrderItem, type FulfillmentOrder, type Warehouse } from '../../domain';
+import { OrderStatus, type Order, type OrderItem } from '../../domain';
 import {
   Button,
   Input,
@@ -26,23 +24,21 @@ import {
 /**
  * Solicitud de Devolución para el Comprador (Frontend-Role-Modules sección 2.4 y Frontend-User-Flows sección 5).
  * Valida que el pedido esté en Delivered, permite seleccionar la variante física a devolver
- * y registra la solicitud técnica en el backend.
+ * y registra la solicitud técnica en el backend. La bodega de recepción la resuelve el sistema.
  */
 export function RequestReturnPage() {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { orderId?: string };
 
   const { data: deliveredOrders, isLoading: isLoadingOrders } = useOrdersQuery(OrderStatus.Delivered);
-  const { data: warehouses } = useWarehousesQuery();
-  const { data: fulfillments } = useFulfillmentsQuery();
 
   const requestReturnMutation = useRequestReturnMutation();
 
   const [selectedOrderId, setSelectedOrderId] = useState<string>(search?.orderId ?? '');
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
   const [reason, setReason] = useState<string>('');
+  const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Consultar detalle del pedido seleccionado
@@ -50,11 +46,6 @@ export function RequestReturnPage() {
   const selectedOrder = selectedOrderData as Order | undefined;
 
   const orderItems: OrderItem[] = selectedOrder?.items ?? [];
-
-  // Fulfillments de la orden para deducir bodega física de recepción
-  const orderFulfillments: FulfillmentOrder[] = (fulfillments ?? []).filter(
-    (f: FulfillmentOrder) => f.customerOrderId === selectedOrderId
-  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,18 +59,15 @@ export function RequestReturnPage() {
       return;
     }
 
-    // Determinar bodega de destino (de los despachos o la primera bodega disponible)
-    const targetWarehouseId =
-      selectedWarehouseId ||
-      orderFulfillments[0]?.shipments?.[0]?.warehouseId ||
-      warehouses?.[0]?.id ||
-      '00000000-0000-0000-0000-000000000001';
+    if (!acceptedTerms) {
+      setFeedback({ type: 'error', message: 'Debe aceptar los términos y condiciones de devolución.' });
+      return;
+    }
 
     try {
       await requestReturnMutation.mutateAsync({
         customerOrderId: selectedOrderId,
         variantId: selectedVariantId,
-        warehouseId: targetWarehouseId,
         quantity,
       });
 
@@ -89,177 +77,113 @@ export function RequestReturnPage() {
       });
 
       setTimeout(() => {
-        navigate({ to: '/buyer/orders/$orderId', params: { orderId: selectedOrderId } });
+        navigate({ to: '/buyer/orders' });
       }, 2000);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al registrar la solicitud de devolución.';
-      setFeedback({ type: 'error', message: msg });
+    } catch (error: any) {
+      setFeedback({
+        type: 'error',
+        message: error?.message || 'Error al registrar la devolución.',
+      });
     }
   };
 
-  if (isLoadingOrders) {
-    return (
-      <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
-        <Skeleton className="h-8 w-48 bg-surface" />
-        <Skeleton className="h-96 rounded-2xl bg-surface" />
-      </div>
-    );
-  }
-
-  const eligibleOrders = deliveredOrders ?? [];
-
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-3xl mx-auto w-full">
-      {/* ── Encabezado ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Link to="/buyer/orders">
-              <Button variant="outline" size="sm" className="border-border text-foreground-muted hover:text-foreground mr-2">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
-              Solicitud de Devolución
-            </h1>
-          </div>
-          <p className="text-sm font-mono text-foreground-muted">
-            Aplica exclusivamente a productos físicos en estado Entregado (Delivered) dentro de los 30 días.
+    <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Header */}
+      <div className="flex items-center gap-4 border-b border-border pb-4">
+        <Link to="/buyer/orders" className="p-2 rounded-lg hover:bg-surface-muted text-foreground-muted hover:text-foreground transition-colors">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
+            <RotateCcw className="h-6 w-6 text-brand" />
+            Solicitud de Devolución
+          </h1>
+          <p className="text-sm text-foreground-muted mt-1">
+            Proceso de devolución asistido (Garantía Legal de 30 días). Selecciona el pedido entregado y el artículo a devolver.
           </p>
         </div>
       </div>
 
       {feedback && (
-        <Alert
-          variant={feedback.type === 'success' ? 'default' : 'destructive'}
-          className={
-            feedback.type === 'success'
-              ? 'border-brand/40 bg-brand/10 text-brand'
-              : 'border-danger/30 bg-danger/10 text-danger'
-          }
-        >
-          {feedback.type === 'success' ? (
-            <CheckCircle2 className="h-5 w-5 text-brand" />
-          ) : (
-            <AlertCircle className="h-5 w-5 text-danger" />
-          )}
-          <AlertTitle>{feedback.type === 'success' ? 'Solicitud Enviada' : 'Error de Validación'}</AlertTitle>
-          <AlertDescription className="text-xs font-mono mt-1">{feedback.message}</AlertDescription>
+        <Alert variant={feedback.type === 'success' ? 'default' : 'destructive'} className="border-border bg-surface">
+          {feedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+          <AlertTitle className="font-mono text-sm">{feedback.type === 'success' ? 'Éxito' : 'Error'}</AlertTitle>
+          <AlertDescription className="text-xs">{feedback.message}</AlertDescription>
         </Alert>
       )}
 
-      {/* ── Formulario de Solicitud ─────────────────────────────────────── */}
-      <form noValidate onSubmit={handleSubmit} className="rounded-2xl border border-border bg-surface p-6 sm:p-8 space-y-6 shadow-xl">
+      <form onSubmit={handleSubmit} className="space-y-6 bg-surface border border-border rounded-2xl p-6 shadow-sm">
         {/* Selección de Pedido */}
         <div className="space-y-2">
           <label className="text-xs font-mono uppercase text-foreground-muted block">
-            1. Seleccione el Pedido Entregado
+            1. Pedido Entregado
           </label>
-          <select
-            value={selectedOrderId}
-            onChange={(e) => {
-              setSelectedOrderId(e.target.value);
-              setSelectedVariantId('');
-            }}
-            className="w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-sm font-mono text-foreground focus:border-brand focus:outline-none"
-          >
-            <option value="">-- Seleccionar Pedido --</option>
-            {eligibleOrders.map((o) => (
-              <option key={o.id} value={o.id}>
-                Pedido #{o.id.slice(0, 8)} • {o.currency} ${o.totalAmount.toLocaleString('es-CO')} ({o.status})
-              </option>
-            ))}
-          </select>
-          {eligibleOrders.length === 0 && (
-            <p className="text-xs font-mono text-warning">
-              No cuenta con pedidos en estado Entregado (Delivered) disponibles para devolución.
-            </p>
+          {isLoadingOrders ? (
+            <Skeleton className="h-10 w-full" />
+          ) : (
+            <select
+              value={selectedOrderId}
+              onChange={(e) => {
+                setSelectedOrderId(e.target.value);
+                setSelectedVariantId('');
+              }}
+              className="w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2 text-sm font-mono text-foreground focus:border-brand focus:outline-none"
+            >
+              <option value="">-- Seleccionar Pedido --</option>
+              {(deliveredOrders ?? []).map((order: Order) => (
+                <option key={order.id} value={order.id}>
+                  Orden #{order.id.slice(0, 8)} - {new Date(order.updatedAt).toLocaleDateString()}
+                </option>
+              ))}
+            </select>
           )}
         </div>
 
-        {/* Selección de Variante de la Orden */}
-        {selectedOrderId && (
-          <div className="space-y-2">
-            <label className="text-xs font-mono uppercase text-foreground-muted block">
-              2. Variante del Producto a Devolver
-            </label>
-            {orderItems.length === 0 ? (
-              <p className="text-xs font-mono text-foreground-muted">Cargando ítems del pedido...</p>
-            ) : (
-              <div className="space-y-2">
-                {orderItems.map((item: OrderItem) => {
-                  const isSelected = selectedVariantId === item.variantId;
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => {
-                        setSelectedVariantId(item.variantId);
-                        setQuantity(1);
-                      }}
-                      className={`cursor-pointer rounded-xl border p-4 transition-all flex items-center justify-between ${
-                        isSelected
-                          ? 'border-brand bg-brand/10'
-                          : 'border-border bg-surface-muted/60 hover:border-foreground-muted/40'
-                      }`}
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4 text-brand" />
-                          <span className="text-xs font-mono font-bold text-foreground">
-                            Variante SKU: {item.variantId.slice(0, 8)}
-                          </span>
-                        </div>
-                        <p className="text-xs font-mono text-foreground-muted">
-                          Cantidad comprada: {item.quantity} ud(s) • Total: ${item.totalPrice.toLocaleString('es-CO')}
-                        </p>
-                      </div>
-
-                      <Badge
-                        variant="outline"
-                        className={isSelected ? 'border-brand text-brand' : 'border-border text-foreground-muted'}
-                      >
-                        {isSelected ? 'Seleccionado' : 'Elegir'}
-                      </Badge>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Cantidad a Devolver */}
-        {selectedVariantId && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Selección de Variante */}
+        {selectedOrder && (
+          <div className="space-y-4 animate-in fade-in">
             <div className="space-y-2">
               <label className="text-xs font-mono uppercase text-foreground-muted block">
-                3. Cantidad a Devolver
+                2. Artículo a Devolver
               </label>
-              <Input
-                type="number"
-                min={1}
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                className="bg-surface-muted border-border font-mono text-foreground"
-              />
+              <div className="grid grid-cols-1 gap-3">
+                {orderItems.map((item: OrderItem) => (
+                  <div
+                    key={item.id}
+                    onClick={() => setSelectedVariantId(item.variantId)}
+                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      selectedVariantId === item.variantId
+                        ? 'border-brand bg-brand/5'
+                        : 'border-border bg-surface-muted hover:border-brand/50'
+                    }`}
+                  >
+                    <div className="h-10 w-10 bg-surface rounded-lg flex items-center justify-center border border-border/50">
+                      <Package className="h-5 w-5 text-foreground-muted" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-foreground">Variante SKU: {item.variantId}</p>
+                      <p className="text-xs text-foreground-muted font-mono">Cantidad comprada: {item.quantity}</p>
+                    </div>
+                    {selectedVariantId === item.variantId && <CheckCircle2 className="h-5 w-5 text-brand" />}
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-foreground-muted block">
-                Bodega de Recepción
-              </label>
-              <select
-                value={selectedWarehouseId}
-                onChange={(e) => setSelectedWarehouseId(e.target.value)}
-                className="w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2 text-sm font-mono text-foreground focus:border-brand focus:outline-none"
-              >
-                <option value="">Bodega por defecto del despacho</option>
-                {(warehouses ?? []).map((w: Warehouse) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name} ({w.type})
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-mono uppercase text-foreground-muted block">
+                  3. Cantidad a Devolver
+                </label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={quantity}
+                  onChange={(e) => setQuantity(Number(e.target.value))}
+                  className="bg-surface-muted border-border font-mono text-foreground"
+                />
+              </div>
             </div>
           </div>
         )}
@@ -282,17 +206,34 @@ export function RequestReturnPage() {
         <div className="rounded-xl border border-warning/30 bg-warning/10 p-4 space-y-1 text-xs">
           <div className="flex items-center gap-2 text-warning font-mono font-bold">
             <ShieldAlert className="h-4 w-4" />
-            Condiciones de Devolución (ZENTRIC.md Dominio 10 y 11)
+            Condiciones de Devolución (Garantía Legal)
           </div>
           <p className="text-foreground-muted leading-relaxed">
-            Al registrar la solicitud, un Operador Logístico inspeccionará el paquete físico en bodega. Si el dictamen es favorable, el vendedor podrá aprobar el reingreso como stock usado y se autorizará el reembolso financiero.
+            Tienes hasta 30 días corridos desde la entrega para solicitar la devolución. Al registrar la solicitud, un Operador Logístico inspeccionará el paquete físico en bodega. Si el dictamen es favorable, el vendedor podrá aprobar el reingreso como stock usado y se autorizará el reembolso financiero.
           </p>
         </div>
+
+        {/* Aceptación de términos */}
+        <label className="flex items-start gap-2 text-xs text-foreground-muted cursor-pointer">
+          <input
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            Acepto los{' '}
+            <Link to="/terms" className="text-brand underline">
+              Términos y Condiciones
+            </Link>{' '}
+            y las Políticas de Devolución de Zentric (estilo Mercado Libre: el comprador asume el envío de vuelta salvo defecto de fábrica).
+          </span>
+        </label>
 
         {/* Botón de Envío */}
         <Button
           type="submit"
-          disabled={!selectedOrderId || !selectedVariantId || requestReturnMutation.isPending}
+          disabled={!selectedOrderId || !selectedVariantId || !acceptedTerms || requestReturnMutation.isPending}
           className="w-full h-12 bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-sm shadow-lg shadow-brand/20 disabled:opacity-40"
         >
           {requestReturnMutation.isPending ? (

@@ -429,6 +429,31 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     };
   }
 
+  async deleteInventory(id: string): Promise<void> {
+    const index = this.inventories.findIndex((i) => i.id === id);
+    if (index === -1) {
+      throw new ProblemDetailsError({
+        status: 404,
+        title: 'Inventario no encontrado',
+        detail: 'Registro de inventario inexistente.',
+      });
+    }
+    const inv = this.inventories[index]!;
+    if (
+      inv.availableQuantity > 0 ||
+      inv.reservedQuantity > 0 ||
+      inv.usedQuantity > 0 ||
+      inv.damagedQuantity > 0
+    ) {
+      throw new ProblemDetailsError({
+        status: 400,
+        title: 'No se puede eliminar',
+        detail: 'El registro aun tiene existencias fisicas.',
+      });
+    }
+    this.inventories.splice(index, 1);
+  }
+
   // ── Catalog ──────────────────────────────────────────────────────────────
   async createProduct(input: CreateProductInput): Promise<CreatedProduct> {
     const productId = `prod-${Date.now()}`;

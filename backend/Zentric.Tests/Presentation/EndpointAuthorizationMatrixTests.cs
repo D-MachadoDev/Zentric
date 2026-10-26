@@ -82,6 +82,7 @@ namespace Zentric.Tests.Presentation
                 ["InventoriesController.GetInventories"] = AuthorizationPolicies.InventoryRead,
                 ["InventoriesController.GetInventoryByVariant"] = AuthorizationPolicies.InventoryRead,
                 ["InventoriesController.AdjustInventory"] = AuthorizationPolicies.InventoryAdjust,
+                ["InventoriesController.DeleteInventory"] = AuthorizationPolicies.InventoryManagement,
 
                 // 5. Pedidos. Escribirlos es del Comprador (seccion 6.1 paso 5).
                 ["OrdersController.CreateCart"] = AuthorizationPolicies.Checkout,

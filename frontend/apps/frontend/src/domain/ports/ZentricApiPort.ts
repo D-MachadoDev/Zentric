@@ -115,6 +115,7 @@ export interface ZentricApiPort {
   listInventoriesPaged(params?: ListInventoriesPagedParams): Promise<PagedResult<Inventory>>;
   listInventoryByVariant(variantId: string): Promise<Inventory[]>;
   adjustInventory(id: string, input: AdjustInventoryInput): Promise<AdjustInventoryResult>;
+  deleteInventory(id: string): Promise<void>;
 
   // ── Módulo 4: Catálogo de Productos (/api/catalog) ──────────────────────
   createProduct(input: CreateProductInput): Promise<CreatedProduct>;

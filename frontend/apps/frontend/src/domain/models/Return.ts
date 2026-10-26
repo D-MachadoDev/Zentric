@@ -31,7 +31,6 @@ export interface ReturnRequest {
 export interface RequestReturnInput {
   customerOrderId: string;
   variantId: string;
-  warehouseId: string;
   quantity: number;
 }
 

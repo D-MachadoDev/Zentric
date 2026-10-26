@@ -34,7 +34,7 @@ namespace Zentric.Api.Controllers
         /// Valida que el pedido se encuentre debidamente entregado y que la solicitud esté dentro
         /// del período legal de garantía del producto según las reglas de negocio de ZENTRIC.md.
         /// </remarks>
-        /// <param name="command">Datos de la devolución (CustomerOrderId, VariantId, WarehouseId de recepción, Quantity). El tipo de producto NO viaja: el servidor lo deduce , igual que la identidad.</param>
+        /// <param name="command">Datos de la devolución (CustomerOrderId, VariantId, Quantity). El tipo de producto y la bodega de recepción NO viajan: el servidor los deduce, igual que la identidad.</param>
         /// <response code="200">Solicitud de devolución radicada con éxito. Retorna el identificador (Guid).</response>
         /// <response code="400">Error si el plazo de garantía ha expirado, el producto no corresponde a la orden o el pedido no pertenece al llamante (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
@@ -177,8 +177,8 @@ namespace Zentric.Api.Controllers
         /// un parametro: no hay forma de pedir las de otro.
         /// </remarks>
         /// <param name="status">Filtro opcional por estado de la devolucion, por nombre .</param>
-        /// <param name="page">P�gina (1-based).</param>
-        /// <param name="size">Tama�o de p�gina.</param>
+        /// <param name="page">P�gina (1-based).</param>
+        /// <param name="size">Tama�o de p�gina.</param>
         /// <response code="200">Listado de devoluciones visibles para el llamante.</response>
         /// <response code="400">El estado indicado no es un <c>ReturnStatus</c> valido (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>

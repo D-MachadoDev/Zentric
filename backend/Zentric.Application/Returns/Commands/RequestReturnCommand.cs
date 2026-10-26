@@ -14,7 +14,7 @@ namespace Zentric.Application.Returns.Commands
     /// pedido a devolver sea propio (Dominio 2: el comprador nunca administra
     /// informacion de otros compradores).
     /// </summary>
-    public record RequestReturnCommand(Guid CustomerOrderId, Guid VariantId, Guid WarehouseId, int Quantity, Guid BuyerId) : IRequest<Result<Guid>>;
+    public record RequestReturnCommand(Guid CustomerOrderId, Guid VariantId, int Quantity, Guid BuyerId) : IRequest<Result<Guid>>;
 
     public class RequestReturnCommandHandler : IRequestHandler<RequestReturnCommand, Result<Guid>>
     {
@@ -50,6 +50,12 @@ namespace Zentric.Application.Returns.Commands
                 return Result<Guid>.NotFound("Order not found.");
             }
 
+            // Ventana legal de 30 días corridos desde la entrega.
+            if ((DateTime.UtcNow - order.UpdatedAt).TotalDays > 30)
+            {
+                return Result<Guid>.Failure("The legal return window of 30 days has expired.");
+            }
+
             // ADel tipo del producto no lo declara el cliente. Sale del producto
             // que tiene el servidor, y con el la Ley: un digital no se devuelve (el
             // cliente no puede "declararlo fisico" para esquivarlo).
@@ -59,26 +65,24 @@ namespace Zentric.Application.Returns.Commands
                 return Result<Guid>.NotFound($"Product for variant {request.VariantId} not found.");
             }
 
-            // El lugar de recepcion se valida contra bodegas reales: una bodega del
-            // Marketplace o una del propio vendedor del producto. Cualquier otro GUID
-            // (o una bodega de otro) es un punto de recepcion inventado por el cliente.
-            var warehouse = await _warehouseRepository.GetByIdAsync(request.WarehouseId, cancellationToken);
+            // La bodega de recepcion la determina el SISTEMA, nunca el comprador:
+            // primero la bodega propia del vendedor (origen del despacho) y, si no
+            // existe, el hub del Marketplace. Asi el comprador nunca elige ni conoce
+            // bodegas, y se elimina el error "The reception warehouse does not exist."
+            var allWarehouses = await _warehouseRepository.GetAllAsync(cancellationToken: cancellationToken);
+            var warehouse = allWarehouses.FirstOrDefault(w =>
+                w.Type == Zentric.Domain.Warehouses.Enum.WarehouseType.Vendor
+                && w.VendorId == product.VendorId)
+                ?? allWarehouses.FirstOrDefault(w => w.Type == Zentric.Domain.Warehouses.Enum.WarehouseType.Marketplace);
+
             if (warehouse == null)
             {
-                return Result<Guid>.Failure("The reception warehouse does not exist.");
-            }
-
-            var isMarketplace = warehouse.Type == Zentric.Domain.Warehouses.Enum.WarehouseType.Marketplace;
-            var isVendorsOwn = warehouse.Type == Zentric.Domain.Warehouses.Enum.WarehouseType.Vendor
-                && warehouse.VendorId == product.VendorId;
-            if (!isMarketplace && !isVendorsOwn)
-            {
-                return Result<Guid>.Failure("The reception warehouse is not valid for this return.");
+                return Result<Guid>.Failure("No reception warehouse is available for this return.");
             }
 
             try
             {
-                var returnReq = new ReturnRequest(request.CustomerOrderId, request.VariantId, request.WarehouseId, request.Quantity, product.Type);
+                var returnReq = new ReturnRequest(request.CustomerOrderId, request.VariantId, warehouse.Id, request.Quantity, product.Type);
                 await _repository.AddAsync(returnReq, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 

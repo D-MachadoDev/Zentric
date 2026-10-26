@@ -994,8 +994,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
         shipments: [
           {
             id: 'ship-1',
-            warehouseId: 'wh-1',
-            trackingNumber: 'TRK-ZENTRIC-9988',
+             trackingNumber: 'TRK-ZENTRIC-9988',
           },
         ],
         createdAt: new Date().toISOString(),
@@ -1265,18 +1264,18 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       renderWithClient(<RequestReturnPage />);
 
       expect(await screen.findByText('Solicitud de Devolución')).toBeInTheDocument();
-      expect(screen.getByText(/Variante SKU: var-1111/i)).toBeInTheDocument();
+       expect(await screen.findByText(/Variante SKU: var-1111/i)).toBeInTheDocument();
 
       // Seleccionar variante
-      const variantCard = screen.getByText(/Variante SKU: var-1111/i);
+       const variantCard = await screen.findByText(/Variante SKU: var-1111/i);
       fireEvent.click(variantCard);
 
       // Cambiar cantidad, bodega y motivo
       const reasonInput = screen.getByPlaceholderText(/Describa el motivo técnico/i);
       fireEvent.change(reasonInput, { target: { value: 'Producto con empaque golpeado' } });
 
-      const warehouseSelect = screen.getByDisplayValue(/Bodega por defecto/i);
-      fireEvent.change(warehouseSelect, { target: { value: 'wh-1' } });
+      // Aceptar terminos legales
+      fireEvent.click(screen.getByRole('checkbox'));
 
       // Enviar formulario
       const submitBtn = screen.getByRole('button', { name: /Enviar Solicitud de Devolución/i });
@@ -1286,7 +1285,6 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
         expect(requestReturnSpy).toHaveBeenCalledWith({
           customerOrderId: mockDeliveredOrder.id,
           variantId: 'var-1111-1111',
-          warehouseId: 'wh-1',
           quantity: 1,
         });
       });
@@ -1321,6 +1319,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
 
       expect(await screen.findByText(/Variante SKU: var-1111/i)).toBeInTheDocument();
       fireEvent.click(screen.getByText(/Variante SKU: var-1111/i));
+      fireEvent.click(screen.getByRole('checkbox'));
 
       // Configurar cantidad inválida
       const quantityInput = screen.getByDisplayValue('1');

@@ -172,7 +172,6 @@ export const CancelGhostStockSchema: z.ZodType<CancelGhostStockInput, CancelGhos
 export const RequestReturnSchema: z.ZodType<RequestReturnInput, RequestReturnInput> = z.object({
   customerOrderId: z.string().min(1, 'El identificador de pedido es obligatorio'),
   variantId: z.string().min(1, 'El identificador de variante es obligatorio'),
-  warehouseId: z.string().min(1, 'El identificador de bodega es obligatorio'),
   quantity: z.number().int().positive('La cantidad a devolver debe ser mayor a cero'),
 });
 export const SolicitarDevolucionSchema = RequestReturnSchema;

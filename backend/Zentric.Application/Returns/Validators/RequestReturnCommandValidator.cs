@@ -15,10 +15,6 @@ namespace Zentric.Application.Returns.Validators
                 .NotEmpty()
                 .WithMessage("Variant ID is required.");
 
-            RuleFor(command => command.WarehouseId)
-                .NotEmpty()
-                .WithMessage("Warehouse ID is required.");
-
             RuleFor(command => command.Quantity)
                 .GreaterThan(0)
                 .WithMessage("Quantity must be greater than zero.");

@@ -530,7 +530,7 @@ describe('ADVERSARIAL CHALLENGE SUITE (W2-S01)', () => {
         expect(CancelGhostStockSchema.safeParse({ fulfillmentOrderId: 'f1', variantId: 'v1', warehouseId: 'w1', quantityToCancel: 0 }).success).toBe(false);
         expect(CancelGhostStockSchema.safeParse({ fulfillmentOrderId: 'f1', variantId: 'v1', warehouseId: 'w1', quantityToCancel: -1 }).success).toBe(false);
 
-        expect(RequestReturnSchema.safeParse({ customerOrderId: 'o1', variantId: 'v1', warehouseId: 'w1', quantity: 0 }).success).toBe(false);
+        expect(RequestReturnSchema.safeParse({ customerOrderId: 'o1', variantId: 'v1', quantity: 0 }).success).toBe(false);
 
         expect(InspectReturnSchema.safeParse({ isGoodCondition: 'true' as unknown as boolean }).success).toBe(false);
         expect(InspectReturnSchema.safeParse({ isGoodCondition: null as unknown as boolean }).success).toBe(false);
@@ -669,7 +669,6 @@ describe('ADVERSARIAL CHALLENGE SUITE (W2-S01)', () => {
       });
       await mock.addStock({
         variantId: 'var-new',
-        warehouseId: whId,
         quantity: 12,
       });
       expect((await mock.listInventories()).length).toBeGreaterThanOrEqual(2);
@@ -716,7 +715,6 @@ describe('ADVERSARIAL CHALLENGE SUITE (W2-S01)', () => {
       const retId = await mock.requestReturn({
         customerOrderId: cartId,
         variantId: 'var-new',
-        warehouseId: whId,
         quantity: 1,
       });
       await mock.inspectReturn(retId, { isGoodCondition: true });
@@ -727,7 +725,6 @@ describe('ADVERSARIAL CHALLENGE SUITE (W2-S01)', () => {
       const retId2 = await mock.requestReturn({
         customerOrderId: cartId,
         variantId: 'var-new',
-        warehouseId: whId,
         quantity: 1,
       });
       await mock.rejectReturn(retId2);

@@ -78,7 +78,20 @@ export function useAdjustInventoryMutation(api?: ZentricApiPort) {
   });
 }
 
-// ── Clases de servicio heredadas ──────────────────────────────────────────
+/**
+ * Hook de mutación para eliminar logicamente un registro de inventario.
+ * Invalida ['inventories'].
+ */
+export function useDeleteInventoryMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string): Promise<void> => resolveApi(api).deleteInventory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventories.all });
+    },
+  });
+}
 
 export class IngresarStockService {
   constructor(private readonly api: ZentricApiPort) {}

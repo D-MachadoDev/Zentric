@@ -422,6 +422,10 @@ export class HttpClient implements ZentricApiPort {
     );
   }
 
+  deleteInventory(id: string): Promise<void> {
+    return this.#json<void>(`/api/Inventories/${encodeURIComponent(id)}`, this.#delete());
+  }
+
   // ── Módulo 4: Catálogo de Productos (/api/Catalog) ──────────────────────
 
   createProduct(input: CreateProductInput): Promise<CreatedProduct> {

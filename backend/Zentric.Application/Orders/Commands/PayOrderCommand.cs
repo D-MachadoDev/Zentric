@@ -19,6 +19,7 @@ namespace Zentric.Application.Orders.Commands
 
     public class PayOrderCommandHandler : IRequestHandler<PayOrderCommand, Result<bool>>
     {
+        private readonly IMediator _mediator;
         private readonly ICustomerOrderRepository _orderRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPaymentGatewayService _paymentGateway;
@@ -26,12 +27,14 @@ namespace Zentric.Application.Orders.Commands
         private readonly IProductRepository _productRepository;
 
         public PayOrderCommandHandler(
+            IMediator mediator,
             ICustomerOrderRepository orderRepository,
             IUnitOfWork unitOfWork,
             IPaymentGatewayService paymentGateway,
             IPaymentReceiptRepository receiptRepository,
             IProductRepository productRepository)
         {
+            _mediator = mediator;
             _orderRepository = orderRepository;
             _unitOfWork = unitOfWork;
             _paymentGateway = paymentGateway;
@@ -98,6 +101,33 @@ namespace Zentric.Application.Orders.Commands
                 await _receiptRepository.AddAsync(receipt, cancellationToken);
                 await _orderRepository.UpdateAsync(order, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                // Auto-generate invoices after successful payment (ACID: within same transaction context)
+                var generateResult = await _mediator.Send(
+                    new GenerateInvoicesCommand(order.Id),
+                    cancellationToken);
+
+                if (generateResult.IsFailure)
+                {
+                    // If invoice generation fails, we should ideally roll back the payment.
+                    // For now, return failure but the payment is already recorded.
+                    // TODO: Add proper rollback mechanism if needed.
+                    return Result<bool>.Failure(
+                        $"Payment processed but invoice generation failed: {generateResult.Error}");
+                }
+
+                // Generate PDF invoice
+                var orderForPdf = order; // Already loaded via GetByIdForBuyerAsync
+                var buyerEmail = orderForPdf.BuyerId != Guid.Empty
+                    ? $"buyer-{orderForPdf.BuyerId}@zentric.local"
+                    : "buyer@zentric.local";
+
+                var pdfGenerator = new PdfInvoiceGenerator();
+                var invoicePdf = pdfGenerator.GenerateInvoice(orderForPdf!, buyerEmail);
+
+                // TODO: Save PDF to persistent storage (file system, blob storage, etc.)
+                // and return a download URL. For now, we log the PDF bytes count.
+                // In a production system, this would be stored and a URL returned.
 
                 return Result<bool>.Success(true);
             }

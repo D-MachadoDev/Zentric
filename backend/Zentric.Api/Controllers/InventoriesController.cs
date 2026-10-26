@@ -66,8 +66,8 @@ namespace Zentric.Api.Controllers
         /// productos aunque esten en cualquier bodega, y el Operador ve la red completa. El filtro
         /// no es un parametro: no hay forma de pedir el stock de otro.
         /// </remarks>
-        /// <param name="page">Página (1-based).</param>
-        /// <param name="size">Tamaño de página.</param>
+        /// <param name="page">Pï¿½gina (1-based).</param>
+        /// <param name="size">Tamaï¿½o de pï¿½gina.</param>
         /// <response code="200">Listado de existencias visibles para el llamante.</response>
         /// <response code="401">Token ausente o invÃ¡lido.</response>
         [HttpGet]
@@ -147,6 +147,37 @@ namespace Zentric.Api.Controllers
             var result = await _mediator.Send(new AdjustInventoryCommand(id, command.CountedQuantity, command.Reason, userId.Value, role.Value));
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
+        }
+
+        /// <summary>
+        /// Elimina logicamente (soft delete) un registro de inventario.
+        /// </summary>
+        /// <remarks>
+        /// Solo se permite cuando el registro no tiene existencias fisicas (disponible, reservado,
+        /// usado y danado en cero). El Vendedor solo puede eliminar registros de SUS productos.
+        /// </remarks>
+        /// <param name="id">Identificador unico (Guid) del registro de inventario.</param>
+        /// <response code="204">Registro eliminado logicamente.</response>
+        /// <response code="400">El registro aun tiene existencias fisicas.</response>
+        /// <response code="401">Token ausente o invalido.</response>
+        /// <response code="403">El llamante no tiene permisos.</response>
+        /// <response code="404">Registro no encontrado.</response>
+        [HttpDelete("{id}")]
+        [Authorize(Policy = AuthorizationPolicies.InventoryManagement)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteInventory(Guid id)
+        {
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var result = await _mediator.Send(new DeleteInventoryCommand(id, userId.Value, role.Value));
+            if (result.IsFailure) return result.ToProblem();
+            return NoContent();
         }
 
         /// <summary>

@@ -86,6 +86,17 @@ export function SellerInventoryPage() {
   const warehouseMap = new Map<string, Warehouse>(allWarehouses.map((w: Warehouse) => [w.id, w]));
   const variantInfoMap = new Map<string, { sku: string; productName: string }>();
 
+   // Map inventories for table row click handling
+   const inventoryMap = new Map<string, { variantId: string; warehouseId: string }>(
+     inventories.map((inv: Inventory) => [inv.id, { variantId: inv.variantId, warehouseId: inv.warehouseId }])
+   );
+
+   // Manejo de clic en filas de tabla para prellenar el formulario
+   const handleInventoryRowClick = (inv: Inventory) => {
+     setTargetVariantId(inv.variantId);
+     setTargetWarehouseId(inv.warehouseId);
+   };
+
   allProducts.forEach((p: Product) => {
     (p.variants ?? []).forEach((v: ProductVariant) => {
       variantInfoMap.set(v.id, { sku: v.sku, productName: p.name });

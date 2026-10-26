@@ -102,7 +102,6 @@ describe('Zod Contracts Derived 1:1 from OpenAPI / FluentValidation', () => {
     it('acepta cantidades enteras positivas', () => {
       const res = AddStockSchema.safeParse({
         variantId: 'var-1',
-        warehouseId: 'wh-1',
         quantity: 50,
       });
       expect(res.success).toBe(true);
@@ -209,7 +208,6 @@ describe('Zod Contracts Derived 1:1 from OpenAPI / FluentValidation', () => {
       const res = RequestReturnSchema.safeParse({
         customerOrderId: 'order-1',
         variantId: 'var-1',
-        warehouseId: 'wh-1',
         quantity: 1,
       });
       expect(res.success).toBe(true);
