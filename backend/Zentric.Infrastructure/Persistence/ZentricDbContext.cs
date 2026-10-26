@@ -20,6 +20,7 @@ namespace Zentric.Infrastructure.Persistence
         public DbSet<InventoryDbModel> Inventories => Set<InventoryDbModel>();
         public DbSet<StockAdjustmentDbModel> StockAdjustments => Set<StockAdjustmentDbModel>();
         public DbSet<WarehouseDbModel> Warehouses => Set<WarehouseDbModel>();
+        public DbSet<UserRecentlyViewedDbModel> UserRecentlyViewed => Set<UserRecentlyViewedDbModel>();
 
         public ZentricDbContext(DbContextOptions<ZentricDbContext> options) : base(options)
         {
@@ -167,6 +168,14 @@ namespace Zentric.Infrastructure.Persistence
             modelBuilder.Entity<ReturnRequestDbModel>().HasKey(r => r.Id);
             modelBuilder.Entity<InventoryDbModel>().HasKey(i => i.Id);
             modelBuilder.Entity<WarehouseDbModel>().HasKey(w => w.Id);
+
+            modelBuilder.Entity<UserRecentlyViewedDbModel>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.HasIndex(x => new { x.UserId, x.ProductId }).IsUnique();
+                b.HasIndex(x => x.UserId);
+                b.HasIndex(x => x.ViewedAt);
+            });
             
             modelBuilder.Entity<ProductDbModel>(b =>
             {

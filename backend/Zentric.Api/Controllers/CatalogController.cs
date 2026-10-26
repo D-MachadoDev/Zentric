@@ -1,9 +1,9 @@
-using Zentric.Application.Common.Messaging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
 using Zentric.Application.Catalog.Commands;
 using Zentric.Application.Catalog.Queries;
+using Zentric.Application.Common.Messaging;
 using Zentric.Application.Common.Models;
 
 using Zentric.Api.Contracts;
@@ -189,6 +189,57 @@ namespace Zentric.Api.Controllers
         {
             var result = await _mediator.Send(new GetCategoriesQuery());
             return Ok(result.Value);
+        }
+
+        /// <summary>
+        /// Obtiene los productos vistos recientemente por el usuario autenticado.
+        /// </summary>
+        /// <remarks>
+        /// Devuelve hasta 20 productos ordenados por última visualización (más reciente primero).
+        /// Solo productos en estado Published que existan actualmente en el catálogo.
+        /// </remarks>
+        /// <param name="maxItems">Máximo de productos a devolver (1..50, por defecto 20).</param>
+        /// <response code="200">Lista de productos vistos recientemente.</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        [HttpGet("products/recently-viewed")]
+        [Authorize(Policy = AuthorizationPolicies.AnyAuthenticatedUser)]
+        [ProducesResponseType(typeof(IReadOnlyList<ProductDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetRecentlyViewed([FromQuery] int maxItems = 20)
+        {
+            var userId = _currentUser.UserId;
+            if (userId is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            maxItems = Math.Clamp(maxItems, 1, 50);
+
+            var result = await _mediator.Send(new GetRecentlyViewedQuery(userId.Value, maxItems));
+            return Ok(result.Value);
+        }
+
+        /// <summary>
+        /// Registra la visualización de un producto por el usuario autenticado.
+        /// </summary>
+        /// <remarks>
+        /// Actualiza o crea el registro de "vistos recientemente" para el par (UserId, ProductId).
+        /// El producto debe existir y estar en estado Published.
+        /// </remarks>
+        /// <param name="productId">Identificador único (Guid) del producto visualizado.</param>
+        /// <response code="204">Visualización registrada correctamente.</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        /// <response code="404">Producto no encontrado o no publicado.</response>
+        [HttpPost("products/{productId}/track-view")]
+        [Authorize(Policy = AuthorizationPolicies.AnyAuthenticatedUser)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> TrackProductView(Guid productId)
+        {
+            var userId = _currentUser.UserId;
+            if (userId is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var result = await _mediator.Send(new TrackProductViewCommand(userId.Value, productId));
+            if (result.IsFailure) return result.ToProblem();
+
+            return NoContent();
         }
 
         /// <summary>

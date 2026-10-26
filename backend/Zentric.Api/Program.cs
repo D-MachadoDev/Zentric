@@ -188,6 +188,7 @@ builder.Services.AddScoped<Zentric.Infrastructure.Persistence.IDomainEventDispat
 builder.Services.AddScoped<Zentric.Domain.Users.Ports.IUserRepository, UserRepository>();
 builder.Services.AddScoped<Zentric.Domain.Buyers.Ports.IBuyerRepository, BuyerRepository>();
 builder.Services.AddScoped<Zentric.Domain.Products.Ports.IProductRepository, ProductRepository>();
+builder.Services.AddScoped<Zentric.Domain.Products.Ports.IUserRecentlyViewedRepository, UserRecentlyViewedRepository>();
 builder.Services.AddScoped<Zentric.Domain.Inventories.Ports.IInventoryRepository, InventoryRepository>();
 builder.Services.AddScoped<Zentric.Domain.Warehouses.Ports.IWarehouseRepository, WarehouseRepository>();
 builder.Services.AddScoped<Zentric.Domain.Orders.Ports.ICustomerOrderRepository, CustomerOrderRepository>();
