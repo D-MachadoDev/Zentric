@@ -269,6 +269,7 @@ export function SellerProductsPage() {
     onClick={() => navigator.clipboard?.writeText(product.id)}
     className="text-foreground-muted hover:text-foreground"
     title="Copiar ID"
+    aria-label="Copiar ID del producto"
   >
     <Copy className="h-3 w-3" />
   </button>

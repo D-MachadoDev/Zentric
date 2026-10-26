@@ -513,6 +513,7 @@ export function SellerInventoryPage() {
                   value={stockQuantity}
                   onChange={(e) => setStockQuantity(e.target.value)}
                   className="bg-surface-muted border-border text-foreground font-mono text-sm focus:border-brand"
+                aria-label="Cantidad de unidades a ingresar"
                 />
                 <p className="text-[11px] text-foreground-muted">
                   Debe ser un entero mayor a cero (INV-01).
@@ -522,7 +523,7 @@ export function SellerInventoryPage() {
               <Button
                 type="submit"
                 disabled={addStockMutation.isPending}
-                className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold"
+                className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold" title="Ingresar existencias en la bodega seleccionada"
               >
                 {addStockMutation.isPending ? (
                   <>
