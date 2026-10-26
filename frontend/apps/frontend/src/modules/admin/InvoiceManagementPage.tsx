@@ -3,6 +3,8 @@ import {
   AlertCircle,
   Ban,
   CheckCircle,
+  ChevronLeft,
+  ChevronRight,
   FileCheck,
   Receipt,
   RefreshCw,
@@ -18,14 +20,15 @@ import {
   MoneyAmount,
   Skeleton,
   StatusBadge,
+  Pagination,
 } from '@zentric/ui';
 import {
   useAnnulInvoicesMutation,
   useGenerateInvoicesMutation,
-  useInvoicesQuery,
+  useInvoicesPagedQuery,
   useOrdersQuery,
 } from '../../application/services';
-import type { Invoice, OrderListItem } from '../../domain';
+import type { Invoice, ListInvoicesPagedParams, OrderListItem, PagedResult } from '../../domain';
 import { InvoiceType, OrderStatus } from '../../domain';
 import {
   NOMBRES_DE_COMPROBANTE,
@@ -89,6 +92,13 @@ const ESTADOS_PAGADOS: ReadonlyArray<OrderStatus> = [
 export function InvoiceManagementPage() {
   const [typeFilter, setTypeFilter] = useState<'All' | InvoiceType>('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+
+  // Pagination params for server-side pagination
+  const params: ListInvoicesPagedParams = {
+    page: page - 1, // backend uses 0-based
+    size: 20,
+  };
 
   // Estación de emisión
   const [numeroDeEmision, setNumeroDeEmision] = useState('');
@@ -101,20 +111,14 @@ export function InvoiceManagementPage() {
   const [annulSuccess, setAnnulSuccess] = useState<string | null>(null);
   const [annulError, setAnnulError] = useState<string | null>(null);
 
-  const {
-    data: invoices = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useInvoicesQuery();
+  const { data: pagedResult, isLoading, isError, error, refetch } = useInvoicesPagedQuery(params);
+  const invoices = pagedResult?.items ?? [];
+  const totalItems = pagedResult?.totalItems ?? 0;
+  const totalPages = pagedResult?.totalPages ?? 0;
 
-  // Pedidos vivos: permiten resolver el número amigable y validar el estado
-  // antes de emitir. El servidor sigue siendo la autoridad financiera.
-  const {
-    data: orders = [],
-    isError: isErrorOrders,
+  const { data: orders = [], isError: isErrorOrders, refetch: refetchOrders } = useOrdersQuery();
+  const generateMutation = useGenerateInvoicesMutation();
+  const annulMutation = useAnnulInvoicesMutation();
   } = useOrdersQuery();
 
   const generateMutation = useGenerateInvoicesMutation();
@@ -404,6 +408,17 @@ export function InvoiceManagementPage() {
                 </table>
               </div>
             )}
+
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                onPageChange={setPage}
+                className="mt-6"
+              />
+            )}
+
           </div>
         </section>
 
