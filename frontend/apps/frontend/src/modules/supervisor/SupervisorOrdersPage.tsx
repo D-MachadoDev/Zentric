@@ -7,6 +7,8 @@ import {
   Search,
   ShieldCheck,
   ShoppingBag,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   Alert,
@@ -16,9 +18,10 @@ import {
   Button,
   Input,
   Skeleton,
+  Pagination,
 } from '@zentric/ui';
-import { useOrdersQuery } from '../../application/services';
-import type { OrderListItem } from '../../domain';
+import { useOrdersPagedQuery } from '../../application/services';
+import type { ListOrdersPagedParams, OrderListItem, PagedResult } from '../../domain';
 import { OrderStatus } from '../../domain';
 
 /**
@@ -27,22 +30,27 @@ import { OrderStatus } from '../../domain';
  * Frontend-Role-Modules.md §2.6:
  * DataTable global de pedidos con filtro por `OrderStatus` y búsqueda por texto
  * en modo estricto de sólo lectura (cero botones de mutación comercial).
+ * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
  */
 export function SupervisorOrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const parsedStatus = statusFilter === 'All' ? undefined : (statusFilter as OrderStatus);
 
-  const {
-    data: orders = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useOrdersQuery(parsedStatus);
+  // Pagination params for server-side pagination
+  const params: ListOrdersPagedParams = {
+    status: parsedStatus,
+    page: page - 1, // backend uses 0-based
+    size: 20,
+  };
+
+  const { data: pagedResult, isLoading, isError, error, refetch, isFetching } = useOrdersPagedQuery(params);
+  const orders = pagedResult?.items ?? [];
+  const totalItems = pagedResult?.totalItems ?? 0;
+  const totalPages = pagedResult?.totalPages ?? 0;
 
   const filteredOrders = orders.filter((ord: OrderListItem) => {
     const matchesSearch =
@@ -230,6 +238,17 @@ export function SupervisorOrdersPage() {
               </div>
             </div>
           )}
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={setPage}
+              className="mt-6"
+            />
+          )}
+
         </section>
 
         {/* Lado Derecho (35%): Resumen de Orden Seleccionada ────────────── */}
