@@ -46,7 +46,10 @@ export function GhostStockReportPage({ fulfillmentId }: GhostStockReportPageProp
   const cancelGhostMutation = useCancelGhostStockMutation();
   const { data: productsResult } = useProductsPagedQuery();
   const products = productsResult?.items ?? [];
-  const { data: warehouses = [] } = useWarehousesQuery();
+  const { data: warehousesRaw } = useWarehousesQuery();
+  const warehouses = Array.isArray(warehousesRaw)
+    ? warehousesRaw
+    : ((warehousesRaw as { items?: Warehouse[] } | null | undefined)?.items ?? []);
   const catalogVariants = products.flatMap((p: Product) =>
     (p.variants ?? []).map((v) => ({
       id: v.id,

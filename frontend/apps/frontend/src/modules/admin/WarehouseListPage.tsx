@@ -77,7 +77,10 @@ export function WarehouseListPage() {
   const totalItems = pagedResult?.totalItems ?? 0;
   const totalPages = pagedResult?.totalPages ?? 0;
 
-  const { data: users = [] } = useUsersQuery(undefined, undefined, { enabled: !isSellerMode });
+  const { data: usersRaw } = useUsersQuery(undefined, undefined, { enabled: !isSellerMode });
+  const users = Array.isArray(usersRaw)
+    ? usersRaw
+    : ((usersRaw as { items?: User[] } | null | undefined)?.items ?? []);
   const sellerUsers = users.filter((u: User) => u.role === UserRole.Seller);
 
   const createMutation = useCreateWarehouseMutation();
