@@ -213,10 +213,14 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
     vi.clearAllMocks();
 
     vi.spyOn(appServices.api, 'listUsers').mockResolvedValue(mockUsers);
+    vi.spyOn(appServices.api, 'listUsersPaged').mockResolvedValue({ items: mockUsers, page: 0, size: 20, totalItems: mockUsers.length, totalPages: 1 });
     vi.spyOn(appServices.api, 'listWarehouses').mockResolvedValue(mockWarehouses);
+    vi.spyOn(appServices.api, 'listWarehousesPaged').mockResolvedValue({ items: mockWarehouses, page: 0, size: 20, totalItems: mockWarehouses.length, totalPages: 1 });
     vi.spyOn(appServices.api, 'listOrders').mockResolvedValue(mockOrders);
     vi.spyOn(appServices.api, 'listInvoices').mockResolvedValue(mockInvoices);
+    vi.spyOn(appServices.api, 'listInvoicesPaged').mockResolvedValue({ items: mockInvoices, page: 0, size: 20, totalItems: mockInvoices.length, totalPages: 1 });
     vi.spyOn(appServices.api, 'listInventories').mockResolvedValue(mockInventories);
+    vi.spyOn(appServices.api, 'listInventoriesPaged').mockResolvedValue({ items: mockInventories, page: 0, size: 20, totalItems: mockInventories.length, totalPages: 1 });
     vi.spyOn(appServices.api, 'listReturns').mockResolvedValue(mockReturns);
     vi.spyOn(appServices.api, 'getHealth').mockResolvedValue({
       status: 'healthy',
@@ -315,7 +319,7 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
     });
 
     it('muestra alerta de error y permite reintentar cuando falla la carga', async () => {
-      vi.spyOn(appServices.api, 'listUsers').mockRejectedValue(new Error('Fallo de directorio'));
+      vi.spyOn(appServices.api, 'listUsersPaged').mockRejectedValue(new Error('Fallo de directorio'));
       renderWithClient(<UserListPage />);
 
       expect(await screen.findByText('Error al consultar el directorio')).toBeInTheDocument();
@@ -482,7 +486,7 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
     });
 
     it('muestra alerta de error y permite reintentar', async () => {
-      vi.spyOn(appServices.api, 'listWarehouses').mockRejectedValue(new Error('Fallo de bodegas'));
+      vi.spyOn(appServices.api, 'listWarehousesPaged').mockRejectedValue(new Error('Fallo de bodegas'));
       renderWithClient(<WarehouseListPage />);
 
       expect(await screen.findByText('Error al cargar la red de bodegas')).toBeInTheDocument();
@@ -491,18 +495,24 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
     });
 
     it('maneja bodegas inactivas, cambio de tipo Vendor a Marketplace y errores de creación', async () => {
-      vi.spyOn(appServices.api, 'listWarehouses').mockResolvedValue([
-        {
-          id: 'wh-inactive-1',
-          name: 'Bodega Inactiva Sur',
-          location: 'Bogotá Sur',
-          capacity: 500,
-          type: WarehouseType.Marketplace,
-          vendorId: null,
-          isActive: false,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+      vi.spyOn(appServices.api, 'listWarehousesPaged').mockResolvedValue({
+        items: [
+          {
+            id: 'wh-inactive-1',
+            name: 'Bodega Inactiva Sur',
+            location: 'Bogotá Sur',
+            capacity: 500,
+            type: WarehouseType.Marketplace,
+            vendorId: null,
+            isActive: false,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+        page: 0,
+        size: 20,
+        totalItems: 1,
+        totalPages: 1,
+      });
       vi.spyOn(appServices.api, 'createWarehouse').mockRejectedValue(new Error('Nombre de bodega duplicado'));
 
       renderWithClient(<WarehouseListPage />);
@@ -615,7 +625,7 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
     });
 
     it('muestra estado de error y permite reintentar cuando listInventories falla', async () => {
-      vi.spyOn(appServices.api, 'listInventories').mockRejectedValue(new Error('Fallo de red inventarios'));
+      vi.spyOn(appServices.api, 'listInventoriesPaged').mockRejectedValue(new Error('Fallo de red inventarios'));
       renderWithClient(<InventoryAdjustPage />);
 
       expect(await screen.findByText('Error al cargar inventarios')).toBeInTheDocument();
@@ -813,7 +823,7 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
     });
 
     it('muestra error y permite reintentar cuando falla la carga', async () => {
-      vi.spyOn(appServices.api, 'listInvoices').mockRejectedValue(new Error('Fallo de facturación'));
+      vi.spyOn(appServices.api, 'listInvoicesPaged').mockRejectedValue(new Error('Fallo de facturación'));
       renderWithClient(<InvoiceManagementPage />);
 
       expect(await screen.findByText('No fue posible cargar la facturación')).toBeInTheDocument();

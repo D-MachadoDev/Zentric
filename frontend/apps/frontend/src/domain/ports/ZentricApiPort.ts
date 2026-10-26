@@ -12,6 +12,7 @@
   CreateProductVariantInput,
   CreateUserInput,
   CreateWarehouseInput,
+  UpdateProductInput,
   UpdateWarehouseInput,
   CreatedProduct,
   CurrentUser,
@@ -119,6 +120,8 @@ export interface ZentricApiPort {
   createProduct(input: CreateProductInput): Promise<CreatedProduct>;
   addProductVariant(productId: string, input: CreateProductVariantInput): Promise<string>;
   publishProduct(productId: string): Promise<void>;
+  updateProduct(productId: string, input: UpdateProductInput): Promise<void>;
+
   suspendProduct(productId: string): Promise<void>;
   listProductsPaged(params?: ListProductsPagedParams, signal?: AbortSignal): Promise<PagedResult<Product>>;
   getProductById(id: string): Promise<Product>;

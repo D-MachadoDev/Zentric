@@ -8,8 +8,6 @@ import {
   ShieldCheck,
   Check,
   X,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import {
   Button,
@@ -25,7 +23,7 @@ import {
   useReturnsPagedQuery,
   useInspectReturnMutation,
 } from '../../application/services';
-import type { ListReturnsPagedParams, PagedResult, ReturnRequest } from '../../domain';
+import type { ListReturnsPagedParams, ReturnRequest } from '../../domain';
 import { ReturnStatus } from '../../domain';
 
 /**

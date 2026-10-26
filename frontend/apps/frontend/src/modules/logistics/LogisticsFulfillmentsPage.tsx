@@ -9,8 +9,6 @@ import {
   CheckCircle,
   PackageCheck,
   ArrowUpRight,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import {
   Button,
@@ -31,7 +29,7 @@ import {
 } from '../../application/services';
 import { CreateFulfillmentSchema } from '../../application/schemas';
 import { NOMBRES_DE_ESTADO_DE_DESPACHO } from '../../components/domainLabels';
-import type { CreateFulfillmentInput, FulfillmentOrder, ListFulfillmentsPagedParams, PagedResult } from '../../domain';
+import type { CreateFulfillmentInput, FulfillmentOrder, ListFulfillmentsPagedParams } from '../../domain';
 import { FulfillmentStatus } from '../../domain';
 
 /**

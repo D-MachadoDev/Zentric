@@ -36,6 +36,7 @@ import type {
   UpdateUserProfileInput,
   UserRole,
   Warehouse,
+  UpdateProductInput,
   UpdateWarehouseInput,
   ZentricApiPort,
 } from '../../domain';
@@ -481,6 +482,23 @@ export class MockZentricApiAdapter implements ZentricApiPort {
   async suspendProduct(productId: string): Promise<void> {
     const prod = this.products.find((p) => p.id === productId);
     if (prod) prod.status = 'Suspended';
+  }
+
+  async updateProduct(productId: string, input: UpdateProductInput): Promise<void> {
+    const prod = this.products.find((p) => p.id === productId);
+    if (!prod) {
+      throw new ProblemDetailsError({
+        status: 404,
+        title: 'Producto no encontrado',
+        detail: `No se encontró el producto ${productId}.`,
+      });
+    }
+    prod.name = input.name;
+    prod.description = input.description;
+    prod.price = input.priceAmount;
+    prod.currency = input.priceCurrency;
+    if (input.imageUrl !== undefined) prod.imageUrl = input.imageUrl;
+    if (input.category !== undefined) prod.category = input.category ?? undefined;
   }
 
   async listProductsPaged(params?: ListProductsPagedParams, _signal?: AbortSignal): Promise<PagedResult<Product>> {

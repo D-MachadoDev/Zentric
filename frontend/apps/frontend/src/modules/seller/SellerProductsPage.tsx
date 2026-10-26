@@ -32,6 +32,7 @@ import {
   Package,
   FileCode,
   RefreshCw,
+  Copy,
 } from 'lucide-react';
 
 /**
@@ -261,7 +262,17 @@ export function SellerProductsPage() {
                       <span>•</span>
                       <span>Creado: {new Date(product.createdAt).toLocaleDateString('es-CO')}</span>
                       <span>•</span>
-                      <span>ID: {product.id}</span>
+                      <span className="flex items-center gap-1">
+  ID: {product.id}
+  <button
+    type="button"
+    onClick={() => navigator.clipboard?.writeText(product.id)}
+    className="text-foreground-muted hover:text-foreground"
+    title="Copiar ID"
+  >
+    <Copy className="h-3 w-3" />
+  </button>
+</span>
                     </div>
                   </div>
 

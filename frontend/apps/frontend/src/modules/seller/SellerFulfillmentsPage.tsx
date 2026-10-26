@@ -43,6 +43,7 @@ import {
   CheckCircle2,
   Warehouse as WarehouseIcon,
   Ban,
+  ChevronRight,
 } from 'lucide-react';
 
 

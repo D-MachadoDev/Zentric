@@ -673,7 +673,9 @@ export const logisticsLayoutRoute = createRoute({
 export const logisticsIndexRoute = createRoute({
   getParentRoute: () => logisticsLayoutRoute,
   path: '/',
-  component: () => <LogisticsFulfillmentsPage />,
+  beforeLoad: () => {
+    throw redirect({ to: '/logistics/fulfillments' });
+  },
 });
 
 export const logisticsFulfillmentsRoute = createRoute({

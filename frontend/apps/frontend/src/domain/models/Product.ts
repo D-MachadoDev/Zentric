@@ -40,7 +40,15 @@ export interface Product {
   category?: string;
 }
 
-/** Atributo de una variante (`VariantAttributeDto`). */
+export interface UpdateProductInput {
+  name: string;
+  description: string;
+  priceAmount: number;
+  priceCurrency: string;
+  imageUrl?: string | null;
+  category?: string;
+}
+
 export interface VariantAttribute {
   name: string;
   value: string;

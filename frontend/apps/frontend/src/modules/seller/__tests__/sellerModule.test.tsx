@@ -319,23 +319,36 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
     vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValue({ items: [mockProduct1, mockProduct2], totalItems: 2, totalPages: 1, page: 0, size: 20 });
     vi.spyOn(appServices.api, 'getProductById').mockResolvedValue(mockProduct1);
     vi.spyOn(appServices.api, 'listWarehouses').mockResolvedValue([mockWarehouse1, mockWarehouse2]);
-    vi.spyOn(appServices.api, 'listInventories').mockResolvedValue([mockInventory1]);
+    vi.spyOn(appServices.api, 'listInventoriesPaged').mockResolvedValue({ items: [mockInventory1], page: 0, size: 20, totalItems: 1, totalPages: 1 });
     vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([mockOrderListItem, mockOrderListItem2]);
+vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [mockOrderListItem, mockOrderListItem2], page: 0, size: 20, totalItems: 2, totalPages: 1 });
     vi.spyOn(appServices.api, 'getOrderById').mockResolvedValue(mockSellerOrderView);
-    vi.spyOn(appServices.api, 'listFulfillments').mockResolvedValue([
-      mockFulfillment1,
-      mockFulfillment2,
-      mockFulfillment3,
-      mockFulfillment4,
-      mockFulfillment5,
-    ]);
-    vi.spyOn(appServices.api, 'listReturns').mockResolvedValue([
-      mockReturn1,
-      mockReturn2,
-      mockReturnApproved,
-      mockReturnRefunded,
-      mockReturnRejected,
-    ]);
+    vi.spyOn(appServices.api, 'listFulfillmentsPaged').mockResolvedValue({
+      items: [
+        mockFulfillment1,
+        mockFulfillment2,
+        mockFulfillment3,
+        mockFulfillment4,
+        mockFulfillment5,
+      ],
+      page: 0,
+      size: 20,
+      totalItems: 5,
+      totalPages: 1,
+    });
+    vi.spyOn(appServices.api, 'listReturnsPaged').mockResolvedValue({
+      items: [
+        mockReturn1,
+        mockReturn2,
+        mockReturnApproved,
+        mockReturnRefunded,
+        mockReturnRejected,
+      ],
+      page: 0,
+      size: 20,
+      totalItems: 5,
+      totalPages: 1,
+    });
     vi.spyOn(appServices.api, 'listInvoices').mockResolvedValue([mockVendorInvoice]);
   });
 
@@ -795,7 +808,7 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
     });
 
     it('muestra error y permite reintentar cuando falla la carga', async () => {
-      vi.spyOn(appServices.api, 'listInventories').mockRejectedValue(new Error('Fallo de inventario'));
+      vi.spyOn(appServices.api, 'listInventoriesPaged').mockRejectedValue(new Error('Fallo de inventario'));
       renderWithClient(<SellerInventoryPage />);
 
       expect(await screen.findByText('Error al cargar el inventario')).toBeInTheDocument();
@@ -805,17 +818,23 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
     });
 
     it('muestra alerta cuando la mutación addStock falla y cubre filtros, estados vacíos y fallbacks de mapeo', async () => {
-      vi.spyOn(appServices.api, 'listInventories').mockResolvedValue([
-        {
-          id: 'inv-unknown-1',
-          variantId: 'var-unknown-9999',
-          warehouseId: 'wh-unknown-9999',
-          availableQuantity: 10,
-          reservedQuantity: 0,
-          usedQuantity: 0,
-          damagedQuantity: 0,
-        },
-      ]);
+      vi.spyOn(appServices.api, 'listInventoriesPaged').mockResolvedValue({
+        items: [
+          {
+            id: 'inv-unknown-1',
+            variantId: 'var-unknown-9999',
+            warehouseId: 'wh-unknown-9999',
+            availableQuantity: 10,
+            reservedQuantity: 0,
+            usedQuantity: 0,
+            damagedQuantity: 0,
+          },
+        ],
+        page: 0,
+        size: 20,
+        totalItems: 1,
+        totalPages: 1,
+      });
       vi.spyOn(appServices.api, 'addStock').mockRejectedValue(new Error('Capacidad excedida en bodega'));
       renderWithClient(<SellerInventoryPage />);
 
@@ -844,7 +863,7 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
     });
 
     it('muestra mensaje vacío inicial cuando no existen posiciones de inventario', async () => {
-      vi.spyOn(appServices.api, 'listInventories').mockResolvedValue([]);
+      vi.spyOn(appServices.api, 'listInventoriesPaged').mockResolvedValue({ items: [], page: 0, size: 20, totalItems: 0, totalPages: 0 });
       renderWithClient(<SellerInventoryPage />);
 
       expect(
@@ -901,11 +920,11 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       const filterSelect = screen.getByLabelText(/Filtrar por estado del pedido/i);
       fireEvent.change(filterSelect, { target: { value: OrderStatus.Cancelled } });
 
-      expect(screen.getByText('No hay pedidos registrados')).toBeInTheDocument();
+      expect(await screen.findByText('No hay pedidos registrados')).toBeInTheDocument();
       expect(screen.getByText('Selecciona un pedido para inspeccionar su liquidación.')).toBeInTheDocument();
 
       unmount();
-      vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([]);
+      vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [], page: 0, size: 20, totalItems: 0, totalPages: 0 });
       renderWithClient(<SellerOrdersPage />);
       expect(
         await screen.findByText('Aún no se han recibido compras que contengan productos de tu catálogo.')
@@ -913,7 +932,7 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
     });
 
     it('muestra error y permite reintentar cuando falla la carga', async () => {
-      vi.spyOn(appServices.api, 'listOrders').mockRejectedValue(new Error('Fallo de pedidos'));
+      vi.spyOn(appServices.api, 'listOrdersPaged').mockRejectedValue(new Error('Fallo de pedidos'));
       renderWithClient(<SellerOrdersPage />);
 
       expect(await screen.findByText('Error al cargar pedidos')).toBeInTheDocument();
@@ -1060,7 +1079,7 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       fireEvent.change(screen.getByLabelText(/Filtrar por estado de despacho/i), {
         target: { value: FulfillmentStatus.Packed },
       });
-      expect(screen.getByText('No hay despachos que coincidan con los filtros aplicados.')).toBeInTheDocument();
+      expect(await screen.findByText('No hay despachos que coincidan con los filtros aplicados.')).toBeInTheDocument();
       expect(screen.getByText('Selecciona un despacho para operar o verificar su estado.')).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
     });
@@ -1084,7 +1103,7 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       expect(await screen.findByText('Fallo al cancelar por quiebre')).toBeInTheDocument();
 
       unmount();
-      vi.spyOn(appServices.api, 'listFulfillments').mockResolvedValue([]);
+      vi.spyOn(appServices.api, 'listFulfillmentsPaged').mockResolvedValue({ items: [], page: 0, size: 20, totalItems: 0, totalPages: 0 });
       renderWithClient(<SellerFulfillmentsPage />);
       expect(
         await screen.findByText('No tienes órdenes de despacho activas en este momento.')
@@ -1092,7 +1111,7 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
     });
 
     it('muestra error y permite reintentar cuando falla la carga', async () => {
-      vi.spyOn(appServices.api, 'listFulfillments').mockRejectedValue(new Error('Fallo de logística'));
+      vi.spyOn(appServices.api, 'listFulfillmentsPaged').mockRejectedValue(new Error('Fallo de logística'));
       renderWithClient(<SellerFulfillmentsPage />);
 
       expect(await screen.findByText('Error al cargar despachos')).toBeInTheDocument();
@@ -1173,11 +1192,11 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       fireEvent.change(screen.getByLabelText(/Filtrar por estado de devolución/i), {
         target: { value: ReturnStatus.Approved },
       });
-      expect(screen.getByText('No hay solicitudes de devolución que coincidan con los filtros aplicados.')).toBeInTheDocument();
+      expect(await screen.findByText('No hay solicitudes de devolución que coincidan con los filtros aplicados.')).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
 
       unmount();
-      vi.spyOn(appServices.api, 'listReturns').mockResolvedValue([]);
+      vi.spyOn(appServices.api, 'listReturnsPaged').mockResolvedValue({ items: [], page: 0, size: 20, totalItems: 0, totalPages: 0 });
       renderWithClient(<SellerReturnsPage />);
       expect(
         await screen.findByText('Ningún comprador ha solicitado devolución para tus productos.')
@@ -1186,7 +1205,7 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
     });
 
     it('muestra error y permite reintentar cuando falla la carga', async () => {
-      vi.spyOn(appServices.api, 'listReturns').mockRejectedValue(new Error('Fallo de devoluciones'));
+      vi.spyOn(appServices.api, 'listReturnsPaged').mockRejectedValue(new Error('Fallo de devoluciones'));
       renderWithClient(<SellerReturnsPage />);
 
       expect(await screen.findByText('Error al cargar devoluciones')).toBeInTheDocument();

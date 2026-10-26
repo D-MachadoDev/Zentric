@@ -34,6 +34,7 @@ import {
   RefreshCw,
   AlertCircle,
   ShieldCheck,
+  ChevronRight,
 } from 'lucide-react';
 
 

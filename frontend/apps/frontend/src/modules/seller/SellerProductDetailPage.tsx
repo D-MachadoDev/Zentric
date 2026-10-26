@@ -5,6 +5,7 @@ import {
   usePublishProductMutation,
   useSuspendProductMutation,
   useAddProductVariantMutation,
+  useUpdateProductMutation,
 } from '../../application/services/catalog';
 import { ProductStatus, type ProductVariant } from '../../domain';
 import {
@@ -28,6 +29,8 @@ import {
   PauseCircle,
   CheckCircle,
   AlertCircle,
+  Copy,
+  Edit2,
 } from 'lucide-react';
 
 /**
@@ -41,12 +44,59 @@ export function SellerProductDetailPage() {
   const publishMutation = usePublishProductMutation();
   const suspendMutation = useSuspendProductMutation();
   const addVariantMutation = useAddProductVariantMutation();
+  const updateMutation = useUpdateProductMutation();
 
   const [newSku, setNewSku] = useState('');
   const [newAttrName, setNewAttrName] = useState('Color');
   const [newAttrValue, setNewAttrValue] = useState('');
   const [newPrice, setNewPrice] = useState<string>('');
   const [variantError, setVariantError] = useState<string | null>(null);
+
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editImageUrl, setEditImageUrl] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleStartEdit = () => {
+    if (!product) return;
+    setEditName(product.name);
+    setEditDescription(product.description);
+    setEditPrice(String(product.price));
+    setEditImageUrl(product.imageUrl ?? '');
+    setEditCategory(product.category ?? '');
+    setEditError(null);
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productId || !product) return;
+    setEditError(null);
+    const priceAmount = Number(editPrice);
+    if (isNaN(priceAmount) || priceAmount <= 0) {
+      setEditError('El precio debe ser un valor positivo.');
+      return;
+    }
+    try {
+      await updateMutation.mutateAsync({
+        productId,
+        input: {
+          name: editName.trim(),
+          description: editDescription.trim(),
+          priceAmount,
+          priceCurrency: product.currency,
+          imageUrl: editImageUrl.trim() || null,
+          category: editCategory.trim() || undefined,
+        },
+      });
+      setIsEditing(false);
+    } catch (err: unknown) {
+      setEditError(err instanceof Error ? err.message : 'No se pudo actualizar el producto.');
+    }
+  };
 
   const handleAddVariant = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,12 +190,28 @@ export function SellerProductDetailPage() {
               {NOMBRES_DE_ESTADO_DE_PRODUCTO[product.status]}
             </StatusBadge>
           </div>
-          <p className="text-sm font-mono text-foreground-muted">
+<p className="text-sm font-mono text-foreground-muted flex items-center gap-2">
             Creado el {new Date(product.createdAt).toLocaleDateString('es-CO')} • ID: {product.id}
+            <button
+              type="button"
+              onClick={() => navigator.clipboard?.writeText(product.id)}
+              className="text-foreground-muted hover:text-foreground"
+              title="Copiar ID"
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
           </p>
         </div>
 
         <div className="flex items-center gap-3">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleStartEdit}
+            className="border-border text-foreground-muted hover:text-foreground text-xs font-mono"
+          >
+            <Edit2 className="h-3.5 w-3.5 mr-1.5" /> Editar
+          </Button>
           <Button
             size="sm"
             variant={isPublished ? 'outline' : 'secondary'}
@@ -177,6 +243,47 @@ export function SellerProductDetailPage() {
       </div>
 
       {/* ── Ficha Técnica ──────────────────────────────────────────────── */}
+      {isEditing && (
+        <div className="rounded-2xl border border-border bg-surface p-6 space-y-4 shadow-xl">
+          <h3 className="text-xs font-mono uppercase text-foreground-muted">Editar Producto</h3>
+          <form onSubmit={handleSaveEdit} className="space-y-3">
+            {editError && (
+              <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+                <AlertDescription className="text-xs font-mono">{editError}</AlertDescription>
+              </Alert>
+            )}
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono uppercase text-foreground-muted">Nombre</label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono uppercase text-foreground-muted">Descripción</label>
+              <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono uppercase text-foreground-muted">Precio base</label>
+              <Input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono uppercase text-foreground-muted">Imagen URL</label>
+              <Input value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono uppercase text-foreground-muted">Categoría</label>
+              <Input value={editCategory} onChange={(e) => setEditCategory(e.target.value)} />
+            </div>
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+              <Button type="button" variant="outline" onClick={() => setIsEditing(false)} className="border-border text-foreground hover:bg-surface-muted text-xs">
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={updateMutation.isPending} className="bg-brand text-primary-foreground font-bold text-xs">
+                {updateMutation.isPending ? 'Guardando…' : 'Guardar Cambios'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-8 space-y-6">
           <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 space-y-6 shadow-xl">

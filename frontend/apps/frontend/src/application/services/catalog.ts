@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   CreateProductInput,
   CreateProductVariantInput,
+  UpdateProductInput,
   CreatedProduct,
   ListProductsPagedParams,
   ZentricApiPort,
@@ -137,11 +138,24 @@ export function useTrackProductViewMutation(api?: ZentricApiPort) {
 }
 
 /**
+ * Hook de mutación para actualizar un producto del catálogo comercial.
+ */
+export function useUpdateProductMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ productId, input }: { productId: string; input: UpdateProductInput }) =>
+      resolveApi(api).updateProduct(productId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+    },
+  });
+}
+
+/**
  * Hook de mutación para suspender un producto del catálogo comercial.
  */
 export function useSuspendProductMutation(api?: ZentricApiPort) {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (productId: string) => resolveApi(api).suspendProduct(productId),
     onSuccess: () => {
@@ -149,6 +163,7 @@ export function useSuspendProductMutation(api?: ZentricApiPort) {
     },
   });
 }
+
 
 
 

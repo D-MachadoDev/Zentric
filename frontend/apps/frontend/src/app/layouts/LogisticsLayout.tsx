@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useState, type ReactNode } from 'react';
-import { Truck, CheckSquare, LayoutDashboard } from 'lucide-react';
+import { Truck, CheckSquare } from 'lucide-react';
 import { Link, useRouterState, useNavigate } from '@tanstack/react-router';
 import { LayoutHeader } from './LayoutHeader';
 import { LayoutSidebar, type NavItem } from './LayoutSidebar';
@@ -9,7 +9,6 @@ import { useAuth } from '../providers/authContext';
 import { UserRole } from '../../domain';
 
 const logisticsNavItems: NavItem[] = [
-  { href: '/logistics', label: 'Panel Logístico', icon: LayoutDashboard },
   { href: '/logistics/fulfillments', label: 'Cola de Despachos', icon: Truck },
   { href: '/logistics/returns', label: 'Inspección de Devoluciones', icon: CheckSquare },
 ];
