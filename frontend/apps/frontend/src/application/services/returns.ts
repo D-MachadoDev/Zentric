@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   InspectReturnInput,
+  ListReturnsPagedParams,
+  PagedResult,
   RequestReturnInput,
   ReturnRequest,
   ReturnStatus,
@@ -10,12 +12,27 @@ import { queryKeys } from './queryKeys';
 import { resolveApi } from './apiContext';
 
 /**
- * Hook de consulta para listar solicitudes de devolución.
+ * Hook de consulta para listar solicitudes de devolución (sin paginar - legacy).
  */
 export function useReturnsQuery(status?: ReturnStatus | string, api?: ZentricApiPort) {
   return useQuery({
     queryKey: queryKeys.returns.list({ status }),
     queryFn: () => resolveApi(api).listReturns(status),
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Hook de consulta para listar devoluciones paginadas (server-side).
+ * El backend pagina; el frontend solo renderiza.
+ */
+export function useReturnsPagedQuery(
+  params?: ListReturnsPagedParams,
+  api?: ZentricApiPort,
+) {
+  return useQuery({
+    queryKey: queryKeys.returns.listPaged(params),
+    queryFn: () => resolveApi(api).listReturnsPaged(params),
     staleTime: 30_000,
   });
 }

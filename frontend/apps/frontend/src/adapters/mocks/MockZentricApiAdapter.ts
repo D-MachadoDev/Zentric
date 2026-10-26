@@ -747,6 +747,26 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     return status ? this.returns.filter((r) => r.status === status) : [...this.returns];
   }
 
+  async listReturnsPaged(params?: { status?: ReturnStatus | string; page?: number; size?: number }): Promise<PagedResult<ReturnRequest>> {
+    const page = params?.page ?? 0;
+    const size = params?.size ?? 20;
+    let filtered = this.returns;
+    if (params?.status) {
+      filtered = filtered.filter((r) => r.status === params.status);
+    }
+    const start = page * size;
+    const items = filtered.slice(start, start + size);
+    return {
+      items,
+      page,
+      size,
+      totalItems: filtered.length,
+      totalPages: Math.ceil(filtered.length / size),
+      hasPrevious: page > 0,
+      hasNext: start + items.length < filtered.length,
+    };
+  }
+
   async getReturnById(id: string): Promise<ReturnRequest> {
     const ret = this.returns.find((r) => r.id === id);
     if (!ret) throw new ProblemDetailsError({ status: 404, detail: 'Devolución no encontrada' });

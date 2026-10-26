@@ -545,6 +545,15 @@ export class HttpClient implements ZentricApiPort {
     return this.#json<ReturnRequest[]>(`/api/Returns${query}`, { method: 'GET' });
   }
 
+  listReturnsPaged(params?: ListReturnsPagedParams): Promise<PagedResult<ReturnRequest>> {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.set('status', params.status);
+    if (params?.page !== undefined) queryParams.set('page', String(params.page));
+    if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.#json<PagedResult<ReturnRequest>>(`/api/Returns${query}`, { method: 'GET' });
+  }
+
   getReturnById(id: string): Promise<ReturnRequest> {
     return this.#json<ReturnRequest>(`/api/Returns/${encodeURIComponent(id)}`, { method: 'GET' });
   }
