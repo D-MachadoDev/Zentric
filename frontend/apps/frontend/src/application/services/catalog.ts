@@ -10,17 +10,6 @@ import { queryKeys } from './queryKeys';
 import { resolveApi } from './apiContext';
 
 /**
- * Hook de consulta para listar productos del catálogo.
- */
-export function useProductsQuery(vendorId?: string, api?: ZentricApiPort) {
-  return useQuery({
-    queryKey: queryKeys.products.list({ vendorId }),
-    queryFn: () => resolveApi(api).listProducts(vendorId),
-    staleTime: 60_000,
-  });
-}
-
-/**
  * Hook de consulta para listar productos paginados.
  */
 export function useProductsPagedQuery(params?: ListProductsPagedParams, api?: ZentricApiPort) {
@@ -70,6 +59,17 @@ export function useProductQuery(id: string, api?: ZentricApiPort) {
 }
 
 /**
+ * Hook de consulta para obtener los productos vistos recientemente.
+ */
+export function useRecentlyViewedQuery(maxItems = 20, api?: ZentricApiPort) {
+  return useQuery({
+    queryKey: ['recentlyViewed', maxItems],
+    queryFn: () => resolveApi(api).getRecentlyViewed(maxItems),
+    staleTime: 30_000,
+  });
+}
+
+/**
  * Hook de mutación para dar de alta un nuevo producto.
  * Retorna `{ productId, variantIds }` e invalida ['products'].
  */
@@ -100,6 +100,16 @@ export function usePublishProductMutation(api?: ZentricApiPort) {
 }
 
 /**
+ * Hook de mutación para registrar la visualización de un producto.
+ * Solo para usuarios autenticados; invitados usan localStorage.
+ */
+export function useTrackProductViewMutation(api?: ZentricApiPort) {
+  return useMutation({
+    mutationFn: (productId: string) => resolveApi(api).trackProductView(productId),
+  });
+}
+
+/**
  * Hook de mutación para suspender un producto del catálogo comercial.
  */
 export function useSuspendProductMutation(api?: ZentricApiPort) {
@@ -112,3 +122,7 @@ export function useSuspendProductMutation(api?: ZentricApiPort) {
     },
   });
 }
+
+
+
+
