@@ -45,6 +45,18 @@ import { toApiError } from './problemDetails';
 
 const DEFAULT_BASE_URL = 'http://localhost:15433';
 const TIMEOUT_MS = 15_000;
+/**
+ * Los listados del backend paginan en servidor desde `c0d41f7` (maximo 100
+ * por pagina). Los metodos planos del port conservan el contrato de "traer
+ * todo", asi que piden el maximo admitido y desenvuelven la pagina.
+ */
+const FLAT_LIST_SIZE = 100;
+/**
+ * Los listados del backend paginan en servidor desde `c0d41f7` (maximo 100 por
+ * pagina). Los metodos planos del port conservan el contrato de "traer todo",
+ * asi que piden el maximo admitido y desenvuelven la pagina.
+ */
+const FLAT_LIST_SIZE = 100;
 
 export interface HttpClientOptions {
   /** Provee y guarda el access token; es la única fuente de autenticación. */
@@ -222,6 +234,19 @@ export class HttpClient implements ZentricApiPort {
     return (text === '' ? undefined : JSON.parse(text)) as T;
   }
 
+  /**
+   * Desenvuelve un listado paginado (`{ items, page, size, totalItems }`) al
+   * arreglo plano que esperan las pantallas sin paginacion. Tolera tambien el
+   * arreglo directo para no romper contra backends o mocks antiguos.
+   */
+  async #listItems<T>(path: string, filters?: Record<string, string>): Promise<T[]> {
+    const params = new URLSearchParams(filters);
+    params.set('size', String(FLAT_LIST_SIZE));
+    const result = await this.#json<PagedResult<T> | T[]>(`${path}?${params.toString()}`);
+    if (Array.isArray(result)) return result;
+    return result?.items ?? [];
+  }
+
   /** Desenvuelve cadenas GUID retornadas por endpoints de creación */
   async #guid(path: string, init: RequestInit = {}): Promise<string> {
     const response = await this.#send(path, init);
@@ -352,7 +377,7 @@ export class HttpClient implements ZentricApiPort {
   }
 
   listInventories(): Promise<Inventory[]> {
-    return this.#json<Inventory[]>('/api/Inventories', { method: 'GET' });
+    return this.#listItems<Inventory>('/api/Inventories');
   }
 
   listInventoriesPaged(params?: ListInventoriesPagedParams): Promise<PagedResult<Inventory>> {
@@ -473,8 +498,7 @@ export class HttpClient implements ZentricApiPort {
   }
 
   listOrders(status?: OrderStatus | string): Promise<OrderListItem[]> {
-    const query = status ? `?status=${encodeURIComponent(status)}` : '';
-    return this.#json<OrderListItem[]>(`/api/Orders${query}`, { method: 'GET' });
+    return this.#listItems<OrderListItem>('/api/Orders', status ? { status } : undefined);
   }
 
   listOrdersPaged(params?: ListOrdersPagedParams): Promise<PagedResult<OrderListItem>> {
@@ -517,8 +541,10 @@ export class HttpClient implements ZentricApiPort {
   }
 
   listFulfillments(status?: FulfillmentStatus | string): Promise<FulfillmentOrder[]> {
-    const query = status ? `?status=${encodeURIComponent(status)}` : '';
-    return this.#json<FulfillmentOrder[]>(`/api/Logistics/fulfillments${query}`, { method: 'GET' });
+    return this.#listItems<FulfillmentOrder>(
+      '/api/Logistics/fulfillments',
+      status ? { status } : undefined,
+    );
   }
 
   listFulfillmentsPaged(params?: ListFulfillmentsPagedParams): Promise<PagedResult<FulfillmentOrder>> {
@@ -568,8 +594,7 @@ export class HttpClient implements ZentricApiPort {
   }
 
   listReturns(status?: ReturnStatus | string): Promise<ReturnRequest[]> {
-    const query = status ? `?status=${encodeURIComponent(status)}` : '';
-    return this.#json<ReturnRequest[]>(`/api/Returns${query}`, { method: 'GET' });
+    return this.#listItems<ReturnRequest>('/api/Returns', status ? { status } : undefined);
   }
 
   listReturnsPaged(params?: ListReturnsPagedParams): Promise<PagedResult<ReturnRequest>> {
