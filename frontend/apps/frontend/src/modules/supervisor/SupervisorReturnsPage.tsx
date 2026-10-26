@@ -8,6 +8,8 @@ import {
   Search,
   ShieldCheck,
   XCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   Alert,
@@ -17,9 +19,10 @@ import {
   Button,
   Input,
   Skeleton,
+  Pagination,
 } from '@zentric/ui';
-import { useReturnQuery, useReturnsQuery } from '../../application/services';
-import type { ReturnRequest } from '../../domain';
+import { useReturnQuery, useReturnsPagedQuery } from '../../application/services';
+import type { ListReturnsPagedParams, PagedResult, ReturnRequest } from '../../domain';
 import { ReturnStatus } from '../../domain';
 
 /**
@@ -30,22 +33,27 @@ import { ReturnStatus } from '../../domain';
  * Audita dictámenes técnicos de inspección física (`isGoodCondition`) y
  * resoluciones comerciales/financieras (`Approved`, `Rejected`, `Refunded`).
  * Cero botones de inspección, aprobación, rechazo o reembolso.
+ * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
  */
 export function SupervisorReturnsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReturnId, setSelectedReturnId] = useState<string>('');
+  const [page, setPage] = useState(1);
 
   const parsedStatus = statusFilter === 'All' ? undefined : (statusFilter as ReturnStatus);
 
-  const {
-    data: returns = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useReturnsQuery(parsedStatus);
+  // Pagination params for server-side pagination
+  const params: ListReturnsPagedParams = {
+    status: parsedStatus,
+    page: page - 1, // backend uses 0-based
+    size: 20,
+  };
+
+  const { data: pagedResult, isLoading, isError, error, refetch, isFetching } = useReturnsPagedQuery(params);
+  const returns = pagedResult?.items ?? [];
+  const totalItems = pagedResult?.totalItems ?? 0;
+  const totalPages = pagedResult?.totalPages ?? 0;
 
   const { data: detailedReturn } = useReturnQuery(selectedReturnId);
 
@@ -245,7 +253,18 @@ export function SupervisorReturnsPage() {
               </div>
             </div>
           )}
+          </div>
         </section>
+
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={setPage}
+            className="mt-6"
+          />
+        )}
 
         {/* Lado Derecho (35%): Expediente Técnico de Devolución ─────────── */}
         <section className="lg:col-span-4 space-y-6">
