@@ -52,6 +52,19 @@ export interface ListUsersPagedParams {
   size?: number;
 }
 
+/** Parámetros para listado paginado de inventarios. */
+export interface ListInventoriesPagedParams {
+  page?: number;
+  size?: number;
+}
+
+/** Parámetros para listado paginado de despachos. */
+export interface ListFulfillmentsPagedParams {
+  status?: FulfillmentStatus | string;
+  page?: number;
+  size?: number;
+}
+
 /**
  * Puerto de salida unificado hacia la API de Zentric (Frontend-Architecture Â§5.1).
  *
@@ -167,6 +180,7 @@ export interface ZentricApiPort {
   listInvoicesPaged(params?: ListInvoicesPagedParams): Promise<PagedResult<Invoice>>;
   getInvoicesByOrder(orderId: string): Promise<Invoice[]>;
 }
+
 
 
 

@@ -4,18 +4,35 @@ import type {
   CreateFulfillmentInput,
   FulfillmentOrder,
   FulfillmentStatus,
+  ListFulfillmentsPagedParams,
+  PagedResult,
   ZentricApiPort,
 } from '../../domain';
 import { queryKeys } from './queryKeys';
 import { resolveApi } from './apiContext';
 
 /**
- * Hook de consulta para listar órdenes de fulfillment.
+ * Hook de consulta para listar órdenes de fulfillment (sin paginar - legacy).
  */
 export function useFulfillmentsQuery(status?: FulfillmentStatus | string, api?: ZentricApiPort) {
   return useQuery({
     queryKey: queryKeys.fulfillments.list({ status }),
     queryFn: () => resolveApi(api).listFulfillments(status),
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Hook de consulta para listar órdenes de fulfillment paginadas (server-side).
+ * El backend pagina; el frontend solo renderiza.
+ */
+export function useFulfillmentsPagedQuery(
+  params?: ListFulfillmentsPagedParams,
+  api?: ZentricApiPort,
+) {
+  return useQuery({
+    queryKey: queryKeys.fulfillments.listPaged(params),
+    queryFn: () => resolveApi(api).listFulfillmentsPaged(params),
     staleTime: 30_000,
   });
 }

@@ -4,18 +4,35 @@ import type {
   AdjustInventoryInput,
   AdjustInventoryResult,
   Inventory,
+  ListInventoriesPagedParams,
+  PagedResult,
   ZentricApiPort,
 } from '../../domain';
 import { queryKeys } from './queryKeys';
 import { resolveApi } from './apiContext';
 
 /**
- * Hook de consulta para listar inventario consolidado.
+ * Hook de consulta para listar inventario consolidado (sin paginar - legacy).
  */
 export function useInventoriesQuery(api?: ZentricApiPort) {
   return useQuery({
     queryKey: queryKeys.inventories.list(),
     queryFn: () => resolveApi(api).listInventories(),
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Hook de consulta para listar inventario paginado (server-side).
+ * El backend pagina; el frontend solo renderiza.
+ */
+export function useInventoriesPagedQuery(
+  params?: ListInventoriesPagedParams,
+  api?: ZentricApiPort,
+) {
+  return useQuery({
+    queryKey: queryKeys.inventories.listPaged(params),
+    queryFn: () => resolveApi(api).listInventoriesPaged(params),
     staleTime: 30_000,
   });
 }

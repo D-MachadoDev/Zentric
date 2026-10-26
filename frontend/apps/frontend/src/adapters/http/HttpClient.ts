@@ -355,6 +355,14 @@ export class HttpClient implements ZentricApiPort {
     return this.#json<Inventory[]>('/api/Inventories', { method: 'GET' });
   }
 
+  listInventoriesPaged(params?: ListInventoriesPagedParams): Promise<PagedResult<Inventory>> {
+    const queryParams = new URLSearchParams();
+    if (params?.page !== undefined) queryParams.set('page', String(params.page));
+    if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.#json<PagedResult<Inventory>>(`/api/Inventories${query}`, { method: 'GET' });
+  }
+
   listInventoryByVariant(variantId: string): Promise<Inventory[]> {
     return this.#json<Inventory[]>(`/api/Inventories/${encodeURIComponent(variantId)}`, { method: 'GET' });
   }
@@ -501,6 +509,15 @@ export class HttpClient implements ZentricApiPort {
   listFulfillments(status?: FulfillmentStatus | string): Promise<FulfillmentOrder[]> {
     const query = status ? `?status=${encodeURIComponent(status)}` : '';
     return this.#json<FulfillmentOrder[]>(`/api/Logistics/fulfillments${query}`, { method: 'GET' });
+  }
+
+  listFulfillmentsPaged(params?: ListFulfillmentsPagedParams): Promise<PagedResult<FulfillmentOrder>> {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.set('status', params.status);
+    if (params?.page !== undefined) queryParams.set('page', String(params.page));
+    if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.#json<PagedResult<FulfillmentOrder>>(`/api/Logistics/fulfillments${query}`, { method: 'GET' });
   }
 
   getFulfillmentById(id: string): Promise<FulfillmentOrder> {

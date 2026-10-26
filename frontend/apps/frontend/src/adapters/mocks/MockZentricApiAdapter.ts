@@ -385,6 +385,22 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     return [...this.inventories];
   }
 
+  async listInventoriesPaged(params?: { page?: number; size?: number }): Promise<PagedResult<Inventory>> {
+    const page = params?.page ?? 0;
+    const size = params?.size ?? 20;
+    const start = page * size;
+    const items = this.inventories.slice(start, start + size);
+    return {
+      items,
+      page,
+      size,
+      totalItems: this.inventories.length,
+      totalPages: Math.ceil(this.inventories.length / size),
+      hasPrevious: page > 0,
+      hasNext: start + items.length < this.inventories.length,
+    };
+  }
+
   async listInventoryByVariant(variantId: string): Promise<Inventory[]> {
     return this.inventories.filter((i) => i.variantId === variantId);
   }
@@ -689,6 +705,26 @@ export class MockZentricApiAdapter implements ZentricApiPort {
 
   async listFulfillments(status?: FulfillmentStatus | string): Promise<FulfillmentOrder[]> {
     return status ? this.fulfillments.filter((f) => f.status === status) : [...this.fulfillments];
+  }
+
+  async listFulfillmentsPaged(params?: { status?: FulfillmentStatus | string; page?: number; size?: number }): Promise<PagedResult<FulfillmentOrder>> {
+    const page = params?.page ?? 0;
+    const size = params?.size ?? 20;
+    let filtered = this.fulfillments;
+    if (params?.status) {
+      filtered = filtered.filter((f) => f.status === params.status);
+    }
+    const start = page * size;
+    const items = filtered.slice(start, start + size);
+    return {
+      items,
+      page,
+      size,
+      totalItems: filtered.length,
+      totalPages: Math.ceil(filtered.length / size),
+      hasPrevious: page > 0,
+      hasNext: start + items.length < filtered.length,
+    };
   }
 
   async getFulfillmentById(id: string): Promise<FulfillmentOrder> {

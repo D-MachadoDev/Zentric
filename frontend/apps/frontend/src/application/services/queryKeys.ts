@@ -1,5 +1,7 @@
 import type {
   FulfillmentStatus,
+  ListFulfillmentsPagedParams,
+  ListInventoriesPagedParams,
   ListInvoicesPagedParams,
   ListOrdersPagedParams,
   ListProductsPagedParams,
@@ -41,6 +43,8 @@ export const queryKeys = {
   inventories: {
     all: ['inventories'] as const,
     list: () => ['inventories', 'list'] as const,
+    listPaged: (params?: ListInventoriesPagedParams) =>
+      ['inventories', 'paged', params ?? {}] as const,
     variant: (variantId: string) => ['inventories', 'variant', variantId] as const,
   },
   products: {
@@ -72,6 +76,8 @@ export const queryKeys = {
     all: ['fulfillments'] as const,
     list: (filters?: { status?: FulfillmentStatus | string }) =>
       ['fulfillments', 'list', filters ?? {}] as const,
+    listPaged: (params?: ListFulfillmentsPagedParams) =>
+      ['fulfillments', 'paged', params ?? {}] as const,
     detail: (id: string) => ['fulfillments', 'detail', id] as const,
   },
   returns: {
