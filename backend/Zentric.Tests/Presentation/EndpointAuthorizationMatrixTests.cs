@@ -7,7 +7,7 @@ using Zentric.Domain.Users.Enums;
 namespace Zentric.Tests.Presentation
 {
     /// <summary>
-    /// Matriz de autorizacion por rol. Cierra RG-03: "ningun participante podra
+    /// Matriz de autorizacion por rol. Cierra "ningun participante podra
     /// administrar informacion fuera de su rol" (ZENTRIC.md seccion 10).
     ///
     /// Que comprueba esta clase y por que existe. La autorizacion por rol no se puede validar
@@ -34,13 +34,13 @@ namespace Zentric.Tests.Presentation
         /// <summary>
         /// La matriz dictada, endpoint por endpoint. Es la traduccion de la Matriz de
         /// Responsabilidades (ZENTRIC.md seccion 12) mas el ADDENDUM, con la preferencia del
-        /// ADDENDUM que fija ADR-0006.
+        /// ADDENDUM que fija AD.
         /// </summary>
         private static readonly IReadOnlyDictionary<string, string> ExpectedPolicyByEndpoint =
             new Dictionary<string, string>
             {
                 // Autenticacion. Login es anonimo porque no se puede pedir un token antes de
-                // tener cuenta; /me sirve la identidad del propio llamante (RG-01).
+                // tener cuenta; /me sirve la identidad del propio llamante .
                 ["AuthController.Login"] = Anonymous,
                 ["AuthController.Me"] = AuthorizationPolicies.AnyAuthenticatedUser,
 
@@ -50,7 +50,7 @@ namespace Zentric.Tests.Presentation
                 ["UsersController.CreateUser"] = Anonymous,
                 ["UsersController.GetUsers"] = AuthorizationPolicies.UserAdministration,
                 ["UsersController.GetUserById"] = AuthorizationPolicies.UserAdministration,
-                // INV-05 (dictamen del Owner 2026-10-06): el bloqueo es administracion de
+                // (dictamen del Owner 2026-10-06): el bloqueo es administracion de
                 // usuarios, asi que cae en la misma politica que el alta y la consulta. El
                 // Supervisor no participa: es perfil de consulta, no de escritura.
                 ["UsersController.BlockUser"] = AuthorizationPolicies.UserAdministration,
@@ -72,6 +72,8 @@ namespace Zentric.Tests.Presentation
                 ["CatalogController.GetProductById"] = AuthorizationPolicies.AnyAuthenticatedUser,
                 ["CatalogController.GetCategories"] = AuthorizationPolicies.AnyAuthenticatedUser,
                 ["CatalogController.GetHeroProducts"] = AuthorizationPolicies.AnyAuthenticatedUser,
+                ["CatalogController.GetRecentlyViewed"] = AuthorizationPolicies.AnyAuthenticatedUser,
+                ["CatalogController.TrackProductView"] = AuthorizationPolicies.AnyAuthenticatedUser,
 
                 // 4. Inventario (seccion 12: "Administracion Inventario").
                 ["InventoriesController.AddStock"] = AuthorizationPolicies.InventoryManagement,
@@ -156,7 +158,7 @@ namespace Zentric.Tests.Presentation
         }
 
         /// <summary>
-        /// Criterio (ADDENDUM Dominio 10 + ADR-0006): la aprobacion de una devolucion es del
+        /// Criterio (ADDENDUM Dominio 10 + AD): la aprobacion de una devolucion es del
         /// Vendedor. El Administrador NO aprueba, aunque la Matriz de Responsabilidades de la
         /// seccion 12 lo dibujara asi: el ADDENDUM tiene la ultima palabra. El Dominio ya lo
         /// modela con ese nombre, en <c>ReturnRequest.ApproveByVendor</c>.
@@ -172,7 +174,7 @@ namespace Zentric.Tests.Presentation
 
         /// <summary>
         /// Criterio (ZENTRIC.md seccion 12): el inventario lo administran el Vendedor y el
-        /// Operador Logistico. El Administrador no figura en esa fila de la Matriz, y RG-03 le
+        /// Operador Logistico. El Administrador no figura en esa fila de la Matriz, y le
         /// impide administrar informacion fuera de su rol.
         /// </summary>
         [Fact]

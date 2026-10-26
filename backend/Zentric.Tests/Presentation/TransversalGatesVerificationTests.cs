@@ -41,7 +41,7 @@ namespace Zentric.Tests.Presentation
     /// Verificación explícita de las compuertas transversales de cierre (W5-S02):
     /// - Gate (d): Confidencialidad de la factura de comisión del 5% (ZentricDetail) en BillingController,
     ///   garantizando que jamás se serialice hacia Buyer ni Seller, y solo sea visible para Administrator y Supervisor
-    ///   (ZENTRIC.md ADDENDUM Dominio 9, ADR-0013, ADR-0023).
+    ///   (ZENTRIC.md ADDENDUM Dominio 9, AD, AD).
     /// - Gate (e): Auditoría Anti-Amnesia de los 14 DbSets en ZentricDbContext, los 11 repositorios y las 15 migraciones.
     /// </summary>
     public sealed class TransversalGatesVerificationTests
@@ -70,7 +70,7 @@ namespace Zentric.Tests.Presentation
                 => Task.FromResult<IReadOnlyList<Invoice>>(
                     _invoices.Where(i => i.CustomerOrderId == orderId).ToList());
 
-            // Replica exacta del filtrado en base de datos de InvoiceRepository.GetListAsync (ADR-0017):
+            // Replica exacta del filtrado en base de datos de InvoiceRepository.GetListAsync (AD):
             // - Si se filtra por buyerId: únicamente Facturas Maestras (Master) de pedidos de ese comprador.
             // - Si se filtra por vendorId: únicamente Facturas de Vendedor (VendorDetail) de ese vendedor.
             // - Si ambos son null (Administrator / Supervisor): todas las facturas, incluyendo ZentricDetail (5%).
@@ -153,7 +153,7 @@ namespace Zentric.Tests.Presentation
             var order = new CustomerOrder(buyerId);
             order.AddItem(Guid.NewGuid(), sellerId, 1, new Money(100_000m, "COP"));
 
-            // Split de facturación (ZENTRIC.md ADDENDUM Dominio 9 y ADR-0023):
+            // Split de facturación (ZENTRIC.md ADDENDUM Dominio 9 y AD):
             // - Master: 100.000 COP (100% para el comprador)
             // - ZentricDetail: 5.000 COP (5% comisión confidencial de plataforma)
             // - VendorDetail: 95.000 COP (95% liquidación neta del vendedor)
@@ -271,7 +271,7 @@ namespace Zentric.Tests.Presentation
         // Gate (e): Anti-Amnesia — 14 DbSets, 11 Repositorios y 15 Migraciones en ZentricDbContext
         // =========================================================================================
 
-        private static readonly IReadOnlyDictionary<string, Type> Canonical14DbSets =
+        private static readonly IReadOnlyDictionary<string, Type> Canonical18DbSets =
             new Dictionary<string, Type>(StringComparer.Ordinal)
             {
                 [nameof(ZentricDbContext.CustomerOrders)] = typeof(CustomerOrderDbModel),
@@ -287,7 +287,11 @@ namespace Zentric.Tests.Presentation
                 [nameof(ZentricDbContext.Products)] = typeof(ProductDbModel),
                 [nameof(ZentricDbContext.Inventories)] = typeof(InventoryDbModel),
                 [nameof(ZentricDbContext.StockAdjustments)] = typeof(StockAdjustmentDbModel),
-                [nameof(ZentricDbContext.Warehouses)] = typeof(WarehouseDbModel)
+                [nameof(ZentricDbContext.Warehouses)] = typeof(WarehouseDbModel),
+                [nameof(ZentricDbContext.UserRecentlyViewed)] = typeof(UserRecentlyViewedDbModel),
+                [nameof(ZentricDbContext.IdempotencyKeys)] = typeof(IdempotencyKeyDbModel),
+                [nameof(ZentricDbContext.OutboxMessages)] = typeof(OutboxMessageDbModel),
+                [nameof(ZentricDbContext.AuditLogs)] = typeof(AuditLogDbModel)
             };
 
         [Fact]
@@ -299,10 +303,10 @@ namespace Zentric.Tests.Presentation
                             p.PropertyType.GetGenericTypeDefinition() == typeof(DbSet<>))
                 .ToList();
 
-            Assert.Equal(14, dbSetProperties.Count);
-            Assert.Equal(14, Canonical14DbSets.Count);
+            Assert.Equal(18, dbSetProperties.Count);
+            Assert.Equal(18, Canonical18DbSets.Count);
 
-            foreach (var expected in Canonical14DbSets)
+            foreach (var expected in Canonical18DbSets)
             {
                 var prop = dbSetProperties.SingleOrDefault(p => p.Name == expected.Key);
                 Assert.NotNull(prop);
@@ -323,7 +327,7 @@ namespace Zentric.Tests.Presentation
                 .Select(e => e.ClrType)
                 .ToHashSet();
 
-            foreach (var expected in Canonical14DbSets)
+            foreach (var expected in Canonical18DbSets)
             {
                 Assert.True(
                     mappedClrTypes.Contains(expected.Value),
@@ -368,7 +372,7 @@ namespace Zentric.Tests.Presentation
                 .Where(t => t.IsClass && !t.IsAbstract && typeof(Migration).IsAssignableFrom(t))
                 .ToList();
 
-            Assert.Equal(18, migrations.Count);
+            Assert.Equal(22, migrations.Count);
         }
     }
 }
