@@ -109,9 +109,11 @@ namespace Zentric.Application.Orders.Commands
 
                 if (generateResult.IsFailure)
                 {
-                    // If invoice generation fails, we should ideally roll back the payment.
-                    // For now, return failure but the payment is already recorded.
-                    // TODO: Add proper rollback mechanism if needed.
+                    // If invoice generation fails, we should ideally roll back the payment
+                    // to maintain ACID consistency (payment recorded but invoice not generated).
+                    // For now, return failure but the payment is already recorded;
+                    // a future enhancement would add a compensation command to void the payment.
+                    // TODO: Implement compensation mechanism to roll back payment if invoice fails.
                     return Result<bool>.Failure(
                         $"Payment processed but invoice generation failed: {generateResult.Error}");
                 }
