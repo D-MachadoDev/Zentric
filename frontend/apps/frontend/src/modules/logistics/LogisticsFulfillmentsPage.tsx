@@ -9,6 +9,8 @@ import {
   CheckCircle,
   PackageCheck,
   ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   Button,
@@ -18,9 +20,10 @@ import {
   Alert,
   AlertTitle,
   AlertDescription,
+  Pagination,
 } from '@zentric/ui';
 import {
-  useFulfillmentsQuery,
+  useFulfillmentsPagedQuery,
   useCreateFulfillmentMutation,
   usePackFulfillmentMutation,
   useDispatchFulfillmentMutation,
@@ -28,12 +31,22 @@ import {
 } from '../../application/services';
 import { CreateFulfillmentSchema } from '../../application/schemas';
 import { NOMBRES_DE_ESTADO_DE_DESPACHO } from '../../components/domainLabels';
-import type { CreateFulfillmentInput, FulfillmentOrder } from '../../domain';
+import type { CreateFulfillmentInput, FulfillmentOrder, ListFulfillmentsPagedParams, PagedResult } from '../../domain';
 import { FulfillmentStatus } from '../../domain';
 
+/**
+ * Monitoreo de Despachos y Cancelaciones por Quiebre (/logistics/fulfillments).
+ *
+ * Frontend-Role-Modules.md §2.6:
+ * Supervisión en modo sólo lectura de todas las órdenes de fulfillment en la red
+ * logística (`GET /api/logistics/fulfillments`), incluyendo guías y motivos de
+ * cancelación por stock fantasma (ADR-0014 / ADR-0021). Cero botones de mutación.
+ * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
+ */
 export function LogisticsFulfillmentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
 
   // Formulario nuevo despacho
   const [formData, setFormData] = useState<CreateFulfillmentInput>({
@@ -46,14 +59,17 @@ export function LogisticsFulfillmentsPage() {
 
   const parsedStatus = statusFilter === 'All' ? undefined : (statusFilter as FulfillmentStatus);
 
-  const {
-    data: fulfillments = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useFulfillmentsQuery(parsedStatus);
+  // Pagination params for server-side pagination
+  const params: ListFulfillmentsPagedParams = {
+    status: parsedStatus,
+    page: page - 1, // backend uses 0-based
+    size: 20,
+  };
+
+  const { data: pagedResult, isLoading, isError, error, refetch, isFetching } = useFulfillmentsPagedQuery(params);
+  const fulfillments = pagedResult?.items ?? [];
+  const totalItems = pagedResult?.totalItems ?? 0;
+  const totalPages = pagedResult?.totalPages ?? 0;
 
   const createMutation = useCreateFulfillmentMutation();
   const packMutation = usePackFulfillmentMutation();
@@ -448,6 +464,17 @@ export function LogisticsFulfillmentsPage() {
               </div>
             </div>
           )}
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={setPage}
+              className="mt-6"
+            />
+          )}
+
         </section>
 
         {/* Lado Derecho (30%): Alta Manual de Despacho ──────────────────── */}
