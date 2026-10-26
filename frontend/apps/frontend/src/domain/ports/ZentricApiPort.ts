@@ -128,6 +128,11 @@ export interface ZentricApiPort {
    */
   listCategories(): Promise<Category[]>;
   /**
+   * Productos destacados para el mosaico del hero (S2).
+   * Backend: GET /api/Catalog/products/hero
+   */
+  listHeroProducts(count?: number): Promise<Product[]>;
+  /**
    * Productos vistos recientemente por el usuario autenticado (máx 20).
    * Backend: GET /api/Catalog/products/recently-viewed?maxItems=20
    * Requiere autenticación (token JWT).

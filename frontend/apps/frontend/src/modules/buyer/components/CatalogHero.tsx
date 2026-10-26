@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { ArrowRight, ImageOff, ShoppingBag, Sparkles } from 'lucide-react';
 import { Button, MoneyAmount, Skeleton } from '@zentric/ui';
 import type { Product } from '../../../domain';
-import { useHeroProductsQuery } from '../../../application/services/catalog';
+import { useCategoriesQuery, useHeroProductsQuery } from '../../../application/services/catalog';
 import { getProductImageUrl } from '../productImages';
 
 interface HeroTileProps {
@@ -62,20 +62,7 @@ function tileLayout(index: number): string {
   return '';
 }
 
-const PROMISES = [
-  'Hogar, Moda, Supermercado, Deportes y Tecnología en un solo carrito',
-  'Reserva de stock por 15 minutos al pasar a caja',
-  'Envío rastreable desde bodega certificada y devolución garantizada',
-];
-
-const QUICK_DEPARTMENTS: Array<{ id: string; label: string }> = [
-  { id: 'hogar', label: 'Hogar y Cocina' },
-  { id: 'moda', label: 'Moda y Calzado' },
-  { id: 'supermercado', label: 'Supermercado' },
-  { id: 'deportes', label: 'Deportes' },
-  { id: 'tecnologia', label: 'Tecnología' },
-  { id: 'audio', label: 'Audio' },
-];
+const MAX_QUICK_DEPARTMENTS = 8;
 
 interface CatalogHeroProps {
   onExploreAll: () => void;
@@ -92,7 +79,9 @@ interface CatalogHeroProps {
  */
 export function CatalogHero({ onExploreAll, onSelectCategory }: CatalogHeroProps) {
   const { data, isLoading, isError, refetch } = useHeroProductsQuery();
+  const { data: categories = [] } = useCategoriesQuery();
   const heroProducts = data ?? [];
+  const departments = categories.slice(0, MAX_QUICK_DEPARTMENTS);
   const hasHeroProducts = heroProducts.length > 0;
   const featuredProduct = heroProducts[0];
 
@@ -123,18 +112,6 @@ export function CatalogHero({ onExploreAll, onSelectCategory }: CatalogHeroProps
             Elige tu variante, agrégala al carrito sin registro previo y paga seguro.
           </p>
 
-          <ul className="space-y-1.5 pt-1">
-            {PROMISES.map((promise) => (
-              <li key={promise} className="flex items-start gap-2 text-xs text-foreground-muted">
-                <span
-                  aria-hidden="true"
-                  className="mt-1.5 size-1 shrink-0 rounded-full bg-brand"
-                />
-                {promise}
-              </li>
-            ))}
-          </ul>
-
           <div className="flex flex-wrap items-center gap-3 pt-2">
             {featuredProduct ? (
               <Link
@@ -156,32 +133,20 @@ export function CatalogHero({ onExploreAll, onSelectCategory }: CatalogHeroProps
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Button>
             )}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onExploreAll}
-              className="h-10 border-border text-foreground hover:border-brand/40 hover:text-brand"
-            >
-              Explorar catálogo completo
-              <ArrowRight className="h-3.5 w-3.5 ml-1" aria-hidden="true" />
-            </Button>
           </div>
 
-          {onSelectCategory && (
-            <div className="pt-2 border-t border-border/60 space-y-1.5">
-              <span className="font-mono text-[10px] uppercase tracking-wider text-foreground-subtle block">
-                Departamentos rápidos
-              </span>
+          {onSelectCategory && departments.length > 0 && (
+            <div className="space-y-2 border-t border-border/60 pt-3">
+              <span className="text-xs font-medium text-foreground-muted">Departamentos</span>
               <div className="flex flex-wrap items-center gap-1.5">
-                {QUICK_DEPARTMENTS.map((dept) => (
+                {departments.map((department) => (
                   <button
-                    key={dept.id}
+                    key={department.id}
                     type="button"
-                    onClick={() => onSelectCategory(dept.id)}
+                    onClick={() => onSelectCategory(department.id)}
                     className="rounded-full border border-border bg-surface px-2.5 py-1 text-[11px] font-medium text-foreground-muted transition-colors hover:border-brand/50 hover:bg-brand/10 hover:text-brand"
                   >
-                    {dept.label}
+                    {department.name}
                   </button>
                 ))}
               </div>

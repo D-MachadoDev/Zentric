@@ -89,15 +89,14 @@ export function BuyerProductDetailPage() {
     (availableStock !== undefined && availableStock <= 0);
   const isExceedingStock = quantity > maxStock;
 
-  const trackProductView = useTrackProductViewMutation();
+  const { mutate: trackProductView } = useTrackProductViewMutation();
 
   useEffect(() => {
-    if (product) {
-      if (hasActiveSession) {
-        trackProductView.mutate(product.id);
-      } else {
-        saveRecentlyViewedProduct(product);
-      }
+    if (!product) return;
+    if (hasActiveSession) {
+      trackProductView(product.id);
+    } else {
+      saveRecentlyViewedProduct(product);
     }
   }, [product, hasActiveSession, trackProductView]);
 

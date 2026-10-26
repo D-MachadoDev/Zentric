@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import {
   useCategoriesQuery,
   useProductsPagedQuery,
@@ -10,7 +10,6 @@ import {
   AlertTitle,
   AlertDescription,
   Button,
-  MoneyAmount,
   Skeleton,
   StateView,
   useDebounce,
@@ -18,11 +17,10 @@ import {
 import {
   ChevronLeft,
   ChevronRight,
-  Clock,
   Flame,
   RefreshCw,
 } from 'lucide-react';
-import { getProductImageUrl, getRecentlyViewedProducts } from './productImages';
+import { RecentlyViewedCarousel } from './components/RecentlyViewedCarousel';
 import { CatalogFilters, type CatalogSort, type CatalogTypeFilter } from './components/CatalogFilters';
 import { CatalogHero } from './components/CatalogHero';
 import { CatalogPagination } from './components/CatalogPagination';
@@ -126,7 +124,6 @@ export function BuyerCatalogPage() {
   const totalItems = pagedData?.totalItems ?? 0;
   const totalPages = pagedData?.totalPages ?? 0;
 
-  const recentlyViewed = useMemo(() => getRecentlyViewedProducts(), []);
 
   const popularProducts = useMemo(
     () => (products.length > 2 ? products.slice(0, 6) : []),
@@ -272,7 +269,7 @@ export function BuyerCatalogPage() {
   }, [buildSearchParams, navigate]);
 
   return (
-    <div className="space-y-10 py-2 sm:py-4">
+    <div className="space-y-6 py-2 sm:space-y-8 sm:py-4">
       {/* ── 1. Primera impresion: mosaico de productos reales y accesos a departamentos (S2) ── */}
       <CatalogHero
         onExploreAll={scrollToProductGrid}
@@ -355,39 +352,7 @@ export function BuyerCatalogPage() {
         </section>
       )}
 
-      {/* ── 4. Carrusel: Vistos Recientemente (si existen) ── */}
-      {recentlyViewed.length > 0 && (
-        <section aria-label="Vistos recientemente" className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-brand" aria-hidden="true" />
-            <h2 className="text-lg font-bold text-foreground sm:text-xl">Vistos Recientemente por Ti</h2>
-          </div>
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
-            {recentlyViewed.map((product) => (
-              <Link
-                key={`recent-${product.id}`}
-                to="/buyer/catalog/$productId"
-                params={{ productId: product.id }}
-                className="group flex w-60 shrink-0 items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-brand/40"
-              >
-                <img
-                  src={getProductImageUrl(product)}
-                  alt={product.name}
-                  className="h-14 w-14 shrink-0 rounded-lg bg-surface-muted object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                  <h4 className="truncate text-xs font-semibold text-foreground group-hover:text-brand">
-                    {product.name}
-                  </h4>
-                  <div className="text-xs font-bold text-foreground">
-                    <MoneyAmount amount={product.price} currency={product.currency ?? 'COP'} />
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      <RecentlyViewedCarousel title="Vistos Recientemente por Ti" maxItems={10} />
 
       {/* ── 5. Sección completa del catálogo: filtros, grilla y paginación ── */}
       <section

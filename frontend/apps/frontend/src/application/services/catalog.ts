@@ -61,11 +61,16 @@ export function useProductQuery(id: string, api?: ZentricApiPort) {
 /**
  * Hook de consulta para obtener los productos vistos recientemente.
  */
-export function useRecentlyViewedQuery(maxItems = 20, api?: ZentricApiPort) {
+export function useRecentlyViewedQuery(
+  maxItems = 20,
+  api?: ZentricApiPort,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: ['recentlyViewed', maxItems],
     queryFn: () => resolveApi(api).getRecentlyViewed(maxItems),
     staleTime: 30_000,
+    enabled: options?.enabled ?? true,
   });
 }
 
