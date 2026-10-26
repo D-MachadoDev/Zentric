@@ -8,6 +8,8 @@ import {
   ShieldCheck,
   Check,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   Button,
@@ -17,33 +19,48 @@ import {
   Alert,
   AlertTitle,
   AlertDescription,
+  Pagination,
 } from '@zentric/ui';
 import {
-  useReturnsQuery,
+  useReturnsPagedQuery,
   useInspectReturnMutation,
 } from '../../application/services';
-import type { ReturnRequest } from '../../domain';
+import type { ListReturnsPagedParams, PagedResult, ReturnRequest } from '../../domain';
 import { ReturnStatus } from '../../domain';
 
+/**
+ * Fiscalización de Solicitudes de Devolución (/logistics/returns/inspect).
+ *
+ * Frontend-Role-Modules.md §2.6:
+ * Consume `GET /api/returns` y `GET /api/returns/{id}` en modo de sólo lectura.
+ * Audita dictámenes técnicos de inspección física (`isGoodCondition`) y
+ * resoluciones comerciales/financieras (`Approved`, `Rejected`, `Refunded`).
+ * Cero botones de inspección, aprobación, rechazo o reembolso.
+ * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
+ */
 export function LogisticsReturnsInspectPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>(ReturnStatus.Requested);
   const [selectedReturnId, setSelectedReturnId] = useState<string | null>(null);
   const [isGoodCondition, setIsGoodCondition] = useState<boolean>(true);
+  const [page, setPage] = useState(1);
 
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const parsedStatus = statusFilter === 'All' ? undefined : (statusFilter as ReturnStatus);
 
-  const {
-    data: returns = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useReturnsQuery(parsedStatus);
+  // Pagination params for server-side pagination
+  const params: ListReturnsPagedParams = {
+    status: parsedStatus,
+    page: page - 1, // backend uses 0-based
+    size: 20,
+  };
+
+  const { data: pagedResult, isLoading, isError, error, refetch, isFetching } = useReturnsPagedQuery(params);
+  const returns = pagedResult?.items ?? [];
+  const totalItems = pagedResult?.totalItems ?? 0;
+  const totalPages = pagedResult?.totalPages ?? 0;
 
   const inspectMutation = useInspectReturnMutation();
 
@@ -269,6 +286,16 @@ export function LogisticsReturnsInspectPage() {
             </div>
           )}
         </section>
+
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={setPage}
+            className="mt-6"
+          />
+        )}
 
         {/* Lado Derecho (35%): Panel de Dictamen Físico ──────────────────── */}
         <section className="lg:col-span-4 space-y-6">
