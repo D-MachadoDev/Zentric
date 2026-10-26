@@ -7,6 +7,8 @@ import {
   Search,
   ShieldCheck,
   Truck,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   Alert,
@@ -16,9 +18,10 @@ import {
   Button,
   Input,
   Skeleton,
+  Pagination,
 } from '@zentric/ui';
-import { useFulfillmentsQuery } from '../../application/services';
-import type { FulfillmentOrder } from '../../domain';
+import { useFulfillmentsPagedQuery } from '../../application/services';
+import type { FulfillmentOrder, ListFulfillmentsPagedParams, PagedResult } from '../../domain';
 import { FulfillmentStatus } from '../../domain';
 
 /**
@@ -28,22 +31,27 @@ import { FulfillmentStatus } from '../../domain';
  * Supervisión en modo sólo lectura de todas las órdenes de fulfillment en la red
  * logística (`GET /api/logistics/fulfillments`), incluyendo guías y motivos de
  * cancelación por stock fantasma (ADR-0014 / ADR-0021). Cero botones de mutación.
+ * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
  */
 export function SupervisorFulfillmentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFulfillmentId, setSelectedFulfillmentId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const parsedStatus = statusFilter === 'All' ? undefined : (statusFilter as FulfillmentStatus);
 
-  const {
-    data: fulfillments = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useFulfillmentsQuery(parsedStatus);
+  // Pagination params for server-side pagination
+  const params: ListFulfillmentsPagedParams = {
+    status: parsedStatus,
+    page: page - 1, // backend uses 0-based
+    size: 20,
+  };
+
+  const { data: pagedResult, isLoading, isError, error, refetch, isFetching } = useFulfillmentsPagedQuery(params);
+  const fulfillments = pagedResult?.items ?? [];
+  const totalItems = pagedResult?.totalItems ?? 0;
+  const totalPages = pagedResult?.totalPages ?? 0;
 
   const filteredFulfillments = fulfillments.filter((ful: FulfillmentOrder) => {
     const matchesSearch =
@@ -229,7 +237,18 @@ export function SupervisorFulfillmentsPage() {
               </div>
             </div>
           )}
+          </div>
         </section>
+
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={setPage}
+            className="mt-6"
+          />
+        )}
 
         {/* Lado Derecho (35%): Expediente de Despacho Seleccionado ──────── */}
         <section className="lg:col-span-4 space-y-6">
