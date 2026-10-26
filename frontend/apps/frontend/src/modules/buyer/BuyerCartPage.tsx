@@ -44,7 +44,7 @@ import {
 
 /**
  * Carrito de Compras del Comprador (Frontend-Role-Modules sección 2.4 y Frontend-User-Flows sección 2).
- * Soporta tanto sesión autenticada como Modo Invitado (`guestCart`), vista previa de
+ * Soporta sesión autenticada o modo `Comprar como Invitado` (`guestCart`), vista previa de
  * domicilio de entrega estilo Mercado Libre y flujo hacia pago con reserva de 15 min.
  */
 export function BuyerCartPage() {
