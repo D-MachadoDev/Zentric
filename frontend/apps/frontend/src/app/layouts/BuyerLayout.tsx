@@ -149,7 +149,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
       {/* ── 1. Franja utilitaria: beneficios reales del comprador y acceso discreto operativo ── */}
       <div className="border-b border-border/60 bg-surface px-4 py-1.5 text-xs text-foreground-muted">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-          <p className="flex items-center gap-1.5 text-[11px]">
+          <p className="flex items-center gap-1.5 text-xs">
             <Truck className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
             <span>
               Envíos rastreables a todo el país · Compra protegida y devolución garantizada
@@ -159,7 +159,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
           <div className="flex shrink-0 items-center gap-4">
             <Link
               to="/buyer/orders"
-              className="hidden items-center gap-1.5 text-[11px] font-medium text-foreground-muted transition-colors hover:text-brand md:flex"
+              className="hidden items-center gap-1.5 text-xs font-medium text-foreground-muted transition-colors hover:text-brand md:flex"
             >
               <ShieldCheck className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
               Rastreo de Pedidos y Garantías
@@ -169,7 +169,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
             </span>
             <Link
               to="/acceso-corporativo"
-              className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-foreground-muted transition-colors hover:text-brand"
+              className="inline-flex items-center gap-1 text-xs font-mono font-medium text-foreground-muted transition-colors hover:text-brand"
             >
               <span>Vender / Acceso Operativo</span>
             </Link>
@@ -195,7 +195,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
             <Link
               to="/buyer/orders/$orderId/pay"
               params={{ orderId: activePendingOrder.id }}
-              className="inline-flex items-center gap-1.5 rounded-md bg-warning px-3 py-1 font-mono text-[11px] font-bold text-primary-foreground transition-colors hover:bg-warning/90"
+              className="inline-flex items-center gap-1.5 rounded-md bg-warning px-3 py-1 font-mono text-xs font-bold text-primary-foreground transition-colors hover:bg-warning/90"
             >
               Completar Pago Ahora →
             </Link>
@@ -204,7 +204,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
       )}
 
       {/* ── 2. Cabecera Comercial Principal (Navbar) ── */}
-      <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur-md overscroll-contain">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           {/* Logo de Marca — limpio, sin badge redundante */}
           <div className="flex items-center gap-3 shrink-0">
@@ -225,8 +225,14 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
               showRecentSearches
               maxRecentSearches={5}
               aria-label="Buscar en todo el marketplace"
+              aria-describedby="search-context-hint"
               className="w-full"
             />
+            <span id="search-context-hint" className="sr-only">
+              {activeCategoryId
+                ? `La búsqueda se filtrará a la categoría ${(categories ?? []).find(c => c.id === activeCategoryId)?.name ?? activeCategoryId}.`
+                : 'La búsqueda abarcará todo el catálogo de productos.'}
+            </span>
           </div>
 
           {/* Acciones del Comprador */}
@@ -293,7 +299,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
                   : 'text-foreground-muted hover:bg-surface-muted hover:text-foreground'
               }`}
             >
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand/10 text-brand font-semibold text-[11px]">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand/10 text-brand font-semibold text-xs">
                 {user?.fullName?.charAt(0) || 'C'}
               </div>
               <span className="sr-only xl:not-sr-only max-w-[120px] truncate text-foreground font-medium">

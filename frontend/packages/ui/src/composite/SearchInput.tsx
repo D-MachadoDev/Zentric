@@ -362,7 +362,7 @@ export function SearchInput({
           ref={dropdownRef}
           id="search-dropdown"
           role="listbox"
-          className="absolute z-50 mt-1.5 w-full max-h-96 rounded-xl border border-border bg-surface shadow-xl overflow-hidden scrollbar-thin"
+          className="absolute z-50 mt-1.5 w-full max-h-96 rounded-xl border border-border bg-surface shadow-xl overflow-hidden scrollbar-thin overscroll-contain"
         >
           {dropdownItems.map((item, index) => {
             const isDivider =

@@ -362,9 +362,6 @@ export function BuyerCatalogPage() {
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-1">
-            <p className="font-mono text-[11px] font-medium tracking-[0.16em] text-foreground-subtle uppercase">
-              Todos los productos
-            </p>
             <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               Catálogo de Productos
             </h1>

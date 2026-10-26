@@ -191,25 +191,19 @@ export function LoginPage() {
       className="surface-hairline my-4 flex w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-surface text-foreground shadow-2xl transition-colors lg:flex-row"
     >
       {/* ── Escenario Izquierdo: Propuesta de Valor para el Comprador (54%) ── */}
-      <div className="relative flex flex-col justify-between overflow-hidden border-b border-border bg-surface-muted/90 p-8 sm:p-10 lg:w-[54%] lg:border-r lg:border-b-0 lg:p-12">
+      <div className="relative flex flex-col justify-between overflow-hidden border-b border-border p-8 sm:p-10 lg:w-[54%] lg:border-r lg:border-b-0 lg:p-12">
         {/* Capas atmosféricas (HyperFrames Creative House Style: profundidad con acento Jade) */}
         <div
           className="pointer-events-none absolute -top-28 -left-24 h-96 w-96 rounded-full bg-brand/12 blur-3xl"
           aria-hidden="true"
         />
-        <div
-          className="pointer-events-none absolute right-6 bottom-10 select-none font-mono text-[6.5rem] leading-none font-bold tracking-tighter text-foreground/[0.03]"
-          aria-hidden="true"
-        >
-          15:00
-        </div>
 
         <div className="relative z-10 space-y-8">
           {/* Cabecera con retorno inmediato al Marketplace como Invitado */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-5">
             <div className="flex items-center gap-3">
               <Logo role="buyer" />
-              <span className="rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 text-[10px] font-semibold tracking-wide text-brand uppercase">
+              <span className="rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-brand uppercase">
                 Compradores
               </span>
             </div>
@@ -239,7 +233,7 @@ export function LoginPage() {
           {/* Jerarquía Asimétrica de Beneficios del Comprador (1 Hero Card + 2 Soportes) */}
           <div className="max-w-xl space-y-3.5">
             {/* Tarjeta Principal: Reserva de Stock 15 min */}
-            <div className="rounded-2xl border border-brand/35 bg-surface/95 p-5 shadow-sm">
+            <div className="rounded-2xl p-5">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/15 text-brand">
@@ -249,7 +243,7 @@ export function LoginPage() {
                     <h2 className="font-sans text-sm font-bold text-foreground">
                       Reserva de Stock por 15 Minutos al Pagar
                     </h2>
-                    <p className="font-mono text-[11px] text-brand">
+                    <p className="font-mono text-xs text-brand">
                       Disponibilidad física garantizada en bodega
                     </p>
                   </div>
@@ -267,7 +261,7 @@ export function LoginPage() {
 
             {/* Dos tarjetas secundarias complementarias */}
             <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-              <div className="surface-hairline rounded-xl bg-surface/80 p-4 space-y-1.5">
+              <div className="rounded-xl p-4 space-y-1.5">
                 <div className="flex items-center gap-2 font-sans text-xs font-bold text-foreground">
                   <Truck className="h-4 w-4 text-brand" />
                   <span>Despacho Rastreable</span>
@@ -278,7 +272,7 @@ export function LoginPage() {
                 </p>
               </div>
 
-              <div className="surface-hairline rounded-xl bg-surface/80 p-4 space-y-1.5">
+              <div className="rounded-xl p-4 space-y-1.5">
                 <div className="flex items-center gap-2 font-sans text-xs font-bold text-foreground">
                   <RotateCcw className="h-4 w-4 text-brand" />
                   <span>Devolución Protegida</span>
@@ -298,7 +292,7 @@ export function LoginPage() {
             <ShieldCheck className="h-4 w-4 text-brand" />
             <span>COMPRA 100% PROTEGIDA · ESTATUTO DEL CONSUMIDOR</span>
           </div>
-          <span className="font-mono text-[11px] text-foreground-subtle">
+          <span className="font-mono text-xs text-foreground-subtle">
             <Lock className="mr-1 inline h-3 w-3 text-brand" />
             PAGO SEGURO TLS
           </span>
@@ -322,7 +316,7 @@ export function LoginPage() {
           </div>
 
           {guestItemCount > 0 && (
-            <div className="flex items-center justify-between rounded-xl border border-brand/35 bg-brand/10 px-4 py-3 text-xs">
+            <div className="flex items-center justify-between rounded-xl px-4 py-3 text-xs">
               <div className="flex items-center gap-2.5 text-foreground">
                 <ShoppingBag className="h-4 w-4 text-brand shrink-0" />
                 <span>
@@ -430,7 +424,7 @@ export function LoginPage() {
             </div>
 
             {/* Casillas de Aceptación Legal del Consumidor */}
-            <div className="space-y-2 rounded-xl border border-border bg-surface-muted/50 p-3.5 text-xs">
+            <div className="space-y-2 rounded-xl p-3.5 text-xs">
               <label className="flex items-start gap-2.5 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -506,7 +500,7 @@ export function LoginPage() {
           </form>
 
           {/* UNA sola acción de demostración clara para el Comprador */}
-          <div className="rounded-xl border border-border bg-surface-muted/40 p-3">
+          <div className="rounded-xl p-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs">
                 <LogoMark role="buyer" className="size-4 shrink-0" />
@@ -514,7 +508,7 @@ export function LoginPage() {
                   <div className="font-sans font-semibold text-foreground">
                     ¿Quieres probar el flujo de compra rápido?
                   </div>
-                  <div className="font-mono text-[11px] text-foreground-muted">
+                  <div className="font-mono text-xs text-foreground-muted">
                     {BUYER_DEMO_IDENTITY.email}
                   </div>
                 </div>
@@ -542,7 +536,7 @@ export function LoginPage() {
             </div>
             <Link
               to="/acceso-corporativo"
-              className="font-mono text-[11px] text-foreground-muted transition-colors hover:text-brand"
+              className="font-mono text-xs text-foreground-muted transition-colors hover:text-brand"
             >
               Portal Vendedores y Operación →
             </Link>
