@@ -160,8 +160,8 @@ app.Use(async (context, next) =>
 - Exportador: OTLP → Jaeger/Tempo.
 
 ### 4.5 Health Checks
-- `/health/live` → Liveness (solo proceso)
-- `/health/ready` → Readiness (DB, Redis, Storage, Payment Gateway, Business rules)
+- `/health` → Liveness (solo proceso)
+- `/ready` → Readiness (DB, Redis, Storage, Payment Gateway, Business rules)
 
 ---
 

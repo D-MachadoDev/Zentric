@@ -66,8 +66,8 @@ branches:
 ### 4.1 Smoke Tests Pre-Merge
 ```bash
 # Ejecutados automáticamente en PR antes de merge
-curl -f https://staging.zentric.com/health/live      # Liveness
-curl -f https://staging.zentric.com/health/ready     # Readiness
+curl -f https://staging.zentric.com/health      # Liveness
+curl -f https://staging.zentric.com/ready     # Readiness
 curl -f -H "Authorization: Bearer $TOKEN" \
   https://staging.zentric.com/api/v1/auth/me          # Auth
 curl -f https://staging.zentric.com/api/v1/products   # Public endpoint
@@ -106,7 +106,7 @@ aws elbv2 modify-listener --listener-arn $LISTENER_ARN \
   --default-actions Type=forward,TargetGroupArn=$GREEN_TG_ARN
 
 # 4. Verificar salud Green
-curl -f https://zentric.com/health/ready
+curl -f https://zentric.com/ready
 # Smoke tests automatizados
 
 # 5. Notificar a equipo + Owner

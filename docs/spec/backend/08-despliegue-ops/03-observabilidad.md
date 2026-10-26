@@ -132,8 +132,8 @@ builder.Services.AddOpenTelemetry()
 ### 5.1 Endpoints
 | Endpoint | Descripción | Dependencias |
 |----------|-------------|--------------|
-| `GET /health/live` | Liveness (K8s probe) | Solo proceso vivo |
-| `GET /health/ready` | Readiness (K8s probe) | DB, Redis, Storage, Payment Gateway |
+| `GET /health` | Liveness (K8s probe) | Solo proceso vivo |
+| `GET /ready` | Readiness (K8s probe) | DB, Redis, Storage, Payment Gateway |
 
 ### 5.2 Implementación
 ```csharp
@@ -212,7 +212,7 @@ CREATE INDEX ix_audit_correlation ON audit_logs(correlation_id);
 
 | Gate | Verificación | Comando |
 |------|--------------|---------|
-| **Health Checks** | `/health/ready` = Healthy en staging | `curl -f https://staging.zentric.com/health/ready` |
+| **Health Checks** | `/ready` = Healthy en staging | `curl -f https://staging.zentric.com/ready` |
 | **Métricas** | Prometheus scrape OK, 0 targets down | `curl -f http://prometheus:9090/-/healthy` |
 | **Logs** | Seq/Elastic recibe logs, 0 errors en 5 min | Query: `level:Error AND timestamp:>now-5m` |
 | **Tracing** | Jaeger recibe spans, 0 spans dropped | `curl -f http://jaeger:16686/api/traces` |
