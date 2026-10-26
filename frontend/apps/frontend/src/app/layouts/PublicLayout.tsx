@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
-import { LogoMark } from '@zentric/ui/logo';
+import { Logo } from '@zentric/ui/logo';
 
 interface PublicLayoutProps {
   children?: ReactNode;
@@ -17,17 +17,12 @@ interface PublicLayoutProps {
 export function PublicLayout({ children }: PublicLayoutProps) {
   return (
     <div className="relative flex min-h-screen flex-col bg-background text-foreground">
-      {/* Cabecera institucional con hairline e indicador indexical */}
+      {/* Cabecera institucional limpia */}
       <header className="relative z-10 flex h-16 items-center justify-between border-b border-border bg-background/85 px-6 backdrop-blur-md">
         <div className="flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2.5">
-            <LogoMark className="size-6 text-brand" />
-            <span className="text-sm font-bold tracking-tight text-foreground">Zentric Core</span>
+          <Link to="/" className="flex items-center gap-2.5" aria-label="Zentric - Inicio">
+            <Logo className="size-7 shrink-0" />
           </Link>
-          <span className="hidden h-4 w-px bg-border sm:inline-block" aria-hidden="true" />
-          <span className="kicker-spike hidden sm:inline-flex">
-            Sistema Operativo para Comercio · Reserva Atómica de 15 Minutos
-          </span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
@@ -40,7 +35,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
             to="/acceso-corporativo"
             className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 font-mono text-xs text-foreground-muted transition-colors hover:border-brand/40 hover:text-brand"
           >
-            Portal Corporativo / Vendedores
+            Acceso Vendedores
           </Link>
           <Link
             to="/health"

@@ -206,13 +206,10 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
       {/* ── 2. Cabecera Comercial Principal (Navbar) ── */}
       <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-          {/* Logo de Marca e Identidad del Portal */}
+          {/* Logo de Marca — limpio, sin badge redundante */}
           <div className="flex items-center gap-3 shrink-0">
-            <Link to="/buyer" className="flex items-center gap-2 group">
-              <Logo className="h-7 sm:h-8" />
-              <span className="hidden sm:inline-flex items-center rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] font-semibold text-brand tracking-wide uppercase">
-                Portal de Compras
-              </span>
+            <Link to="/buyer" className="flex items-center gap-2 group" aria-label="Zentric Marketplace - Inicio">
+              <Logo className="h-8 sm:h-9" />
             </Link>
           </div>
 
@@ -222,7 +219,9 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
               value={headerSearch}
               onChange={setHeaderSearch}
               onSearch={handleHeaderSearch}
-              placeholder="Buscar productos, hardware, periféricos, licencias cloud..."
+              placeholder={activeCategoryId 
+                ? \`Buscar en \${(categories ?? []).find(c => c.id === activeCategoryId)?.name || activeCategoryId}...\`
+                : "Buscar productos, hardware, periféricos, licencias cloud..."}
               showRecentSearches
               maxRecentSearches={5}
               aria-label="Buscar en todo el marketplace"
