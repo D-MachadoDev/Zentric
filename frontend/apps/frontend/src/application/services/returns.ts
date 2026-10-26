@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   InspectReturnInput,
   ListReturnsPagedParams,
-  PagedResult,
   RequestReturnInput,
   ReturnRequest,
   ReturnStatus,

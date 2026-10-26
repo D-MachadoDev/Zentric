@@ -23,8 +23,6 @@ import {
   AlertCircle,
   CheckCircle2,
   ArrowUpRight,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 
 

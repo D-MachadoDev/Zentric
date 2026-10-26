@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Zentric.Application.Common.Models;
 using Zentric.Application.Common.Ports;
 using Zentric.Domain.Logistics.Ports;
+using Zentric.Domain.Orders.Ports;
+using Zentric.Domain.Orders.Enums;
 using Zentric.Domain.Users.Enums;
 
 namespace Zentric.Application.Logistics.Commands
@@ -15,13 +17,16 @@ namespace Zentric.Application.Logistics.Commands
     public class PackFulfillmentCommandHandler : IRequestHandler<PackFulfillmentCommand, Result<bool>>
     {
         private readonly IFulfillmentOrderRepository _fulfillmentOrderRepository;
+        private readonly ICustomerOrderRepository _orderRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public PackFulfillmentCommandHandler(
             IFulfillmentOrderRepository fulfillmentOrderRepository,
+            ICustomerOrderRepository orderRepository,
             IUnitOfWork unitOfWork)
         {
             _fulfillmentOrderRepository = fulfillmentOrderRepository;
+            _orderRepository = orderRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -29,6 +34,17 @@ namespace Zentric.Application.Logistics.Commands
         {
             var fulfillmentOrder = await _fulfillmentOrderRepository.GetByIdAsync(request.FulfillmentOrderId, cancellationToken);
             if (fulfillmentOrder == null)
+            {
+                return Result<bool>.NotFound($"FulfillmentOrder with ID {request.FulfillmentOrderId} not found.");
+            }
+
+            // No se puede empaquetar un despacho cuyo pedido aun no se pago.
+            // Evita que logistica prepare paquetes de pedidos en PendingPayment.
+            var order = await _orderRepository.GetByIdAsync(fulfillmentOrder.CustomerOrderId, cancellationToken);
+            if (order == null ||
+                (order.Status != OrderStatus.Paid &&
+                 order.Status != OrderStatus.Dispatched &&
+                 order.Status != OrderStatus.Delivered))
             {
                 return Result<bool>.NotFound($"FulfillmentOrder with ID {request.FulfillmentOrderId} not found.");
             }

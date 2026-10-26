@@ -5,7 +5,6 @@ import type {
   FulfillmentOrder,
   FulfillmentStatus,
   ListFulfillmentsPagedParams,
-  PagedResult,
   ZentricApiPort,
 } from '../../domain';
 import { queryKeys } from './queryKeys';

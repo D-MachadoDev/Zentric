@@ -7,7 +7,7 @@ import {
 } from '../../application/services/logistics';
 import { useWarehousesQuery } from '../../application/services/warehouses';
 import { useProductsPagedQuery } from '../../application/services/catalog';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+
 import { Pagination } from '@zentric/ui';
 import {
   FulfillmentStatus,

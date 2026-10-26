@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { AnnulInvoiceInput, Invoice, ListInvoicesPagedParams, PagedResult, ZentricApiPort } from '../../domain';
+import type { AnnulInvoiceInput, Invoice, ListInvoicesPagedParams, ZentricApiPort } from '../../domain';
 import { queryKeys } from './queryKeys';
 import { resolveApi } from './apiContext';
 

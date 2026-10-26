@@ -1,7 +1,7 @@
 ﻿import { useState } from 'react';
 import { useOrdersPagedQuery, useOrderQuery } from '../../application/services/orders';
 import { useProductsPagedQuery } from '../../application/services/catalog';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+
 import { Pagination } from '@zentric/ui';
 import {
   OrderStatus,

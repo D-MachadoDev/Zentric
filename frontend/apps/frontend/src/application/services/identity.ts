@@ -5,7 +5,6 @@ import type {
   CreateUserInput,
   ListUsersPagedParams,
   LoginInput,
-  PagedResult,
   SessionPort,
   User,
   UserProfile,

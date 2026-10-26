@@ -142,7 +142,7 @@ function mockCatalogChrome() {
  * nunca sobre la página activa en el cliente.
  */
 function mockPagedFromFixtures(fixtures: Product[]) {
-  return vi.spyOn(appServices.api, 'listProductsPaged').mockImplementation(async (params) => {
+  return vi.spyOn(appServices.api, 'listProductsPaged').mockImplementation(async (params, _signal) => {
     const term = params?.search?.trim().toLowerCase() ?? '';
     const matches = fixtures.filter((product) => {
       if (params?.type && product.type !== params.type) return false;
@@ -167,7 +167,7 @@ function mockPagedFromFixtures(fixtures: Product[]) {
       items,
       page,
       size,
-      totalitems: matches.length,
+      totalItems: matches.length,
       totalPages,
     };
   });
@@ -297,7 +297,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
         items: [mockPhysicalProduct, mockDigitalProduct],
         page: 1,
         size: 12,
-        totalitems: 2,
+        totalItems: 2,
         totalPages: 1,
       });
 
@@ -372,7 +372,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
         items: [],
         page: 1,
         size: 12,
-        totalitems: 0,
+        totalItems: 0,
         totalPages: 0,
       });
 
@@ -402,7 +402,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
         items: [mockPhysicalProduct],
         page: 1,
         size: 12,
-        totalitems: 1,
+        totalItems: 1,
         totalPages: 1,
       });
 
@@ -415,7 +415,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
         items: [mockPhysicalProduct],
         page: 1,
         size: 12,
-        totalitems: 25,
+        totalItems: 25,
         totalPages: 3,
       });
 
@@ -796,7 +796,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
         'https://pics.test/a.jpg',
       );
 
-      fireEvent.click(thumbs[1]);
+      fireEvent.click(thumbs[1]!);
       expect(screen.getByRole('img', { name: 'Teclado Mecánico Ergonómico' })).toHaveAttribute(
         'src',
         'https://pics.test/b.jpg',

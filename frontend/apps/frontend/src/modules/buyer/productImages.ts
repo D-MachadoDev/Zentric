@@ -203,7 +203,7 @@ export function getProductImageUrl(product: {
   imageUrl?: string | null;
   imageUrls?: string[] | null;
 }): string {
-  return getProductImageUrls(product)[0];
+  return getProductImageUrls(product)[0] ?? '';
 }
 
 /**

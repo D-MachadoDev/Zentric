@@ -5,7 +5,6 @@ import type {
   AdjustInventoryResult,
   Inventory,
   ListInventoriesPagedParams,
-  PagedResult,
   ZentricApiPort,
 } from '../../domain';
 import { queryKeys } from './queryKeys';

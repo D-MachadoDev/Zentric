@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CreateWarehouseInput, ListWarehousesPagedParams, PagedResult, UpdateWarehouseInput, Warehouse, ZentricApiPort } from '../../domain';
+import type { CreateWarehouseInput, ListWarehousesPagedParams, UpdateWarehouseInput, Warehouse, ZentricApiPort } from '../../domain';
 import { queryKeys } from './queryKeys';
 import { resolveApi } from './apiContext';
 

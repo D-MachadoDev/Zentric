@@ -316,7 +316,7 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
     mockParams = {};
 
     // Defaults en appServices.api
-    vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValue({ items: [mockProduct1, mockProduct2], totalitems: 2, totalPages: 1, Page: 0, Size: 20 });
+    vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValue({ items: [mockProduct1, mockProduct2], totalItems: 2, totalPages: 1, page: 0, size: 20 });
     vi.spyOn(appServices.api, 'getProductById').mockResolvedValue(mockProduct1);
     vi.spyOn(appServices.api, 'listWarehouses').mockResolvedValue([mockWarehouse1, mockWarehouse2]);
     vi.spyOn(appServices.api, 'listInventories').mockResolvedValue([mockInventory1]);
@@ -474,10 +474,10 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
           type: ProductType.Digital,
           description: '',
         }],
-        totalitems: 1,
+        totalItems: 1,
         totalPages: 1,
-        Page: 0,
-        Size: 20,
+        page: 0,
+        size: 20,
       });
       const { unmount: unmount2 } = renderWithClient(<SellerProductsPage />);
       expect(await screen.findByText('Digital')).toBeInTheDocument();
@@ -485,7 +485,7 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
 
       unmount2();
-      vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValueOnce({ items: [], totalitems: 0, totalPages: 0, Page: 0, Size: 20 });
+      vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValueOnce({ items: [], totalItems: 0, totalPages: 0, page: 0, size: 20 });
       renderWithClient(<SellerProductsPage />);
       expect(
         await screen.findByText('Aún no tiene productos registrados en su catálogo de vendedor.')
@@ -1196,5 +1196,6 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
     });
   });
 });
+
 
 
