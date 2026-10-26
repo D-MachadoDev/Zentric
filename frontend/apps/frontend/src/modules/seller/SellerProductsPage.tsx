@@ -309,7 +309,26 @@ export function SellerProductsPage() {
                         )}
                       </Button>
 
-                      <Link to="/seller/products/$productId" params={{ productId: product.id }}>
+                      {product.variants.length > 0 && (
+                        <Link
+                          to="/seller/inventory"
+                          search={{ variantId: product.variants[0]!.id } as never}
+                        >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-border text-brand hover:text-brand"
+                          >
+                            <Package className="h-3.5 w-3.5 mr-1.5" /> Abastecer
+                          </Button>
+                        </Link>
+                      )}
+
+                      <Link
+                        to="/seller/products/$productId"
+                        params={{ productId: product.id }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Button
                           variant="outline"
                           size="sm"
