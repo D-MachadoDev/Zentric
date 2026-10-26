@@ -1,9 +1,9 @@
-import * as React from 'react';
+﻿import * as React from 'react';
 import { Ban, Check } from 'lucide-react';
 import { cn } from '../lib/cn';
 
 /**
- * Línea de tiempo secuencial del ciclo de vida de un pedido o despacho (Frontend-Design-System §5.3).
+ * Línea de tiempo secuencial del ciclo de vida de un pedido o despacho (Frontend-Design-System sección 5.3).
  *
  * Flujo canónico de la Ley (ZENTRIC.md Dominio 6 y Dominio 8):
  * Creado (o Pendiente de Pago) -> Pagado -> Despachado -> Entregado.

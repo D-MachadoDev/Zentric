@@ -1,4 +1,4 @@
-# Zentric — Especificación del Dominio del Negocio (SDD)
+﻿# Zentric — Especificación del Dominio del Negocio (SDD)
 
 **Versión:** 1.0
 **Propósito:** establecer una descripción funcional detallada del negocio, sus entidades, objetos de valor, reglas e interacciones, como base para diseñar una arquitectura orientada al dominio (DDD).
@@ -229,12 +229,12 @@ Cada usuario tiene un **único rol principal**. `Buyer` y `Seller` son **entidad
 | Dominio ZENTRIC.md | Entidades/Agregados | ADRs relacionados | Addendums |
 |--------------------|---------------------|-------------------|-----------|
 | 1. Usuarios | `User`, `Buyer`, `Seller` | ADR-0009, ADR-0011, ADR-0013 | — |
-| 2. Vendedores | `Seller`, `Warehouse` (first) | ADR-0013, ADR-0017 | Addendum 2026-10-17 §1-2 |
-| 3. Bodegas | `Warehouse` (Marketplace/Vendor) | ADR-0008 | Addendum 2026-10-17 §1-3 |
-| 4. Catálogo | `Product`, `ProductVariant` | ADR-0002, ADR-0003, ADR-0012 | Addendum 2026-10-17 §5 |
+| 2. Vendedores | `Seller`, `Warehouse` (first) | ADR-0013, ADR-0017 | Addendum 2026-10-17 sección 1-2 |
+| 3. Bodegas | `Warehouse` (Marketplace/Vendor) | ADR-0008 | Addendum 2026-10-17 sección 1-3 |
+| 4. Catálogo | `Product`, `ProductVariant` | ADR-0002, ADR-0003, ADR-0012 | Addendum 2026-10-17 sección 5 |
 | 5. Inventario | `Inventory`, `InventoryReservationService` | ADR-0001, ADR-0002, ADR-0025 | — |
 | 6. Carrito | `CustomerOrder` (Cart), `OrderItem` | ADR-0005, ADR-0020 | — |
-| 7. Pedidos | `CustomerOrder`, `FulfillmentOrder`, `Shipment` | ADR-0004, ADR-0006, ADR-0008, ADR-0022 | Addendum 2026-10-03 §1-2 |
+| 7. Pedidos | `CustomerOrder`, `FulfillmentOrder`, `Shipment` | ADR-0004, ADR-0006, ADR-0008, ADR-0022 | Addendum 2026-10-03 sección 1-2 |
 | 8. Facturación | `Invoice` (Master/ZentricDetail/Vendor) | ADR-0023 | — |
 | 9. Logística | `FulfillmentOrder`, `Shipment` | ADR-0004, ADR-0008 | — |
 | 10. Devoluciones | `ReturnRequest`, `RefundCredit` | ADR-0018, ADR-0020 | — |

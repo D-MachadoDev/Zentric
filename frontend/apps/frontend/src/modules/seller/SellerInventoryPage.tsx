@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import { useInventoriesPagedQuery, useAddStockMutation } from '../../application/services/inventory';
 import { useWarehousesQuery } from '../../application/services/warehouses';
 import { useProductsPagedQuery } from '../../application/services/catalog';
-import type { Inventory, Warehouse, Product, ProductVariant, ListInventoriesPagedParams, PagedResult } from '../../domain';
+import type { Inventory, Warehouse, Product, ProductVariant, ListInventoriesPagedParams } from '../../domain';
 import {
   Button,
   Input,
@@ -29,7 +29,7 @@ import {
 
 
 /**
- * Gestión de Inventario del Vendedor (SellerInventoryPage - Frontend-Role-Modules §2.3).
+ * Gestión de Inventario del Vendedor (SellerInventoryPage - Frontend-Role-Modules sección 2.3).
  * Split-Frame Asimétrico (65% Tabla de Posiciones / 35% Carga de Stock).
  * Muestra existencias divididas en available, reserved, used y damaged en Geist Mono tabular-nums.
  * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.

@@ -1,4 +1,4 @@
-import { Link, useParams } from '@tanstack/react-router';
+﻿import { Link, useParams } from '@tanstack/react-router';
 import {
   AlertCircle,
   ArrowLeft,
@@ -38,7 +38,7 @@ export interface SupervisorOrderAuditPageProps {
 /**
  * Expediente 360° de Auditoría de Pedido (/supervisor/orders/$orderId).
  *
- * Frontend-Role-Modules.md §2.6:
+ * Frontend-Role-Modules.md sección 2.6:
  * Cruza en Split-Frame (65% / 35%) las líneas del pedido (`GET /api/orders/{id}`),
  * los despachos por bodega (`GET /api/logistics/fulfillments`) y las tres facturas
  * del split tributario (`Master`, `ZentricDetail`, `VendorDetail` vía

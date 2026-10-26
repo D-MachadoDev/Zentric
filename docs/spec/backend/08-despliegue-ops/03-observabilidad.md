@@ -1,6 +1,6 @@
-# Backend — Observabilidad — Zentric
+﻿# Backend — Observabilidad — Zentric
 
-**Fuente:** `../frontendSDD/02-arquitectura/01-arquitectura-global.md` §6 + `PROMPT-MAESTRO-AGENTES-CONCURRENTES.md` §4 Gate 8
+**Fuente:** `../frontendSDD/02-arquitectura/01-arquitectura-global.md` sección 6 + `PROMPT-MAESTRO-AGENTES-CONCURRENTES.md` sección 4 Gate 8
 **Estado:** Especificación vinculante para `Zentric.Api` + `Zentric.Infrastructure` + Kubernetes
 
 ---

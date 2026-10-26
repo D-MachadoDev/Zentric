@@ -1,10 +1,10 @@
-import * as React from 'react';
+﻿import * as React from 'react';
 import { AlertDialog as AlertDialogPrimitive } from 'radix-ui';
 import { Button } from '../primitives/Button';
 import { cn } from '../lib/cn';
 
 /**
- * Diálogo modal de confirmación crítica y alerta (Frontend-Design-System §5.3).
+ * Diálogo modal de confirmación crítica y alerta (Frontend-Design-System sección 5.3).
  *
  * Implementa role="alertdialog" con trampa de foco accesible, cierre con la
  * tecla Escape, botón de cancelación por defecto y botón de acción con soporte

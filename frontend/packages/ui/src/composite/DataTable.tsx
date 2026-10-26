@@ -1,11 +1,11 @@
-import * as React from 'react';
+﻿import * as React from 'react';
 import { ArrowDown, ArrowUp, ChevronsUpDown, RotateCcw, X } from 'lucide-react';
 
 import { cn } from '../lib/cn';
 import { Skeleton } from '../primitives/Skeleton';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Contrato del compuesto (Frontend-Design-System §5.3 "DataTable")
+// Contrato del compuesto (Frontend-Design-System sección 5.3 "DataTable")
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Una columna de la tabla. `numeric` alinea a la derecha y usa Geist Mono. */
@@ -16,7 +16,7 @@ export interface DataTableColumn<T> {
   accessorKey?: string;
   /** La columna puede ordenarse desde su cabecera. */
   sortable?: boolean;
-  /** Columna de cifras: alineacion derecha + `tabular-nums` (§4.1 Voz 3). */
+  /** Columna de cifras: alineacion derecha + `tabular-nums` (sección 4.1 Voz 3). */
   numeric?: boolean;
   /** Render propio de la celda. */
   cell?: (context: { row: T; value: unknown; index: number }) => React.ReactNode;

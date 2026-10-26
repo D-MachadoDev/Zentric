@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+﻿import { describe, expect, it } from 'vitest';
 import {
   FulfillmentStatus,
   InvoiceType,
@@ -29,14 +29,14 @@ import {
 } from '../domainLabels';
 
 /**
- * Rotulación de enums (Frontend-Design-System §3).
+ * Rotulación de enums (Frontend-Design-System sección 3).
  *
  * Lo que se fija aquí no es la ortografía de cada rótulo, sino que el
  * vocabulario cubra TODOS los estados del backend sin inventar ninguno: si el
  * backend añade un rol o un estado, esta prueba falla antes de que una pantalla
  * lo muestre en crudo.
  */
-describe('domainLabels (§3)', () => {
+describe('domainLabels (sección 3)', () => {
   it('rotula los cinco roles con los términos de la Ley', () => {
     expect(Object.values(UserRole).map((rol) => NOMBRES_DE_ROL[rol])).toEqual([
       'Comprador',
@@ -59,7 +59,7 @@ describe('domainLabels (§3)', () => {
   });
 
   it('señala Aprobada con warning: es el único estado que espera al Administrador', () => {
-    // §2.2: el reembolso sólo cabe sobre una devolución Aprobada.
+    // sección 2.2: el reembolso sólo cabe sobre una devolución Aprobada.
     expect(TONOS_DE_ESTADO_DE_DEVOLUCION[ReturnStatus.Approved]).toBe('warning');
     expect(TONOS_DE_ESTADO_DE_DEVOLUCION[ReturnStatus.Refunded]).toBe('success');
   });

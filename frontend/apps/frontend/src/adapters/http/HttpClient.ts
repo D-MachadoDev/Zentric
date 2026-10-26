@@ -10,6 +10,7 @@ import type {
   Category,
   CreateFulfillmentInput,
   CreateProductInput,
+  CreateProductVariantInput,
   CreateUserInput,
   CreateWarehouseInput,
   UpdateWarehouseInput,
@@ -21,8 +22,14 @@ import type {
   InspectReturnInput,
   Inventory,
   Invoice,
+  ListFulfillmentsPagedParams,
+  ListInventoriesPagedParams,
+  ListInvoicesPagedParams,
   ListOrdersPagedParams,
   ListProductsPagedParams,
+  ListReturnsPagedParams,
+  ListUsersPagedParams,
+  ListWarehousesPagedParams,
   LoginInput,
   Order,
   OrderListItem,
@@ -134,7 +141,7 @@ export class HttpClient implements ZentricApiPort {
   // ── Núcleo de peticiones ───────────────────────────────────────────────────
 
   /**
-   * Envía una petición con la política de transporte de sección1:
+   * Envía una petición con la política de transporte de sección 1:
    * - Cabeceras estándar Accept y Content-Type
    * - Inyección de Bearer token desde SessionPort
    * - Prohibición de cabeceras forjables (X-Buyer-Id, X-User-Id, X-Role)
@@ -415,6 +422,18 @@ export class HttpClient implements ZentricApiPort {
   createProduct(input: CreateProductInput): Promise<CreatedProduct> {
     return this.#json<CreatedProduct>('/api/Catalog/products', this.#post(input));
   }
+
+  addProductVariant(productId: string, input: CreateProductVariantInput): Promise<string> {
+    return this.#guid(
+      `/api/Catalog/products/${encodeURIComponent(productId)}/variants`,
+      this.#post({
+        sku: input.sku,
+        attributes: input.attributes,
+        priceAmount: input.priceAmount,
+      }),
+    );
+  }
+
 
   publishProduct(productId: string): Promise<void> {
     return this.#json<void>(

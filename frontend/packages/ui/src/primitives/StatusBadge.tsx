@@ -1,13 +1,13 @@
-import { cva, type VariantProps } from 'class-variance-authority';
+﻿import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../lib/cn';
 
 /**
- * Insignia de estado de dominio (Frontend-Design-System §3).
+ * Insignia de estado de dominio (Frontend-Design-System sección 3).
  *
  * El tono se elige con `tone`, nunca con el texto: así una misma entidad
  * (pedido, despacho, devolución, factura) se pinta igual en todas las pantallas.
  *
- * §5 es tajante: **el color no puede ser el único portador de significado**, de
+ * sección 5 es tajante: **el color no puede ser el único portador de significado**, de
  * ahí que el texto sea obligatorio y el punto sea sólo un refuerzo visual.
  */
 const statusBadgeVariants = cva(

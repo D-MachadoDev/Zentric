@@ -1,4 +1,5 @@
-import { Link } from '@tanstack/react-router';
+﻿import { Link } from '@tanstack/react-router';
+import { useState } from 'react';
 import {
   Activity,
   AlertCircle,
@@ -51,7 +52,7 @@ import {
 /**
  * Consola de Fiscalización Transversal del Supervisor (/supervisor).
  *
- * ZENTRIC.md Dominio 1 y Frontend-Role-Modules.md §2.6:
+ * ZENTRIC.md Dominio 1 y Frontend-Role-Modules.md sección 2.6:
  * Opera en modo de sólo lectura sobre pedidos, despachos, devoluciones y facturas.
  * Regla estricta de privacidad: NUNCA invoca `/api/users` dado que la política
  * `UserAdministration` reserva los datos personales (PII) al Administrador.

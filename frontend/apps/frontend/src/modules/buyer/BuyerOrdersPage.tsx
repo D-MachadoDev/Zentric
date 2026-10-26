@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useOrdersQuery, useCancelOrderMutation } from '../../application/services/orders';
 import { useProductsPagedQuery } from '../../application/services/catalog';
@@ -39,7 +39,7 @@ import {
 import { getProductImageUrl } from './productImages';
 
 /**
- * Historial de Pedidos del Comprador (Frontend-Role-Modules §2.4).
+ * Historial de Pedidos del Comprador (Frontend-Role-Modules sección 2.4).
  * - Los pedidos en `PendingPayment` solo permanecen en "Pendientes de Pago" mientras su
  *   ventana de 15 minutos esté vigente (`expiresAt > now`). Si expiran, salen de la lista.
  * - Incluye botón "Cancelar pedido" para liberar manualmente la reserva sin esperar 15 minutos.

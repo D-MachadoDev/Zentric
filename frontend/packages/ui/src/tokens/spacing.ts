@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Espaciado y forma (Frontend-Design-System.md seccion 2.3).
  *
  * Escala de 4 px. El multiplicador es intencional: cualquier valor fuera de
@@ -49,7 +49,7 @@ export const durations = {
 } as const;
 
 /**
- * Curvas de transición y aceleración (Frontend-Design-System.md §1, §3).
+ * Curvas de transición y aceleración (Frontend-Design-System.md sección 1, sección 3).
  * easeOutExpo para paneles laterales y diálogos; easeOutQuint para microinteracciones.
  */
 export const transitions = {

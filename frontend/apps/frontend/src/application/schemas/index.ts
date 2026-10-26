@@ -104,7 +104,7 @@ export const VariantAttributeSchema = z.object({
 
 export const CreateProductVariantInputSchema = z.object({
   sku: z.string().trim().min(1, 'El SKU es obligatorio').max(100, 'El SKU no puede superar 100 caracteres'),
-  attributes: z.array(VariantAttributeSchema).optional(),
+  attributes: z.array(VariantAttributeSchema).min(1, 'Debe definir al menos un atributo'),
   priceAmount: z.number().nonnegative('El precio no puede ser negativo').optional(),
 });
 

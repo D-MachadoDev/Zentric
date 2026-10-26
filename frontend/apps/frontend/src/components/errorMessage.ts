@@ -1,13 +1,13 @@
-import { isApiError } from '../domain';
+﻿import { isApiError } from '../domain';
 
 /**
  * Mensaje apto para mostrar tras el fallo de un caso de uso.
  *
- * Vive en `components/`, no en los módulos: según Frontend-Architecture §2 es
+ * Vive en `components/`, no en los módulos: según Frontend-Architecture sección 2 es
  * el único punto permitido para importar `domain/` en tiempo de ejecución, y
  * aquí hace falta porque `ApiError` es una clase, no un tipo.
  *
- * Aplica la tabla de §5 —comportamiento por estado— de memoria, sin exponer
+ * Aplica la tabla de sección 5 —comportamiento por estado— de memoria, sin exponer
  * nunca una traza de pila ni texto crudo de base de datos:
  *
  * | Estado | Aquí |
@@ -29,7 +29,7 @@ export interface OpcionesMensaje {
 export function mensajeDeError(error: unknown, opciones: OpcionesMensaje = {}): string {
   if (!isApiError(error)) {
     // Un error que no viene del servidor no se filtra: su texto podría contener
-    // detalles técnicos que §5 prohíbe mostrar.
+    // detalles técnicos que sección 5 prohíbe mostrar.
     return 'No se pudo completar la operación. Comprueba tu conexión e inténtalo de nuevo.';
   }
 

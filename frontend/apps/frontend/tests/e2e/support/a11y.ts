@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+﻿import { expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 /**
@@ -7,7 +7,7 @@ import AxeBuilder from '@axe-core/playwright';
  * `@axe-core/playwright` v4 expone `AxeBuilder` (no `checkA11y`). Este helper
  * centraliza:
  *   - las reglas WCAG que aplican al proyecto (2.1 AA, el estandar de la
- *     compuerta §7.5 de `frontendSDD/Frontend-Design-System.md`),
+ *     compuerta sección 7.5 de `frontendSDD/Frontend-Design-System.md`),
  *   - el formato del mensaje de fallo, que debe ser legible en el reporte.
  */
 

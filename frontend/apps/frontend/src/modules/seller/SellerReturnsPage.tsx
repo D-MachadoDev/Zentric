@@ -14,6 +14,7 @@ import {
   type Warehouse,
   type Product,
   type ProductVariant,
+  type ListReturnsPagedParams,
 } from '../../domain';
 import {
   NOMBRES_DE_ESTADO_DE_DEVOLUCION,
@@ -44,7 +45,7 @@ import {
 
 
 /**
- * Resolución Comercial de Devoluciones del Vendedor (SellerReturnsPage - Frontend-Role-Modules sección2.3).
+ * Resolución Comercial de Devoluciones del Vendedor (SellerReturnsPage - Frontend-Role-Modules sección 2.3).
  * Split-Frame Asimétrico (65% Bandeja de Devoluciones / 35% Estación de Decisión Comercial).
  *
  * Cumplimiento de AD * Exhibe el veredicto de inspección física (isGoodCondition) emitido por el operador logístico

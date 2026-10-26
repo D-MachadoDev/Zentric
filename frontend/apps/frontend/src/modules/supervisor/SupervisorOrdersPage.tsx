@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import {
   AlertCircle,
@@ -27,7 +27,7 @@ import { OrderStatus } from '../../domain';
 /**
  * Vista global de pedidos para el Supervisor (/supervisor/orders).
  *
- * Frontend-Role-Modules.md §2.6:
+ * Frontend-Role-Modules.md sección 2.6:
  * DataTable global de pedidos con filtro por `OrderStatus` y búsqueda por texto
  * en modo estricto de sólo lectura (cero botones de mutación comercial).
  * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.

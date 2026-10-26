@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+﻿import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Logo } from '@zentric/ui/logo';
 
@@ -9,7 +9,7 @@ interface PublicLayoutProps {
 /**
  * Shell para pantallas públicas y de autenticación (AuthShell).
  *
- * Aplica (Frontend-Design-System §9):
+ * Aplica (Frontend-Design-System sección 9):
  * - Lienzo porcelana en claro / grafito-tinta en oscuro (#0B0F19 / #111827),
  *   con superficies limpias de alta legibilidad y tokens semánticos.
  * - Logotipo central y pie de página con enlace a telemetría de salud.

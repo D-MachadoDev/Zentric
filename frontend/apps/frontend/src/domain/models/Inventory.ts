@@ -1,9 +1,9 @@
-/**
+﻿/**
  * Existencias de una variante en una bodega (`InventoryDto`).
  *
  * Origen: `backend/Zentric.Application/Inventories/Queries/GetInventoryByVariantQuery.cs`.
  * El servidor separa disponible, reservado, usado y dañado; el stock real nunca
- * se recalcula en el cliente (Frontend-Domain-Services §5.3).
+ * se recalcula en el cliente (Frontend-Domain-Services sección 5.3).
  */
 export interface Inventory {
   id: string;

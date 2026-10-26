@@ -1,8 +1,8 @@
-import * as React from 'react';
+﻿import * as React from 'react';
 import { cn } from '../lib/cn';
 
 /**
- * Importe monetario con disciplina OpenType (Frontend-Design-System §4.2 y §5.3).
+ * Importe monetario con disciplina OpenType (Frontend-Design-System sección 4.2 y sección 5.3).
  *
  * El servidor C# es la única autoridad financiera: la moneda y el total vienen
  * siempre del backend en el DTO (ZENTRIC.md / AD). Aquí sólo se formatea

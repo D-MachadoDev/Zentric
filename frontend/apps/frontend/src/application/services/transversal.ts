@@ -1,4 +1,4 @@
-import type { HealthStatus, ZentricApiPort } from '../../domain';
+﻿import type { HealthStatus, ZentricApiPort } from '../../domain';
 
 /**
  * Servicios transversales.
@@ -9,7 +9,7 @@ export { useHealthQuery } from './health';
 export class VerificarEstadoServidorService {
   constructor(private readonly api: ZentricApiPort) {}
 
-  /** `GET /health`. Un `5xx` lo traduce el adaptador a `ApiError` (§5). */
+  /** `GET /health`. Un `5xx` lo traduce el adaptador a `ApiError` (sección 5). */
   ejecutar(): Promise<HealthStatus> {
     return this.api.getHealth();
   }

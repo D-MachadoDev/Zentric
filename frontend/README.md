@@ -1,4 +1,4 @@
-# Frontend — Consola operativa Zentric
+﻿# Frontend — Consola operativa Zentric
 
 Monorepo Turborepo que aloja el design system y la consola web que consume la API de Zentric.
 
@@ -28,7 +28,7 @@ frontend/
 └── package.json          # Scripts raíz (delegan en turbo)
 ```
 
-**Regla de dependencia** ([`Frontend-Architecture.md` §3](../frontendSDD/Frontend-Architecture.md)):
+**Regla de dependencia** ([`Frontend-Architecture.md` sección 3](../frontendSDD/Frontend-Architecture.md)):
 `apps/frontend` → `packages/ui` → `packages/config`. `packages/ui` **no** importa de la app y
 `packages/config` no importa de nadie.
 

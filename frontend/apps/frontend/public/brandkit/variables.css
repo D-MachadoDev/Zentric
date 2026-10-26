@@ -1,8 +1,8 @@
-/* Brandkit Zentric - generado desde packages/ui/src/styles/theme.css (§9).
+﻿/* Brandkit Zentric - generado desde packages/ui/src/styles/theme.css (sección 9).
    No editar a mano: regenerar con `pnpm brandkit:generate`. */
 
 :root {
-  /* Modo claro "Estudio Porcelana" (§9.1) */
+  /* Modo claro "Estudio Porcelana" (sección 9.1) */
   --color-background: #F5F6F8;
   --color-surface: #FFFFFF;
   --color-surface-muted: #EEF0F4;
@@ -21,7 +21,7 @@
 }
 
 .dark {
-  /* Modo oscuro "Boveda Grafito" (§9.1) */
+  /* Modo oscuro "Boveda Grafito" (sección 9.1) */
   --color-background: #0C0F16;
   --color-surface: #131824;
   --color-surface-muted: #1A2030;
@@ -39,7 +39,7 @@
   --color-brand-strong: #5EEAD4;
 }
 
-/* Identidad por rol (§9.2): el scope remapea SOLO el eje de acento. */
+/* Identidad por rol (sección 9.2): el scope remapea SOLO el eje de acento. */
 [data-role='seller'] {
   --color-brand: #6D28D9;
   --color-brand-strong: #5B21B6;

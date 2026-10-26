@@ -12,8 +12,6 @@ import {
   Edit2,
   X,
   User as UserIcon,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import {
   Button,

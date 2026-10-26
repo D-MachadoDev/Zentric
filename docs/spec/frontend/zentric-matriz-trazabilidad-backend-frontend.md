@@ -1,6 +1,6 @@
-# Zentric — Matriz de Trazabilidad Backend ↔ Frontend
+﻿# Zentric — Matriz de Trazabilidad Backend ↔ Frontend
 
-**Propósito:** Vincular cada caso de uso del dominio (`zentric-domain-sdd.md` §4, `05-backend/01-casos-de-uso.md`) con su implementación frontend (página, componente, hook, endpoint API) y criterios de aceptación.
+**Propósito:** Vincular cada caso de uso del dominio (`zentric-domain-sdd.md` sección 4, `05-backend/01-casos-de-uso.md`) con su implementación frontend (página, componente, hook, endpoint API) y criterios de aceptación.
 
 ## Convenciones
 - **CU**: Caso de uso (Command/Query) del backend.

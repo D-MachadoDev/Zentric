@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   AlertCircle,
   Ban,
@@ -38,7 +38,7 @@ import {
 } from '../../components/domainLabels';
 
 /**
- * Consola de Facturación Operativa (Frontend-Role-Modules §2.2).
+ * Consola de Facturación Operativa (Frontend-Role-Modules sección 2.2).
  *
  * Split-Frame 65/35: tabla de "Comprobantes Emitidos" en lenguaje de negocio
  * a la izquierda; a la derecha dos estaciones de acción —emitir facturación y
@@ -111,7 +111,7 @@ export function InvoiceManagementPage() {
   const [annulSuccess, setAnnulSuccess] = useState<string | null>(null);
   const [annulError, setAnnulError] = useState<string | null>(null);
 
-  const { data: pagedResult, isLoading, isError, error, refetch } = useInvoicesPagedQuery(params);
+  const { data: pagedResult, isLoading, isError, error, refetch, isFetching } = useInvoicesPagedQuery(params);
   const invoices = pagedResult?.items ?? [];
   const totalItems = pagedResult?.totalItems ?? 0;
   const totalPages = pagedResult?.totalPages ?? 0;
@@ -285,7 +285,7 @@ export function InvoiceManagementPage() {
         </Alert>
       )}
 
-      {/* ── Split-Frame 65/35 (Frontend-Design-System §2.1) ────────────────── */}
+      {/* ── Split-Frame 65/35 (Frontend-Design-System sección 2.1) ────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Izquierda (65%): Comprobantes Emitidos ────────────────────────── */}
         <section className="lg:col-span-8" aria-labelledby="comprobantes-emitidos">

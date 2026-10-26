@@ -1,8 +1,8 @@
-import type { OrderStatus } from '../enums';
+﻿import type { OrderStatus } from '../enums';
 
 /**
  * Línea de un pedido (`OrderItemDto`).
- * `unitPrice`/`totalPrice` son decimales con dos decimales (§3.5).
+ * `unitPrice`/`totalPrice` son decimales con dos decimales (sección 3.5).
  */
 export interface OrderItem {
   id: string;

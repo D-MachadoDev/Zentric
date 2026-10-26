@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, ImageOff, ShoppingBag, Sparkles } from 'lucide-react';
 import { Button, MoneyAmount, Skeleton } from '@zentric/ui';
@@ -15,15 +16,26 @@ interface HeroTileProps {
  * Ficha del mosaico: imagen real del producto con enlace directo a su ficha de compra.
  */
 function HeroTile({ product, featured = false, className = '' }: HeroTileProps) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const imageUrl = getProductImageUrl(product);
+
   return (
     <figure
       className={`group relative overflow-hidden rounded-2xl border border-border bg-surface-muted ${className}`}
     >
-      <img
-        src={getProductImageUrl(product)}
-        alt={product.name}
-        className="h-full w-full object-cover object-center outline-1 -outline-offset-1 outline-black/10 motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-out motion-safe:group-hover:scale-[1.04] dark:outline-white/10"
-      />
+      {imageFailed ? (
+        <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-foreground-muted">
+          <ImageOff className="h-8 w-8" aria-hidden="true" />
+          <span className="text-xs">Imagen no disponible</span>
+        </div>
+      ) : (
+        <img
+          src={imageUrl}
+          alt={product.name}
+          onError={() => setImageFailed(true)}
+          className="h-full w-full object-cover object-center outline-1 -outline-offset-1 outline-black/10 motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-out motion-safe:group-hover:scale-[1.04] dark:outline-white/10"
+        />
+      )}
       <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/95 via-background/55 to-transparent p-3 pt-8">
         <Link
           to="/buyer/catalog/$productId"

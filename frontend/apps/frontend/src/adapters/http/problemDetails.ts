@@ -1,4 +1,4 @@
-import { ProblemDetailsError } from '../../domain';
+﻿import { ProblemDetailsError } from '../../domain';
 import type { ProblemDetailsData } from '../../domain';
 
 /**
@@ -6,7 +6,7 @@ import type { ProblemDetailsData } from '../../domain';
  *
  * El backend emite dos envoltorios distintos: el middleware de validación de
  * ASP.NET añade `title` + `errors` + `traceId`, mientras que el controlador
- * publica `status` + `detail`. El orden de extracción lo fija §3.4:
+ * publica `status` + `detail`. El orden de extracción lo fija sección 3.4:
  * `detail` → `title` → `errors` aplanado → mensaje genérico con el estado.
  *
  * Compatible con RFC 7807 y RFC 9457.

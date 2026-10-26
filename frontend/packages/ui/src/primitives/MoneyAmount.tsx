@@ -1,7 +1,7 @@
-import { cn } from '../lib/cn';
+﻿import { cn } from '../lib/cn';
 
 /**
- * Importe monetario (Frontend-Design-System §3).
+ * Importe monetario (Frontend-Design-System sección 3).
  *
  * La moneda y el total los decide el **servidor**: aquí sólo se formatea. La Ley
  * prohíbe recalcular el total en el cliente como fuente de verdad, y por eso

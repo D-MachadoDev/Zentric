@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useParams, Link } from '@tanstack/react-router';
 import {
   useProductQuery,
   usePublishProductMutation,
   useSuspendProductMutation,
+  useAddProductVariantMutation,
 } from '../../application/services/catalog';
 import { ProductStatus, type ProductVariant } from '../../domain';
 import {
@@ -12,6 +14,7 @@ import {
 import {
   Button,
   Badge,
+  Input,
   Skeleton,
   Alert,
   AlertTitle,
@@ -37,6 +40,48 @@ export function SellerProductDetailPage() {
   const { data: product, isLoading, isError, error } = useProductQuery(productId ?? '');
   const publishMutation = usePublishProductMutation();
   const suspendMutation = useSuspendProductMutation();
+  const addVariantMutation = useAddProductVariantMutation();
+
+  const [newSku, setNewSku] = useState('');
+  const [newAttrName, setNewAttrName] = useState('Color');
+  const [newAttrValue, setNewAttrValue] = useState('');
+  const [newPrice, setNewPrice] = useState<string>('');
+  const [variantError, setVariantError] = useState<string | null>(null);
+
+  const handleAddVariant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productId) return;
+    setVariantError(null);
+    if (!newSku.trim()) {
+      setVariantError('El SKU es obligatorio.');
+      return;
+    }
+    if (!newAttrName.trim() || !newAttrValue.trim()) {
+      setVariantError('Debe definir al menos un atributo (nombre y valor).');
+      return;
+    }
+    const priceAmount = newPrice.trim() ? Number(newPrice) : undefined;
+    if (priceAmount !== undefined && (isNaN(priceAmount) || priceAmount <= 0)) {
+      setVariantError('El precio debe ser un valor positivo.');
+      return;
+    }
+    try {
+      await addVariantMutation.mutateAsync({
+        productId,
+        input: {
+          sku: newSku.trim(),
+          attributes: [{ name: newAttrName.trim(), value: newAttrValue.trim() }],
+          priceAmount,
+        },
+      });
+      setNewSku('');
+      setNewAttrValue('');
+      setNewPrice('');
+    } catch (err: unknown) {
+      setVariantError(err instanceof Error ? err.message : 'No se pudo crear la variante.');
+    }
+  };
+
 
   const handleToggleStatus = async () => {
     if (!product) return;
@@ -223,6 +268,51 @@ export function SellerProductDetailPage() {
         </div>
 
         <div className="lg:col-span-4 space-y-6">
+          <div className="rounded-2xl border border-border bg-surface p-6 space-y-4 shadow-xl">
+            <h3 className="text-xs font-mono uppercase text-foreground-muted">
+              Agregar Nueva Variante (SKU)
+            </h3>
+            <form onSubmit={handleAddVariant} className="space-y-3">
+              {variantError && (
+                <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+                  <AlertDescription className="text-xs font-mono">{variantError}</AlertDescription>
+                </Alert>
+              )}
+              <div className="space-y-1">
+                <label className="text-[10px] font-mono uppercase text-foreground-muted">Código SKU</label>
+                <Input value={newSku} onChange={(e) => setNewSku(e.target.value)} placeholder="SKU-REF-02" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono uppercase text-foreground-muted">Atributo</label>
+                  <Input value={newAttrName} onChange={(e) => setNewAttrName(e.target.value)} placeholder="Color" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono uppercase text-foreground-muted">Valor</label>
+                  <Input value={newAttrValue} onChange={(e) => setNewAttrValue(e.target.value)} placeholder="Rojo" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-mono uppercase text-foreground-muted">
+                  Precio SKU (COP) — vacío usa precio base
+                </label>
+                <Input
+                  type="number"
+                  value={newPrice}
+                  onChange={(e) => setNewPrice(e.target.value)}
+                  placeholder={String(product.price)}
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={addVariantMutation.isPending}
+                className="w-full bg-brand text-primary-foreground font-bold text-xs"
+              >
+                {addVariantMutation.isPending ? 'Creando…' : 'Crear Variante con Precio'}
+              </Button>
+            </form>
+          </div>
+
           <div className="rounded-2xl border border-border bg-surface p-6 space-y-4 shadow-xl">
             <h3 className="text-xs font-mono uppercase text-foreground-muted">
               Condiciones Comerciales

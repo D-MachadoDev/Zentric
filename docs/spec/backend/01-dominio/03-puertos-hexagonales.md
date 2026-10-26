@@ -1,6 +1,6 @@
-# Backend — Puertos Hexagonales — Zentric
+﻿# Backend — Puertos Hexagonales — Zentric
 
-**Fuente:** `../frontendSDD/zentric-domain-sdd.md` §2.1 (Puertos listados por entidad)
+**Fuente:** `../frontendSDD/zentric-domain-sdd.md` sección 2.1 (Puertos listados por entidad)
 **Estado:** Especificación vinculante para `Zentric.Domain` (interfaces) + `Zentric.Infrastructure` (adapters)
 
 ---

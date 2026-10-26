@@ -1,4 +1,4 @@
-/** Brandkit Zentric - generado desde packages/ui/src/styles/theme.css (§9).
+﻿/** Brandkit Zentric - generado desde packages/ui/src/styles/theme.css (sección 9).
  *  No editar a mano: regenerar con `pnpm brandkit:generate`.
  *  La app ya define su propia paleta en packages/ui/src/styles/theme.css (fuente
  *  unica real); este archivo es un espejo para consumidores externos. */

@@ -1,4 +1,4 @@
-# ADR-0012: Los `enum` del contrato REST viajan solo por nombre
+﻿# ADR-0012: Los `enum` del contrato REST viajan solo por nombre
 
 ```yaml
 id: 0012
@@ -82,7 +82,7 @@ Suite completa tras el cambio: **353/353** (348 + 5 nuevos), build `-warnaserror
 
 ## Consecuencias
 
-- **El frontend tiene que enviar nombres.** `Frontend-Adapters.md` §3.2 mandaba
+- **El frontend tiene que enviar nombres.** `Frontend-Adapters.md` sección 3.2 mandaba
   convertir con constantes numéricas; quedó reescrito. De paso se corrigió ese bloque, que además
   tenía los valores mal (`Seller: 1, Buyer: 2, Admin: 3` cuando el dominio es
   `Buyer=0, Seller=1, Administrator=2, Supervisor=3, LogisticsOperator=4`) y no incluía `Supervisor`.

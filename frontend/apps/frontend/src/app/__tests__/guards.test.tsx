@@ -1,4 +1,4 @@
-import { createMemoryHistory, createRouter, isRedirect } from '@tanstack/react-router';
+﻿import { createMemoryHistory, createRouter, isRedirect } from '@tanstack/react-router';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { InMemorySession } from '../../adapters';
 import { UserRole } from '../../domain';
@@ -30,7 +30,7 @@ function redirectDe(error: unknown): { to?: string; search?: Record<string, unkn
  * el rol equivocado hay estado 403 que conserva la sesión, y con el rol
  * correcto se pasa.
  */
-describe('guardas de rol (§3)', () => {
+describe('guardas de rol (sección 3)', () => {
   it('sin sesión redirige a /login con el aviso sin-sesion', () => {
     const session = new InMemorySession();
 
@@ -39,7 +39,7 @@ describe('guardas de rol (§3)', () => {
       expect.unreachable('Debía lanzar la redirección');
     } catch (error) {
       expect(isRedirect(error)).toBe(true);
-      // Decisión A4 / §3: Redirección canónica a `/login` con aviso
+      // Decisión A4 / sección 3: Redirección canónica a `/login` con aviso
       expect(redirectDe(error)).toMatchObject({ to: '/login', search: { aviso: 'sin-sesion' } });
     }
   });
@@ -118,7 +118,7 @@ describe('guardas de rol (§3)', () => {
   });
 });
 
-describe('getRoleHomePath (§2 y Decisión A4)', () => {
+describe('getRoleHomePath (sección 2 y Decisión A4)', () => {
   it('retorna la ruta home canónica para cada uno de los 5 roles del sistema', () => {
     expect(getRoleHomePath(UserRole.Administrator)).toBe('/admin');
     expect(getRoleHomePath(UserRole.Seller)).toBe('/seller');

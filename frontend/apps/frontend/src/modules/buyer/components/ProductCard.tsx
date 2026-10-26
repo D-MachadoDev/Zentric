@@ -1,5 +1,6 @@
+﻿import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, CheckCircle2, FileCode, Flame, Package, XCircle, Zap } from 'lucide-react';
+import { ArrowRight, CheckCircle2, FileCode, Flame, ImageOff, Package, XCircle, Zap } from 'lucide-react';
 import { Badge, MoneyAmount } from '@zentric/ui';
 import { ProductType, type Product } from '../../../domain';
 import { getProductImageUrl } from '../productImages';
@@ -52,7 +53,7 @@ interface ProductCardProps {
 }
 
 /**
- * Tarjeta comercial de la grilla "Todos los productos" (§8-A4).
+ * Tarjeta comercial de la grilla "Todos los productos" (sección 8-A4).
  *
  * Jerarquia de tres niveles, no cuatro cajas identicas: (1) fotografia 16:10
  * con zoom en hover, (2) identidad del producto —tipo, variantes y SKU en
@@ -65,6 +66,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const sku = resolvePrimarySku(product);
   const availabilityBadge = availability === 'digital' ? null : AVAILABILITY[availability];
   const TypeIcon = product.type === ProductType.Digital ? FileCode : Package;
+  const imageUrl = getProductImageUrl(product);
+  const [imageFailed, setImageFailed] = useState(false);
 
   return (
     <Link
@@ -73,12 +76,20 @@ export function ProductCard({ product }: ProductCardProps) {
       className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-surface transition-[transform,box-shadow,border-color] duration-200 ease-out hover:border-brand/50 hover:shadow-lg motion-safe:hover:-translate-y-0.5"
     >
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-surface-muted">
-        <img
-          src={getProductImageUrl(product)}
-          alt={product.name}
-          loading="lazy"
-          className="h-full w-full object-cover object-center outline-1 -outline-offset-1 outline-black/10 motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out motion-safe:group-hover:scale-[1.04] dark:outline-white/10"
-        />
+        {imageFailed ? (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-foreground-muted">
+            <ImageOff className="h-8 w-8" aria-hidden="true" />
+            <span className="text-xs">Imagen no disponible</span>
+          </div>
+        ) : (
+          <img
+            src={imageUrl}
+            alt={product.name}
+            loading="lazy"
+            onError={() => setImageFailed(true)}
+            className="h-full w-full object-cover object-center outline-1 -outline-offset-1 outline-black/10 motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out motion-safe:group-hover:scale-[1.04] dark:outline-white/10"
+          />
+        )}
 
         <div className="absolute top-3 right-3">
           {availabilityBadge ? (
@@ -87,7 +98,7 @@ export function ProductCard({ product }: ProductCardProps) {
               {availabilityBadge.label}
             </Badge>
           ) : (
-            /* Texto sobre relleno de acento: token `--primary-foreground` (§9.5-5). */
+            /* Texto sobre relleno de acento: token `--primary-foreground` (sección 9.5-5). */
             <span className="inline-flex items-center gap-1 rounded-md bg-brand/90 px-2 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-xs">
               <Zap className="h-3 w-3" aria-hidden="true" />
               Entrega Inmediata
@@ -135,7 +146,7 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           </div>
 
-          {/* Accion comercial con micro-interaccion de flecha (§8-A4). */}
+          {/* Accion comercial con micro-interaccion de flecha (sección 8-A4). */}
           <span className="inline-flex items-center gap-1 rounded-lg bg-surface-muted px-3 py-1.5 text-xs font-semibold text-brand transition-colors group-hover:bg-brand group-hover:text-primary-foreground">
             Ver
             <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />

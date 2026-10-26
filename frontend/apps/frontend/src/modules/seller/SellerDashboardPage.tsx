@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+﻿import { Link } from '@tanstack/react-router';
 import { useProductsPagedQuery } from '../../application/services/catalog';
 import { useOrdersQuery } from '../../application/services/orders';
 import { useFulfillmentsQuery } from '../../application/services/logistics';
@@ -41,7 +41,7 @@ import {
 } from 'lucide-react';
 
 /**
- * Panel Principal del Vendedor (SellerDashboardPage - Frontend-Role-Modules §2.3).
+ * Panel Principal del Vendedor (SellerDashboardPage - Frontend-Role-Modules sección 2.3).
  * Hero KPI Strip + Split-Frame (65% Pedidos Recientes / 35% Operaciones Logísticas).
  * Métrica dominante con subtotal neto liquidado en facturas VendorDetail.
  */

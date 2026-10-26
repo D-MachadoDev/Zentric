@@ -1,4 +1,4 @@
-import {
+﻿import {
   FulfillmentStatus,
   InvoiceType,
   OrderStatus,
@@ -10,16 +10,16 @@ import {
 } from '../domain';
 
 /**
- * Rotulación de los enums del dominio en español (Frontend-Design-System §3).
+ * Rotulación de los enums del dominio en español (Frontend-Design-System sección 3).
  *
- * Vive en `components/`, no en los módulos: según Frontend-Architecture §2 los
+ * Vive en `components/`, no en los módulos: según Frontend-Architecture sección 2 los
  * módulos no importan `domain/`, y ésta es la capa puente que traduce el
  * vocabulario del backend al de la Ley, igual que `errorMessage.ts`. No se
  * inventa ningún sinónimo: cada rótulo es el término exacto de `ZENTRIC.md`.
  *
  * Los mapas son `Record<Enum, …>` para que el compilador obligue a rotular
  * cualquier estado nuevo del backend: si se añade uno, esto no compila y ninguna
- * vista queda muda (§4).
+ * vista queda muda (sección 4).
  */
 
 /**
@@ -30,7 +30,7 @@ import {
  */
 export type TonoDeEstado = 'neutral' | 'info' | 'warning' | 'success' | 'danger';
 
-/** Roles de usuario. Origen: `ZENTRIC.md` §5 (tabla de roles). */
+/** Roles de usuario. Origen: `ZENTRIC.md` sección 5 (tabla de roles). */
 export const NOMBRES_DE_ROL: Record<UserRole, string> = {
   [UserRole.Buyer]: 'Comprador',
   [UserRole.Seller]: 'Vendedor',
@@ -39,7 +39,7 @@ export const NOMBRES_DE_ROL: Record<UserRole, string> = {
   [UserRole.Supervisor]: 'Supervisor',
 };
 
-/** Tono por rol de usuario (Frontend-Design-System §3). */
+/** Tono por rol de usuario (Frontend-Design-System sección 3). */
 export const TONOS_DE_ROL: Record<UserRole, TonoDeEstado> = {
   [UserRole.Administrator]: 'danger',
   [UserRole.Seller]: 'info',
@@ -57,11 +57,11 @@ export const NOMBRES_DE_ESTADO_DE_DEVOLUCION: Record<ReturnStatus, string> = {
 };
 
 /**
- * Tono de la insignia por estado de devolución (Frontend-Design-System §3).
+ * Tono de la insignia por estado de devolución (Frontend-Design-System sección 3).
  *
  * `Aprobada` es `warning` a propósito: en la bandeja del Administrador es el
- * único estado que espera una acción suya —el reembolso, §2.2—, y el tono lo
- * señala sin depender del color (§5: el texto siempre acompaña).
+ * único estado que espera una acción suya —el reembolso, sección 2.2—, y el tono lo
+ * señala sin depender del color (sección 5: el texto siempre acompaña).
  */
 export const TONOS_DE_ESTADO_DE_DEVOLUCION: Record<ReturnStatus, TonoDeEstado> = {
   [ReturnStatus.Requested]: 'info',
@@ -102,7 +102,7 @@ export const NOMBRES_DE_COMPROBANTE: Record<InvoiceType, string> = {
 /**
  * Tono de la insignia por tipo de comprobante.
  *
- * Sigue la matriz canónica de Frontend-Design-System §6: el comprobante del
+ * Sigue la matriz canónica de Frontend-Design-System sección 6: el comprobante del
  * comprador es el documento confirmado (`success`), la comisión de la
  * plataforma es informativa (`info`) y la liquidación del vendedor es
  * registro (`neutral`).
@@ -123,7 +123,7 @@ export const NOMBRES_DE_ESTADO_DE_PEDIDO: Record<OrderStatus, string> = {
   [OrderStatus.Cancelled]: 'Cancelado',
 };
 
-/** Tono por estado de pedido (Frontend-Design-System §3). */
+/** Tono por estado de pedido (Frontend-Design-System sección 3). */
 export const TONOS_DE_ESTADO_DE_PEDIDO: Record<OrderStatus, TonoDeEstado> = {
   [OrderStatus.Cart]: 'neutral',
   [OrderStatus.PendingPayment]: 'warning',
@@ -142,7 +142,7 @@ export const NOMBRES_DE_ESTADO_DE_DESPACHO: Record<FulfillmentStatus, string> = 
   [FulfillmentStatus.Cancelled]: 'Cancelado',
 };
 
-/** Tono por estado de despacho (Frontend-Design-System §3). */
+/** Tono por estado de despacho (Frontend-Design-System sección 3). */
 export const TONOS_DE_ESTADO_DE_DESPACHO: Record<FulfillmentStatus, TonoDeEstado> = {
   [FulfillmentStatus.PendingPack]: 'warning',
   [FulfillmentStatus.Packed]: 'info',
@@ -159,7 +159,7 @@ export const NOMBRES_DE_ESTADO_DE_PRODUCTO: Record<ProductStatus, string> = {
 };
 
 /**
- * Tono por estado de producto (Frontend-Design-System §3). En la vista del
+ * Tono por estado de producto (Frontend-Design-System sección 3). En la vista del
  * Vendedor lo que exige acción es lo que está FUERA del catálogo: el
  * `Suspendido`, que sólo se reactiva publicándolo.
  */

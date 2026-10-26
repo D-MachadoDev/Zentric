@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   AlertCircle,
   Layers,
@@ -26,7 +26,7 @@ import { InvoiceType } from '../../domain';
 /**
  * Libro Mayor Tributario del Supervisor (/supervisor/invoices).
  *
- * Frontend-Role-Modules.md §2.6:
+ * Frontend-Role-Modules.md sección 2.6:
  * Consume `GET /api/billing/invoices` en modo estricto de sólo lectura.
  * Desglosa Facturas Maestras (`Master`), comisiones de plataforma (`ZentricDetail` 5%)
  * y liquidaciones a vendedores (`VendorDetail` 95%). Cero botones de emisión o anulación.

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from '@tanstack/react-router';
 import {
   useOrderQuery,
@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 
 /**
- * Consola de Pago y Reserva Atómica de 15 Minutos para el Comprador (Frontend-Role-Modules §2.4 y Frontend-User-Flows §2).
+ * Consola de Pago y Reserva Atómica de 15 Minutos para el Comprador (Frontend-Role-Modules sección 2.4 y Frontend-User-Flows sección 2).
  * Incluye:
  * - Gestión en línea de Domicilio de Entrega estilo Mercado Libre (respaldada por GET/PUT /api/users/profile).
  * - Temporizador determinista en Geist Mono tabular-nums con reactivación de reserva de 15 min mientras exista stock disponible.

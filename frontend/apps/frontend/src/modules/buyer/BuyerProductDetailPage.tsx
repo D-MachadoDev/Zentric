@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from '@tanstack/react-router';
 import { useProductQuery, useTrackProductViewMutation } from '../../application/services/catalog';
 import {
@@ -50,7 +50,7 @@ function variantLabel(variant: ProductVariant, index: number): string {
 }
 
 /**
- * Ficha de detalle del producto para el comprador (Frontend-Role-Modules §2.4).
+ * Ficha de detalle del producto para el comprador (Frontend-Role-Modules sección 2.4).
  *
  * Una sola superficie elevada (el buy box): la galería, la descripción y las
  * condiciones se separan con jerarquía y divisores, no con cajas anidadas.

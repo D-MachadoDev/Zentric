@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+﻿import { describe, expect, it } from 'vitest';
 import { isApiError } from '../../../domain';
 import type { ApiError, SessionPort, UserRole } from '../../../domain';
 import { ZentricHttpClient } from '../ZentricHttpClient';
@@ -64,7 +64,7 @@ function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status });
 }
 
-describe('ZentricHttpClient — cabeceras (§1)', () => {
+describe('ZentricHttpClient — cabeceras (sección 1)', () => {
   it('adjunta Authorization: Bearer cuando hay token en memoria', async () => {
     const { impl, llamadas } = crearFetch(() => json([]));
 
@@ -110,7 +110,7 @@ describe('ZentricHttpClient — cabeceras (§1)', () => {
   });
 });
 
-describe('ZentricHttpClient — desenvoltura de respuestas (§3.1, CAT-01)', () => {
+describe('ZentricHttpClient — desenvoltura de respuestas (sección 3.1, CAT-01)', () => {
   it('desenvuelve el Guid serializado como cadena en los endpoints de creación', async () => {
     const { impl } = crearFetch(() => json('3de3d5d4-0000-0000-0000-000000000000'));
 
@@ -148,7 +148,7 @@ describe('ZentricHttpClient — desenvoltura de respuestas (§3.1, CAT-01)', () 
   });
 });
 
-describe('ZentricHttpClient — política de reintentos (§1)', () => {
+describe('ZentricHttpClient — política de reintentos (sección 1)', () => {
   it('un 4xx es definitivo: no se reintenta', async () => {
     let peticiones = 0;
     const { impl } = crearFetch(() => {

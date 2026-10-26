@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, CheckCircle2, Flame } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Flame, ImageOff } from 'lucide-react';
 import { MoneyAmount } from '@zentric/ui';
 import type { Product } from '../../../domain';
 import { getProductImageUrl } from '../productImages';
@@ -25,6 +26,8 @@ export function ProductRailCard({ product }: ProductRailCardProps) {
   const availability = resolveProductAvailability(product);
   const variantCount = product.variants?.length ?? 1;
   const sku = resolvePrimarySku(product);
+  const imageUrl = getProductImageUrl(product);
+  const [imageFailed, setImageFailed] = useState(false);
 
   return (
     <Link
@@ -33,12 +36,20 @@ export function ProductRailCard({ product }: ProductRailCardProps) {
       className="group relative flex w-72 shrink-0 flex-col overflow-hidden rounded-2xl border border-border bg-surface transition-[transform,box-shadow,border-color] duration-300 ease-out hover:border-brand/60 hover:shadow-lg motion-safe:hover:-translate-y-1"
     >
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-surface-muted">
-        <img
-          src={getProductImageUrl(product)}
-          alt={product.name}
-          loading="lazy"
-          className="h-full w-full object-cover object-center outline-1 -outline-offset-1 outline-black/10 motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out motion-safe:group-hover:scale-105 dark:outline-white/10"
-        />
+        {imageFailed ? (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-foreground-muted">
+            <ImageOff className="h-8 w-8" aria-hidden="true" />
+            <span className="text-xs">Imagen no disponible</span>
+          </div>
+        ) : (
+          <img
+            src={imageUrl}
+            alt={product.name}
+            loading="lazy"
+            onError={() => setImageFailed(true)}
+            className="h-full w-full object-cover object-center outline-1 -outline-offset-1 outline-black/10 motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out motion-safe:group-hover:scale-105 dark:outline-white/10"
+          />
+        )}
         <div className="absolute top-2.5 left-2.5">
           <span className="inline-flex items-center gap-1 rounded-md border border-border bg-surface/90 px-2 py-0.5 text-[10px] font-bold text-brand shadow-xs backdrop-blur-md">
             <CheckCircle2 className="h-3 w-3" aria-hidden="true" />

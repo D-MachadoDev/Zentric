@@ -1,4 +1,4 @@
-# Zentric — Frontend Master SDD (Next.js 15 App Router + DDD)
+﻿# Zentric — Frontend Master SDD (Next.js 15 App Router + DDD)
 
 **Estado:** propuesta técnica basada en `zentric-domain-sdd.md` y `02-arquitectura/03-arquitectura-frontend-nextjs.md`
 **Tecnología objetivo:** Next.js 15 App Router, React 19, TypeScript 5.6+, TanStack Router v1, TanStack Query v5
@@ -71,7 +71,7 @@ Decisiones que el frontend debe respetar:
 - **No duplicar tipos** manualmente. Regenerar en CI tras cambios de contrato.
 - **Versionado**: Frontend consume `v1`. Breaking changes → backend `v2` + frontend migración coordinada.
 
-## 6. Estados de UI obligatorios (ver `04-experiencia/01-principios-ux.md` §4)
+## 6. Estados de UI obligatorios (ver `04-experiencia/01-principios-ux.md` sección 4)
 Cada pantalla asíncrona debe contemplar: carga inicial, carga incremental, contenido, vacío con siguiente paso, error recuperable, sesión expirada, acceso denegado, recurso inexistente, conflicto por estado cambiado, datos desactualizados, operación en curso, operación confirmada, operación fallida.
 
 ## 7. Navegación y URL state

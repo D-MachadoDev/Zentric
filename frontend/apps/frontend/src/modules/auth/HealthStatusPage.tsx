@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useHealthQuery } from '../../application/services/health';
 import {
@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 /**
- * Pantalla de Estado y Telemetría del Sistema (Frontend-Role-Modules §2.1).
+ * Pantalla de Estado y Telemetría del Sistema (Frontend-Role-Modules sección 2.1).
  * Expone la sonda técnica pública consumiendo GET /health.
  */
 export function HealthStatusPage() {

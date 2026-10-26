@@ -35,27 +35,45 @@ function Add-Warning { param($msg) $warnings += $msg; Write-Host "WARNING: $msg"
 function Add-Ok { param($msg) if ($Verbose) { Write-Host "OK: $msg" -ForegroundColor Green } }
 
 Write-Host 'Iniciando spec-sync-check...' -ForegroundColor Cyan
-Write-Host 'Repo root: $repoRoot' -ForegroundColor Gray
+Write-Host "Repo root: $repoRoot" -ForegroundColor Gray
 
 # ============================================================================
 # 1. Validar ADRs referenciados existen
 # ============================================================================
 Write-Host 'Validando referencias a ADRs...' -ForegroundColor Cyan
 
-$adrFiles = Get-ChildItem "$adrDir/ADR-*.md" | ForEach-Object { $_.BaseName }
+$adrFiles = Get-ChildItem "$adrDir/ADR-*.md" -File
 $adrSet = @{}
-$adrFiles | ForEach-Object { $adrSet[$_] = $true }
+foreach ($f in $adrFiles) {
+    if ($f.BaseName -match 'ADR-(\d{4})') {
+        $adrSet[$Matches[1]] = $true
+    }
+}
 
 $allMd = Get-ChildItem "$repoRoot/docs/spec" -Recurse -Filter '*.md' -File
-$allMd += Get-ChildItem "$repoRoot/backend" -Recurse -Filter '*.md' -File
-$allMd += Get-ChildItem "$repoRoot/frontend" -Recurse -Filter '*.md' -File
+    $allMd += Get-ChildItem "$repoRoot/backend" -Recurse -Filter '*.md' -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '\\(bin|obj)\\' }
+    $allMd += Get-ChildItem "$repoRoot/frontend" -Recurse -Filter '*.md' -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '\\(node_modules|dist|build)\\' }
 
 $adrRefRegex = 'ADR-(\d{4})'
 $missingAdrs = @()
 
 foreach ($file in $allMd) {
     $content = Get-Content $file.FullName -Raw
-    $matches = [regex]::Matches($content, $adrRefRegex)
+    $adrMatches = [regex]::Matches($content, $adrRefRegex)
+    foreach ($m in $adrMatches) {
+        $adrNum = $m.Groups[1].Value
+        if (-not $adrSet.ContainsKey($adrNum)) {
+            $missingAdrs += "ADR-$adrNum referenciado en $($file.FullName.Substring($repoRoot.Length+1))"
+        }
+    }
+}
+
+if ($missingAdrs.Count -gt 0) {
+    $missingAdrs | Sort-Object -Unique | ForEach-Object { Add-Error "ADR faltante: $_" }
+} else {
+    Add-Ok "Todos los ADRs referenciados existen ($($adrFiles.Count) ADRs en docs/adr/)"
+}
+
 # ============================================================================
 # 2. Extraer endpoints de controllers backend
 # ============================================================================
@@ -102,8 +120,8 @@ $specApiFiles = Get-ChildItem "$specBackend/04-api-contratos" -Filter '*.md' -Fi
 $specQueriesCommands = @()
 foreach ($file in $specApiFiles) {
     $content = Get-Content $file.FullName -Raw
-    $matches = [regex]::Matches($content, '(GET|POST|PUT|PATCH|DELETE)\s+(/api/\S+)')
-    foreach ($match in $matches) {
+    $adrMatches = [regex]::Matches($content, '(GET|POST|PUT|PATCH|DELETE)\s+(/api/\S+)')
+    foreach ($match in $adrMatches) {
         $specQueriesCommands += [pscustomobject]@{
             Verb  = $match.Groups[1].Value
             Route = $match.Groups[2].Value
@@ -223,30 +241,4 @@ if ($errors.Count -gt 0) {
 } else {
     Write-Host 'SPEC-SYNC-CHECK PASO - Spec y codigo sincronizados' -ForegroundColor Green
     exit 0
-}
-$missingInSpec = $codeRoutes | Where-Object { $specRoutes -notcontains $_ }
-$missingInCode = $specRoutes | Where-Object { $codeRoutes -notcontains $_ }
-
-if ($missingInSpec) {
-    $missingInSpec | ForEach-Object { Add-Warning 'Endpoint en codigo pero NO en spec: $_' }
-}
-if ($missingInCode) {
-    $missingInCode | ForEach-Object { Add-Warning 'Endpoint en spec pero NO en codigo: $_' }
-}
-
-if (-not $missingInSpec -and -not $missingInCode) {
-    Add-Ok "Endpoints code <-> spec sincronizados"
-}
-    foreach ($match in $matches) {
-        $adrNum = 'ADR-$($match.Groups[1].Value)'
-        if (-not $adrSet.ContainsKey($adrNum)) {
-            $missingAdrs += '$adrNum referenciado en $($file.FullName.Substring($repoRoot.Length+1))'
-        }
-    }
-}
-
-if ($missingAdrs.Count -gt 0) {
-    $missingAdrs | Sort-Object -Unique | ForEach-Object { Add-Error 'ADR faltante: $_' }
-} else {
-    Add-Ok 'Todos los ADRs referenciados existen ($($adrFiles.Count) ADRs en docs/adr/)'
 }

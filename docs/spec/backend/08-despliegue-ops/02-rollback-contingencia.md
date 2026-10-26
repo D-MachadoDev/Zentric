@@ -1,6 +1,6 @@
-# Backend — Rollback y Contingencia — Zentric
+﻿# Backend — Rollback y Contingencia — Zentric
 
-**Fuente:** `../frontendSDD/PROMPT-MAESTRO-AGENTES-CONCURRENTES.md` §8
+**Fuente:** `../frontendSDD/PROMPT-MAESTRO-AGENTES-CONCURRENTES.md` sección 8
 **Estado:** Procedimientos obligatorios para `Zentric.Api` + `Zentric.Infrastructure` + Kubernetes
 
 ---

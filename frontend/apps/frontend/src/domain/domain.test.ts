@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+﻿import { describe, expect, it } from 'vitest';
 import {
   FulfillmentStatus,
   InvoiceType,
@@ -101,7 +101,7 @@ describe('Enums del dominio (ADR-0012)', () => {
   });
 });
 
-describe('ApiError y ProblemDetailsError (Frontend-Architecture §5)', () => {
+describe('ApiError y ProblemDetailsError (Frontend-Architecture sección 5)', () => {
   it('expone el ProblemDetails del servidor como mensaje apto para el usuario', () => {
     const error = new ApiError(409, 'El documento ya está registrado.');
 

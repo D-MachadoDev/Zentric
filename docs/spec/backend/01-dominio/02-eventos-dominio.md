@@ -1,6 +1,6 @@
-# Backend — Eventos de Dominio — Zentric
+﻿# Backend — Eventos de Dominio — Zentric
 
-**Fuente:** `../frontendSDD/zentric-domain-sdd.md` §2.3
+**Fuente:** `../frontendSDD/zentric-domain-sdd.md` sección 2.3
 **Estado:** Especificación vinculante para `Zentric.Domain` — publicados tras transacción exitosa (outbox pattern)
 
 ---

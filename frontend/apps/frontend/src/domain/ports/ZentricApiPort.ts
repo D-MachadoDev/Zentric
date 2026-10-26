@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   AddCartItemInput,
   AddStockInput,
   AdjustInventoryInput,
@@ -9,6 +9,7 @@ import type {
   Category,
   CreateFulfillmentInput,
   CreateProductInput,
+  CreateProductVariantInput,
   CreateUserInput,
   CreateWarehouseInput,
   UpdateWarehouseInput,
@@ -52,11 +53,6 @@ export interface ListUsersPagedParams {
   size?: number;
 }
 
-/** Par�metros para listado paginado de inventarios. */
-export interface ListInventoriesPagedParams {
-  page?: number;
-  size?: number;
-}
 
 /** Par�metros para listado paginado de despachos. */
 export interface ListFulfillmentsPagedParams {
@@ -65,8 +61,15 @@ export interface ListFulfillmentsPagedParams {
   size?: number;
 }
 
+/** Parámetros para listado paginado de devoluciones. */
+export interface ListReturnsPagedParams {
+  status?: ReturnStatus | string;
+  page?: number;
+  size?: number;
+}
+
 /**
- * Puerto de salida unificado hacia la API de Zentric (Frontend-Architecture §5.1).
+ * Puerto de salida unificado hacia la API de Zentric (Frontend-Architecture sección 5.1).
  *
  * Contiene los métodos canónicos en inglés (Decision A2) que orquestan los endpoints
  * REST de negocio de backendSDD/Presentation/01-endpoints.md + 1 sonda /health.
@@ -79,7 +82,7 @@ export interface ZentricApiPort {
 
   // ── Módulo 0: Autenticación e Identidad (/api/auth) ─────────────────────
   login(input: LoginInput): Promise<AuthToken>;
-  getCurrentUser(): Promise<CurrentUser>;
+  getCurrentUser(signal?: AbortSignal): Promise<CurrentUser>;
   /** Alias compatible para getCurrentUser */
   currentUser(): Promise<CurrentUser>;
 
@@ -114,9 +117,10 @@ export interface ZentricApiPort {
 
   // ── Módulo 4: Catálogo de Productos (/api/catalog) ──────────────────────
   createProduct(input: CreateProductInput): Promise<CreatedProduct>;
+  addProductVariant(productId: string, input: CreateProductVariantInput): Promise<string>;
   publishProduct(productId: string): Promise<void>;
   suspendProduct(productId: string): Promise<void>;
-  listProductsPaged(params?: ListProductsPagedParams): Promise<PagedResult<Product>>;
+  listProductsPaged(params?: ListProductsPagedParams, signal?: AbortSignal): Promise<PagedResult<Product>>;
   getProductById(id: string): Promise<Product>;
   /** Alias compatible para getProductById */
   getProduct(id: string): Promise<Product>;
@@ -126,7 +130,7 @@ export interface ZentricApiPort {
    * Es la ÚNICA fuente de categorías del buyer: chips del catálogo, atajos del
    * header y enlaces del footer salen de aquí, nunca de una lista hardcodeada.
    */
-  listCategories(): Promise<Category[]>;
+  listCategories(signal?: AbortSignal): Promise<Category[]>;
   /**
    * Productos destacados para el mosaico del hero (S2).
    * Backend: GET /api/Catalog/products/hero
@@ -153,10 +157,10 @@ export interface ZentricApiPort {
   checkoutOrder(orderId: string): Promise<void>;
   cancelOrder?(orderId: string): Promise<void>;
   payOrder(orderId: string): Promise<void>;
-  listOrders(status?: OrderStatus | string): Promise<OrderListItem[]>;
+  listOrders(status?: OrderStatus | string, signal?: AbortSignal): Promise<OrderListItem[]>;
   /** Listado paginado de pedidos (backend: GET /api/Orders?status&page&size). */
-  listOrdersPaged(params?: ListOrdersPagedParams): Promise<PagedResult<OrderListItem>>;
-  getOrderById(id: string): Promise<Order | SellerOrderView>;
+  listOrdersPaged(params?: ListOrdersPagedParams, signal?: AbortSignal): Promise<PagedResult<OrderListItem>>;
+  getOrderById(id: string, signal?: AbortSignal): Promise<Order | SellerOrderView>;
   /** Alias compatible para getOrderById */
   getOrder(id: string): Promise<Order | SellerOrderView>;
 
@@ -167,6 +171,8 @@ export interface ZentricApiPort {
   deliverFulfillment(id: string): Promise<void>;
   cancelGhostStock(input: CancelGhostStockInput): Promise<boolean>;
   listFulfillments(status?: FulfillmentStatus | string): Promise<FulfillmentOrder[]>;
+  /** Listado paginado de despachos (backend: GET /api/Logistics/fulfillments?status&page&size). */
+  listFulfillmentsPaged(params?: ListFulfillmentsPagedParams): Promise<PagedResult<FulfillmentOrder>>;
   getFulfillmentById(id: string): Promise<FulfillmentOrder>;
   /** Alias compatible para getFulfillmentById */
   getFulfillment(id: string): Promise<FulfillmentOrder>;

@@ -5,6 +5,21 @@ export type BrandRole = 'buyer' | 'seller' | 'admin' | 'logistics' | 'supervisor
 
 const VALID_ROLES = new Set<BrandRole>(['buyer', 'seller', 'admin', 'logistics', 'supervisor']);
 
+/**
+ * Normaliza un rol (posiblemente con mayúsculas, ej. UserRole.Seller = 'Seller')
+ * a su equivalente BrandRole en minúsculas. Devuelve 'buyer' si no se reconoce.
+ */
+export function normalizeRole(raw: string | undefined | null): BrandRole {
+  if (!raw) return 'buyer';
+  const lower = raw.toLowerCase();
+  if (lower === 'seller') return 'seller';
+  if (lower === 'administrator' || lower === 'admin') return 'admin';
+  if (lower === 'logisticsoperator' || lower === 'logistics') return 'logistics';
+  if (lower === 'supervisor') return 'supervisor';
+  if (lower === 'buyer') return 'buyer';
+  return VALID_ROLES.has(lower as BrandRole) ? (lower as BrandRole) : 'buyer';
+}
+
 export function getRoleLogoSrc(role: BrandRole = 'buyer'): string {
   return `/brandkit/logo/zentric-icon-${role}.png`;
 }
@@ -27,8 +42,8 @@ export function LogoMark({ title, role, className, alt, ...props }: LogoMarkProp
 
     const resolveClosestRole = (): BrandRole => {
       const closest = el.closest('[data-role]');
-      const attr = closest?.getAttribute('data-role')?.toLowerCase() as BrandRole | undefined;
-      return attr && VALID_ROLES.has(attr) ? attr : 'buyer';
+      const attr = closest?.getAttribute('data-role');
+      return normalizeRole(attr);
     };
 
     setInheritedRole(resolveClosestRole());
@@ -48,7 +63,7 @@ export function LogoMark({ title, role, className, alt, ...props }: LogoMarkProp
     return () => observer.disconnect();
   }, [role]);
 
-  const effectiveRole: BrandRole = role ?? inheritedRole;
+  const effectiveRole: BrandRole = role ? normalizeRole(role) : inheritedRole;
   const accessibleLabel = title ?? alt;
 
   return (
@@ -60,7 +75,7 @@ export function LogoMark({ title, role, className, alt, ...props }: LogoMarkProp
       aria-hidden={isDecorative || undefined}
       aria-label={accessibleLabel}
       data-testid="logo-mark"
-      data-role={role && role !== 'buyer' ? role : undefined}
+      data-role={role ? normalizeRole(role) : undefined}
       draggable={false}
       className={cn('inline-block select-none object-contain', className)}
       {...props}
@@ -77,5 +92,5 @@ export interface LogoMarkProps extends Omit<ImgHTMLAttributes<HTMLImageElement>,
   /**
    * Rol opcional para seleccionar directamente la imagen `/brandkit/logo/zentric-icon-{role}.png`.
    */
-  role?: BrandRole;
+  role?: BrandRole | string;
 }

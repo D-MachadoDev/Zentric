@@ -1,4 +1,4 @@
-# Zentric Frontend SDD — Índice Rápido
+﻿# Zentric Frontend SDD — Índice Rápido
 
 > **Fuente de verdad:** Este directorio contiene la especificación completa del frontend. El backend SDD está en `../backendSDD/`. El dominio compartido está en `zentric-domain-sdd.md`.
 
@@ -57,9 +57,9 @@ backendSDD/
 ## 🚀 Quickstart para Agentes
 
 1. **Leer en orden**: `00-LEEME-INDICE.md` → `zentric-domain-sdd.md` → `01-negocio/01-alcance-y-decisiones.md` → `02-arquitectura/`
-2. **Incertidumbres bloqueantes**: Ver `01-negocio/01-alcance-y-decisiones.md` §12 (INC-01..11) + `frontend/shared/08-cambios-obligatorios.md` (FE-01..10)
+2. **Incertidumbres bloqueantes**: Ver `01-negocio/01-alcance-y-decisiones.md` sección 12 (INC-01..11) + `frontend/shared/08-cambios-obligatorios.md` (FE-01..10)
 3. **No resolver INC/FE silenciosamente** → Escalar a Orchestrator → Owner → Registrar en ADR
-4. **Puertas de calidad**: Ver `PROMPT-MAESTRO-AGENTES-CONCURRENTES.md` §4 (13 gates obligatorios)
+4. **Puertas de calidad**: Ver `PROMPT-MAESTRO-AGENTES-CONCURRENTES.md` sección 4 (13 gates obligatorios)
 
 ## 📋 Estado del Proyecto (Oct 2026)
 

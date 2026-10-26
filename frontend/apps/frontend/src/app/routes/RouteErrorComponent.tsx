@@ -1,4 +1,4 @@
-import type { ErrorComponentProps } from '@tanstack/react-router';
+﻿import type { ErrorComponentProps } from '@tanstack/react-router';
 import { Button } from '@zentric/ui/components/ui/button';
 import { isApiError } from '../../domain';
 import { appServices } from '../providers/appServices';
@@ -62,7 +62,7 @@ export function RouteErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 /**
- * Sólo un `5xx` tiene `traceId`, y §5 exige ofrecerlo para soporte: sin él el
+ * Sólo un `5xx` tiene `traceId`, y sección 5 exige ofrecerlo para soporte: sin él el
  * usuario no tiene nada que reportar y el equipo no tiene por qué rastrear.
  *
  * Recibe `unknown` porque eso es lo que TanStack entrega al errorComponent.

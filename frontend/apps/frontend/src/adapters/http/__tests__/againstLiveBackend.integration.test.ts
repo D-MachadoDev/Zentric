@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+﻿import { beforeAll, describe, expect, it } from 'vitest';
 import { WarehouseType, isApiError } from '../../../domain';
 import type { ApiError, CurrentUser } from '../../../domain';
 import { createApiClient } from '../../index';
@@ -128,7 +128,7 @@ describe.skipIf(!shouldRunLive)('ZentricHttpClient contra el backend real', () =
       }),
     );
 
-    // readGuid (§3.1): son GUID serializados, no objetos.
+    // readGuid (sección 3.1): son GUID serializados, no objetos.
     expect(estado.sellerId).toMatch(/^[0-9a-f-]{36}$/i);
     expect(estado.buyerId).toMatch(/^[0-9a-f-]{36}$/i);
     expect(estado.operadorId).toMatch(/^[0-9a-f-]{36}$/i);

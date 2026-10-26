@@ -1,10 +1,10 @@
-@import '@zentric/ui/styles/theme.css';
+﻿@import '@zentric/ui/styles/theme.css';
 @source "../";
 
 /* ============================================================================
    Zentric Marketplace — Utilidades de composición global
    ----------------------------------------------------------------------------
-   Design System v2 "Porcelana y Grafito" (ADDENDUM §9):
+   Design System v2 "Porcelana y Grafito" (ADDENDUM sección 9):
    TODOS los tokens de color viven exclusivamente en @zentric/ui theme.css.
    Este fichero NO declara ni pisa un solo color: solo utilidades de layout
    construidas sobre los tokens runtime (var(--border), var(--brand)...), de
@@ -32,7 +32,7 @@ body {
 }
 
 /* Elevación de tarjeta comercial: hairline + sombra susurrada en claro,
-   hairline + brillo superior interior en oscuro (§9.3 elevación). */
+   hairline + brillo superior interior en oscuro (sección 9.3 elevación). */
 .surface-hairline {
   background-color: var(--surface);
   border: 1px solid var(--border);
@@ -44,7 +44,7 @@ body {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-/* Eyebrow indexical en Geist Mono con marca ✱ en acento de rol (§9.5) */
+/* Eyebrow indexical en Geist Mono con marca ✱ en acento de rol (sección 9.5) */
 .kicker-spike {
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -65,7 +65,7 @@ body {
 }
 
 /* Encabezado de sección lateral: rótulo mono-caps que agrupa la navegación
-   de los shells operativos (Estudio/Sala de Libros, §9.6). */
+   de los shells operativos (Estudio/Sala de Libros, sección 9.6). */
 .nav-group-label {
   font-family: var(--font-mono);
   font-size: 0.6875rem; /* 11px */

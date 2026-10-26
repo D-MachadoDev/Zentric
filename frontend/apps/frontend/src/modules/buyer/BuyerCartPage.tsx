@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+﻿import { useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import {
   useOrdersQuery,
@@ -43,7 +43,7 @@ import {
 } from 'lucide-react';
 
 /**
- * Carrito de Compras del Comprador (Frontend-Role-Modules §2.4 y Frontend-User-Flows §2).
+ * Carrito de Compras del Comprador (Frontend-Role-Modules sección 2.4 y Frontend-User-Flows sección 2).
  * Soporta tanto sesión autenticada como Modo Invitado (`guestCart`), vista previa de
  * domicilio de entrega estilo Mercado Libre y flujo hacia pago con reserva de 15 min.
  */

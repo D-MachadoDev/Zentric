@@ -1,11 +1,11 @@
-import * as React from 'react';
+﻿import * as React from 'react';
 import { Ban, Inbox, RotateCcw } from 'lucide-react';
 import { Button } from '../primitives/Button';
 import { Skeleton } from '../primitives/Skeleton';
 import { cn } from '../lib/cn';
 
 /**
- * Contenedor unificado para los 4 estados canónicos de una vista (Frontend-Design-System §5.3):
+ * Contenedor unificado para los 4 estados canónicos de una vista (Frontend-Design-System sección 5.3):
  * 1. Loading: Esqueletos de carga con aria-busy="true".
  * 2. Empty: Ilustración/ícono + título explicativo + acción de escape/creación.
  * 3. Error: Ícono de alerta + mensaje RFC 7807 + botón de reintento en línea.

@@ -1,10 +1,10 @@
-import * as React from 'react';
+﻿import * as React from 'react';
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import { cn } from '../lib/cn';
 import { StatusBadge, type StatusTone } from './StatusBadge';
 
 /**
- * Tarjeta analítica de métricas KPI (Frontend-Design-System §2.1 y §5.3).
+ * Tarjeta analítica de métricas KPI (Frontend-Design-System sección 2.1 y sección 5.3).
  *
  * Implementa la banda asimétrica de indicadores (KPI Strip):
  * - Variante "hero": Métrica primaria dominante en Geist Mono 600 con tabular-nums.

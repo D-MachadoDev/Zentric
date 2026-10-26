@@ -1,5 +1,5 @@
-/**
- * Módulo del Comprador (Buyer Module - Frontend-Role-Modules §2.4).
+﻿/**
+ * Módulo del Comprador (Buyer Module - Frontend-Role-Modules sección 2.4).
  *
  * Exporta las pantallas del flujo de marketplace, catálogo,
  * carrito de compras con reserva atómica de 15 minutos, pasarela de pago,

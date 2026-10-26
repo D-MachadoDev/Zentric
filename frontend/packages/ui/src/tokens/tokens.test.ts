@@ -1,11 +1,11 @@
-import { readFileSync } from 'node:fs';
+﻿import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { colors, darkColors, roleAccents } from './colors';
 import { typography } from './typography';
 import { radii, space, spacing, transitions } from './spacing';
 
-// Frontend-Design-System.md §9: "Si ambos divergen, MANDA EL CSS".
+// Frontend-Design-System.md sección 9: "Si ambos divergen, MANDA EL CSS".
 // Esa precedencia no se puede hacer cumplir en tiempo de ejecucion, pero sí
 // aquí: si alguien cambia un valor en TS sin tocar theme.css, la suite falla.
 const css = readFileSync(join(process.cwd(), 'src/styles/theme.css'), 'utf8');
@@ -94,7 +94,7 @@ const paletteByToken = {
 
 type PaletteKey = keyof typeof paletteByToken;
 
-describe('tokens de color y paridad con theme.css (dual theme §9)', () => {
+describe('tokens de color y paridad con theme.css (dual theme sección 9)', () => {
   it('espeja el modo claro (:root) sin divergir en ningun valor de la paleta', () => {
     for (const [tsKey, cssName] of Object.entries(paletteByToken)) {
       const fromCss = cssTokenIn(':root', cssName);
@@ -117,7 +117,7 @@ describe('tokens de color y paridad con theme.css (dual theme §9)', () => {
     }
   });
 
-  it('espeja los acentos de rol [data-role] en ambos modos (§9.2)', () => {
+  it('espeja los acentos de rol [data-role] en ambos modos (sección 9.2)', () => {
     for (const [role, modes] of Object.entries(roleAccents)) {
       for (const mode of ['light', 'dark'] as const) {
         expect(cssRoleToken(role, 'brand', mode)).toBe(modes[mode].brand);
@@ -128,7 +128,7 @@ describe('tokens de color y paridad con theme.css (dual theme §9)', () => {
     expect(css).not.toMatch(/\[data-role='buyer'\]/);
   });
 
-  it('cumple exactamente con los codigos hex canonicos del SDD v2 (§9.1)', () => {
+  it('cumple exactamente con los codigos hex canonicos del SDD v2 (sección 9.1)', () => {
     expect(colors.background).toBe('#F5F6F8');
     expect(colors.surface).toBe('#FFFFFF');
     expect(colors.surfaceMuted).toBe('#EEF0F4');
@@ -160,7 +160,7 @@ describe('tokens de color y paridad con theme.css (dual theme §9)', () => {
     expect(darkColors.info).toBe('#60A5FA');
   });
 
-  it('mapea el contrato shadcn y las derivaciones en theme.css (@theme inline §9)', () => {
+  it('mapea el contrato shadcn y las derivaciones en theme.css (@theme inline sección 9)', () => {
     expect(cssToken('color-background')).toBe('var(--background)');
     expect(cssToken('color-surface')).toBe('var(--surface)');
     expect(cssToken('color-card')).toBe('var(--card)');
@@ -187,7 +187,7 @@ describe('tokens de color y paridad con theme.css (dual theme §9)', () => {
   });
 });
 
-describe('accesibilidad y contraste WCAG 2.1 (AA) en AMBOS modos (§9.4)', () => {
+describe('accesibilidad y contraste WCAG 2.1 (AA) en AMBOS modos (sección 9.4)', () => {
   const onBrandLight = '#FFFFFF';
   const onBrandDark = '#0C0F16';
 
@@ -253,7 +253,7 @@ describe('accesibilidad y contraste WCAG 2.1 (AA) en AMBOS modos (§9.4)', () =>
   });
 });
 
-describe('doctrina visual anti-IA generica v2 (AGENTS.md §4.14 y SDD §9.3)', () => {
+describe('doctrina visual anti-IA generica v2 (AGENTS.md sección 4.14 y SDD sección 9.3)', () => {
   it('prohibe el negro puro #000000 o #000 en la paleta y en theme.css', () => {
     for (const value of [...Object.values(colors), ...Object.values(darkColors)]) {
       expect(value.toLowerCase()).not.toBe('#000000');
@@ -270,7 +270,7 @@ describe('doctrina visual anti-IA generica v2 (AGENTS.md §4.14 y SDD §9.3)', (
       ['border claro', colors.border],
       ['border-subtle claro', colors.borderSubtle],
     ];
-    // Exención documentada §9.3: la superficie clara es papel nítido #FFFFFF
+    // Exención documentada sección 9.3: la superficie clara es papel nítido #FFFFFF
     // (blanco puro, no gris desaturado); se exige exactamente eso.
     expect(colors.surface).toBe('#FFFFFF');
 
@@ -294,7 +294,7 @@ describe('doctrina visual anti-IA generica v2 (AGENTS.md §4.14 y SDD §9.3)', (
     expect(colors.brand).not.toBe('#00D4AA');
     expect(darkColors.background).not.toBe('#0A0E1A');
     expect(darkColors.background).not.toBe('#0A0F1D');
-    // El acento del Administrador NO es el "índigo eléctrico" de §8.
+    // El acento del Administrador NO es el "índigo eléctrico" de sección 8.
     expect(roleAccents.admin.light.brand).not.toBe('#4F46E5');
     expect(roleAccents.admin.dark.brand).not.toBe('#6366F1');
   });

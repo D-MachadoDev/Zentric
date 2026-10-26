@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   CreateProductInput,
+  CreateProductVariantInput,
   CreatedProduct,
   ListProductsPagedParams,
   ZentricApiPort,
@@ -15,7 +16,7 @@ import { resolveApi } from './apiContext';
 export function useProductsPagedQuery(params?: ListProductsPagedParams, api?: ZentricApiPort) {
   return useQuery({
     queryKey: queryKeys.products.paged(params),
-    queryFn: () => resolveApi(api).listProductsPaged(params),
+    queryFn: ({ signal }) => resolveApi(api).listProductsPaged(params, signal),
     staleTime: 60_000,
   });
 }
@@ -29,7 +30,7 @@ export function useProductsPagedQuery(params?: ListProductsPagedParams, api?: Ze
 export function useCategoriesQuery(api?: ZentricApiPort) {
   return useQuery({
     queryKey: queryKeys.categories.list(),
-    queryFn: () => resolveApi(api).listCategories(),
+    queryFn: ({ signal }) => resolveApi(api).listCategories(signal),
     staleTime: 60_000,
   });
 }
@@ -103,6 +104,27 @@ export function usePublishProductMutation(api?: ZentricApiPort) {
     },
   });
 }
+
+/**
+ * Hook de mutación para agregar una variante (SKU) con precio propio a un producto existente.
+ */
+export function useAddProductVariantMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      productId,
+      input,
+    }: {
+      productId: string;
+      input: CreateProductVariantInput;
+    }): Promise<string> => resolveApi(api).addProductVariant(productId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+    },
+  });
+}
+
 
 /**
  * Hook de mutación para registrar la visualización de un producto.

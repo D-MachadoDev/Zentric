@@ -1,7 +1,7 @@
-import { Toaster as SonnerToaster, toast } from 'sonner';
+﻿import { Toaster as SonnerToaster, toast } from 'sonner';
 
 /**
- * Avisos flotantes del design system (Frontend-Adapters §5).
+ * Avisos flotantes del design system (Frontend-Adapters sección 5).
  *
  * Adaptado del patrón shadcn con los tokens de Q7/Q8: no se añade una segunda
  * librería de avisos, se tematiza `sonner` para que un toast pinte con las
@@ -20,7 +20,7 @@ function Toaster() {
     <SonnerToaster
       theme="dark"
       position="bottom-right"
-      // §7: los avisos no bloquean la lectura ni retienen la atención.
+      // sección 7: los avisos no bloquean la lectura ni retienen la atención.
       visibleToasts={3}
       toastOptions={{
         classNames: {

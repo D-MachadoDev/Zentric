@@ -1,11 +1,11 @@
-import * as React from 'react';
+﻿import * as React from 'react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { X } from 'lucide-react';
 import { Button } from '../primitives/Button';
 import { cn } from '../lib/cn';
 
 /**
- * Panel lateral deslizante de inspección rápida (Frontend-Design-System §2.1 y §5.3).
+ * Panel lateral deslizante de inspección rápida (Frontend-Design-System sección 2.1 y sección 5.3).
  *
  * Ocupa la zona secundaria del Split-Frame Layout (30%-35% en escritorio, pantalla completa en móvil).
  * Utiliza la curva de desaceleración exponencial canónica:

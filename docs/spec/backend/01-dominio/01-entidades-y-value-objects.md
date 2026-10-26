@@ -1,6 +1,6 @@
-# Backend — Entidades, Value Objects y Agregados — Zentric
+﻿# Backend — Entidades, Value Objects y Agregados — Zentric
 
-**Fuente:** `../frontendSDD/zentric-domain-sdd.md` §2
+**Fuente:** `../frontendSDD/zentric-domain-sdd.md` sección 2
 **Estado:** Especificación vinculante para `Zentric.Domain`
 
 ---

@@ -1,4 +1,4 @@
-# Arquitectura Frontend — Zentric (Next.js 15 App Router + React 19 + TypeScript)
+﻿# Arquitectura Frontend — Zentric (Next.js 15 App Router + React 19 + TypeScript)
 
 ## 1. Stack y versiones objetivo
 - **Next.js 15** (App Router, Server Components por defecto, Streaming, Actions).
@@ -110,7 +110,7 @@ src/
 - Política de accesibilidad, privacidad, cookies, analítica (INC-08, INC-09).
 ## 8. Diseño visual y theming
 - **Tokens centralizados** en `theme.css` (`:root` = light, `.dark` = dark, `[data-role]` = role accent).
-- **Design System v2 "Porcelana y Grafito"** (ADDENDUM §9): contraste WCAG 2.1 AA verificado en ambos modos.
+- **Design System v2 "Porcelana y Grafito"** (ADDENDUM sección 9): contraste WCAG 2.1 AA verificado en ambos modos.
 - **Componentes**: primitives (`@zentric/ui`) + composite. `class-variance-authority` para variantes.
 - **Fuentes**: Geist Variable (sans), Geist Mono Variable (mono) — local, sin CDN.
 - **Imágenes**: `next/image` con dominios permitidos, placeholder blur, lazy loading, fallback.

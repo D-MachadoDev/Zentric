@@ -129,7 +129,7 @@ export function LayoutSidebar({
               size="sm"
               onClick={onClose}
               aria-label="Cerrar navegación"
-              className="text-foreground-muted hover:text-foreground"
+              className="text-foreground-muted hover:text-foreground md:hidden"
             >
               <X className="h-5 w-5" />
             </Button>

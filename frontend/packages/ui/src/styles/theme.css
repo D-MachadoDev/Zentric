@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+﻿@import 'tailwindcss';
 @import 'tw-animate-css';
 /* Escaneo obligatorio del paquete @zentric/ui en Tailwind v4 para que todas las
    clases utilitarias de primitives/ y composite/ se incluyan en el bundle de apps/frontend. */
@@ -19,7 +19,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================================================
-   ZENTRIC DESIGN SYSTEM v2 — "Porcelana y Grafito" (ADDENDUM §9)
+   ZENTRIC DESIGN SYSTEM v2 — "Porcelana y Grafito" (ADDENDUM sección 9)
    ----------------------------------------------------------------------------
    Arquitectura de tema (decision dictada por Owner en /grill-me):
    1. UNA sola fuente de verdad de color: ESTE fichero. global.css ya no pisa
@@ -35,13 +35,13 @@
       --primary y --ring derivan de --brand por var(), asi que foco, botones
       primarios, links y chips de rol cambian de identidad sin tocar componentes.
    5. Contraste WCAG 2.1 AA verificado programaticamente para AMBOS modos y
-      los 5 acentos (Frontend-Design-System.md §9.4).
+      los 5 acentos (Frontend-Design-System.md sección 9.4).
    ========================================================================== */
 
 :root {
   /* --- Modo Claro "Estudio Porcelana" (default: comercio de grado Stripe/Shopify) --- */
   --background: #F5F6F8; /* Lienzo porcelana con tinte frio (B > R, nunca gris muerto) */
-  --surface: #FFFFFF; /* Papel nítido de tarjeta. Exención documentada §9.3: blanco puro, no gris desaturado. */
+  --surface: #FFFFFF; /* Papel nítido de tarjeta. Exención documentada sección 9.3: blanco puro, no gris desaturado. */
   --surface-muted: #EEF0F4; /* Zona editorial secundaria (cabeceras, hover, bloques) */
   --border: #E1E5EB; /* Borde estructural 1px */
   --border-subtle: #EBEEF2; /* Hairline divisorio interno */
@@ -57,7 +57,7 @@
   --danger: #B91C1C; /* Error / destructivo (5.98:1) */
   --info: #1D4ED8; /* Informativo / transito (6.20:1) */
 
-  /* --- Acento por defecto = identidad Comprador (jade de marca, §9.2) ---
+  /* --- Acento por defecto = identidad Comprador (jade de marca, sección 9.2) ---
      Los scopes [data-role] de abajo solo re-declaran este par. */
   --brand: #0F766E;
   --brand-strong: #0B5D56; /* Hover/active (paso mas profundo en claro) */
@@ -80,7 +80,7 @@
   --destructive: var(--danger);
   --destructive-foreground: #FFFFFF;
   --input: var(--border);
-  /* Anillo de foco = acento del rol. Un unico anillo visible (spec §5). */
+  /* Anillo de foco = acento del rol. Un unico anillo visible (spec sección 5). */
   --ring: var(--brand);
 
   color-scheme: light;
@@ -112,7 +112,7 @@
 }
 
 /* ============================================================================
-   Identidad de Rol (§9.2): solo el eje de acento. --primary, --ring y todos
+   Identidad de Rol (sección 9.2): solo el eje de acento. --primary, --ring y todos
    los tokens derivados siguen a --brand por var(). El scope vive en la raiz
    del layout de cada rol; sin data-role (paginas publicas) heredan el jade
    Comprador, que es la identidad de marca por defecto.
@@ -129,7 +129,7 @@
 
 [data-role='admin'] {
   /* Administrador — Índigo de Mando: gobernanza central (7.31:1 texto en claro).
-     NO es el "índigo eléctrico" #4F46E5/#6366F1 rechazado en §8: es un paso
+     NO es el "índigo eléctrico" #4F46E5/#6366F1 rechazado en sección 8: es un paso
      más profundo (700), contenido y sin brillo neón. */
   --brand: #4338CA;
   --brand-strong: #3730A3;
@@ -212,7 +212,7 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
-  /* 9999 y no 999: el Owner confirmó §2.3 como fuente de verdad de los radios.
+  /* 9999 y no 999: el Owner confirmó sección 2.3 como fuente de verdad de los radios.
      9999 asegura círculo real independientemente del tamaño del elemento. */
   --radius-full: 9999px;
   /* Derivados: la spec fija 6/8/12/16/9999. Estos tres escalan la misma rampa

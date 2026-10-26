@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import {
   Activity,
@@ -40,10 +40,10 @@ import {
 } from '../../components/domainLabels';
 
 /**
- * Centro de Mando del Administrador (Frontend-Role-Modules §2.2).
+ * Centro de Mando del Administrador (Frontend-Role-Modules sección 2.2).
  *
  * Composición: Hero KPI Strip —el GMV facturado domina la banda y tres
- * contadores compactos lo acompañan en línea (Frontend-Design-System §2.1:
+ * contadores compactos lo acompañan en línea (Frontend-Design-System sección 2.1:
  * prohibida la cuadrícula de tarjetas clonadas)— y debajo Split-Frame 65/35:
  * actividad reciente de pedidos a la izquierda; salud operativa y accesos de
  * gestión a la derecha.
@@ -142,7 +142,7 @@ export function AdminDashboardPage() {
   // Latencia de la sonda /health medida en el cliente: ida y vuelta de cada
   // sondeo (inicial, botón Actualizar y la automática cada 30 s). El contrato
   // del backend no la expone; es telemetría de presentación, no un dato de
-  // negocio (Frontend-Design-System §2.1, capa 3).
+  // negocio (Frontend-Design-System sección 2.1, capa 3).
   const [apiLatencyMs, setApiLatencyMs] = useState<number | null>(null);
   const sondeoIniciadoEn = useRef<number | null>(null);
 
@@ -273,7 +273,7 @@ export function AdminDashboardPage() {
         </Alert>
       )}
 
-      {/* ── Hero KPI Strip: GMV dominante + contadores compactos (§2.1) ────── */}
+      {/* ── Hero KPI Strip: GMV dominante + contadores compactos (sección 2.1) ────── */}
       <section
         aria-label="Indicadores principales del marketplace"
         className="grid grid-cols-1 gap-4 lg:grid-cols-12"
@@ -313,7 +313,7 @@ export function AdminDashboardPage() {
         </div>
       </section>
 
-      {/* ── Split-Frame 65/35 (Frontend-Design-System §2.1) ────────────────── */}
+      {/* ── Split-Frame 65/35 (Frontend-Design-System sección 2.1) ────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Izquierda (65%): Actividad Reciente de la Plataforma ─────────── */}
         <section className="lg:col-span-8" aria-labelledby="actividad-reciente">

@@ -1,9 +1,9 @@
-# ADR-0021 — Ajuste de stock sin cuello de botella (INV-04)
+﻿# ADR-0021 — Ajuste de stock sin cuello de botella (INV-04)
 
 - **Estado:** Aceptado
 - **Fecha:** 2026-10-04
 - **Dictado por:** Owner (grill de la capa Domain, INV-04)
-- **Precisa:** [ADR-0019](ADR-0019-cierre-de-decisiones-capa-domain.md) §5
+- **Precisa:** [ADR-0019](ADR-0019-cierre-de-decisiones-capa-domain.md) sección 5
 - **Ley:** Dominio 6, «Movimientos: Ingreso, Reserva, Salida por venta, **Ajuste** y Devolución»
 
 ## Contexto

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+﻿import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
@@ -264,9 +264,9 @@ describe('Select', () => {
 });
 
 describe('StatusBadge y Toaster', () => {
-  it('muestra el texto de estado, que es su único portador de significado (§5)', () => {
+  it('muestra el texto de estado, que es su único portador de significado (sección 5)', () => {
     render(<StatusBadge tone="success">Pagado</StatusBadge>);
-    // §5: el color nunca puede ser el único indicador, así que el texto es
+    // sección 5: el color nunca puede ser el único indicador, así que el texto es
     // obligatorio y el punto va sólo como refuerzo (aria-hidden).
     const insignia = screen.getByText('Pagado');
     expect(insignia).toBeInTheDocument();
@@ -303,7 +303,7 @@ describe('MoneyAmount', () => {
 });
 
 describe('StateView', () => {
-  it('el vacío se anuncia como estado y ofrece la acción siguiente (§4)', () => {
+  it('el vacío se anuncia como estado y ofrece la acción siguiente (sección 4)', () => {
     render(
       <StateView
         title="Todavía no hay bodegas registradas."

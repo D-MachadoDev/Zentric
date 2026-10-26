@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   AlertCircle,
   CheckCircle,
@@ -28,7 +28,7 @@ import { ReturnStatus } from '../../domain';
 /**
  * Fiscalización de Solicitudes de Devolución (/supervisor/returns).
  *
- * Frontend-Role-Modules.md §2.6:
+ * Frontend-Role-Modules.md sección 2.6:
  * Consume `GET /api/returns` y `GET /api/returns/{id}` en modo de sólo lectura.
  * Audita dictámenes técnicos de inspección física (`isGoodCondition`) y
  * resoluciones comerciales/financieras (`Approved`, `Rejected`, `Refunded`).

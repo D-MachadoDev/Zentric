@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+﻿import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -13,7 +13,7 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 const THEME_STORAGE_KEY = 'zentric.theme';
 
 /**
- * Proveedor de tema dual para Zentric Marketplace (§9 "Porcelana y
+ * Proveedor de tema dual para Zentric Marketplace (sección 9 "Porcelana y
  * Grafito": tokens runtime en ui/theme.css; este provider solo conmuta .dark).
  *
  * Soporta:

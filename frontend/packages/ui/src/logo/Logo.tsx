@@ -1,6 +1,6 @@
 import { forwardRef, type HTMLAttributes } from 'react';
 import { cn } from '../lib/cn';
-import { LogoMark, type BrandRole } from './LogoMark';
+import { LogoMark, type BrandRole, normalizeRole } from './LogoMark';
 import { LogoWordmark } from './LogoWordmark';
 
 /**
@@ -11,10 +11,11 @@ export const Logo = forwardRef<HTMLSpanElement, LogoProps>(function Logo(
   { className, showTagline = false, role, ...props },
   ref,
 ) {
+  const normalizedRole = role ? normalizeRole(role) : undefined;
   return (
     <span
       ref={ref}
-      data-role={role && role !== 'buyer' ? role : undefined}
+      data-role={normalizedRole && normalizedRole !== 'buyer' ? normalizedRole : undefined}
       className={cn('inline-flex items-center gap-2 text-brand', className)}
       data-testid="logo"
       {...props}
@@ -36,5 +37,5 @@ export interface LogoProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'role'>
   /** Muestra el tagline debajo del wordmark. */
   showTagline?: boolean;
   /** Rol opcional para seleccionar la imagen `/brandkit/logo/zentric-icon-{role}.png` y el color `--brand`. */
-  role?: BrandRole;
+  role?: BrandRole | string;
 }

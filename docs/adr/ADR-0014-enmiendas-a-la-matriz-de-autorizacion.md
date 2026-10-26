@@ -1,4 +1,4 @@
-# ADR-0014: Tres enmiendas a la matriz de roles: quién cancela por quiebre, quién factura y qué es el Supervisor
+﻿# ADR-0014: Tres enmiendas a la matriz de roles: quién cancela por quiebre, quién factura y qué es el Supervisor
 
 ```yaml
 id: 0014
@@ -12,7 +12,7 @@ relacionado: [ADR-0011](ADR-0011-matriz-autorizacion-por-rol.md), [ADR-0013](ADR
 ## Contexto
 
 [ADR-0011](ADR-0011-matriz-autorizacion-por-rol.md) mapeó las 30 acciones a la Matriz de
-Responsabilidades de `ZENTRIC.md` §12. Al hacerlo quedaron tres puntos donde **el texto de la
+Responsabilidades de `ZENTRIC.md` sección 12. Al hacerlo quedaron tres puntos donde **el texto de la
 Ley no alcanza** y la matriz hubo que decidir por fail-closed (el conjunto más pequeño que la
 Ley sostiene). Cada uno se registra aquí con su alternativa descartada.
 
@@ -66,7 +66,7 @@ va en el módulo del Administrador.
 
 ## Enmienda 3 — El Supervisor es un rol de solo lectura y auditoría
 
-`UserRole` tiene cinco valores y `ZENTRIC.md` §5 los define; el documento de módulos del
+`UserRole` tiene cinco valores y `ZENTRIC.md` sección 5 los define; el documento de módulos del
 frontend declaraba "**cuatro** roles". El Supervisor tenía permisos de lectura en el backend y ninguna
 pantalla donde usarlos.
 
@@ -77,20 +77,20 @@ define, así que el documento desactualizado es el del cliente, no el enum.
 |---|---|
 | **Rol de solo lectura, sin módulo propio; documento a cinco roles** ✅ | Coherente con la Ley y con lo que el backend ya hace; el Supervisor usa las pantallas compartidas de solo lectura |
 | Crearle un módulo de solo lectura | Es alcance de producto del frontend, y además exige endpoints de **listado** que la API no tiene: no existe `GET /api/Logistics/fulfillment` de listado (R-03) |
-| Eliminar el rol del enum | Contradice `ZENTRIC.md` §5, que es la Ley intocable; sería un cambio de lenguaje ubicuo, no una corrección |
+| Eliminar el rol del enum | Contradice `ZENTRIC.md` sección 5, que es la Ley intocable; sería un cambio de lenguaje ubicuo, no una corrección |
 
-**Corrección de evidencia (obligatoria):** la etiqueta `[CONFIRMADO] §12 "Gestión de Pedidos" con
+**Corrección de evidencia (obligatoria):** la etiqueta `[CONFIRMADO] sección 12 "Gestión de Pedidos" con
 palomita en los cinco` puesta en `OrderRead`, `FulfillmentRead` y `ReturnRead`
-**sobredeclara la Ley**: la Matriz §12 tiene cuatro columnas (Comprador, Vendedor, Op. Logístico,
+**sobredeclara la Ley**: la Matriz sección 12 tiene cuatro columnas (Comprador, Vendedor, Op. Logístico,
 Admin) y no incluye al Supervisor ni marca ✔ al Admin. La base real de esa lectura es el dictamen
-que fijó "Admin y Supervisor solo lectura", no el texto de §12. Corregido en la tabla de
+que fijó "Admin y Supervisor solo lectura", no el texto de sección 12. Corregido en la tabla de
 autorización; los comentarios de
 `AuthorizationPolicies.cs` ya lo decían bien y se dejan como estaban.
 
 ## Consecuencias
 
 - El bloque de autorización queda **cerrado por completo**: sus cuatro sub-preguntas (b, c, d, e) tienen dictamen.
-- El Operador puede reportar stock fantasma; el módulo de logística del cliente (§2.5) gana esa
+- El Operador puede reportar stock fantasma; el módulo de logística del cliente (sección 2.5) gana esa
   acción, que hoy está documentada pero recibiría `403`.
 - La emisión de facturas queda en un único sitio auditable y no se puede duplicar.
 - El Supervisor deja de ser un rol sin destino en el contrato del cliente.

@@ -1,6 +1,6 @@
-# Backend — CI/CD Pipeline — Zentric
+﻿# Backend — CI/CD Pipeline — Zentric
 
-**Fuente:** `../frontendSDD/PROMPT-MAESTRO-AGENTES-CONCURRENTES.md` §4 (Quality Gates)
+**Fuente:** `../frontendSDD/PROMPT-MAESTRO-AGENTES-CONCURRENTES.md` sección 4 (Quality Gates)
 **Estado:** Especificación vinculante para `Zentric.Api` + `Zentric.Tests` + GitHub Actions
 
 ---

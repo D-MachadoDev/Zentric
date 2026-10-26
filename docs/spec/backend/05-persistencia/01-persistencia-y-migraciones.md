@@ -1,20 +1,19 @@
-# Backend — Persistencia y Migraciones — Zentric (PostgreSQL + EF Core 10)
+# Backend � Persistencia y Migraciones � Zentric (PostgreSQL + EF Core 10)
 
 ## 1. Principios
 - **Schema-first**: Migraciones EF Core versionadas en `Zentric.Infrastructure/Migrations`.
 - **Convenciones**: Snake_case para tablas/columnas (`customer_orders`, `variant_id`). PK = `id` (UUID). FK = `{table}_id`.
 - **Soft delete global**: Columna `deleted_at` (timestamptz) + `is_deleted` (bool) en todas las entidades. Global query filter `WHERE deleted_at IS NULL`.
-- **Auditoría**: `created_at`, `updated_at` en todas. `created_by`, `updated_by` (FK a users) en entidades sensibles.
-- **Índices**: PK + FK automáticos. Índices compuestos por patrones de query frecuentes (ver §3).
-- **Concurrencia**: `xmin` (system column) o `row_version` (bytea) para optimistic locking en agregados críticos (`Inventory`, `CustomerOrder`).
+- **Auditor�a**: `created_at`, `updated_at` en todas. `created_by`, `updated_by` (FK a users) en entidades sensibles.
+- **�ndices**: PK + FK autom�ticos. �ndices compuestos por patrones de query frecuentes (ver secci�n 3).
+- **Concurrencia**: `xmin` (system column) o `row_version` (bytea) para optimistic locking en agregados cr�ticos (`Inventory`, `CustomerOrder`).
 
 ## 2. Tablas principales (resumen)
 
-| Tabla | Entidad | PK | FKs clave | Índices compuestos sugeridos |
+| Tabla | Entidad | PK | FKs clave | �ndices compuestos sugeridos |
 |-------|---------|----|-----------|------------------------------|
-| `users` | User | `id` | — | `email` (unique), `role`, `status` |
-| `buyers` | Buyer | `id` (=user_id) | `user_id` | — |
-| `sellers` | Seller | `id` (=user_id) | `user_id`, `first_warehouse_id` | `status` |
+| `users` | User | `id` | � | `email` (unique), `role`, `status` |
+| `buyers` | Buyer | `id` (=user_id) | `user_id` | � |
 | `warehouses` | Warehouse | `id` | `vendor_id` (nullable) | `type`, `is_active`, `vendor_id` |
 | `products` | Product | `id` | `vendor_id` | `vendor_id`, `status`, `type`, `category` |
 | `product_variants` | ProductVariant | `id` | `product_id` | `product_id`, `sku` (unique), `is_active` |
@@ -22,15 +21,12 @@
 | `customer_orders` | CustomerOrder | `id` | `buyer_id` | `buyer_id`, `status`, `created_at`, `checkout_started_at` |
 | `order_items` | OrderItem | `id` | `order_id`, `variant_id`, `vendor_id` | `order_id`, `variant_id`, `vendor_id` |
 | `fulfillment_orders` | FulfillmentOrder | `id` | `order_id`, `vendor_id`, `warehouse_id`, `carrier_id` | `order_id`, `vendor_id`, `warehouse_id`, `status` |
-| `fulfillment_items` | FulfillmentItem | `id` | `fulfillment_order_id`, `variant_id` | `fulfillment_order_id` |
 | `shipments` | Shipment | `id` | `fulfillment_order_id`, `carrier_id` | `fulfillment_order_id`, `tracking_number` |
 | `inventories` | Inventory | `id` | `variant_id`, `warehouse_id` | **Unique**: `(variant_id, warehouse_id)`, `variant_id`, `warehouse_id` |
-| `inventory_movements` | InventoryMovement | `id` | `inventory_id`, `variant_id`, `warehouse_id` | `variant_id`, `warehouse_id`, `created_at`, `type` |
 | `invoices` | Invoice | `id` | `order_id` | `order_id`, `type`, `status`, `issued_at` |
-| `invoice_lines` | InvoiceLine | `id` | `invoice_id` | `invoice_id` |
 | `return_requests` | ReturnRequest | `id` | `order_id`, `vendor_id`, `variant_id` | `order_id`, `vendor_id`, `status`, `created_at` |
 | `refund_credits` | RefundCredit | `id` | `return_request_id` | `return_request_id`, `status` |
-## 3. Detalles por agregado crítico
+## 3. Detalles por agregado cr�tico
 
 ### 3.1 Inventory (clave compuesta + concurrencia)
 ```sql
@@ -50,8 +46,8 @@ CREATE TABLE inventories (
 CREATE INDEX ix_inventories_variant ON inventories(variant_id);
 CREATE INDEX ix_inventories_warehouse ON inventories(warehouse_id);
 ```
-- **Concurrencia**: `UPDATE inventories SET available_quantity = available_quantity + @qty, updated_at = now() WHERE variant_id = @v AND warehouse_id = @w AND available_quantity + @qty >= 0` (conditional update atómico, ADR-0025).
-- **Movimientos**: Tabla `inventory_movements` con `type` (enum: `in`, `reserve`, `release`, `sale`, `adjustment`, `return`, `transfer_out`, `transfer_in`), `delta`, `reason`, `actor_id`, `correlation_id`.
+- **Concurrencia**: `UPDATE inventories SET available_quantity = available_quantity + @qty, updated_at = now() WHERE variant_id = @v AND warehouse_id = @w AND available_quantity + @qty >= 0` (conditional update at�mico, ADR-0025).
+- **Movimientos**: ⚠️ Pendiente — Tabla `inventory_movements` (no implementada en código; hoy los movimientos solo ajustan contadores). Diseño previsto: `type` (enum: `in`, `reserve`, `release`, `sale`, `adjustment`, `return`, `transfer_out`, `transfer_in`), `delta`, `reason`, `actor_id`, `correlation_id`.
 
 ### 3.2 CustomerOrder (estados + transiciones)
 ```sql
@@ -71,7 +67,7 @@ CREATE INDEX ix_orders_status ON customer_orders(status);
 CREATE INDEX ix_orders_checkout ON customer_orders(checkout_started_at) WHERE status = 'PendingPayment';
 ```
 
-### 3.3 FulfillmentOrder (subdivisión por vendor+warehouse)
+### 3.3 FulfillmentOrder (subdivisi�n por vendor+warehouse)
 ```sql
 CREATE TABLE fulfillment_orders (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -114,13 +110,13 @@ CREATE TABLE invoices (
 ## 4. Migraciones y despliegue
 - **Naming**: `YYYYMMDDHHMMSS_DescripcionPascalCase.cs` (ej. `20261025120000_AddInventoryConditionalUpdate.cs`).
 - **Idempotencia**: Migraciones son transaccionales (PG). `dotnet ef database update` en pipeline CI/CD.
-- **Rollback**: `dotnet ef database update <PreviousMigration>`. Cada migración debe tener `Down()` probado.
-- **Seeding**: Solo datos de referencia (roles, carriers, categorías base) en migración `*_SeedReferenceData`. No datos de prueba.
+- **Rollback**: `dotnet ef database update <PreviousMigration>`. Cada migraci�n debe tener `Down()` probado.
+- **Seeding**: Solo datos de referencia (roles, carriers, categor�as base) en migraci�n `*_SeedReferenceData`. No datos de prueba.
 
 ## 5. Testing de persistencia
-- **Testcontainers** (PostgreSQL efímero) en `Zentric.Tests.Integration`.
+- **Testcontainers** (PostgreSQL ef�mero) en `Zentric.Tests.Integration`.
 - **Fixtures**: `DatabaseFixture` comparte instancia por test class. `Respawn` para limpieza entre tests.
-- **Assertions**: Verificar constraints (CHECK, UNIQUE, FK), indexes, query plans (`EXPLAIN ANALYZE`) para queries críticas.
+- **Assertions**: Verificar constraints (CHECK, UNIQUE, FK), indexes, query plans (`EXPLAIN ANALYZE`) para queries cr�ticas.
 
 ## 6. Decisiones ABIERTAS (requieren ADR)
 - Estrategia de particionado para `inventory_movements` / `audit_logs` (por fecha/mes).
@@ -133,6 +129,6 @@ CREATE INDEX ix_invoices_order ON invoices(order_id);
 CREATE INDEX ix_invoices_type ON invoices(type);
 ```
 | `payment_receipts` | PaymentReceipt | `id` | `order_id` | `order_id`, `status`, `external_reference` |
-| `idempotency_keys` | IdempotencyKey | `key` | — | `expires_at` (TTL index) |
+| `idempotency_keys` | IdempotencyKey | `key` | � | `expires_at` (TTL index) |
 | `audit_logs` | AuditLog | `id` | `actor_id`, `resource_type`, `resource_id` | `actor_id`, `resource_type`, `resource_id`, `created_at` |
-| `carriers` | Carrier | `id` | — | `is_active` |
+| `carriers` | Carrier | `id` | � | `is_active` |

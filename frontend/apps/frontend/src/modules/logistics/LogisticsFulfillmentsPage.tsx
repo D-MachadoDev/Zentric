@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import {
   Truck,
@@ -37,7 +37,7 @@ import { FulfillmentStatus } from '../../domain';
 /**
  * Monitoreo de Despachos y Cancelaciones por Quiebre (/logistics/fulfillments).
  *
- * Frontend-Role-Modules.md §2.6:
+ * Frontend-Role-Modules.md sección 2.6:
  * Supervisión en modo sólo lectura de todas las órdenes de fulfillment en la red
  * logística (`GET /api/logistics/fulfillments`), incluyendo guías y motivos de
  * cancelación por stock fantasma (AD/ AD). Cero botones de mutación.

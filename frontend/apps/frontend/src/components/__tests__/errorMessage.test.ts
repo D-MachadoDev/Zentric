@@ -1,15 +1,15 @@
-import { describe, expect, it } from 'vitest';
+﻿import { describe, expect, it } from 'vitest';
 import { ApiError } from '../../domain';
 import { mensajeDeError } from '../errorMessage';
 
 /**
- * Traducción de errores a mensaje (Frontend-Architecture §5).
+ * Traducción de errores a mensaje (Frontend-Architecture sección 5).
  *
  * Lo que se fija aquí no es sólo el texto, sino lo que NO se dice: un `401` no
  * significa lo mismo en el formulario de acceso que en el resto de la consola,
  * y un `5xx` nunca puede arrastrar un detalle técnico al usuario.
  */
-describe('mensajeDeError (§5)', () => {
+describe('mensajeDeError (sección 5)', () => {
   it('un 401 en el resto de la consola anuncia la caducidad', () => {
     const mensaje = mensajeDeError(new ApiError(401, 'Unauthorized'));
 
@@ -30,7 +30,7 @@ describe('mensajeDeError (§5)', () => {
   });
 
   it('propaga el detalle del servidor en un 400', () => {
-    // §5: "Mostrar el mensaje del servidor junto al formulario". El `detail` del
+    // sección 5: "Mostrar el mensaje del servidor junto al formulario". El `detail` del
     // RFC 7807 ya lo escribió el servidor pensando en el usuario.
     const detalle = 'El documento ya está registrado.';
 
@@ -51,7 +51,7 @@ describe('mensajeDeError (§5)', () => {
   });
 
   it('no filtra el texto de un error que no viene del servidor', () => {
-    // Una excepción inesperada puede arrastrar rutas, SQL o claves: §5 prohíbe
+    // Una excepción inesperada puede arrastrar rutas, SQL o claves: sección 5 prohíbe
     // exponerlas, así que se sustituye entera por un mensaje genérico.
     const mensaje = mensajeDeError(new Error('SELECT * FROM users WHERE token = "x"'));
 

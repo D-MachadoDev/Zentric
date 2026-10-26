@@ -1,6 +1,6 @@
-{
+﻿{
   "$meta": {
-    "source": "packages/ui/src/styles/theme.css (§9.1 / §9.2)",
+    "source": "packages/ui/src/styles/theme.css (sección 9.1 / sección 9.2)",
     "generated": "2026-10-25",
     "note": "Paleta dual. El acento de marca es el jade Comprador; los demas roles re-mapean --brand via data-role."
   },

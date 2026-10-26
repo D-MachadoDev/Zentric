@@ -58,6 +58,43 @@ namespace Zentric.Api.Controllers
         }
 
         /// <summary>
+        /// Agrega una nueva variante (SKU) a un producto existente del vendedor.
+        /// </summary>
+        /// <remarks>
+        /// Permite al vendedor crear variantes con precio propio sobre un producto ya
+        /// creado, sin tener que recrear la ficha. El VariantId resultante es la clave
+        /// con la que se abastece inventario.
+        /// </remarks>
+        /// <param name="productId">Identificador del producto.</param>
+        /// <param name="request">Datos del SKU, atributos y precio opcional.</param>
+        /// <response code="200">Variante creada. Retorna el variantId.</response>
+        /// <response code="400">Error de validación.</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        /// <response code="404">Producto no encontrado o ajeno.</response>
+        [HttpPost("products/{productId}/variants")]
+        [Authorize(Policy = AuthorizationPolicies.ProductManagement)]
+        [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> AddProductVariant(Guid productId, [FromBody] AddProductVariantRequest request)
+        {
+            var userId = _currentUser.UserId;
+            if (userId is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var command = new AddProductVariantCommand(
+                productId,
+                userId.Value,
+                request.Sku,
+                request.Attributes ?? new List<VariantAttributeDto>(),
+                request.PriceAmount);
+
+            var result = await _mediator.Send(command);
+            if (result.IsFailure) return result.ToProblem();
+            return Ok(result.Value);
+        }
+
+        /// <summary>
         /// Reactiva un producto suspendido devolviéndolo al estado Published.
         /// </summary>
         /// <remarks>

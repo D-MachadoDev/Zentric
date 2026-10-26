@@ -1,15 +1,15 @@
-import { useState, type ReactNode } from 'react';
+﻿import { useState, type ReactNode } from 'react';
 import { LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../providers/authContext';
 import { NOMBRES_DE_ROL } from '../../components/domainLabels';
 import { Button } from '@zentric/ui/components/ui/button';
-import { Logo, LogoMark } from '@zentric/ui/logo';
+import { LogoMark } from '@zentric/ui/logo';
 import { ThemeToggle } from '../components/ThemeToggle';
 
 interface LayoutHeaderProps {
   title?: string;
   onToggleSidebar?: () => void;
-  /** Densa (h-14) para el Tablero de Colas logístico; estándar h-16 (§9.6). */
+  /** Densa (h-14) para el Tablero de Colas logístico; estándar h-16 (sección 9.6). */
   dense?: boolean;
   children?: ReactNode;
 }
@@ -19,8 +19,6 @@ interface LayoutHeaderProps {
  *
  * Muestra:
  * - Botón de menú móvil / colapso lateral.
- * - Logo Zentric (isotipo + wordmark) que adopta automáticamente el color `--brand`
- *   del rol activo ([data-role] del layout) en Modo Claro y Modo Oscuro.
  * - Título del módulo o sección.
  * - Chip de rol con el isotipo Z coloreado por el acento del rol.
  * - Identidad del usuario (nombre / correo) en Geist Sans y Geist Mono.
@@ -62,7 +60,6 @@ export function LayoutHeader({ title, onToggleSidebar, dense = false, children }
             <Menu className="h-5 w-5" />
           </Button>
         )}
-        <Logo role={role ?? undefined} className="size-8 shrink-0" />
         {title && <h2 className="text-base font-semibold text-foreground sm:text-lg">{title}</h2>}
         {children}
       </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import {
   useProductsPagedQuery,
@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 
 /**
- * Catálogo Propio del Vendedor (SellerProductsPage - Frontend-Role-Modules §2.3).
+ * Catálogo Propio del Vendedor (SellerProductsPage - Frontend-Role-Modules sección 2.3).
  * Consulta el catálogo con `vendorId` del vendedor activo para listar tanto
  * productos Published como Suspended, con alternancia inmediata de estado comercial.
  */

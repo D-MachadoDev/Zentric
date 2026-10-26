@@ -1,17 +1,17 @@
-import { Ban, RotateCcw } from 'lucide-react';
+﻿import { Ban, RotateCcw } from 'lucide-react';
 import { Button } from './Button';
 import { cn } from '../lib/cn';
 
 /**
- * Estado vacío y estado de error con una sola pieza (Frontend-Design-System §4).
+ * Estado vacío y estado de error con una sola pieza (Frontend-Design-System sección 4).
  *
- * §4 exige que **ninguna vista quede muda**: un vacío explica y ofrece la
+ * sección 4 exige que **ninguna vista quede muda**: un vacío explica y ofrece la
  * siguiente acción útil; un error dice qué pasó y permite reintentar. Pintarlos
  * con el mismo componente evita que cada módulo reinvente el tono y el roles
  * accesibles:
  *
  * - `tone="empty"` → `role="status"` (anuncio, no urgencia)
- * - `tone="error"` → `role="alert"` (anuncio inmediato, §5)
+ * - `tone="error"` → `role="alert"` (anuncio inmediato, sección 5)
  */
 export interface StateViewProps {
   tone?: 'empty' | 'error';

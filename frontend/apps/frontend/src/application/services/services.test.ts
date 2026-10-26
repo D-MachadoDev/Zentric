@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+﻿import { describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement, type ReactNode } from 'react';
@@ -104,7 +104,7 @@ function entradaProducto(): CreateProductInput {
   };
 }
 
-describe('IniciarSesionService (§2.1)', () => {
+describe('IniciarSesionService (sección 2.1)', () => {
   it('guarda el token en memoria y devuelve la identidad sin exponerlo', async () => {
     const sesion = crearSesion();
     const api = crearApi({
@@ -137,7 +137,7 @@ describe('IniciarSesionService (§2.1)', () => {
   });
 });
 
-describe('RestaurarSesionService (§2.1, ADR-0009)', () => {
+describe('RestaurarSesionService (sección 2.1, ADR-0009)', () => {
   it('sin token no restaura nada y ni siquiera consulta al servidor', async () => {
     const currentUser = vi.fn();
     const resultado = await new RestaurarSesionService(crearApi({ currentUser }), crearSesion()).ejecutar();
@@ -166,7 +166,7 @@ describe('RestaurarSesionService (§2.1, ADR-0009)', () => {
   });
 });
 
-describe('CerrarSesionService (§2.1)', () => {
+describe('CerrarSesionService (sección 2.1)', () => {
   it('limpia el token en memoria y vuelve al estado inicial', () => {
     const sesion = crearSesion();
     sesion.setAccessToken('tok-123');
@@ -177,7 +177,7 @@ describe('CerrarSesionService (§2.1)', () => {
   });
 });
 
-describe('Alta de producto (§2.2, FR-03) — camino moderno (hooks)', () => {
+describe('Alta de producto (sección 2.2, FR-03) — camino moderno (hooks)', () => {
   it('toma los variantId del propio alta en vez de depender del releer', async () => {
     const createProduct = vi.fn().mockResolvedValue({ productId: 'p-1', variantIds: ['v-1', 'v-2'] });
     const getProduct = vi.fn();
@@ -219,7 +219,7 @@ describe('Casos de uso que no deben llevar identidad (Q-21b)', () => {
   });
 });
 
-describe('Listado de catalogo paginado (§2.2, Q-27) — camino moderno (hooks)', () => {
+describe('Listado de catalogo paginado (sección 2.2, Q-27) — camino moderno (hooks)', () => {
   it('con vendorId consulta la vista de gestión del dueño', async () => {
     const listProductsPaged = vi.fn().mockResolvedValue({ Items: [], TotalItems: 0, TotalPages: 0, Page: 0, Size: 20 });
     const api = crearApi({ listProductsPaged });
@@ -243,7 +243,7 @@ describe('Listado de catalogo paginado (§2.2, Q-27) — camino moderno (hooks)'
   });
 });
 
-describe('RegistrarUsuarioService (§2.1)', () => {
+describe('RegistrarUsuarioService (sección 2.1)', () => {
   it('devuelve el id creado SIN tocar la sesión del llamante', async () => {
     // Regresión: el servicio sobreescribía el `userId` de la sesión con el id del
     // usuario creado. Un Administrador que daba de alta un Vendedor quedaba
@@ -267,7 +267,7 @@ describe('RegistrarUsuarioService (§2.1)', () => {
   });
 });
 
-describe('Bodegas (§2.8)', () => {
+describe('Bodegas (sección 2.8)', () => {
   it('ConsultarBodegasService delega el listado completo al servidor', async () => {
     const listWarehouses = vi.fn().mockResolvedValue([]);
 
@@ -293,7 +293,7 @@ describe('Bodegas (§2.8)', () => {
   });
 });
 
-describe('Devoluciones (§2.7)', () => {
+describe('Devoluciones (sección 2.7)', () => {
   it('ConsultarDevolucionesService pide la bandeja sin filtros de dueño', async () => {
     const listReturns = vi.fn().mockResolvedValue([]);
 
@@ -313,7 +313,7 @@ describe('Devoluciones (§2.7)', () => {
   });
 });
 
-describe('ExportarService (§3)', () => {
+describe('ExportarService (sección 3)', () => {
   it('escapa comillas y comas según RFC 4180', () => {
     const csv = new ExportarService().ejecutar([{ nombre: 'Café, con leche', total: 10 }]);
 

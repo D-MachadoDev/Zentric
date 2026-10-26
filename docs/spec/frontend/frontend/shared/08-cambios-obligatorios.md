@@ -1,19 +1,19 @@
-# Zentric — Cambios obligatorios y Decisiones pendientes (Frontend)
+﻿# Zentric — Cambios obligatorios y Decisiones pendientes (Frontend)
 
 ## 1. Cambios obligatorios vs implementación actual
 *Basado en auditoría de `frontend/apps/frontend/src` contra `zentric-domain-sdd.md` y `02-arquitectura/03-arquitectura-frontend-nextjs.md`.*
 
 | Área | Hallazgo | Acción requerida | Prioridad | Referencia |
 |------|----------|------------------|-----------|------------|
-| **Tokens de color** | Uso de `red-500`, `green-600`, `amber-500`, `rose-500` hardcodeados en Badges/Alerts | Migrar a tokens semánticos: `destructive`, `success`, `warning`, `info` via `StatusBadge` y `Alert` variants | **CRÍTICA** | DS v2 §9, `theme.css` |
+| **Tokens de color** | Uso de `red-500`, `green-600`, `amber-500`, `rose-500` hardcodeados en Badges/Alerts | Migrar a tokens semánticos: `destructive`, `success`, `warning`, `info` via `StatusBadge` y `Alert` variants | **CRÍTICA** | DS v2 sección 9, `theme.css` |
 | **Badges de estado** | `Badge variant="outline" className="border-red-900/60 text-red-400"` | Usar `StatusBadge tone="danger"` (dot + label obligatorio) | **CRÍTICA** | `04-experiencia/02-criterios-accesibilidad.md` |
-| **Alertas de error** | `Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200"` | Usar `Alert variant="destructive"` sin className override (tokens resuelven en ambos modos) | **CRÍTICA** | DS v2 §9.4 |
-| **Estados de carga** | Algunas páginas usan solo `isLoading` boolean | Implementar 13 estados UI obligatorios (skeleton, empty, error, conflict, stale, etc.) | **ALTA** | `04-experiencia/01-principios-ux.md` §4 |
+| **Alertas de error** | `Alert variant="destructive" className="border-red-900 bg-red-950/40 text-red-200"` | Usar `Alert variant="destructive"` sin className override (tokens resuelven en ambos modos) | **CRÍTICA** | DS v2 sección 9.4 |
+| **Estados de carga** | Algunas páginas usan solo `isLoading` boolean | Implementar 13 estados UI obligatorios (skeleton, empty, error, conflict, stale, etc.) | **ALTA** | `04-experiencia/01-principios-ux.md` sección 4 |
 | **Accesibilidad** | Falta `aria-live` en toasts, `aria-describedby` en errores de form, focus management en modals | Auditar y corregir según checklist WCAG 2.2 AA | **ALTA** | `04-experiencia/02-criterios-accesibilidad.md` |
 | **Imágenes** | `next/image` sin `placeholder="blur"` en listados, `fallback` genérico hardcodeado | Configurar `placeholder="blur"`, `blurDataURL`, fallback por tipo desde `06-media-image-sdd.md` | **ALTA** | `06-media-image-sdd.md` |
-| **Formularios** | Validación solo client-side en algunos casos | Dual validation: Zod schema (OpenAPI) en client + server. Errores inline + `aria-invalid` | **ALTA** | `07-routes-components-sdd.md` §2.3 |
-| **Navegación** | Filtros/paginación en state local, no en URL | Mover a search params (TanStack Router) para deep linking | **MEDIA** | `07-routes-components-sdd.md` §1.2 |
-| **Tipos API** | Tipos manuales en `src/domain/models/` | Generar desde OpenAPI (`orval`) → `src/domain/api/`. Eliminar duplicados | **MEDIA** | `00-frontend-master-sdd.md` §5 |
+| **Formularios** | Validación solo client-side en algunos casos | Dual validation: Zod schema (OpenAPI) en client + server. Errores inline + `aria-invalid` | **ALTA** | `07-routes-components-sdd.md` sección 2.3 |
+| **Navegación** | Filtros/paginación en state local, no en URL | Mover a search params (TanStack Router) para deep linking | **MEDIA** | `07-routes-components-sdd.md` sección 1.2 |
+| **Tipos API** | Tipos manuales en `src/domain/models/` | Generar desde OpenAPI (`orval`) → `src/domain/api/`. Eliminar duplicados | **MEDIA** | `00-frontend-master-sdd.md` sección 5 |
 ## 2. Decisiones pendientes (deben resolverse ANTES de implementar flujo afectado)
 
 | ID | Decisión | Impacto | Opciones | Recomendación | Due |
@@ -60,6 +60,6 @@
 - [ ] Lighthouse CI (performance ≥ 90, accessibility = 100, best practices ≥ 90).
 - [ ] Bundle analysis (`@next/bundle-analyzer`) en CI.
 - [ ] Error tracking (Sentry) + Real User Monitoring (Vercel Analytics / Plausible).
-| **Estado global** | `Zustand` store con `products`, `orders` cache | Migrar a TanStack Query. Solo `session` + UI prefs en Zustand | **MEDIA** | `07-routes-components-sdd.md` §3 |
-| **Componentes base** | `Button`, `Input`, `Badge` custom en `src/components/ui/` | Migrar a `@zentric/ui` primitives (Radix + cva + tokens) | **MEDIA** | `02-arquitectura/03-arquitectura-frontend-nextjs.md` §8 |
-| **Dark mode** | `class="dark"` en `html` pero tokens no resuelven en `[data-role]` | Verificar `theme.css` @theme inline + `data-role` en layouts por rol | **BAJA** | `theme.css` §9.2 |
+| **Estado global** | `Zustand` store con `products`, `orders` cache | Migrar a TanStack Query. Solo `session` + UI prefs en Zustand | **MEDIA** | `07-routes-components-sdd.md` sección 3 |
+| **Componentes base** | `Button`, `Input`, `Badge` custom en `src/components/ui/` | Migrar a `@zentric/ui` primitives (Radix + cva + tokens) | **MEDIA** | `02-arquitectura/03-arquitectura-frontend-nextjs.md` sección 8 |
+| **Dark mode** | `class="dark"` en `html` pero tokens no resuelven en `[data-role]` | Verificar `theme.css` @theme inline + `data-role` en layouts por rol | **BAJA** | `theme.css` sección 9.2 |

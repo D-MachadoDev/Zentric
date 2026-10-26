@@ -11,6 +11,7 @@ import {
   type Order,
   type Product,
   type ProductVariant,
+  type ListOrdersPagedParams,
 } from '../../domain';
 import {
   NOMBRES_DE_ESTADO_DE_PEDIDO,
@@ -37,7 +38,7 @@ import {
 
 
 /**
- * Vista de Pedidos para el Vendedor (SellerOrdersPage - Frontend-Role-Modules sección2.3).
+ * Vista de Pedidos para el Vendedor (SellerOrdersPage - Frontend-Role-Modules sección 2.3).
  * Split-Frame Asimétrico (65% Listado de Pedidos / 35% Detalle SellerOrderView).
  * Garantiza cumplimiento de ADMuestra exclusivamente líneas propias y vendorSubtotal,
  * ocultando datos del comprador (PII) y márgenes de otros comerciantes.

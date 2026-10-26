@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useSearch, Link, useNavigate } from '@tanstack/react-router';
 import { useOrdersQuery, useOrderQuery } from '../../application/services/orders';
 import { useFulfillmentsQuery } from '../../application/services/logistics';
@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 /**
- * Solicitud de Devolución para el Comprador (Frontend-Role-Modules §2.4 y Frontend-User-Flows §5).
+ * Solicitud de Devolución para el Comprador (Frontend-Role-Modules sección 2.4 y Frontend-User-Flows sección 5).
  * Valida que el pedido esté en Delivered, permite seleccionar la variante física a devolver
  * y registra la solicitud técnica en el backend.
  */

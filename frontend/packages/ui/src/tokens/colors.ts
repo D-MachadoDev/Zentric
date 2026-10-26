@@ -1,5 +1,5 @@
-/**
- * Paleta Zentric v2 — "Porcelana y Grafito" (Frontend-Design-System.md §9).
+﻿/**
+ * Paleta Zentric v2 — "Porcelana y Grafito" (Frontend-Design-System.md sección 9).
  *
  * Espejo de packages/ui/src/styles/theme.css. Existe en TS SOLO para lo que
  * JavaScript necesita: formateadores, validación de contraste y tests.
@@ -7,7 +7,7 @@
  * pinta la UI (el test de paridad en tokens.test.ts lo hace fallar).
  *
  * `colors` espeja el MODO CLARO (:root) y `darkColors` el MODO OSCURO (.dark);
- * `roleAccents` espeja los scopes [data-role] de §9.2.
+ * `roleAccents` espeja los scopes [data-role] de sección 9.2.
  */
 
 /** Modo Claro "Estudio Porcelana" — tokens :root de theme.css. */
@@ -21,7 +21,7 @@ export const colors = {
   /** Texto terciario / placeholders / metadatos (4.96:1 sobre lienzo). */
   foregroundSubtle: '#5F6B82',
 
-  /** Jade de marca — acento por defecto (identidad Comprador, §9.2). */
+  /** Jade de marca — acento por defecto (identidad Comprador, sección 9.2). */
   brand: '#0F766E',
   /** Hover/active de la acción primaria en claro (paso más profundo). */
   brandStrong: '#0B5D56',
@@ -29,7 +29,7 @@ export const colors = {
   /** Ámbar profundo — alerta, transitorio y reloj de 15 minutos (4.64:1). */
   warning: '#B45309',
 
-  /** Papel nítido de tarjeta. Exención §9.3: blanco puro, no gris desaturado. */
+  /** Papel nítido de tarjeta. Exención sección 9.3: blanco puro, no gris desaturado. */
   surface: '#FFFFFF',
   /** Superficie secundaria (cabeceras, hover, bloques editoriales). */
   surfaceMuted: '#EEF0F4',
@@ -81,7 +81,7 @@ export const darkColors = {
 } as const;
 
 /**
- * Identidad por rol (§9.2): par [acento, acento-hover] por modo.
+ * Identidad por rol (sección 9.2): par [acento, acento-hover] por modo.
  * Comprador no aparece porque :root YA es el jade Comprador por defecto.
  */
 export const roleAccents = {

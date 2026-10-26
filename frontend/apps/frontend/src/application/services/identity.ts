@@ -63,10 +63,10 @@ export function useCurrentUserQuery(
 ) {
   return useQuery({
     queryKey: queryKeys.auth.me(),
-    queryFn: async (): Promise<CurrentUser> => {
+    queryFn: async ({ signal }): Promise<CurrentUser> => {
       const activeApi = resolveApi(api);
       const activeSession = resolveSession(session);
-      const user = await activeApi.getCurrentUser();
+      const user = await activeApi.getCurrentUser(signal);
       activeSession.setUser?.(user);
       return user;
     },

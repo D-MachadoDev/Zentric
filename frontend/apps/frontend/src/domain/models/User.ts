@@ -1,4 +1,4 @@
-import type { UserRole } from '../enums';
+﻿import type { UserRole } from '../enums';
 
 /**
  * Usuario del sistema (`UserDto`).
@@ -23,7 +23,7 @@ export interface User {
  * la identidad la fija el token, no el cuerpo. `CreateUserCommand` no
  * lleva identidad del llamante, así que el cuerpo es completo aquí.
  * La unicidad de documento y correo la valida el servidor; el cliente sólo da
- * feedback inmediato (Frontend-Domain-Services §1).
+ * feedback inmediato (Frontend-Domain-Services sección 1).
  */
 export interface CreateUserInput {
   identityDocument: string;

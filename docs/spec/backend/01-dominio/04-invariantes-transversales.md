@@ -1,6 +1,6 @@
-# Backend — Invariantes Transversales (Reglas de Negocio) — Zentric
+﻿# Backend — Invariantes Transversales (Reglas de Negocio) — Zentric
 
-**Fuente:** `../frontendSDD/zentric-domain-sdd.md` §3
+**Fuente:** `../frontendSDD/zentric-domain-sdd.md` sección 3
 **Estado:** Especificación vinculante — Implementadas en `Zentric.Domain` (entidades, domain services) + verificadas en tests
 
 ---

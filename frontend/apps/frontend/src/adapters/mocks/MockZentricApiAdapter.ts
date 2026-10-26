@@ -9,6 +9,7 @@ import type {
   Category,
   CreateFulfillmentInput,
   CreateProductInput,
+  CreateProductVariantInput,
   CreateUserInput,
   CreateWarehouseInput,
   CreatedProduct,
@@ -190,7 +191,7 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     };
   }
 
-  async getCurrentUser(): Promise<CurrentUser> {
+  async getCurrentUser(_signal?: AbortSignal): Promise<CurrentUser> {
     return { ...this.currentUserData };
   }
 
@@ -453,17 +454,36 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     return { productId, variantIds };
   }
 
+  async addProductVariant(productId: string, input: CreateProductVariantInput): Promise<string> {
+    const prod = this.products.find((p) => p.id === productId);
+    const variantId = `var-${Date.now()}`;
+    if (prod) {
+      prod.variants = [
+        ...prod.variants,
+        {
+          id: variantId,
+          sku: input.sku,
+          canBeSold: true,
+          price: input.priceAmount ?? prod.price,
+          attributes: input.attributes,
+        },
+      ];
+    }
+    return variantId;
+  }
+
   async publishProduct(productId: string): Promise<void> {
     const prod = this.products.find((p) => p.id === productId);
     if (prod) prod.status = 'Published';
   }
+
 
   async suspendProduct(productId: string): Promise<void> {
     const prod = this.products.find((p) => p.id === productId);
     if (prod) prod.status = 'Suspended';
   }
 
-  async listProductsPaged(params?: ListProductsPagedParams): Promise<PagedResult<Product>> {
+  async listProductsPaged(params?: ListProductsPagedParams, _signal?: AbortSignal): Promise<PagedResult<Product>> {
     const page = params?.page ?? 0;
     const size = params?.size ?? 10;
     let filtered = params?.vendorId
@@ -524,7 +544,7 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     return this.getProductById(id);
   }
 
-  async listCategories(): Promise<Category[]> {
+  async listCategories(_signal?: AbortSignal): Promise<Category[]> {
     const counts = new Map<string, number>();
     for (const product of this.products) {
       if (!product.category || product.status !== 'Published') continue;
@@ -546,7 +566,7 @@ export class MockZentricApiAdapter implements ZentricApiPort {
       .slice(0, clamped);
   }
 
-  async trackProductView(productId: string): Promise<void> {
+  async trackProductView(_productId: string): Promise<void> {
     // En mock, no hacemos nada; solo para satisfacer la interfaz
     return;
   }
@@ -620,7 +640,7 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     order.status = 'Cancelled';
   }
 
-  async listOrders(status?: OrderStatus | string): Promise<OrderListItem[]> {
+  async listOrders(status?: OrderStatus | string, _signal?: AbortSignal): Promise<OrderListItem[]> {
     return this.orders
       .filter((o) => !status || o.status === status)
       .map((o) => ({
@@ -635,7 +655,7 @@ export class MockZentricApiAdapter implements ZentricApiPort {
       }));
   }
 
-  async listOrdersPaged(params?: { status?: OrderStatus | string; page?: number; size?: number }): Promise<PagedResult<OrderListItem>> {
+  async listOrdersPaged(params?: { status?: OrderStatus | string; page?: number; size?: number }, _signal?: AbortSignal): Promise<PagedResult<OrderListItem>> {
     const page = params?.page ?? 0;
     const size = params?.size ?? 20;
     const filtered = this.orders
@@ -663,7 +683,7 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     };
   }
 
-  async getOrderById(id: string): Promise<Order | SellerOrderView> {
+  async getOrderById(id: string, _signal?: AbortSignal): Promise<Order | SellerOrderView> {
     const order = this.orders.find((o) => o.id === id);
     if (!order) throw new ProblemDetailsError({ status: 404, detail: 'Pedido no encontrado' });
     return { ...order };

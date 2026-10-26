@@ -1,4 +1,4 @@
-import type { FulfillmentStatus } from '../enums';
+﻿import type { FulfillmentStatus } from '../enums';
 
 /** Paquete de envío de un despacho (`ShipmentDto`). */
 export interface Shipment {
@@ -38,7 +38,7 @@ export interface CreateFulfillmentInput {
 
 /**
  * Cancelación por stock fantasma (`CancelFulfillmentOrderDueToNoStockCommand`).
- * Exige confirmación previa en la UI (Frontend-Domain-Services §2.6).
+ * Exige confirmación previa en la UI (Frontend-Domain-Services sección 2.6).
  * `CallerId`/`CallerRole` los inyecta el servidor .
  */
 export interface CancelGhostStockInput {

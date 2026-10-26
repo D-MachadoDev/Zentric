@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+﻿import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from '@tanstack/react-router';
 import { useCreateUserMutation } from '../../application/services/identity';
 import { UserRole } from '../../domain';
@@ -37,7 +37,7 @@ const RegisterBuyerSchema = z
 type RegisterBuyerFormData = z.infer<typeof RegisterBuyerSchema>;
 
 /**
- * Pantalla de Registro de Comprador (Frontend SDD C4-4 §2 y Frontend-Role-Modules §2.1).
+ * Pantalla de Registro de Comprador (Frontend SDD C4-4 sección 2 y Frontend-Role-Modules sección 2.1).
  * Alta pública que envía `role: "Buyer"` a POST /api/users.
  */
 export function RegisterBuyerPage() {

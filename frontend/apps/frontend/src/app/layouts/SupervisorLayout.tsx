@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { useState, type ReactNode } from 'react';
 import { Eye, ShoppingBag, Truck, RotateCcw, Receipt, Sliders } from 'lucide-react';
 import { LayoutHeader } from './LayoutHeader';
@@ -91,7 +91,7 @@ export function SupervisorLayout({ children }: SupervisorLayoutProps) {
 
         <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6">
           {/* Hoja de libro mayor: el contenido vive en un documento continuo
-              delimitado por hairline, no en tarjetas dispersas (§9.6). */}
+              delimitado por hairline, no en tarjetas dispersas (sección 9.6). */}
           <div className="mx-auto max-w-[1440px] rounded-lg border border-border bg-surface shadow-xs">
             {children}
           </div>

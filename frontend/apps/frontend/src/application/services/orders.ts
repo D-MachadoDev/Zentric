@@ -22,7 +22,7 @@ export function useOrdersQuery(
 ) {
   return useQuery({
     queryKey: queryKeys.orders.list({ status }),
-    queryFn: () => resolveApi(api).listOrders(status),
+    queryFn: ({ signal }) => resolveApi(api).listOrders(status, signal),
     enabled: options?.enabled,
     staleTime: 30_000,
   });
@@ -39,7 +39,7 @@ export function useOrdersPagedQuery(
 ) {
   return useQuery({
     queryKey: queryKeys.orders.listPaged(params),
-    queryFn: () => resolveApi(api).listOrdersPaged(params),
+    queryFn: ({ signal }) => resolveApi(api).listOrdersPaged(params, signal),
     enabled: options?.enabled,
     staleTime: 30_000,
   });
@@ -51,7 +51,7 @@ export function useOrdersPagedQuery(
 export function useOrderQuery(id: string, api?: ZentricApiPort) {
   return useQuery({
     queryKey: queryKeys.orders.detail(id),
-    queryFn: () => resolveApi(api).getOrderById(id),
+    queryFn: ({ signal }) => resolveApi(api).getOrderById(id, signal),
     enabled: Boolean(id),
   });
 }

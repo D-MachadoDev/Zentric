@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useCreateProductMutation } from '../../application/services/catalog';
 import { ProductType, type CreatedProduct } from '../../domain';
@@ -42,7 +42,7 @@ const ATTRIBUTE_PRESETS: Array<{ name: string; sampleValue: string }> = [
 ];
 
 /**
- * Alta de Producto con Constructor de Variantes y Precio por SKU (CreateProductPage - Frontend-Role-Modules §2.3).
+ * Alta de Producto con Constructor de Variantes y Precio por SKU (CreateProductPage - Frontend-Role-Modules sección 2.3).
  * Split-Frame Asimétrico (60% Formulario / 40% Ficha Técnica en Vivo).
  * Cumple con ADexige al menos una variante para productos físicos y permite fijar precio específico por SKU.
  */

@@ -1,10 +1,10 @@
-import type { ProductStatus, ProductType } from '../enums';
+﻿import type { ProductStatus, ProductType } from '../enums';
 
 /**
  * Variante de un producto (`ProductVariantDto`).
  *
  * El identificador útil para inventario y carrito es el de la VARIANTE, no el
- * del producto (riesgo F, Frontend-Adapters §3.3).
+ * del producto (riesgo F, Frontend-Adapters sección 3.3).
  */
 export interface ProductVariant {
   id: string;
@@ -19,7 +19,7 @@ export interface ProductVariant {
  * Ficha de producto (`ProductDto`).
  *
  * Origen: `backend/Zentric.Application/Catalog/Queries/GetProductsQuery.cs`.
- * `price` es un decimal con dos decimales (§3.5) y `type`/`status` viajan como
+ * `price` es un decimal con dos decimales (sección 3.5) y `type`/`status` viajan como
  * nombre de enum (AD).
  */
 export interface Product {

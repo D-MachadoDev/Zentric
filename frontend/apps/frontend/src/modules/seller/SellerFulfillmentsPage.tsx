@@ -15,6 +15,7 @@ import {
   type Shipment,
   type Warehouse,
   type Product,
+  type ListFulfillmentsPagedParams,
 } from '../../domain';
 import {
   NOMBRES_DE_ESTADO_DE_DESPACHO,
@@ -46,7 +47,7 @@ import {
 
 
 /**
- * Cola Operativa de Despachos del Vendedor (SellerFulfillmentsPage - Frontend-Role-Modules sección2.3).
+ * Cola Operativa de Despachos del Vendedor (SellerFulfillmentsPage - Frontend-Role-Modules sección 2.3).
  * Split-Frame Asimétrico (65% Cola de Despachos / 35% Estación de Empaque y Reporte de Quiebre).
  *
  * Invariante de Seguridad Estricta:

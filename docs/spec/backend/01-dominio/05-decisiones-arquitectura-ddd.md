@@ -1,6 +1,6 @@
-# Backend — Decisiones de Arquitectura DDD — Zentric
+﻿# Backend — Decisiones de Arquitectura DDD — Zentric
 
-**Fuente:** `../frontendSDD/zentric-domain-sdd.md` §5
+**Fuente:** `../frontendSDD/zentric-domain-sdd.md` sección 5
 **Estado:** Decisiones vinculantes para `Zentric.Domain`, `Zentric.Application`, `Zentric.Infrastructure`
 
 ---

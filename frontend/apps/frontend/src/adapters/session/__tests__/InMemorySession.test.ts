@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserRole } from '../../../domain';
 import type { CurrentUser } from '../../../domain';
 import { InMemorySession } from '../InMemorySession';
@@ -58,7 +58,7 @@ describe('InMemorySession ([ADDENDUM OWNER] ADR-0009)', () => {
     expect(session.getUserId()).toBe('u-1');
   });
 
-  it('restore() no prolonga la vida del token: lo conserva tal cual (§4)', async () => {
+  it('restore() no prolonga la vida del token: lo conserva tal cual (sección 4)', async () => {
     const session = new InMemorySession();
     session.setAccessToken('tok-vigente');
     session.bindIdentityLoader(async () => ({ userId: 'u-1', email: 'e', fullName: 'f', role: UserRole.Buyer }));

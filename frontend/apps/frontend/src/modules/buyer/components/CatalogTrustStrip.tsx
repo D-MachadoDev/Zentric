@@ -1,26 +1,26 @@
-import { Clock, RotateCcw, ShieldCheck, Truck, type LucideIcon } from 'lucide-react';
+﻿import { Clock, RotateCcw, ShieldCheck, Truck, type LucideIcon } from 'lucide-react';
 
 /**
- * Franja de garantias del marketplace (S6, §8-A3).
+ * Franja de garantias del marketplace (S6, sección 8-A3).
  *
  * No son cuatro tarjetas: son cuatro COMPROMISOS en una sola fila editorial
- * separada por hairlines. §2.2 prohibe las "tarjetas clonadas de igual
- * jerarquia" y §9.6 pide una banda de indicadores con jerarquia, no una
+ * separada por hairlines. sección 2.2 prohibe las "tarjetas clonadas de igual
+ * jerarquia" y sección 9.6 pide una banda de indicadores con jerarquia, no una
  * cuadricula de 4 cajas identicas. Ademas, cuatro iconsos con cuatro colores
- * de estado simultaneos seria el "arcoiris visual" que §2.2 veta: aqui el
+ * de estado simultaneos seria el "arcoiris visual" que sección 2.2 veta: aqui el
  * color lo aporta el texto de estado, y el icono es tinta neutra.
  */
 
 interface Guarantee {
   Icon: LucideIcon;
-  /** Rotulo corto en mono-caps (§4.1 Voz 3: el rotulo tecnico va en Geist Mono). */
+  /** Rotulo corto en mono-caps (sección 4.1 Voz 3: el rotulo tecnico va en Geist Mono). */
   label: string;
   /** Una linea de apoyo en prosa operativa (Geist Sans 400). */
   detail: string;
 }
 
 /**
- * Las tres garantias que el backend sostiene de verdad (§8-A3):
+ * Las tres garantias que el backend sostiene de verdad (sección 8-A3):
  * reserva atomica de 15 minutos, despacho particionado y split de
  * facturacion. El cuarto hueco es la devolucion con inspeccion tecnica.
  */

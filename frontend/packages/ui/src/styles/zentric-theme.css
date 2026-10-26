@@ -1,10 +1,10 @@
-/* ============================================================================
+﻿/* ============================================================================
    Este fichero estaba duplicando la paleta v1 del design system y quedó
    desconectado: la única fuente de verdad es `theme.css` (v2 "Porcelana y
-   Grafito", Frontend-Design-System.md §9.5), que es la que importa
+   Grafito", Frontend-Design-System.md sección 9.5), que es la que importa
    `apps/frontend/src/styles/global.css` a través de `@zentric/ui/styles/theme.css`.
 
-   Duplicar la paleta en dos ficheros es exactamente lo que §9.5-1 prohíbe
+   Duplicar la paleta en dos ficheros es exactamente lo que sección 9.5-1 prohíbe
    ("UNA sola fuente de verdad de color: ESTE fichero"). Se conserva la ruta
    por compatibilidad y se reexporta, de modo que no puedan volver a divergir.
    ========================================================================== */

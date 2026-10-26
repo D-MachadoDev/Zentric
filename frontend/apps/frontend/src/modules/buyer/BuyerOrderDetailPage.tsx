@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from '@tanstack/react-router';
+﻿import { useParams, Link, useNavigate } from '@tanstack/react-router';
 import { useOrderQuery, useCancelOrderMutation } from '../../application/services/orders';
 import { useProductsPagedQuery } from '../../application/services/catalog';
 import { useInvoicesByOrderQuery } from '../../application/services/billing';
@@ -48,7 +48,7 @@ import { useState } from 'react';
 import { getProductImageUrl } from './productImages';
 
 /**
- * Detalle del Pedido para el Comprador (Frontend-Role-Modules §2.4).
+ * Detalle del Pedido para el Comprador (Frontend-Role-Modules sección 2.4).
  * Split-Frame Asimétrico (65% / 35%) con desglose de ítems clicables hacia su ficha en el catálogo,
  * botón de cancelación inmediata en estado PendingPayment, guías de despacho, Factura Maestra y OrderTimeline.
  */

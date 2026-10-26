@@ -1,9 +1,9 @@
-import * as React from 'react';
+﻿import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../lib/cn';
 
 /**
- * Insignia de estado semántico del dominio (Frontend-Design-System §3 y §5.3).
+ * Insignia de estado semántico del dominio (Frontend-Design-System sección 3 y sección 5.3).
  *
  * El color jamás actúa como único portador de significado (WCAG AA). Por ello,
  * exige obligatoriamente punto cromático (6px) como refuerzo visual y rótulo
