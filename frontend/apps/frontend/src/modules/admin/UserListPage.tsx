@@ -9,6 +9,8 @@ import {
   RefreshCw,
   AlertCircle,
   CheckCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   Button,
@@ -18,13 +20,14 @@ import {
   Alert,
   AlertTitle,
   AlertDescription,
+  Pagination,
 } from '@zentric/ui';
 import {
-  useUsersQuery,
+  useUsersPagedQuery,
   useBlockUserMutation,
   useActivateUserMutation,
 } from '../../application/services';
-import type { User } from '../../domain';
+import type { ListUsersPagedParams, PagedResult, User } from '../../domain';
 import { UserRole } from '../../domain';
 
 export function UserListPage() {
@@ -34,17 +37,21 @@ export function UserListPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const parsedRole = roleFilter === 'All' ? undefined : (roleFilter as UserRole);
 
-  const {
-    data: users = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useUsersQuery(parsedRole);
+  // Pagination params for server-side pagination
+  const params: ListUsersPagedParams = {
+    role: parsedRole,
+    page: page - 1, // backend uses 0-based
+    size: 20,
+  };
+
+  const { data: pagedResult, isLoading, isError, error, refetch, isFetching } = useUsersPagedQuery(params);
+  const users = pagedResult?.items ?? [];
+  const totalItems = pagedResult?.totalItems ?? 0;
+  const totalPages = pagedResult?.totalPages ?? 0;
 
   const blockMutation = useBlockUserMutation();
   const activateMutation = useActivateUserMutation();
@@ -294,7 +301,18 @@ export function UserListPage() {
               </div>
             </div>
           )}
+          </div>
         </section>
+
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={setPage}
+            className="mt-6"
+          />
+        )}
 
         {/* Lado Derecho (30%): Ficha Lateral y Acciones ───────────────────── */}
         <section className="lg:col-span-4 space-y-6">
