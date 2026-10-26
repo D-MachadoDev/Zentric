@@ -1,7 +1,8 @@
 ﻿import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useCreateProductMutation } from '../../application/services/catalog';
-import { ProductType, type CreatedProduct } from '../../domain';
+import { ProductType, type Product, type ProductVariant, type CreatedProduct, ProductStatus } from '../../domain';
+import { ProductCard } from '../buyer/components/ProductCard';
 import {
   Button,
   Input,
@@ -48,6 +49,7 @@ const ATTRIBUTE_PRESETS: Array<{ name: string; sampleValue: string }> = [
  */
 export function CreateProductPage() {
   const createProductMutation = useCreateProductMutation();
+  const [isLoading, setIsLoading] = useState(false);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -61,6 +63,31 @@ export function CreateProductPage() {
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [createdResult, setCreatedResult] = useState<CreatedProduct | null>(null);
+
+  const previewProduct: Product = {
+    id: 'preview',
+    name: name || 'Nombre del Producto',
+    description,
+    price: priceAmount > 0 ? priceAmount : 0,
+    currency: 'COP',
+    vendorId: '',
+    type,
+    status: ProductStatus.Published,
+    variants: variants
+      .filter((v) => v.sku.trim().length > 0)
+      .map((v, i) => ({
+        id: `preview-${i}`,
+        sku: v.sku,
+        canBeSold: true,
+        price: v.priceAmount && v.priceAmount > 0 ? v.priceAmount : undefined,
+        attributes:
+          v.attrName && v.attrValue
+            ? [{ name: v.attrName, value: v.attrValue }]
+            : undefined,
+      })),
+    createdAt: new Date().toISOString(),
+    imageUrl: imageUrl.trim() || null,
+  };
 
   const handleAddVariant = () => {
     setVariants((prev) => [
@@ -139,6 +166,15 @@ export function CreateProductPage() {
       setErrorMsg(msg);
     }
   };
+
+if (isLoading) {
+    return (
+      <div className="space-y-8 w-full max-w-full">
+        <Skeleton className="h-8 w-48 bg-surface" />
+        <Skeleton className="h-96 rounded-2xl bg-surface" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 w-full max-w-full">
