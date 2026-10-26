@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useSearch } from '@tanstack/react-router';
-import { useInventoriesQuery, useAddStockMutation } from '../../application/services/inventory';
+import { useInventoriesPagedQuery, useAddStockMutation } from '../../application/services/inventory';
 import { useWarehousesQuery } from '../../application/services/warehouses';
-import { useProductsQuery } from '../../application/services/catalog';
-import type { Inventory, Warehouse, Product, ProductVariant } from '../../domain';
+import { useProductsPagedQuery } from '../../application/services/catalog';
+import type { Inventory, Warehouse, Product, ProductVariant, ListInventoriesPagedParams, PagedResult } from '../../domain';
 import {
   Button,
   Input,
@@ -13,6 +13,7 @@ import {
   AlertTitle,
   AlertDescription,
   StateView,
+  Pagination,
 } from '@zentric/ui';
 import {
   Warehouse as WarehouseIcon,
@@ -22,6 +23,8 @@ import {
   AlertCircle,
   CheckCircle2,
   ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 
@@ -29,12 +32,14 @@ import {
  * Gestión de Inventario del Vendedor (SellerInventoryPage - Frontend-Role-Modules §2.3).
  * Split-Frame Asimétrico (65% Tabla de Posiciones / 35% Carga de Stock).
  * Muestra existencias divididas en available, reserved, used y damaged en Geist Mono tabular-nums.
+ * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
  */
 export function SellerInventoryPage() {
   const search = useSearch({ strict: false }) as { variantId?: string };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('All');
+  const [page, setPage] = useState(1);
 
   // Formulario AddStock
   const [targetVariantId, setTargetVariantId] = useState('');
@@ -43,22 +48,25 @@ export function SellerInventoryPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
-  const {
-    data: inventories,
-    isLoading: isLoadingInventories,
-    isError: isErrorInventories,
-    error: errorInventories,
-    refetch: refetchInventories,
-    isFetching: isFetchingInventories,
-  } = useInventoriesQuery();
+  // Pagination params for server-side pagination
+  const params: ListInventoriesPagedParams = {
+    page: page - 1, // backend uses 0-based
+    size: 20,
+  };
+
+  const { data: pagedResult, isLoading: isLoadingInventories, isError: isErrorInventories, error: errorInventories, refetch: refetchInventories, isFetching: isFetchingInventories } = useInventoriesPagedQuery(params);
+  const inventories = pagedResult?.items ?? [];
+  const totalItems = pagedResult?.totalItems ?? 0;
+  const totalPages = pagedResult?.totalPages ?? 0;
 
   const { data: warehouses, isLoading: isLoadingWarehouses } = useWarehousesQuery();
-  const { data: products } = useProductsQuery();
+  const { data: productsResult } = useProductsPagedQuery();
+  const products = productsResult?.items ?? [];
   const addStockMutation = useAddStockMutation();
 
   const allInventories = inventories ?? [];
   const allWarehouses = warehouses ?? [];
-  const allProducts = products ?? [];
+  const allProducts = products;
 
   // Prefill desde la URL (botón "Abastecer" de la ficha de producto)
   useEffect(() => {
@@ -328,6 +336,20 @@ export function SellerInventoryPage() {
               </div>
             </div>
           )}
+              </div>
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={setPage}
+              className="mt-6"
+            />
+          )}
+
         </section>
 
         {/* Lado Derecho (35%): Panel de Carga de Stock ────────────────── */}
