@@ -308,7 +308,7 @@ export function SellerOrdersPage() {
               {/* Líneas Propias Vendidas */}
               <div className="space-y-3">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
-                  Líneas de tu Catálogo
+                  Mis productos vendidos
                 </h3>
 
                 {(!activeOrder.items || activeOrder.items.length === 0) ? (
@@ -365,8 +365,7 @@ export function SellerOrdersPage() {
               <div className="flex items-start gap-2.5 rounded-xl border border-border bg-surface-muted/30 p-3.5">
                 <ShieldCheck className="h-4 w-4 text-brand shrink-0 mt-0.5" />
                 <p className="text-[11px] text-foreground-muted leading-relaxed">
-                  <strong>ADR-0013 (Aislamiento de Recursos):</strong> Los datos del comprador (PII)
-                  y los importes de otros comercios participantes están protegidos por el servidor.
+                  Tus datos están protegidos: Los datos del comprador y los importes de otros vendedores no se muestran en tu panel, garantizando la privacidad en tu liquidación.
                 </p>
               </div>
             </div>
