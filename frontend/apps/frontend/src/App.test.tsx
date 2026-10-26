@@ -55,7 +55,7 @@ describe('AppRouter', () => {
   });
 
   it('la raíz sin sesión lleva directamente al Marketplace como invitado (/buyer), no a una pantalla en blanco', async () => {
-    vi.spyOn(appServices.api, 'listProducts').mockResolvedValue([]);
+    vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValue({ items: [], totalItems: 0, totalPages: 0, page: 0, size: 20 });
     vi.spyOn(appServices.api, 'listCategories').mockResolvedValue([]);
 
     renderAt('/');
@@ -67,7 +67,7 @@ describe('AppRouter', () => {
     iniciarSesion(UserRole.Administrator);
     vi.spyOn(appServices.api, 'listUsers').mockResolvedValue([]);
     vi.spyOn(appServices.api, 'listWarehouses').mockResolvedValue([]);
-    vi.spyOn(appServices.api, 'listProducts').mockResolvedValue([]);
+    vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValue({ items: [], totalItems: 0, totalPages: 0, page: 0, size: 20 });
     vi.spyOn(appServices.api, 'getHealth').mockResolvedValue({
       status: 'healthy',
       database: 'up',
@@ -81,7 +81,7 @@ describe('AppRouter', () => {
 
   it('la raíz despacha por rol: el Vendedor ve su panel y no el del Administrador', async () => {
     iniciarSesion(UserRole.Seller);
-    vi.spyOn(appServices.api, 'listProducts').mockResolvedValue([]);
+    vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValue({ items: [], totalItems: 0, totalPages: 0, page: 0, size: 20 });
 
     renderAt('/');
 

@@ -316,7 +316,7 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
     mockParams = {};
 
     // Defaults en appServices.api
-    vi.spyOn(appServices.api, 'listProducts').mockResolvedValue([mockProduct1, mockProduct2]);
+    vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValue({ items: [mockProduct1, mockProduct2], totalitems: 2, totalPages: 1, Page: 0, Size: 20 });
     vi.spyOn(appServices.api, 'getProductById').mockResolvedValue(mockProduct1);
     vi.spyOn(appServices.api, 'listWarehouses').mockResolvedValue([mockWarehouse1, mockWarehouse2]);
     vi.spyOn(appServices.api, 'listInventories').mockResolvedValue([mockInventory1]);
@@ -369,7 +369,7 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
     });
 
     it('renderiza el estado de error al fallar los servicios', async () => {
-      vi.spyOn(appServices.api, 'listProducts').mockRejectedValue(new Error('Fallo de red'));
+      vi.spyOn(appServices.api, 'listProductsPaged').mockRejectedValue(new Error('Fallo de red'));
       renderWithClient(<SellerDashboardPage />);
 
       expect(await screen.findByText('Aviso del Catálogo')).toBeInTheDocument();
@@ -459,7 +459,7 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
     });
 
     it('muestra error y permite reintentar cuando falla la carga, soporta productos digitales sin descripción y catálogo vacío', async () => {
-      vi.spyOn(appServices.api, 'listProducts').mockRejectedValueOnce(new Error('Fallo de catálogo'));
+      vi.spyOn(appServices.api, 'listProductsPaged').mockRejectedValueOnce(new Error('Fallo de catálogo'));
       const { unmount } = renderWithClient(<SellerProductsPage />);
 
       expect(await screen.findByText('Error al cargar catálogo propio')).toBeInTheDocument();
@@ -468,20 +468,24 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
       fireEvent.click(retryBtn);
 
       unmount();
-      vi.spyOn(appServices.api, 'listProducts').mockResolvedValueOnce([
-        {
+      vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValueOnce({
+        items: [{
           ...mockProduct1,
           type: ProductType.Digital,
           description: '',
-        },
-      ]);
+        }],
+        totalitems: 1,
+        totalPages: 1,
+        Page: 0,
+        Size: 20,
+      });
       const { unmount: unmount2 } = renderWithClient(<SellerProductsPage />);
       expect(await screen.findByText('Digital')).toBeInTheDocument();
       expect(screen.getByText('Sin descripción provista.')).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
 
       unmount2();
-      vi.spyOn(appServices.api, 'listProducts').mockResolvedValueOnce([]);
+      vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValueOnce({ items: [], totalitems: 0, totalPages: 0, Page: 0, Size: 20 });
       renderWithClient(<SellerProductsPage />);
       expect(
         await screen.findByText('Aún no tiene productos registrados en su catálogo de vendedor.')

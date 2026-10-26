@@ -215,14 +215,11 @@ Thumbs.db
 .engram/
 .codegraph/
 odd/
-backendSDD/
-frontendSDD/
 AGENTS.md
 orchestrator-state.json
 HANDOFF.md
 
 # Experimental / stray folders (not part of the product)
-frontend/src/
 frontend/apps/frontend/public/brandkit/boards/
 ORIGINAL_REQUEST.md
 AUDITORIA_SDD_*.md
