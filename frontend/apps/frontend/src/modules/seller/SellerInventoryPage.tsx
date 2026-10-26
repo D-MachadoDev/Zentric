@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from 'react';
+import { alertAdapter } from '../../app/providers/alertAdapter';
 import { useSearch } from '@tanstack/react-router';
-import { useInventoriesPagedQuery, useAddStockMutation } from '../../application/services/inventory';
+import { useInventoriesPagedQuery, useAddStockMutation, useDeleteInventoryMutation } from '../../application/services/inventory';
 import { useWarehousesQuery } from '../../application/services/warehouses';
 import { useProductsPagedQuery } from '../../application/services/catalog';
 import type { Inventory, Warehouse, Product, ProductVariant, ListInventoriesPagedParams } from '../../domain';
@@ -23,6 +24,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ArrowUpRight,
+  Trash2,
 } from 'lucide-react';
 
 
@@ -61,6 +63,7 @@ export function SellerInventoryPage() {
   const { data: productsResult } = useProductsPagedQuery();
   const products = productsResult?.items ?? [];
   const addStockMutation = useAddStockMutation();
+  const deleteInventoryMutation = useDeleteInventoryMutation();
 
   const allInventories = inventories ?? [];
   const allWarehouses = warehouses ?? [];
@@ -109,6 +112,15 @@ export function SellerInventoryPage() {
     return matchesSearch && matchesWarehouse;
   });
 
+  // Orden de presencia: la variante preseleccionada (URL "Abastecer" o formulario)
+  // aparece primero en la tabla con indicador visual.
+  const presenceVariantId = (search.variantId ?? targetVariantId ?? '').trim();
+  const displayedInventories = [...filteredInventories].sort((a, b) => {
+    const aMatch = presenceVariantId && a.variantId === presenceVariantId ? 0 : 1;
+    const bMatch = presenceVariantId && b.variantId === presenceVariantId ? 0 : 1;
+    return aMatch - bMatch;
+  });
+
   const handleAddStock = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -144,6 +156,35 @@ export function SellerInventoryPage() {
       setFormError(
         err instanceof Error ? err.message : 'Error al registrar existencias en la bodega.'
       );
+    }
+  };
+
+  const handleSelectInventory = (inv: Inventory) => {
+    setTargetVariantId(inv.variantId);
+    setTargetWarehouseId(inv.warehouseId);
+    setStockQuantity('1');
+    setFormError(null);
+    setFormSuccess(null);
+  };
+
+  const handleDeleteInventory = async (inv: Inventory) => {
+    setFormError(null);
+    setFormSuccess(null);
+
+    const accepted = await alertAdapter.confirm({
+      title: 'Eliminar registro de inventario',
+      description:
+        'El registro se marcará como eliminado (soft delete). Esta acción no se puede deshacer desde la UI.',
+      confirmLabel: 'Eliminar',
+      variant: 'destructive',
+    });
+    if (!accepted) return;
+
+    try {
+      await deleteInventoryMutation.mutateAsync(inv.id);
+      setFormSuccess('Registro de inventario eliminado (soft delete).');
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Error al eliminar el registro.');
     }
   };
 
@@ -244,7 +285,7 @@ export function SellerInventoryPage() {
           </div>
 
           {/* Tabla de Existencias */}
-          {filteredInventories.length === 0 ? (
+          {displayedInventories.length === 0 ? (
             <StateView
               state="empty"
               title="No hay existencias registradas"
@@ -267,17 +308,25 @@ export function SellerInventoryPage() {
                       <th className="py-3 px-4 text-right">Reservado</th>
                       <th className="py-3 px-4 text-right">Usado</th>
                       <th className="py-3 px-4 text-right">Dañado</th>
+                      <th className="py-3 px-4 text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
-                    {filteredInventories.map((inv: Inventory) => {
+                    {displayedInventories.map((inv: Inventory) => {
                       const variantInfo = variantInfoMap.get(inv.variantId);
                       const warehouse = warehouseMap.get(inv.warehouseId);
+
+                      const isPresence = Boolean(presenceVariantId) && inv.variantId === presenceVariantId;
 
                       return (
                         <tr
                           key={inv.id}
-                          className="hover:bg-surface-muted/40 transition-colors"
+                          onClick={() => handleSelectInventory(inv)}
+                          className={
+                            isPresence
+                              ? 'bg-brand/10 border-l-4 border-brand hover:bg-brand/15 transition-colors cursor-pointer'
+                              : 'hover:bg-surface-muted/40 transition-colors cursor-pointer'
+                          }
                         >
                           <td className="py-4 px-4">
                             <div className="font-medium text-foreground">
@@ -287,6 +336,11 @@ export function SellerInventoryPage() {
                               <span className="text-xs font-mono text-brand font-semibold">
                                 SKU: {variantInfo?.sku ?? inv.variantId.substring(0, 8)}
                               </span>
+                              {isPresence && (
+                                <Badge className="bg-brand/20 text-brand border-brand/40 text-[10px] font-mono ml-2">
+                                  ↑ Presencia
+                                </Badge>
+                              )}
                               {inv.availableQuantity === 0 ? (
                                 <Badge className="bg-destructive/15 text-destructive border-destructive/30 text-[10px] font-mono">
                                   Agotado
@@ -325,6 +379,22 @@ export function SellerInventoryPage() {
                           </td>
                           <td className="py-4 px-4 text-right font-mono text-destructive tabular-nums">
                             {inv.damagedQuantity}
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteInventory(inv);
+                              }}
+                              disabled={deleteInventoryMutation.isPending}
+                              className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                              title="Eliminar registro (soft delete)"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
                           </td>
                         </tr>
                       );
@@ -395,6 +465,12 @@ export function SellerInventoryPage() {
                       </option>
                     ))
                   )}
+                  {targetVariantId &&
+                    !allProducts.some((p: Product) =>
+                      (p.variants ?? []).some((v: ProductVariant) => v.id === targetVariantId),
+                    ) && (
+                      <option value={targetVariantId}>{targetVariantId}</option>
+                    )}
                 </select>
                 <p className="text-[11px] text-foreground-muted">
                   O ingresa el ID si no aparece en el listado:
