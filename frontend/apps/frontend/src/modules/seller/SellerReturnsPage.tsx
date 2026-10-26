@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import {
-  useReturnsQuery,
+  useReturnsPagedQuery,
   useApproveReturnMutation,
   useRejectReturnMutation,
 } from '../../application/services/returns';
 import { useWarehousesQuery } from '../../application/services/warehouses';
 import { useProductsPagedQuery } from '../../application/services/catalog';
-import {
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Pagination } from '@zentric/ui';
   ReturnStatus,
   type ReturnRequest,
   type Warehouse,
@@ -49,21 +50,28 @@ import {
  * Cumplimiento de ADR-0006:
  * Exhibe el veredicto de inspección física (isGoodCondition) emitido por el operador logístico
  * y permite al vendedor aprobar comercialmente (reingresando a usedQuantity) o rechazar la solicitud.
+ * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
  */
 export function SellerReturnsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | ReturnStatus>('All');
   const [selectedReturnId, setSelectedReturnId] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
-  const {
-    data: returns,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useReturnsQuery();
+  const parsedStatus = statusFilter === 'All' ? undefined : (statusFilter as ReturnStatus);
+
+  // Pagination params for server-side pagination
+  const params: ListReturnsPagedParams = {
+    status: parsedStatus,
+    page: page - 1, // backend uses 0-based
+    size: 20,
+  };
+
+  const { data: pagedResult, isLoading, isError, error, refetch, isFetching } = useReturnsPagedQuery(params);
+  const returns = pagedResult?.items ?? [];
+  const totalItems = pagedResult?.totalItems ?? 0;
+  const totalPages = pagedResult?.totalPages ?? 0;
 
   const { data: warehouses } = useWarehousesQuery();
   const { data: productsResult } = useProductsPagedQuery();
