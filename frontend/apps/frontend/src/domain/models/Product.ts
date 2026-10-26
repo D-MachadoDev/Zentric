@@ -35,6 +35,8 @@ export interface Product {
   /** ISO-8601 (DateTime). */
   createdAt: string;
   imageUrl?: string | null;
+  /** Galería del producto: fotos propias en distintos ángulos, en orden de presentación. */
+  imageUrls?: string[] | null;
   category?: string;
 }
 
@@ -103,6 +105,31 @@ export interface ListProductsPagedParams {
   search?: string;
   sort?: 'relevance' | 'price-asc' | 'price-desc';
   type?: ProductType;
+}
+
+/**
+ * Parámetros de consulta paginada de facturas.
+ */
+export interface ListInvoicesPagedParams {
+  page?: number;
+  size?: number;
+}
+
+/**
+ * Parámetros de consulta paginada de bodegas.
+ */
+export interface ListWarehousesPagedParams {
+  vendorId?: string;
+  page?: number;
+  size?: number;
+}
+
+/**
+ * Parámetros de consulta paginada de inventarios.
+ */
+export interface ListInventoriesPagedParams {
+  page?: number;
+  size?: number;
 }
 
 /** Envoltorio estándar de paginación del backend */

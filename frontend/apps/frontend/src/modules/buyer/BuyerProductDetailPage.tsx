@@ -8,8 +8,9 @@ import {
 } from '../../application/services/orders';
 import { getDefaultSession } from '../../application/services';
 import { ProductType, type ProductVariant } from '../../domain';
-import { getProductImageUrl, saveRecentlyViewedProduct } from './productImages';
+import { getProductImageUrl, getProductImageUrls, saveRecentlyViewedProduct } from './productImages';
 import { addGuestCartItem, setPendingGuestCheckout } from './guestCart';
+import { ProductGallery } from './components/ProductGallery';
 import {
   Button,
   Badge,
@@ -24,7 +25,6 @@ import {
   ShoppingBag,
   Package,
   FileCode,
-  Tag,
   CheckCircle2,
   AlertCircle,
   Clock,
@@ -32,137 +32,28 @@ import {
   Truck,
   RotateCcw,
   Zap,
-  Layers,
 } from 'lucide-react';
 
 /**
- * Formatea una variante en un título y subtítulo amigables para el comprador,
- * priorizando los atributos definidos por el vendedor (Color, Talla, Capacidad, Presentación, etc.)
- * y usando traducción semántica de SKU como respaldo.
+ * Etiqueta legible de una variante para el comprador.
+ *
+ * Se apoya en los atributos que cargó el vendedor (Color, Talla, Capacidad…).
+ * Sin atributos cae a un ordinal neutro: el SKU es un dato logístico y no se
+ * muestra en la ficha (queda disponible en el `title` de la fila).
  */
-function formatVariantDisplay(
-  variant: ProductVariant,
-  index: number,
-): { title: string; subtitle?: string; attributePills: Array<{ name: string; value: string }> } {
-  const attrs = (variant.attributes ?? []).filter((a) => a.name !== '__price__');
+function variantLabel(variant: ProductVariant, index: number): string {
+  const attrs = (variant.attributes ?? []).filter((attr) => attr.name !== '__price__');
   if (attrs.length > 0) {
-    const primaryTitle = attrs.map((a) => `${a.name}: ${a.value}`).join(' · ');
-    return {
-      title: primaryTitle,
-      subtitle: `Opción verificada por el vendedor`,
-      attributePills: attrs,
-    };
+    return attrs.map((attr) => `${attr.name}: ${attr.value}`).join(' · ');
   }
-
-  const sku = variant.sku;
-  const upper = sku.toUpperCase();
-
-  if (upper.includes('RED')) {
-    return {
-      title: 'Edición Switch Red',
-      subtitle: 'Tacto lineal, silencioso y ultra-rápido',
-      attributePills: [{ name: 'Switch', value: 'Red Lineal' }],
-    };
-  }
-  if (upper.includes('BROWN')) {
-    return {
-      title: 'Edición Switch Brown',
-      subtitle: 'Tacto táctil equilibrado y ergonómico',
-      attributePills: [{ name: 'Switch', value: 'Brown Táctil' }],
-    };
-  }
-  if (upper.includes('BLUE')) {
-    return {
-      title: 'Edición Switch Blue',
-      subtitle: 'Tacto táctil sonoro con clic mecánico',
-      attributePills: [{ name: 'Switch', value: 'Blue Clicky' }],
-    };
-  }
-  if (upper.includes('32GB') && upper.includes('1TB')) {
-    return {
-      title: 'Configuración Pro: 32GB RAM · 1TB NVMe',
-      subtitle: 'Máxima potencia para desarrollo',
-      attributePills: [
-        { name: 'Memoria', value: '32GB RAM' },
-        { name: 'Almacenamiento', value: '1TB NVMe' },
-      ],
-    };
-  }
-  if (upper.includes('16GB') && upper.includes('512GB')) {
-    return {
-      title: 'Configuración Base: 16GB RAM · 512GB SSD',
-      subtitle: 'Rendimiento equilibrado y versátil',
-      attributePills: [
-        { name: 'Memoria', value: '16GB RAM' },
-        { name: 'Almacenamiento', value: '512GB SSD' },
-      ],
-    };
-  }
-  if (upper.includes('64GB')) {
-    return {
-      title: 'Edición Enterprise: 64GB RAM',
-      subtitle: 'Para virtualización y cómputo intensivo',
-      attributePills: [{ name: 'Memoria', value: '64GB RAM' }],
-    };
-  }
-  if (upper.includes('WHITE') || upper.includes('BLANCO')) {
-    return {
-      title: 'Color Blanco Glaciar',
-      subtitle: 'Acabado mate premium',
-      attributePills: [{ name: 'Color', value: 'Blanco Glaciar' }],
-    };
-  }
-  if (upper.includes('BLACK') || upper.includes('NEGRO')) {
-    return {
-      title: 'Color Negro Carbón',
-      subtitle: 'Acabado industrial anodizado',
-      attributePills: [{ name: 'Color', value: 'Negro Carbón' }],
-    };
-  }
-  if (upper.includes('5-USER') || upper.includes('USER-5')) {
-    return {
-      title: 'Licencia Empresa (5 Usuarios)',
-      subtitle: 'Soporte prioritario cloud',
-      attributePills: [{ name: 'Licencia', value: '5 Usuarios' }],
-    };
-  }
-  if (upper.includes('USER-1') || upper.includes('1-USER')) {
-    return {
-      title: 'Licencia Individual (1 Usuario)',
-      subtitle: 'Activación inmediata',
-      attributePills: [{ name: 'Licencia', value: '1 Usuario' }],
-    };
-  }
-  if (upper.includes('1000') || upper.includes('1000W')) {
-    return {
-      title: 'Potencia 1000W 80+ Platinum',
-      subtitle: 'Certificación de alta eficiencia',
-      attributePills: [{ name: 'Potencia', value: '1000W Platinum' }],
-    };
-  }
-  if (upper.includes('850') || upper.includes('850W')) {
-    return {
-      title: 'Potencia 850W 80+ Gold',
-      subtitle: 'Certificación estándar oro',
-      attributePills: [{ name: 'Potencia', value: '850W Gold' }],
-    };
-  }
-
-  const cleanSku = sku.replace(/^[A-Z0-9]+-/, '').replace(/-/g, ' ');
-  return {
-    title: cleanSku ? `Opción: ${cleanSku}` : `Opción ${index + 1}`,
-    subtitle: `Ref: ${sku}`,
-    attributePills: [],
-  };
+  return `Opción ${index + 1}`;
 }
 
 /**
- * Ficha Técnica y Detalle del Producto para el Comprador (Frontend-Role-Modules §2.4).
- * Diseñado con referencias de alta conversión (Amazon / Mercado Libre / Éxito):
- * - Selector de variantes arriba en el Buy Box antes de los botones de compra.
- * - Precio dinámico por SKU (`activeVariant?.price ?? product.price`) actualizado en tiempo real.
- * - Soporte de Modo Invitado: permite agregar al carrito sin sesión y sólo solicita
- *   iniciar sesión al confirmar la compra / pagar ahora.
+ * Ficha de detalle del producto para el comprador (Frontend-Role-Modules §2.4).
+ *
+ * Una sola superficie elevada (el buy box): la galería, la descripción y las
+ * condiciones se separan con jerarquía y divisores, no con cajas anidadas.
  */
 export function BuyerProductDetailPage() {
   const { productId } = useParams({ strict: false }) as { productId?: string };
@@ -240,7 +131,7 @@ export function BuyerProductDetailPage() {
       });
       setFeedback({
         type: 'success',
-        message: `¡${quantity} unidad(es) de ${product.name} (${activeVariant.sku}) agregada(s) a tu carrito! Solo te pediremos iniciar sesión cuando decidas pagar.`,
+        message: `¡${quantity} unidad(es) de ${product.name} agregada(s) a tu carrito! Solo te pediremos iniciar sesión cuando decidas pagar.`,
       });
       return;
     }
@@ -338,10 +229,11 @@ export function BuyerProductDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 w-full max-w-full">
-        <Skeleton className="h-8 w-48 bg-surface-muted" />
+      <div className="space-y-8 w-full max-w-full">
+        <Skeleton className="h-4 w-40 bg-surface-muted" />
+        <Skeleton className="h-9 w-2/3 bg-surface-muted" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <Skeleton className="lg:col-span-7 h-96 rounded-2xl bg-surface-muted" />
+          <Skeleton className="lg:col-span-7 aspect-[4/3] rounded-xl bg-surface-muted" />
           <Skeleton className="lg:col-span-5 h-96 rounded-2xl bg-surface-muted" />
         </div>
       </div>
@@ -374,45 +266,49 @@ export function BuyerProductDetailPage() {
     );
   }
 
+  const images = getProductImageUrls(product);
   const totalPrice = unitPrice * quantity;
-  const activeVariantMeta = activeVariant
-    ? formatVariantDisplay(
-        activeVariant,
-        Math.max(
-          0,
-          variants.findIndex((v) => v.id === activeVariant.id),
-        ),
-      )
-    : null;
+  const isPhysical = product.type === ProductType.Physical;
+  const conditions = [
+    {
+      icon: ShieldCheck,
+      title: 'Garantía oficial',
+      detail: '12 meses de cobertura directa Zentric con soporte técnico.',
+    },
+    {
+      icon: Truck,
+      title: 'Despacho trazable',
+      detail: 'Empaque sellado y número de guía en tiempo real.',
+    },
+    {
+      icon: RotateCcw,
+      title: 'Devolución simple',
+      detail: 'Inspección en bodega y reembolso directo.',
+    },
+  ];
 
   return (
-    <div className="space-y-6 w-full max-w-full transition-colors duration-200">
-      {/* ── Navegación y Breadcrumb Comercial ── */}
-      <div className="flex items-center justify-between pb-2 border-b border-border">
+    <article className="w-full max-w-full space-y-8">
+      {/* Navegación */}
+      <div className="flex items-center justify-between gap-4">
         <Link to="/buyer/catalog">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className="border-border text-foreground-muted hover:text-foreground transition-all active:scale-[0.98]"
+            className="text-foreground-muted hover:text-foreground -ml-2"
           >
             <ArrowLeft className="h-4 w-4 mr-1.5" />
-            Volver al Catálogo
+            Catálogo
           </Button>
         </Link>
-
         <Link to="/buyer/cart">
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-border text-brand hover:bg-surface-muted"
-          >
+          <Button variant="outline" size="sm" className="border-border text-brand">
             <ShoppingBag className="h-4 w-4 mr-2" />
-            Ver Carrito
+            Carrito
           </Button>
         </Link>
       </div>
 
-      {/* ── Mensajes de Feedback ── */}
       {feedback && (
         <Alert
           variant={feedback.type === 'success' ? 'default' : 'destructive'}
@@ -430,253 +326,192 @@ export function BuyerProductDetailPage() {
           <AlertTitle>
             {feedback.type === 'success' ? 'Operación Exitosa' : 'Aviso de Compra'}
           </AlertTitle>
-          <AlertDescription className="text-xs font-mono mt-1">{feedback.message}</AlertDescription>
+          <AlertDescription className="text-xs mt-1">{feedback.message}</AlertDescription>
         </Alert>
       )}
 
-      {/* ── Split-Frame Asimétrico (58% Galería y Ficha / 42% Buy Box Superior con Variantes) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Lado Izquierdo: Fotografía Protagonista y Especificaciones (col-span-7) */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="rounded-3xl border border-border bg-surface p-6 sm:p-8 space-y-6 shadow-sm">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className={`text-xs ${
-                    product.type === ProductType.Physical
-                      ? 'border-brand/30 text-brand bg-brand/5'
-                      : 'border-info/30 text-info bg-info/5'
-                  }`}
-                >
-                  {product.type === ProductType.Physical ? (
-                    <span className="flex items-center gap-1 font-mono">
-                      <Package className="h-3 w-3" /> Producto Físico
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 font-mono">
-                      <FileCode className="h-3 w-3" /> Producto Digital
-                    </span>
-                  )}
-                </Badge>
-                <span className="text-xs font-mono text-foreground-muted flex items-center gap-1">
-                  <Tag className="h-3 w-3 text-brand" /> Zentric Marketplace Certificado
-                </span>
-              </div>
-
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground font-sans tracking-tight leading-tight">
-                {product.name}
-              </h1>
-            </div>
-
-            {/* Fotografía Protagonista del Producto (16:10) */}
-            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-surface-muted border border-border shadow-xs">
-              <img
-                src={getProductImageUrl(product)}
-                alt={product.name}
-                className="h-full w-full object-cover object-center ring-1 ring-inset ring-black/10 dark:ring-white/10"
-                loading="lazy"
-              />
-            </div>
-
-            {/* Descripción */}
-            <div className="space-y-2 pt-2 border-t border-border">
-              <h2 className="text-xs uppercase font-mono tracking-wider text-foreground-muted font-bold">
-                Descripción del Producto
-              </h2>
-              <p className="text-sm text-foreground-muted leading-relaxed">
-                {product.description || 'Sin descripción detallada provista por el vendedor.'}
-              </p>
-            </div>
-
-            {/* Especificaciones Técnicas y Garantía */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              <div className="rounded-xl border border-border-subtle bg-surface-muted/50 p-3 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-foreground font-mono">
-                  <ShieldCheck className="h-4 w-4 text-brand" />
-                  Garantía Oficial
-                </div>
-                <p className="text-[11px] text-foreground-muted">
-                  12 meses de garantía directa Zentric con soporte técnico.
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border-subtle bg-surface-muted/50 p-3 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-foreground font-mono">
-                  <Truck className="h-4 w-4 text-info" />
-                  Despacho Seguro
-                </div>
-                <p className="text-[11px] text-foreground-muted">
-                  Empaque con trazabilidad y número de guía en tiempo real.
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border-subtle bg-surface-muted/50 p-3 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-foreground font-mono">
-                  <RotateCcw className="h-4 w-4 text-warning" />
-                  Devoluciones
-                </div>
-                <p className="text-[11px] text-foreground-muted">
-                  Inspección física en bodega y reembolso directo garantizado.
-                </p>
-              </div>
-            </div>
-          </div>
+      {/* Encabezado */}
+      <header className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge
+            variant="outline"
+            className={
+              isPhysical
+                ? 'border-brand/30 text-brand bg-brand/5'
+                : 'border-info/30 text-info bg-info/5'
+            }
+          >
+            {isPhysical ? (
+              <span className="flex items-center gap-1">
+                <Package className="h-3 w-3" /> Producto Físico
+              </span>
+            ) : (
+              <span className="flex items-center gap-1">
+                <FileCode className="h-3 w-3" /> Producto Digital
+              </span>
+            )}
+          </Badge>
+          <span className="text-xs text-foreground-muted">Marketplace verificado</span>
         </div>
 
-        {/* Lado Derecho: Buy Box Superior con Selector de Variantes y Compra Rápida (col-span-5) */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="rounded-3xl border border-border bg-surface p-6 sm:p-7 space-y-5 shadow-md sticky top-20">
-            {/* 1. Precio y Resumen de Opción Activa */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs uppercase font-mono tracking-wider text-foreground-muted font-bold">
-                  Total de Compra
-                </span>
-                {activeVariantMeta && (
-                  <span className="rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-brand">
-                    {activeVariantMeta.title}
-                  </span>
-                )}
-              </div>
-              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-foreground tabular-nums">
-                ${totalPrice.toLocaleString('es-CO', { minimumFractionDigits: 2 })}
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-[-0.02em] text-foreground leading-[1.1] max-w-[22ch]">
+          {product.name}
+        </h1>
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+        {/* Galería, descripción y condiciones */}
+        <div className="lg:col-span-7 space-y-8">
+          <ProductGallery key={product.id} images={images} alt={product.name} />
+
+          <section className="space-y-2.5">
+            <h2 className="text-lg font-semibold text-foreground">Descripción</h2>
+            <p className="text-[15px] leading-relaxed text-foreground-muted max-w-[68ch] whitespace-pre-line">
+              {product.description || 'Sin descripción detallada provista por el vendedor.'}
+            </p>
+          </section>
+
+          <section className="border-t border-border pt-2">
+            <dl className="divide-y divide-border">
+              {conditions.map((condition) => (
+                <div key={condition.title} className="flex gap-3 py-3.5">
+                  <condition.icon className="h-4 w-4 mt-0.5 shrink-0 text-brand" aria-hidden="true" />
+                  <div className="space-y-0.5">
+                    <dt className="text-sm font-medium text-foreground">{condition.title}</dt>
+                    <dd className="text-xs leading-relaxed text-foreground-muted">
+                      {condition.detail}
+                    </dd>
+                  </div>
+                </div>
+              ))}
+            </dl>
+          </section>
+        </div>
+
+        {/* Buy box: la única superficie elevada de la ficha */}
+        <aside className="lg:col-span-5">
+          <div className="surface-hairline rounded-2xl p-6 sm:p-7 space-y-6 lg:sticky lg:top-20">
+            <div className="space-y-1">
+              <div className="text-3xl font-bold tabular-nums text-foreground">
+                ${unitPrice.toLocaleString('es-CO', { minimumFractionDigits: 2 })}
               </div>
               <p className="text-xs text-foreground-muted">
-                Precio SKU seleccionado: ${unitPrice.toLocaleString('es-CO', { minimumFractionDigits: 2 })}{' '}
-                COP · Impuestos incluidos
+                {quantity > 1 ? (
+                  <>
+                    {quantity} × ${unitPrice.toLocaleString('es-CO')} · Total{' '}
+                    <span className="font-semibold text-foreground tabular-nums">
+                      ${totalPrice.toLocaleString('es-CO', { minimumFractionDigits: 2 })}
+                    </span>
+                  </>
+                ) : (
+                  'Impuestos incluidos · Precio unitario'
+                )}
               </p>
             </div>
 
-            {/* 2. Selector de Variantes Arriba en el Buy Box con Precio Individual por SKU */}
-            <div className="space-y-2.5 pt-3 border-t border-border">
-              <div className="flex items-center justify-between">
-                <h2 className="flex items-center gap-1.5 text-xs uppercase font-mono tracking-wider text-foreground font-bold">
-                  <Layers className="h-3.5 w-3.5 text-brand" />
-                  Elige tu Variante ({variants.length})
-                </h2>
-                <span className="font-mono text-[10px] text-foreground-muted">
-                  Precio por SKU
-                </span>
-              </div>
+            {variants.length > 0 && (
+              <fieldset className="space-y-2.5 border-t border-border pt-5">
+                <legend className="text-sm font-semibold text-foreground mb-2.5">
+                  Elegí tu variante
+                </legend>
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-0.5">
+                  {variants.map((variant: ProductVariant, index: number) => {
+                    const isSelected = activeVariant?.id === variant.id;
+                    const stock = variant.availableStock;
+                    const inStock = variant.canBeSold && (stock === undefined || stock > 0);
+                    const label = variantLabel(variant, index);
 
-              <div className="space-y-2 max-h-64 overflow-y-auto pr-0.5">
-                {variants.map((v: ProductVariant, idx: number) => {
-                  const isSelected = activeVariant?.id === v.id;
-                  const vStock = v.availableStock;
-                  const vHasStock = v.canBeSold && (vStock === undefined || vStock > 0);
-                  const variantMeta = formatVariantDisplay(v, idx);
-                  const variantPrice = v.price ?? product.price;
-
-                  return (
-                    <div
-                      key={v.id}
-                      onClick={() => setSelectedVariantId(v.id)}
-                      className={`cursor-pointer rounded-2xl border p-3.5 transition-all flex items-center justify-between gap-3 ${
-                        isSelected
-                          ? 'border-brand bg-brand/10 ring-1 ring-brand/40 shadow-xs'
-                          : 'border-border bg-surface-muted/40 hover:border-brand/40 hover:bg-surface-muted'
-                      }`}
-                    >
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-bold text-foreground">
-                            {variantMeta.title}
-                          </span>
-                          {vHasStock ? (
-                            <Badge className="bg-success/15 text-success border-success/30 text-[10px] font-mono">
-                              {vStock !== undefined ? `✓ ${vStock} disponibles` : 'Disponible'}
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-danger/15 text-danger border-danger/30 text-[10px] font-mono">
-                              Agotado
-                            </Badge>
-                          )}
-                        </div>
-
-                        {variantMeta.attributePills.length > 0 && (
-                          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                            {variantMeta.attributePills.map((attr, attrIdx) => (
-                              <span
-                                key={`${v.id}-${attr.name}-${attrIdx}`}
-                                className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-0.5 font-mono text-[10px] text-foreground-muted"
-                              >
-                                <strong className="text-foreground">{attr.name}:</strong>{' '}
-                                {attr.value}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        {variantMeta.subtitle && (
-                          <p className="text-[11px] text-foreground-muted">{variantMeta.subtitle}</p>
-                        )}
-                        <span className="text-[11px] font-mono text-foreground-subtle block">
-                          SKU: {v.sku}
-                        </span>
-                      </div>
-
-                      <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
-                        <span className="font-mono text-xs font-bold text-brand tabular-nums">
-                          ${variantPrice.toLocaleString('es-CO')}
-                        </span>
+                    return (
+                      <label
+                        key={variant.id}
+                        title={`SKU ${variant.sku}`}
+                        className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand ${
+                          isSelected
+                            ? 'border-brand bg-brand/5'
+                            : 'border-border hover:border-brand/40'
+                        } ${inStock ? '' : 'opacity-70'}`}
+                      >
+                        <input
+                          type="radio"
+                          name="producto-variante"
+                          className="sr-only"
+                          checked={isSelected}
+                          onChange={() => setSelectedVariantId(variant.id)}
+                          aria-label={label}
+                        />
                         <span
-                          className={`inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold ${
-                            isSelected
-                              ? 'border-brand bg-brand text-primary-foreground'
-                              : 'border-border bg-surface text-transparent'
-                          }`}
                           aria-hidden="true"
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                            isSelected ? 'border-brand' : 'border-border'
+                          }`}
                         >
-                          ✓
+                          {isSelected && <span className="h-2 w-2 rounded-full bg-brand" />}
                         </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
 
-            {/* 3. Disponibilidad de Stock de la Variante Seleccionada */}
-            <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-border">
-              <span className="text-foreground-muted">Disponibilidad en Bodega:</span>
+                        <span className="min-w-0 flex-1 space-y-1">
+                          <span className="block truncate text-sm font-medium text-foreground">
+                            {label}
+                          </span>
+                          <span className="flex items-center gap-2">
+                            {inStock ? (
+                              <Badge className="bg-success/15 text-success border-success/30 text-[10px]">
+                                Disponible
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-danger/15 text-danger border-danger/30 text-[10px]">
+                                Agotado
+                              </Badge>
+                            )}
+                            {inStock && stock !== undefined && (
+                              <span className="text-[11px] text-foreground-muted">
+                                {stock} unid.
+                              </span>
+                            )}
+                          </span>
+                        </span>
+
+                        <span className="shrink-0 text-sm font-medium tabular-nums text-foreground">
+                          ${(variant.price ?? product.price).toLocaleString('es-CO')}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            )}
+
+            <div className="flex items-center justify-between text-sm border-t border-border pt-5">
+              <span className="text-foreground-muted">Disponibilidad</span>
               {isSoldOut ? (
-                <span className="text-danger font-semibold flex items-center gap-1">
-                  <AlertCircle className="h-3.5 w-3.5" /> Agotado
-                </span>
+                <span className="font-medium text-danger">Sin stock</span>
               ) : (
-                <span className="text-success font-semibold flex items-center gap-1">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
+                <span className="font-medium text-success">
                   {availableStock !== undefined
-                    ? `${availableStock} unidades disponibles`
+                    ? `${availableStock} unidades`
                     : 'Stock verificado'}
                 </span>
               )}
             </div>
 
-            {/* 4. Selector de cantidad interactivo */}
-            <div className="space-y-2 pt-2 border-t border-border">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label
-                  htmlFor="quantity-input"
-                  className="text-xs uppercase font-mono tracking-wider text-foreground-muted font-bold"
-                >
-                  Cantidad a comprar
+                <label htmlFor="quantity-input" className="text-sm font-medium text-foreground">
+                  Cantidad
                 </label>
                 {availableStock !== undefined && (
-                  <span className="text-[11px] font-mono text-foreground-muted">
-                    Límite: {availableStock} unid.
+                  <span className="text-[11px] text-foreground-muted">
+                    Máximo {availableStock}
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                   disabled={quantity <= 1 || isSoldOut}
-                  className="border-border text-foreground hover:bg-surface-muted h-10 w-10 p-0 flex items-center justify-center font-bold text-lg rounded-xl"
+                  className="border-border text-foreground hover:bg-surface-muted h-10 w-10 p-0 text-lg rounded-xl"
                 >
                   -
                 </Button>
@@ -697,7 +532,7 @@ export function BuyerProductDetailPage() {
                       setQuantity(parsed);
                     }
                   }}
-                  className="w-24 text-center font-mono font-bold text-lg text-foreground bg-surface-muted border-border h-10 rounded-xl focus:border-brand"
+                  className="w-20 text-center font-medium text-base text-foreground bg-surface-muted border-border h-10 rounded-xl focus:border-brand"
                 />
                 <span className="sr-only">{quantity}</span>
                 <Button
@@ -706,20 +541,19 @@ export function BuyerProductDetailPage() {
                   size="sm"
                   onClick={() => setQuantity((q) => Math.min(maxStock, q + 1))}
                   disabled={quantity >= maxStock || isSoldOut}
-                  className="border-border text-foreground hover:bg-surface-muted h-10 w-10 p-0 flex items-center justify-center font-bold text-lg rounded-xl"
+                  className="border-border text-foreground hover:bg-surface-muted h-10 w-10 p-0 text-lg rounded-xl"
                 >
                   +
                 </Button>
               </div>
               {isExceedingStock && (
-                <p className="text-[11px] text-danger font-mono mt-1">
+                <p className="text-[11px] text-danger">
                   La cantidad máxima disponible en bodega es {maxStock}.
                 </p>
               )}
             </div>
 
-            {/* 5. Acciones Comerciales Arriba: Comprar Ahora y Agregar al Carrito */}
-            <div className="pt-2 space-y-2.5">
+            <div className="space-y-2.5 border-t border-border pt-5">
               <Button
                 type="button"
                 onClick={handleBuyNow}
@@ -730,7 +564,7 @@ export function BuyerProductDetailPage() {
                   addCartItemMutation.isPending ||
                   createCartMutation.isPending
                 }
-                className="w-full h-12 bg-brand hover:bg-brand-strong text-primary-foreground font-bold text-base shadow-lg shadow-brand/25 disabled:opacity-50 disabled:pointer-events-none transition-all active:scale-[0.98] rounded-xl flex items-center justify-center gap-2.5"
+                className="w-full h-12 bg-brand hover:bg-brand-strong text-primary-foreground font-semibold text-base shadow-sm disabled:opacity-50 disabled:pointer-events-none transition-all active:scale-[0.99] rounded-xl flex items-center justify-center gap-2"
               >
                 {isBuyingNow ? (
                   <span className="flex items-center gap-2">
@@ -741,7 +575,7 @@ export function BuyerProductDetailPage() {
                   'Agotado en Bodega'
                 ) : (
                   <span className="flex items-center gap-2">
-                    <Zap className="h-4 w-4 fill-current text-primary-foreground" />
+                    <Zap className="h-4 w-4" />
                     Comprar Ahora
                   </span>
                 )}
@@ -758,7 +592,7 @@ export function BuyerProductDetailPage() {
                   addCartItemMutation.isPending ||
                   createCartMutation.isPending
                 }
-                className="w-full h-11 border-brand/40 bg-brand/5 text-brand hover:bg-brand/15 font-semibold text-sm disabled:opacity-50 transition-all active:scale-[0.98] rounded-xl flex items-center justify-center gap-2"
+                className="w-full h-11 border-brand/40 text-brand hover:bg-brand/5 font-medium text-sm disabled:opacity-50 transition-all active:scale-[0.99] rounded-xl flex items-center justify-center gap-2"
               >
                 {addCartItemMutation.isPending || createCartMutation.isPending ? (
                   <span className="flex items-center gap-2">
@@ -769,31 +603,20 @@ export function BuyerProductDetailPage() {
                   'Variante sin existencias'
                 ) : (
                   <span className="flex items-center gap-2">
-                    <ShoppingBag className="h-4 w-4 text-brand" />
+                    <ShoppingBag className="h-4 w-4" />
                     Agregar al Carrito
                   </span>
                 )}
               </Button>
             </div>
 
-            {/* 6. Garantía Comercial y Confianza */}
-            <div className="rounded-2xl border border-border bg-surface-muted/60 p-4 space-y-2 text-xs">
-              <div className="flex items-center gap-2 text-brand font-semibold">
-                <ShieldCheck className="h-4 w-4 text-success" />
-                <span>Compra 100% Protegida y Segura</span>
-              </div>
-              <p className="text-foreground-muted leading-relaxed">
-                Al pasar a pagar, el inventario queda reservado exclusivamente en bodega durante 15
-                minutos para que completes tu pago sin riesgo de sobreventa.
-              </p>
-              <div className="flex items-center gap-2 text-foreground-muted pt-1 text-[11px]">
-                <Truck className="h-3.5 w-3.5 text-brand" />
-                <span>Despacho directo desde bodega física oficial.</span>
-              </div>
-            </div>
+            <p className="text-[11px] leading-relaxed text-foreground-muted border-t border-border pt-4">
+              Al pasar a pagar, el inventario queda reservado en bodega durante 15 minutos para
+              completar el pago sin riesgo de sobreventa.
+            </p>
           </div>
-        </div>
+        </aside>
       </div>
-    </div>
+    </article>
   );
 }

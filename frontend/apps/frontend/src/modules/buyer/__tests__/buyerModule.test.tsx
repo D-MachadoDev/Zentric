@@ -167,7 +167,7 @@ function mockPagedFromFixtures(fixtures: Product[]) {
       items,
       page,
       size,
-      totalItems: matches.length,
+      totalitems: matches.length,
       totalPages,
     };
   });
@@ -297,7 +297,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
         items: [mockPhysicalProduct, mockDigitalProduct],
         page: 1,
         size: 12,
-        totalItems: 2,
+        totalitems: 2,
         totalPages: 1,
       });
 
@@ -372,7 +372,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
         items: [],
         page: 1,
         size: 12,
-        totalItems: 0,
+        totalitems: 0,
         totalPages: 0,
       });
 
@@ -402,7 +402,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
         items: [mockPhysicalProduct],
         page: 1,
         size: 12,
-        totalItems: 1,
+        totalitems: 1,
         totalPages: 1,
       });
 
@@ -415,7 +415,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
         items: [mockPhysicalProduct],
         page: 1,
         size: 12,
-        totalItems: 25,
+        totalitems: 25,
         totalPages: 3,
       });
 
@@ -635,8 +635,8 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
 
       expect(await screen.findByText('Teclado Mecánico Ergonómico')).toBeInTheDocument();
       expect(screen.getByText(/Switches silenciosos/i)).toBeInTheDocument();
-      expect(screen.getByText('SKU: KB-ERG-01')).toBeInTheDocument();
-      expect(screen.getByText('SKU: KB-ERG-02')).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: /Opción 1/i })).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: /Opción 2/i })).toBeInTheDocument();
       expect(screen.getByText('Disponible')).toBeInTheDocument();
       expect(screen.getByText('Agotado')).toBeInTheDocument();
     });
@@ -728,8 +728,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       await screen.findByText('Teclado Mecánico Ergonómico');
 
       // Seleccionar la segunda variante que está agotada
-      const soldOutVariantRow = screen.getByText('SKU: KB-ERG-02');
-      fireEvent.click(soldOutVariantRow);
+      fireEvent.click(screen.getByRole('radio', { name: /Opción 2/i }));
 
       expect(screen.getByRole('button', { name: /Variante sin existencias/i })).toBeDisabled();
     });
@@ -754,6 +753,43 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       expect(
         screen.getByText('Sin descripción detallada provista por el vendedor.'),
       ).toBeInTheDocument();
+    });
+
+    it('muestra el collage de fotos y cambia la imagen activa desde las miniaturas (S1)', async () => {
+      mockParams = { productId: mockPhysicalProduct.id };
+      vi.spyOn(appServices.api, 'getProductById').mockResolvedValue({
+        ...mockPhysicalProduct,
+        imageUrls: ['https://pics.test/a.jpg', 'https://pics.test/b.jpg', 'https://pics.test/c.jpg'],
+      });
+      vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([]);
+
+      renderWithClient(<BuyerProductDetailPage />);
+      await screen.findByText('Teclado Mecánico Ergonómico');
+
+      const thumbs = screen.getAllByRole('button', { name: /Ver foto/i });
+      expect(thumbs).toHaveLength(3);
+      expect(screen.getByRole('img', { name: 'Teclado Mecánico Ergonómico' })).toHaveAttribute(
+        'src',
+        'https://pics.test/a.jpg',
+      );
+
+      fireEvent.click(thumbs[1]);
+      expect(screen.getByRole('img', { name: 'Teclado Mecánico Ergonómico' })).toHaveAttribute(
+        'src',
+        'https://pics.test/b.jpg',
+      );
+    });
+
+    it('no expone el SKU crudo en la ficha del comprador (S2)', async () => {
+      mockParams = { productId: mockPhysicalProduct.id };
+      vi.spyOn(appServices.api, 'getProductById').mockResolvedValue(mockPhysicalProduct);
+      vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([]);
+
+      renderWithClient(<BuyerProductDetailPage />);
+      await screen.findByText('Teclado Mecánico Ergonómico');
+
+      expect(screen.queryByText(/KB-ERG-01/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/KB-ERG-02/)).not.toBeInTheDocument();
     });
   });
 
