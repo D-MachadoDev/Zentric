@@ -11,6 +11,8 @@ import {
   ShieldAlert,
   ShoppingBag,
   Sliders,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   Alert,
@@ -19,18 +21,24 @@ import {
   Badge,
   Button,
   Skeleton,
+  Pagination,
 } from '@zentric/ui';
 import {
-  useFulfillmentsQuery,
+  useFulfillmentsPagedQuery,
   useHealthQuery,
-  useInvoicesQuery,
-  useOrdersQuery,
-  useReturnsQuery,
+  useInvoicesPagedQuery,
+  useOrdersPagedQuery,
+  useReturnsPagedQuery,
 } from '../../application/services';
 import type {
   FulfillmentOrder,
   Invoice,
+  ListFulfillmentsPagedParams,
+  ListInvoicesPagedParams,
+  ListOrdersPagedParams,
+  ListReturnsPagedParams,
   OrderListItem,
+  PagedResult,
   ReturnRequest,
 } from '../../domain';
 import {
@@ -47,8 +55,14 @@ import {
  * Opera en modo de sólo lectura sobre pedidos, despachos, devoluciones y facturas.
  * Regla estricta de privacidad: NUNCA invoca `/api/users` dado que la política
  * `UserAdministration` reserva los datos personales (PII) al Administrador.
+ * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
  */
 export function SupervisorDashboardPage() {
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [fulfillmentsPage, setFulfillmentsPage] = useState(1);
+  const [returnsPage, setReturnsPage] = useState(1);
+  const [invoicesPage, setInvoicesPage] = useState(1);
+
   const {
     data: health,
     isLoading: isLoadingHealth,
@@ -56,33 +70,41 @@ export function SupervisorDashboardPage() {
     refetch: refetchHealth,
   } = useHealthQuery();
 
-  const {
-    data: orders = [],
-    isLoading: isLoadingOrders,
-    isError: isErrorOrders,
-    refetch: refetchOrders,
-  } = useOrdersQuery();
+  const ordersParams: ListOrdersPagedParams = {
+    page: ordersPage - 1,
+    size: 10,
+  };
+  const { data: ordersResult, isLoading: isLoadingOrders, isError: isErrorOrders, refetch: refetchOrders } = useOrdersPagedQuery(ordersParams);
+  const orders = ordersResult?.items ?? [];
+  const ordersTotalItems = ordersResult?.totalItems ?? 0;
+  const ordersTotalPages = ordersResult?.totalPages ?? 0;
 
-  const {
-    data: fulfillments = [],
-    isLoading: isLoadingFulfillments,
-    isError: isErrorFulfillments,
-    refetch: refetchFulfillments,
-  } = useFulfillmentsQuery();
+  const fulfillmentsParams: ListFulfillmentsPagedParams = {
+    page: fulfillmentsPage - 1,
+    size: 10,
+  };
+  const { data: fulfillmentsResult, isLoading: isLoadingFulfillments, isError: isErrorFulfillments, refetch: refetchFulfillments } = useFulfillmentsPagedQuery(fulfillmentsParams);
+  const fulfillments = fulfillmentsResult?.items ?? [];
+  const fulfillmentsTotalItems = fulfillmentsResult?.totalItems ?? 0;
+  const fulfillmentsTotalPages = fulfillmentsResult?.totalPages ?? 0;
 
-  const {
-    data: returns = [],
-    isLoading: isLoadingReturns,
-    isError: isErrorReturns,
-    refetch: refetchReturns,
-  } = useReturnsQuery();
+  const returnsParams: ListReturnsPagedParams = {
+    page: returnsPage - 1,
+    size: 10,
+  };
+  const { data: returnsResult, isLoading: isLoadingReturns, isError: isErrorReturns, refetch: refetchReturns } = useReturnsPagedQuery(returnsParams);
+  const returns = returnsResult?.items ?? [];
+  const returnsTotalItems = returnsResult?.totalItems ?? 0;
+  const returnsTotalPages = returnsResult?.totalPages ?? 0;
 
-  const {
-    data: invoices = [],
-    isLoading: isLoadingInvoices,
-    isError: isErrorInvoices,
-    refetch: refetchInvoices,
-  } = useInvoicesQuery();
+  const invoicesParams: ListInvoicesPagedParams = {
+    page: invoicesPage - 1,
+    size: 10,
+  };
+  const { data: invoicesResult, isLoading: isLoadingInvoices, isError: isErrorInvoices, refetch: refetchInvoices } = useInvoicesPagedQuery(invoicesParams);
+  const invoices = invoicesResult?.items ?? [];
+  const invoicesTotalItems = invoicesResult?.totalItems ?? 0;
+  const invoicesTotalPages = invoicesResult?.totalPages ?? 0;
 
   const isLoading =
     isLoadingHealth ||
