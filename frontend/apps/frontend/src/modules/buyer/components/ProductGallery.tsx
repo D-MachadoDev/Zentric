@@ -21,7 +21,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
 
   return (
     <figure className="space-y-3">
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-surface-muted">
+      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-surface-muted">
         {isBroken ? (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-foreground-muted">
             <ImageOff className="h-8 w-8" aria-hidden="true" />

@@ -295,7 +295,7 @@ export function BuyerProductDetailPage() {
   return (
     <article className="w-full max-w-full space-y-8">
       {/* Navegación */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-4">
         <Link to="/buyer/catalog">
           <Button
             variant="ghost"
@@ -304,12 +304,6 @@ export function BuyerProductDetailPage() {
           >
             <ArrowLeft className="h-4 w-4 mr-1.5" />
             Catálogo
-          </Button>
-        </Link>
-        <Link to="/buyer/cart">
-          <Button variant="outline" size="sm" className="border-border text-brand">
-            <ShoppingBag className="h-4 w-4 mr-2" />
-            Carrito
           </Button>
         </Link>
       </div>
@@ -335,67 +329,41 @@ export function BuyerProductDetailPage() {
         </Alert>
       )}
 
-      {/* Encabezado */}
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge
-            variant="outline"
-            className={
-              isPhysical
-                ? 'border-brand/30 text-brand bg-brand/5'
-                : 'border-info/30 text-info bg-info/5'
-            }
-          >
-            {isPhysical ? (
-              <span className="flex items-center gap-1">
-                <Package className="h-3 w-3" /> Producto Físico
-              </span>
-            ) : (
-              <span className="flex items-center gap-1">
-                <FileCode className="h-3 w-3" /> Producto Digital
-              </span>
-            )}
-          </Badge>
-          <span className="text-xs text-foreground-muted">Marketplace verificado</span>
-        </div>
-
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-[-0.02em] text-foreground leading-[1.1] max-w-[22ch]">
-          {product.name}
-        </h1>
-      </header>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-        {/* Galería, descripción y condiciones */}
-        <div className="lg:col-span-7 space-y-8">
+      <div className="grid grid-cols-1 items-start gap-x-10 gap-y-8 lg:grid-cols-12">
+        {/* Galería */}
+        <div className="lg:col-span-7 lg:col-start-1 lg:row-start-1">
           <ProductGallery key={product.id} images={images} alt={product.name} />
-
-          <section className="space-y-2.5">
-            <h2 className="text-lg font-semibold text-foreground">Descripción</h2>
-            <p className="text-[15px] leading-relaxed text-foreground-muted max-w-[68ch] whitespace-pre-line">
-              {product.description || 'Sin descripción detallada provista por el vendedor.'}
-            </p>
-          </section>
-
-          <section className="border-t border-border pt-2">
-            <dl className="divide-y divide-border">
-              {conditions.map((condition) => (
-                <div key={condition.title} className="flex gap-3 py-3.5">
-                  <condition.icon className="h-4 w-4 mt-0.5 shrink-0 text-brand" aria-hidden="true" />
-                  <div className="space-y-0.5">
-                    <dt className="text-sm font-medium text-foreground">{condition.title}</dt>
-                    <dd className="text-xs leading-relaxed text-foreground-muted">
-                      {condition.detail}
-                    </dd>
-                  </div>
-                </div>
-              ))}
-            </dl>
-          </section>
         </div>
 
-        {/* Buy box: la única superficie elevada de la ficha */}
-        <aside className="lg:col-span-5">
-          <div className="surface-hairline rounded-2xl p-6 sm:p-7 space-y-6 lg:sticky lg:top-20">
+        {/* Título, precio y compra */}
+        <div className="space-y-4 lg:col-span-5 lg:col-start-8 lg:row-span-2 lg:row-start-1">
+          <header className="space-y-2.5">
+            <Badge
+              variant="outline"
+              className={
+                isPhysical
+                  ? 'border-brand/30 text-brand bg-brand/5'
+                  : 'border-info/30 text-info bg-info/5'
+              }
+            >
+              {isPhysical ? (
+                <span className="flex items-center gap-1">
+                  <Package className="h-3 w-3" /> Producto Físico
+                </span>
+              ) : (
+                <span className="flex items-center gap-1">
+                  <FileCode className="h-3 w-3" /> Producto Digital
+                </span>
+              )}
+            </Badge>
+
+            <h1 className="text-2xl sm:text-[28px] font-extrabold tracking-[-0.02em] text-foreground leading-[1.15]">
+              {product.name}
+            </h1>
+          </header>
+
+          {/* Buy box: la única superficie elevada de la ficha */}
+          <div className="surface-hairline rounded-2xl p-6 sm:p-7 space-y-5">
             <div className="space-y-1">
               <div className="text-3xl font-bold tabular-nums text-foreground">
                 ${unitPrice.toLocaleString('es-CO', { minimumFractionDigits: 2 })}
@@ -467,17 +435,19 @@ export function BuyerProductDetailPage() {
                                 Agotado
                               </Badge>
                             )}
-                            {inStock && stock !== undefined && (
+                            {inStock && stock !== undefined && stock <= 3 && (
                               <span className="text-[11px] text-foreground-muted">
-                                {stock} unid.
+                                Últimas {stock}
                               </span>
                             )}
                           </span>
                         </span>
 
-                        <span className="shrink-0 text-sm font-medium tabular-nums text-foreground">
-                          ${(variant.price ?? product.price).toLocaleString('es-CO')}
-                        </span>
+                        {variant.price != null && variant.price !== product.price && (
+                          <span className="shrink-0 text-sm font-medium tabular-nums text-foreground">
+                            ${variant.price.toLocaleString('es-CO')}
+                          </span>
+                        )}
                       </label>
                     );
                   })}
@@ -485,18 +455,20 @@ export function BuyerProductDetailPage() {
               </fieldset>
             )}
 
-            <div className="flex items-center justify-between text-sm border-t border-border pt-5">
-              <span className="text-foreground-muted">Disponibilidad</span>
-              {isSoldOut ? (
-                <span className="font-medium text-danger">Sin stock</span>
-              ) : (
-                <span className="font-medium text-success">
-                  {availableStock !== undefined
-                    ? `${availableStock} unidades`
-                    : 'Stock verificado'}
-                </span>
-              )}
-            </div>
+            {variants.length === 0 && (
+              <div className="flex items-center justify-between text-sm border-t border-border pt-5">
+                <span className="text-foreground-muted">Disponibilidad</span>
+                {isSoldOut ? (
+                  <span className="font-medium text-danger">Sin stock</span>
+                ) : (
+                  <span className="font-medium text-success">
+                    {availableStock !== undefined
+                      ? `${availableStock} unidades`
+                      : 'Stock verificado'}
+                  </span>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -615,12 +587,37 @@ export function BuyerProductDetailPage() {
               </Button>
             </div>
 
-            <p className="text-[11px] leading-relaxed text-foreground-muted border-t border-border pt-4">
+            <dl className="space-y-3 border-t border-border pt-5">
+              {conditions.map((condition) => (
+                <div key={condition.title} className="flex gap-3">
+                  <condition.icon
+                    className="h-4 w-4 mt-0.5 shrink-0 text-brand"
+                    aria-hidden="true"
+                  />
+                  <div className="space-y-0.5">
+                    <dt className="text-sm font-medium text-foreground">{condition.title}</dt>
+                    <dd className="text-xs leading-relaxed text-foreground-muted">
+                      {condition.detail}
+                    </dd>
+                  </div>
+                </div>
+              ))}
+            </dl>
+
+            <p className="text-[11px] leading-relaxed text-foreground-muted">
               Al pasar a pagar, el inventario queda reservado en bodega durante 15 minutos para
               completar el pago sin riesgo de sobreventa.
             </p>
           </div>
-        </aside>
+        </div>
+
+        {/* Descripción */}
+        <section className="space-y-2.5 border-t border-border pt-6 lg:col-span-7 lg:col-start-1 lg:row-start-2">
+          <h2 className="text-lg font-semibold text-foreground">Descripción</h2>
+          <p className="text-[15px] leading-relaxed text-foreground-muted max-w-[68ch] whitespace-pre-line">
+            {product.description || 'Sin descripción detallada provista por el vendedor.'}
+          </p>
+        </section>
       </div>
     </article>
   );
