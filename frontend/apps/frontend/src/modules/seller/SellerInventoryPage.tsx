@@ -116,7 +116,14 @@ export function SellerInventoryPage() {
     }
   }, [targetVariantId, page, inventories.length]);
 
-  // Mapeos auxiliares para nombres y SKUs
+  // Limpia todos los campos del formulario de abastecer
+  const clearForm = () => {
+    setTargetVariantId('');
+    setTargetWarehouseId('');
+    setStockQuantity('1');
+    setFormError(null);
+    setFormSuccess(null);
+  };
   const warehouseMap = new Map<string, Warehouse>(allWarehouses.map((w: Warehouse) => [w.id, w]));
   const variantInfoMap = new Map<string, { sku: string; productName: string }>();
 
@@ -565,21 +572,32 @@ export function SellerInventoryPage() {
                 </p>
               </div>
 
-              <Button
-                type="submit"
-                disabled={addStockMutation.isPending}
-                className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold" title="Ingresar existencias en la bodega seleccionada"
-              >
-                {addStockMutation.isPending ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Registrando...
-                  </>
-                ) : (
-                  <>
-                    <ArrowUpRight className="h-4 w-4 mr-2" /> Ingresar Existencias
-                  </>
-                )}
-              </Button>
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  onClick={clearForm}
+                  disabled={addStockMutation.isPending}
+                  className="w-full bg-muted text-foreground hover:bg-muted/90 font-semibold mr-2"
+                  title="Limpiar campos del formulario"
+                >
+                  Limpiar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={addStockMutation.isPending}
+                  className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold" title="Ingresar existencias en la bodega seleccionada"
+                >
+                  {addStockMutation.isPending ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Registrando...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowUpRight className="h-4 w-4 mr-2" /> Ingresar Existencias
+                    </>
+                  )}
+                </Button>
+              </div>
             </form>
           </div>
 
