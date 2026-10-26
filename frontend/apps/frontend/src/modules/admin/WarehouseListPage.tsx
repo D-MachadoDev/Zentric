@@ -12,6 +12,8 @@ import {
   Edit2,
   X,
   User as UserIcon,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   Button,
@@ -21,16 +23,17 @@ import {
   Alert,
   AlertTitle,
   AlertDescription,
+  Pagination,
 } from '@zentric/ui';
 import {
-  useWarehousesQuery,
+  useWarehousesPagedQuery,
   useCreateWarehouseMutation,
   useUpdateWarehouseMutation,
   useUsersQuery,
   getDefaultSession,
 } from '../../application/services';
 import { CreateWarehouseSchema, UpdateWarehouseSchema } from '../../application/schemas';
-import type { CreateWarehouseInput, UpdateWarehouseInput, Warehouse, User } from '../../domain';
+import type { CreateWarehouseInput, ListWarehousesPagedParams, UpdateWarehouseInput, Warehouse, User } from '../../domain';
 import { WarehouseType, UserRole } from '../../domain';
 
 export function WarehouseListPage() {
@@ -41,6 +44,14 @@ export function WarehouseListPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('All');
+  const [page, setPage] = useState(1);
+
+  // Pagination params for server-side pagination
+  const params: ListWarehousesPagedParams = {
+    vendorId: isSellerMode ? currentUserId : undefined,
+    page: page - 1, // backend uses 0-based
+    size: 20,
+  };
 
   const [formData, setFormData] = useState<CreateWarehouseInput>({
     name: '',
@@ -59,19 +70,14 @@ export function WarehouseListPage() {
   });
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const [editError, setEditError] = useState<string | null>(null);
-
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const {
-    data: warehouses = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useWarehousesQuery();
+  const { data: pagedResult, isLoading, isError, error, refetch, isFetching } = useWarehousesPagedQuery(params);
+  const warehouses = pagedResult?.items ?? [];
+  const totalItems = pagedResult?.totalItems ?? 0;
+  const totalPages = pagedResult?.totalPages ?? 0;
 
   const { data: users = [] } = useUsersQuery(undefined, undefined, { enabled: !isSellerMode });
   const sellerUsers = users.filter((u: User) => u.role === UserRole.Seller);
@@ -424,7 +430,18 @@ export function WarehouseListPage() {
               </div>
             </div>
           )}
+          </div>
         </section>
+
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={setPage}
+            className="mt-6"
+          />
+        )}
 
         {/* Lado Derecho (35%): Formulario de Registro de Bodega ─────────── */}
         <section className="lg:col-span-4 space-y-6">
