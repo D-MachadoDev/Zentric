@@ -13,6 +13,7 @@ import type {
   CreateProductVariantInput,
   CreateUserInput,
   CreateWarehouseInput,
+  UpdateProductInput,
   UpdateWarehouseInput,
   CreatedProduct,
   CurrentUser,
@@ -320,8 +321,10 @@ export class HttpClient implements ZentricApiPort {
   }
 
   listUsers(role?: UserRole): Promise<User[]> {
-    const query = role ? `?role=${encodeURIComponent(role)}` : '';
-    return this.#json<User[]>(`/api/Users${query}`, { method: 'GET' });
+    return this.#listItems<User>(
+      '/api/Users',
+      role ? { role } : undefined,
+    );
   }
 
   listUsersPaged(params?: ListUsersPagedParams): Promise<PagedResult<User>> {
@@ -371,8 +374,10 @@ export class HttpClient implements ZentricApiPort {
   }
 
   listWarehouses(vendorId?: string): Promise<Warehouse[]> {
-    const query = vendorId ? `?vendorId=${encodeURIComponent(vendorId)}` : '';
-    return this.#json<Warehouse[]>(`/api/Warehouses${query}`, { method: 'GET' });
+    return this.#listItems<Warehouse>(
+      '/api/Warehouses',
+      vendorId ? { vendorId } : undefined,
+    );
   }
 
   listWarehousesPaged(params?: ListWarehousesPagedParams): Promise<PagedResult<Warehouse>> {
@@ -446,6 +451,13 @@ export class HttpClient implements ZentricApiPort {
     return this.#json<void>(
       `/api/Catalog/products/${encodeURIComponent(productId)}/suspend`,
       this.#post(),
+    );
+  }
+
+  updateProduct(productId: string, input: UpdateProductInput): Promise<void> {
+    return this.#json<void>(
+      `/api/Catalog/products/${encodeURIComponent(productId)}`,
+      this.#put(input),
     );
   }
 
