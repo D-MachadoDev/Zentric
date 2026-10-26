@@ -14,7 +14,7 @@ Panel operativo del vendedor para gestionar catálogo, inventario, pedidos propi
 - Perfil tienda (nombre, descripción, logo, contacto, estado)
 
 ## 3. Dashboard
-- **KPIs**: Ventas (últimos 30d), Pedidos pendientes, Productos con stock < umbral, Alertas (stock 0, pedidos sin despachar > 48h).
+- **KPIs**: Ventas (últimos 30d), Pedidos pendientes, Productos con stock < umbral, Alertas (stock 0, pedidos sin despachar > 48h), **Clientes Potenciales** (pedidos en `PendingPayment` = checkout iniciado, llegaron al método de pago).
 - **Accesos rápidos**: "Añadir producto", "Abastecer stock", "Ver pedidos urgentes".
 - **Estados vacíos**: "No hay productos publicados" + CTA crear primero.
 
@@ -37,8 +37,14 @@ Panel operativo del vendedor para gestionar catálogo, inventario, pedidos propi
 - **Exportar**: CSV de posiciones actuales (permiso INC-09).
 
 ## 6. Pedidos (Líneas propias)
+
+**Regla de negocio (leads):** `PendingPayment` NO es un pedido recibido — es un cliente potencial (lead). Los pedidos recibidos se limitan a `Paid`, `Dispatched`, `Delivered` y `Cancelled`. Los pedidos en `PendingPayment` se contabilizan en el dashboard del vendedor como "Clientes Potenciales" (checkout iniciado, llegó al método de pago) y NO aparecen en la lista de Pedidos Recibidos.
+
+> Nota: los "clicks en card" (visualizaciones de producto) son un evento de mayor volumen y requieren tracking backend dedicado (fuera de alcance de esta iteración frontend-only). Por ahora solo se contabiliza el checkout iniciado (`PendingPayment`).
+
 - **Listado**: Solo líneas donde `OrderItem.VendorId == Seller.VendorId`. Agrupado por CustomerOrder.
-- **Estados visibles**: PendingPayment, Paid, Dispatched, Delivered, Cancelled (con cause).
+- **Estados visibles en Pedidos Recibidos**: Paid, Dispatched, Delivered, Cancelled (con cause). `PendingPayment` queda excluido (es lead).
+- **Estados visibles en Dashboard (leads)**: PendingPayment → "Clientes Potenciales".
 - **Acciones según estado**:
   - Paid → Ver cumplimientos asignados.
   - Dispatched → Ver tracking.

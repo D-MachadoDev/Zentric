@@ -7,6 +7,7 @@ import { useInventoriesQuery } from '../../application/services/inventory';
 import { useReturnsQuery } from '../../application/services/returns';
 import { getDefaultSession } from '../../application/services';
 import {
+  OrderStatus,
   ProductStatus,
   FulfillmentStatus,
   InvoiceType,
@@ -50,6 +51,7 @@ export function SellerDashboardPage() {
   const { data: productsResult, isLoading: isLoadingProducts, isError: isErrorProducts } = useProductsPagedQuery({ vendorId });
   const products = productsResult?.items ?? [];
   const { data: orders, isLoading: isLoadingOrders } = useOrdersQuery();
+  const { data: pendingPaymentOrders } = useOrdersQuery(OrderStatus.PendingPayment);
   const { data: fulfillments } = useFulfillmentsQuery();
   const { data: invoices } = useInvoicesQuery();
   const { data: inventories } = useInventoriesQuery();
@@ -78,6 +80,7 @@ export function SellerDashboardPage() {
   ).length;
 
   const recentOrders = (orders ?? []).slice(0, 5);
+  const potentialCustomersCount = (pendingPaymentOrders ?? []).length;
 
   if (isLoadingProducts || isLoadingOrders) {
     return (
@@ -141,7 +144,7 @@ export function SellerDashboardPage() {
       )}
 
       {/* ── Hero KPI Strip Asimétrico ───────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatCard
           title="Liquidación Neta Acumulada"
           value={<MoneyAmount amount={netSettledTotal} currency="COP" />}
@@ -172,6 +175,16 @@ export function SellerDashboardPage() {
           }}
           icon={Truck}
           subtitle="Órdenes pagadas en espera de empaque"
+        />
+        <StatCard
+          title="Clientes Potenciales"
+          value={potentialCustomersCount.toString()}
+          badge={{
+            label: potentialCustomersCount > 0 ? 'Leads' : 'Sin Leads',
+            tone: potentialCustomersCount > 0 ? 'info' : 'neutral',
+          }}
+          icon={TrendingUp}
+          subtitle="Pedidos en pago pendiente (checkout iniciado)"
         />
       </div>
 

@@ -81,7 +81,7 @@ export function SellerOrdersPage() {
     });
   });
 
-  const allOrders = orders ?? [];
+  const allOrders = (orders ?? []).filter((order: OrderListItem) => order.status !== OrderStatus.PendingPayment);
 
   const filteredOrders = allOrders.filter((order: OrderListItem) => {
     const matchesSearch =
@@ -197,7 +197,9 @@ export function SellerOrdersPage() {
               className="bg-surface border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
             >
               <option value="All">Todos los estados</option>
-              {Object.values(OrderStatus).map((status) => (
+              {Object.values(OrderStatus)
+                .filter((status) => status !== OrderStatus.PendingPayment)
+                .map((status) => (
                 <option key={status} value={status}>
                   {NOMBRES_DE_ESTADO_DE_PEDIDO[status]}
                 </option>
