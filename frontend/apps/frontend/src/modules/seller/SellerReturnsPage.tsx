@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   useReturnsPagedQuery,
   useApproveReturnMutation,
@@ -36,7 +36,6 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
-  ChevronRight,
   ShieldAlert,
   ShieldCheck,
   Check,
@@ -45,7 +44,7 @@ import {
 
 
 /**
- * Resolución Comercial de Devoluciones del Vendedor (SellerReturnsPage - Frontend-Role-Modules §2.3).
+ * Resolución Comercial de Devoluciones del Vendedor (SellerReturnsPage - Frontend-Role-Modules sección2.3).
  * Split-Frame Asimétrico (65% Bandeja de Devoluciones / 35% Estación de Decisión Comercial).
  *
  * Cumplimiento de AD * Exhibe el veredicto de inspección física (isGoodCondition) emitido por el operador logístico

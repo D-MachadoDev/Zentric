@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useOrdersPagedQuery, useOrderQuery } from '../../application/services/orders';
 import { useProductsPagedQuery } from '../../application/services/catalog';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -33,12 +33,11 @@ import {
   RefreshCw,
   AlertCircle,
   ShieldCheck,
-  ChevronRight,
 } from 'lucide-react';
 
 
 /**
- * Vista de Pedidos para el Vendedor (SellerOrdersPage - Frontend-Role-Modules §2.3).
+ * Vista de Pedidos para el Vendedor (SellerOrdersPage - Frontend-Role-Modules sección2.3).
  * Split-Frame Asimétrico (65% Listado de Pedidos / 35% Detalle SellerOrderView).
  * Garantiza cumplimiento de ADMuestra exclusivamente líneas propias y vendorSubtotal,
  * ocultando datos del comprador (PII) y márgenes de otros comerciantes.

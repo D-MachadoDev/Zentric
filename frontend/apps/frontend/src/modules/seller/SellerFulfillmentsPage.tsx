@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   useFulfillmentsPagedQuery,
   usePackFulfillmentMutation,
@@ -40,14 +40,13 @@ import {
   RefreshCw,
   AlertCircle,
   CheckCircle2,
-  ChevronRight,
   Warehouse as WarehouseIcon,
   Ban,
 } from 'lucide-react';
 
 
 /**
- * Cola Operativa de Despachos del Vendedor (SellerFulfillmentsPage - Frontend-Role-Modules §2.3).
+ * Cola Operativa de Despachos del Vendedor (SellerFulfillmentsPage - Frontend-Role-Modules sección2.3).
  * Split-Frame Asimétrico (65% Cola de Despachos / 35% Estación de Empaque y Reporte de Quiebre).
  *
  * Invariante de Seguridad Estricta:

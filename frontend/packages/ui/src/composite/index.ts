@@ -17,3 +17,4 @@ export * from './DataTable';
 // Alias historico: el mismo compuesto con el nombre anterior.
 export { ZentricDataTable } from './ZentricDataTable';
 export * from './SearchInput';
+export * from './Pagination';

@@ -1,4 +1,4 @@
-import { ProblemDetailsError } from '../../domain';
+﻿import { ProblemDetailsError } from '../../domain';
 import type {
   AddCartItemInput,
   AddStockInput,
@@ -134,7 +134,7 @@ export class HttpClient implements ZentricApiPort {
   // ── Núcleo de peticiones ───────────────────────────────────────────────────
 
   /**
-   * Envía una petición con la política de transporte de §1:
+   * Envía una petición con la política de transporte de sección1:
    * - Cabeceras estándar Accept y Content-Type
    * - Inyección de Bearer token desde SessionPort
    * - Prohibición de cabeceras forjables (X-Buyer-Id, X-User-Id, X-Role)
@@ -156,8 +156,10 @@ export class HttpClient implements ZentricApiPort {
 
     const method = (init.method ?? 'GET').toUpperCase();
 
+    const requestToken = withAuth ? this.#session.getAccessToken() : null;
+
     if (withAuth) {
-      const token = this.#session.getAccessToken();
+      const token = requestToken;
       if (token !== null) {
         headers.set('Authorization', `Bearer ${token}`);
       } else if (
@@ -176,17 +178,30 @@ export class HttpClient implements ZentricApiPort {
     const canRetry = method === 'GET';
     let retriesLeft = canRetry ? 1 : 0;
 
+    const externalSignal = init.signal ?? null;
+    const timeoutSignal = AbortSignal.timeout(this.#timeoutMs);
+    const combinedSignal = externalSignal
+      ? (typeof AbortSignal.any === 'function'
+          ? AbortSignal.any([externalSignal, timeoutSignal])
+          : timeoutSignal)
+      : timeoutSignal;
+
     for (;;) {
       try {
         const response = await this.#fetchImpl(url, {
           ...init,
           headers,
-          signal: AbortSignal.timeout(this.#timeoutMs),
+          signal: combinedSignal,
         });
 
         if (!response.ok) {
           // 401 Unauthorized limpia la sesión en RAM si se había enviado un token previo
-          if (response.status === 401 && withAuth && this.#session.getAccessToken() !== null) {
+          if (
+            response.status === 401 &&
+            withAuth &&
+            requestToken !== null &&
+            this.#session.getAccessToken() === requestToken
+          ) {
             this.#session.clear();
           }
 
@@ -204,6 +219,8 @@ export class HttpClient implements ZentricApiPort {
 
         return response;
       } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') throw error;
+        if (error instanceof Error && error.name === 'AbortError') throw error;
         if (error instanceof ProblemDetailsError) throw error;
 
         // Error transitorio de red o timeout
@@ -233,10 +250,10 @@ export class HttpClient implements ZentricApiPort {
    * arreglo plano que esperan las pantallas sin paginacion. Tolera tambien el
    * arreglo directo para no romper contra backends o mocks antiguos.
    */
-  async #listItems<T>(path: string, filters?: Record<string, string>): Promise<T[]> {
+  async #listItems<T>(path: string, filters?: Record<string, string>, signal?: AbortSignal): Promise<T[]> {
     const params = new URLSearchParams(filters);
     params.set('size', String(FLAT_LIST_SIZE));
-    const result = await this.#json<PagedResult<T> | T[]>(`${path}?${params.toString()}`);
+    const result = await this.#json<PagedResult<T> | T[]>(`${path}?${params.toString()}`, { method: 'GET', signal });
     if (Array.isArray(result)) return result;
     return result?.items ?? [];
   }
@@ -281,8 +298,8 @@ export class HttpClient implements ZentricApiPort {
     return this.#json<AuthToken>('/api/auth/login', this.#post(input), false);
   }
 
-  getCurrentUser(): Promise<CurrentUser> {
-    return this.#json<CurrentUser>('/api/auth/me', { method: 'GET' });
+  getCurrentUser(signal?: AbortSignal): Promise<CurrentUser> {
+    return this.#json<CurrentUser>('/api/auth/me', { method: 'GET', signal });
   }
 
   currentUser(): Promise<CurrentUser> {
@@ -413,7 +430,7 @@ export class HttpClient implements ZentricApiPort {
     );
   }
 
-  listProductsPaged(params?: ListProductsPagedParams): Promise<PagedResult<Product>> {
+  listProductsPaged(params?: ListProductsPagedParams, signal?: AbortSignal): Promise<PagedResult<Product>> {
     const queryParams = new URLSearchParams();
     if (params?.vendorId) queryParams.set('vendorId', params.vendorId);
     if (params?.page !== undefined) queryParams.set('page', String(params.page));
@@ -425,11 +442,11 @@ export class HttpClient implements ZentricApiPort {
     if (params?.sort) queryParams.set('sort', params.sort);
     if (params?.type) queryParams.set('type', params.type);
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    return this.#json<PagedResult<Product>>(`/api/Catalog/products/paged${query}`, { method: 'GET' });
+    return this.#json<PagedResult<Product>>(`/api/Catalog/products/paged${query}`, { method: 'GET', signal });
   }
 
-  listCategories(): Promise<Category[]> {
-    return this.#json<Category[]>('/api/Catalog/categories', { method: 'GET' });
+  listCategories(signal?: AbortSignal): Promise<Category[]> {
+    return this.#json<Category[]>('/api/Catalog/categories', { method: 'GET', signal });
   }
 
   listHeroProducts(count?: number): Promise<Product[]> {
@@ -491,21 +508,21 @@ export class HttpClient implements ZentricApiPort {
     return this.#json<void>(`/api/Orders/${encodeURIComponent(orderId)}/pay`, this.#post());
   }
 
-  listOrders(status?: OrderStatus | string): Promise<OrderListItem[]> {
-    return this.#listItems<OrderListItem>('/api/Orders', status ? { status } : undefined);
+  listOrders(status?: OrderStatus | string, signal?: AbortSignal): Promise<OrderListItem[]> {
+    return this.#listItems<OrderListItem>('/api/Orders', status ? { status } : undefined, signal);
   }
 
-  listOrdersPaged(params?: ListOrdersPagedParams): Promise<PagedResult<OrderListItem>> {
+  listOrdersPaged(params?: ListOrdersPagedParams, signal?: AbortSignal): Promise<PagedResult<OrderListItem>> {
     const queryParams = new URLSearchParams();
     if (params?.status) queryParams.set('status', params.status);
     if (params?.page !== undefined) queryParams.set('page', String(params.page));
     if (params?.size !== undefined) queryParams.set('size', String(params.size));
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    return this.#json<PagedResult<OrderListItem>>(`/api/Orders${query}`, { method: 'GET' });
+    return this.#json<PagedResult<OrderListItem>>(`/api/Orders${query}`, { method: 'GET', signal });
   }
 
-  getOrderById(id: string): Promise<Order | SellerOrderView> {
-    return this.#json<Order | SellerOrderView>(`/api/Orders/${encodeURIComponent(id)}`, { method: 'GET' });
+  getOrderById(id: string, signal?: AbortSignal): Promise<Order | SellerOrderView> {
+    return this.#json<Order | SellerOrderView>(`/api/Orders/${encodeURIComponent(id)}`, { method: 'GET', signal });
   }
 
   getOrder(id: string): Promise<Order | SellerOrderView> {
@@ -625,7 +642,7 @@ export class HttpClient implements ZentricApiPort {
   }
 
   listInvoices(): Promise<Invoice[]> {
-    return this.#json<Invoice[]>('/api/Billing/invoices', { method: 'GET' });
+    return this.#listItems<Invoice>('/api/Billing/invoices');
   }
 
   listInvoicesPaged(params?: ListInvoicesPagedParams): Promise<PagedResult<Invoice>> {
@@ -637,10 +654,7 @@ export class HttpClient implements ZentricApiPort {
   }
 
   getInvoicesByOrder(orderId: string): Promise<Invoice[]> {
-    return this.#json<Invoice[]>(
-      `/api/Billing/invoices/order/${encodeURIComponent(orderId)}`,
-      { method: 'GET' },
-    );
+    return this.#listItems<Invoice>(`/api/Billing/invoices/order/${encodeURIComponent(orderId)}`);
   }
 
 }
