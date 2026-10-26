@@ -37,7 +37,7 @@ import {
 export function BuyerProfilePage() {
   const { user } = useAuth();
   const { data: orders = [] } = useOrdersQuery();
-  const { data: profile } = useUserProfile();
+  const { data: profile, isLoading: isLoadingProfile } = useUserProfile();
   const updateProfileMutation = useUpdateUserProfile();
 
   const [fullName, setFullName] = useState(user?.fullName || '');
@@ -105,6 +105,17 @@ export function BuyerProfilePage() {
       setSaveError(msg);
     }
   };
+if (isLoadingProfile) {
+    return (
+      <div className="space-y-8 w-full max-w-full">
+        <Skeleton className="h-8 w-48 bg-surface" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-surface" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 py-6">
