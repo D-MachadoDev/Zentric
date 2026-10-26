@@ -51,12 +51,6 @@ const TIMEOUT_MS = 15_000;
  * todo", asi que piden el maximo admitido y desenvuelven la pagina.
  */
 const FLAT_LIST_SIZE = 100;
-/**
- * Los listados del backend paginan en servidor desde `c0d41f7` (maximo 100 por
- * pagina). Los metodos planos del port conservan el contrato de "traer todo",
- * asi que piden el maximo admitido y desenvuelven la pagina.
- */
-const FLAT_LIST_SIZE = 100;
 
 export interface HttpClientOptions {
   /** Provee y guarda el access token; es la única fuente de autenticación. */

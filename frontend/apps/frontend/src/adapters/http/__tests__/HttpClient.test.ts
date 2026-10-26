@@ -121,6 +121,20 @@ describe('HttpClient', () => {
     expect(calls[0]!.init.body).toBe(JSON.stringify({ returnRequestId: 'ret-123' }));
   });
 
+  it('desenvuelve la pagina en los listados planos del port', async () => {
+    const page = { items: [{ id: 'ord-1' }], page: 0, size: 100, totalItems: 1, totalPages: 1 };
+    const { client, calls } = createTestClient(() =>
+      new Response(JSON.stringify(page), { status: 200 }),
+    );
+
+    const orders = await client.listOrders('Paid');
+
+    expect(orders).toEqual([{ id: 'ord-1' }]);
+    expect(calls[0]!.url).toContain('/api/Orders?');
+    expect(calls[0]!.url).toContain('status=Paid');
+    expect(calls[0]!.url).toContain('size=100');
+  });
+
   it('ejecuta los endpoints de los 10 módulos del sistema (45 métodos)', async () => {
     const { client, calls } = createTestClient((url) => {
       if (url.includes('generate')) return new Response(JSON.stringify(true), { status: 200 });
