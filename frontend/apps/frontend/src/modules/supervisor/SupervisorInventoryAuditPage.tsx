@@ -5,6 +5,8 @@ import {
   Clock,
   RefreshCw,
   Sliders,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   Alert,
@@ -14,15 +16,16 @@ import {
   Button,
   Input,
   Skeleton,
+  Pagination,
 } from '@zentric/ui';
 import {
   useAdjustInventoryMutation,
-  useInventoriesQuery,
+  useInventoriesPagedQuery,
   useProductsPagedQuery,
   useWarehousesQuery,
 } from '../../application/services';
 import { AdjustInventorySchema } from '../../application/schemas';
-import type { AdjustInventoryResult, Inventory, Product, Warehouse } from '../../domain';
+import type { AdjustInventoryResult, Inventory, ListInventoriesPagedParams, PagedResult, Product, Warehouse } from '../../domain';
 
 /**
  * Estación de Auditoría Física de Existencias (/supervisor/inventory-audit).
@@ -31,24 +34,29 @@ import type { AdjustInventoryResult, Inventory, Product, Warehouse } from '../..
  * ÚNICA acción de mutación autorizada para el rol Supervisor (`InventoryAdjust`).
  * Registra ajustes verificados por conteo físico con motivo obligatorio y ventana
  * de idempotencia de 5 minutos, mostrando `AdjustInventoryResult` en `Geist Mono`.
+ * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
  */
 export function SupervisorInventoryAuditPage() {
   const [targetInventoryId, setTargetInventoryId] = useState('');
   const [countedQuantity, setCountedQuantity] = useState<number>(0);
   const [reason, setReason] = useState('');
+  const [page, setPage] = useState(1);
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [adjustmentResult, setAdjustmentResult] = useState<AdjustInventoryResult | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const {
-    data: inventories = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useInventoriesQuery();
+  // Pagination params for server-side pagination
+  const params: ListInventoriesPagedParams = {
+    page: page - 1, // backend uses 0-based
+    size: 20,
+  };
+
+  const { data: pagedResult, isLoading, isError, error, refetch, isFetching } = useInventoriesPagedQuery(params);
+  const inventories = pagedResult?.items ?? [];
+  const totalItems = pagedResult?.totalItems ?? 0;
+  const totalPages = pagedResult?.totalPages ?? 0;
+
   const { data: productsResult } = useProductsPagedQuery();
   const products = productsResult?.items ?? [];
   const { data: warehouses = [] } = useWarehousesQuery();
@@ -415,6 +423,16 @@ export function SupervisorInventoryAuditPage() {
             </p>
           </div>
         </section>
+
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={setPage}
+            className="mt-6"
+          />
+        )}
       </div>
     </div>
   );
