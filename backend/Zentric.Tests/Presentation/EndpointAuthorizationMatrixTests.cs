@@ -66,8 +66,10 @@ namespace Zentric.Tests.Presentation
 
                 // 3. Catalogo. Alta solo del Vendedor (seccion 12: "Registro Productos").
                 ["CatalogController.CreateProduct"] = AuthorizationPolicies.ProductManagement,
+                ["CatalogController.AddProductVariant"] = AuthorizationPolicies.ProductManagement,
                 ["CatalogController.PublishProduct"] = AuthorizationPolicies.ProductManagement,
                 ["CatalogController.SuspendProduct"] = AuthorizationPolicies.ProductManagement,
+                ["CatalogController.UpdateProduct"] = AuthorizationPolicies.ProductManagement,
                 ["CatalogController.GetProductsPaged"] = AuthorizationPolicies.AnyAuthenticatedUser,
                 ["CatalogController.GetProductById"] = AuthorizationPolicies.AnyAuthenticatedUser,
                 ["CatalogController.GetCategories"] = AuthorizationPolicies.AnyAuthenticatedUser,

@@ -150,6 +150,38 @@ namespace Zentric.Api.Controllers
 
 
         /// <summary>
+        /// Actualiza los datos básicos de un producto del catálogo del vendedor.
+        /// </summary>
+        /// <remarks>
+        /// Permite al vendedor editar nombre, descripción, precio base, imagen y categoría
+        /// de un producto propio. El VendorId lo fija el token; no se puede reasignar.
+        /// </remarks>
+        /// <param name="productId">Identificador del producto a actualizar.</param>
+        /// <param name="command">Datos actualizados del producto.</param>
+        /// <response code="200">Producto actualizado exitosamente.</response>
+        /// <response code="400">Error de validación (RFC 7807 ProblemDetails).</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        /// <response code="403">El llamante no es el vendedor del producto.</response>
+        /// <response code="404">Producto no encontrado.</response>
+        [HttpPut("products/{productId}")]
+        [Authorize(Policy = AuthorizationPolicies.ProductManagement)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateProduct(Guid productId, [FromBody] UpdateProductCommand command)
+        {
+            var userId = _currentUser.UserId;
+            if (userId is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var result = await _mediator.Send(command with { ProductId = productId, CallerId = userId.Value });
+            if (result.IsFailure) return result.ToProblem();
+            return Ok();
+        }
+
+
+        /// <summary>
         /// Lista el catalogo por paginas. Es la variante recomendada para el
         /// frontend: <c>size</c> se acota en 100 y por defecto trae 20 elementos.
         /// </summary>
