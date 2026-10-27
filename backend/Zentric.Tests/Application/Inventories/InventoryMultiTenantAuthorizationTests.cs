@@ -37,7 +37,8 @@ namespace Zentric.Tests.Application.Inventories
     ///    - Anti-enumeracion por GUID: respuestas 404 identicas al recurso inexistente (ADR-0013).
     ///    - Filtro estricto en la consulta de listado paginado por dueno del producto (ADR-0017).
     /// </summary>
-    public sealed class InventoryMultiTenantAuthorizationTests : IClassFixture<ZentricApiFactory>
+    [Collection(ApiCollection.Name)]
+    public sealed class InventoryMultiTenantAuthorizationTests
     {
         private readonly ZentricApiFactory _factory;
 
