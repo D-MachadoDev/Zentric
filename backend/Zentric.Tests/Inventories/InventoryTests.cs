@@ -12,8 +12,8 @@ public sealed class InventoryTests
     private static readonly Guid VariantId = Guid.NewGuid();
     private static readonly Guid WarehouseId = Guid.NewGuid();
 
-    private static Inventory CreateInventory(int available = 10, int reserved = 0, int damaged = 0)
-        => new(VariantId, WarehouseId, available, reserved, damaged);
+    private static Inventory CreateInventory(int available = 10, int reserved = 0, int damaged = 0, int used = 0)
+        => new(VariantId, WarehouseId, available, reserved, damaged, used);
 
     [Fact]
     public void Constructor_ValidData_SetsQuantitiesAndIdentity()
@@ -201,6 +201,23 @@ public sealed class InventoryTests
 
         Assert.Throws<InvalidOperationException>(() => inventory.MarkAsDeleted());
         Assert.False(inventory.IsDeleted);
+    }
+
+    [Fact]
+    public void MarkAsDeleted_WithUsedStock_ThrowsInvalidOperationException()
+    {
+        var inventory = CreateInventory(available: 0, reserved: 0, damaged: 0, used: 5);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => inventory.MarkAsDeleted());
+        Assert.Contains("existencias físicas", ex.Message);
+        Assert.False(inventory.IsDeleted);
+    }
+
+    [Fact]
+    public void Constructor_NegativeUsedQuantity_ThrowsArgumentOutOfRangeException()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new Inventory(VariantId, WarehouseId, availableQuantity: 0, reservedQuantity: 0, damagedQuantity: 0, usedQuantity: -1));
     }
 
     [Fact]

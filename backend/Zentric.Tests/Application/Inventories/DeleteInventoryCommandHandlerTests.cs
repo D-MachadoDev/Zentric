@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Zentric.Application.Common.Models;
 using Zentric.Application.Inventories.Commands;
 using Zentric.Domain.Inventories;
 using Zentric.Domain.Products;
@@ -111,6 +112,23 @@ namespace Zentric.Tests.Application.Inventories
         }
 
         [Fact]
+        public async Task Handle_InventoryWithUsedPhysicalStock_IsRejectedWithActionableMessage()
+        {
+            var vendorId = Guid.NewGuid();
+            var warehouse = new Warehouse("Propia", "Cali", 100, WarehouseType.Vendor, vendorId);
+            var (repo, uow, products, warehouses, inventory) = Build(vendorId, warehouse.Id, available: 0, reserved: 0, damaged: 0, used: 4);
+            warehouses.Warehouses.Add(warehouse);
+
+            var handler = new DeleteInventoryCommandHandler(repo, uow, products, warehouses);
+            var result = await handler.Handle(
+                new DeleteInventoryCommand(inventory.Id, vendorId, UserRole.Seller), CancellationToken.None);
+
+            Assert.True(result.IsFailure);
+            Assert.Contains("existencias f", result.Error);
+            Assert.False(inventory.IsDeleted);
+        }
+
+        [Fact]
         public async Task Handle_SellerDeletesForeignProduct_ReturnsNotFound()
         {
             var vendorId = Guid.NewGuid();
@@ -123,6 +141,7 @@ namespace Zentric.Tests.Application.Inventories
                 new DeleteInventoryCommand(inventory.Id, vendorId, UserRole.Seller), CancellationToken.None);
 
             Assert.True(result.IsFailure);
+            Assert.Equal(ErrorKind.NotFound, result.ErrorKind);
             Assert.False(inventory.IsDeleted);
         }
     }

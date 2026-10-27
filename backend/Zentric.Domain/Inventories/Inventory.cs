@@ -81,6 +81,11 @@ namespace Zentric.Domain.Inventories
                 throw new ArgumentOutOfRangeException(nameof(damagedQuantity), "Damaged quantity cannot be negative.");
             }
 
+            if (usedQuantity < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(usedQuantity), "Used quantity cannot be negative.");
+            }
+
             Id = Guid.NewGuid();
             VariantId = variantId;
             WarehouseId = warehouseId;
@@ -290,7 +295,7 @@ namespace Zentric.Domain.Inventories
                 throw new InvalidOperationException("Inventory is already deleted.");
             }
 
-            if (AvailableQuantity > 0 || ReservedQuantity > 0 || DamagedQuantity > 0)
+            if (AvailableQuantity > 0 || ReservedQuantity > 0 || DamagedQuantity > 0 || UsedQuantity > 0)
             {
                 throw new InvalidOperationException("No puedes eliminar un inventario que aún tiene existencias físicas. Debes transferirlas, ajustarlas a cero o despacharlas primero.");
             }
