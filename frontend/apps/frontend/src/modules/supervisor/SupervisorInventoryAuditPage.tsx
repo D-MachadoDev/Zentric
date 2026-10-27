@@ -5,8 +5,6 @@ import {
   Clock,
   RefreshCw,
   Sliders,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import {
   Alert,
@@ -25,7 +23,7 @@ import {
   useWarehousesQuery,
 } from '../../application/services';
 import { AdjustInventorySchema } from '../../application/schemas';
-import type { AdjustInventoryResult, Inventory, ListInventoriesPagedParams, PagedResult, Product, Warehouse } from '../../domain';
+import type { AdjustInventoryResult, Inventory, ListInventoriesPagedParams, Product, Warehouse } from '../../domain';
 
 /**
  * Estación de Auditoría Física de Existencias (/supervisor/inventory-audit).

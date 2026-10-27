@@ -3,8 +3,6 @@ import {
   AlertCircle,
   Ban,
   CheckCircle,
-  ChevronLeft,
-  ChevronRight,
   FileCheck,
   Receipt,
   RefreshCw,
@@ -28,7 +26,7 @@ import {
   useInvoicesPagedQuery,
   useOrdersQuery,
 } from '../../application/services';
-import type { Invoice, ListInvoicesPagedParams, OrderListItem, PagedResult } from '../../domain';
+import type { Invoice, ListInvoicesPagedParams, OrderListItem } from '../../domain';
 import { InvoiceType, OrderStatus } from '../../domain';
 import {
   NOMBRES_DE_COMPROBANTE,
@@ -116,7 +114,7 @@ export function InvoiceManagementPage() {
   const totalItems = pagedResult?.totalItems ?? 0;
   const totalPages = pagedResult?.totalPages ?? 0;
 
-  const { data: orders = [], isError: isErrorOrders, refetch: refetchOrders } = useOrdersQuery();
+  const { data: orders = [], isError: isErrorOrders } = useOrdersQuery();
   const generateMutation = useGenerateInvoicesMutation();
   const annulMutation = useAnnulInvoicesMutation();
 

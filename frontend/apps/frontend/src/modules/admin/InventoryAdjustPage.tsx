@@ -5,8 +5,6 @@ import {
   AlertCircle,
   RefreshCw,
   Clock,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import {
   Button,
@@ -16,7 +14,6 @@ import {
   Alert,
   AlertTitle,
   AlertDescription,
-  Pagination,
 } from '@zentric/ui';
 import {
   useInventoriesPagedQuery,
@@ -25,13 +22,13 @@ import {
   useWarehousesQuery,
 } from '../../application/services';
 import { AdjustInventorySchema } from '../../application/schemas';
-import type { AdjustInventoryResult, Inventory, ListInventoriesPagedParams, PagedResult, Product, Warehouse } from '../../domain';
+import type { AdjustInventoryResult, Inventory, ListInventoriesPagedParams, Product, Warehouse } from '../../domain';
 
 export function InventoryAdjustPage() {
   const [targetInventoryId, setTargetInventoryId] = useState('');
   const [countedQuantity, setCountedQuantity] = useState<number>(0);
   const [reason, setReason] = useState('');
-  const [page, setPage] = useState(1);
+  const [page] = useState(1);
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [adjustmentResult, setAdjustmentResult] = useState<AdjustInventoryResult | null>(null);
@@ -45,8 +42,6 @@ export function InventoryAdjustPage() {
 
   const { data: pagedResult, isLoading, isError, error, refetch, isFetching } = useInventoriesPagedQuery(params);
   const inventories = pagedResult?.items ?? [];
-  const totalItems = pagedResult?.totalItems ?? 0;
-  const totalPages = pagedResult?.totalPages ?? 0;
 
   const { data: productsResult } = useProductsPagedQuery();
   const products = productsResult?.items ?? [];

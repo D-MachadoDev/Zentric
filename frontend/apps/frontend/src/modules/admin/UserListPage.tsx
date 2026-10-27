@@ -9,8 +9,6 @@ import {
   RefreshCw,
   AlertCircle,
   CheckCircle,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import {
   Button,
@@ -27,7 +25,7 @@ import {
   useBlockUserMutation,
   useActivateUserMutation,
 } from '../../application/services';
-import type { ListUsersPagedParams, PagedResult, User } from '../../domain';
+import type { ListUsersPagedParams, User } from '../../domain';
 import { UserRole } from '../../domain';
 
 export function UserListPage() {

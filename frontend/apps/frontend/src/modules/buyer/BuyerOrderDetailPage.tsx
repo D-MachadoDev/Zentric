@@ -352,7 +352,7 @@ export function BuyerOrderDetailPage() {
                       <div className="space-y-1 pt-1">
                         {ful.shipments.map((s) => (
                           <div key={s.id} className="text-xs font-mono text-foreground-muted flex items-center justify-between">
-                            <span>Bodega Origen: {s.warehouseId.slice(0, 8)}</span>
+                            <span>Bodega Origen: {s.warehouseId ? s.warehouseId.slice(0, 8) : 'N/A'}</span>
                             <span className="text-brand font-bold">Guía: {s.trackingNumber}</span>
                           </div>
                         ))}

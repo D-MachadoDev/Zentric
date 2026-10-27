@@ -12,8 +12,6 @@ import {
   ShieldAlert,
   ShoppingBag,
   Sliders,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import {
   Alert,
@@ -22,7 +20,6 @@ import {
   Badge,
   Button,
   Skeleton,
-  Pagination,
 } from '@zentric/ui';
 import {
   useFulfillmentsPagedQuery,
@@ -39,7 +36,6 @@ import type {
   ListOrdersPagedParams,
   ListReturnsPagedParams,
   OrderListItem,
-  PagedResult,
   ReturnRequest,
 } from '../../domain';
 import {
@@ -59,10 +55,10 @@ import {
  * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
  */
 export function SupervisorDashboardPage() {
-  const [ordersPage, setOrdersPage] = useState(1);
-  const [fulfillmentsPage, setFulfillmentsPage] = useState(1);
-  const [returnsPage, setReturnsPage] = useState(1);
-  const [invoicesPage, setInvoicesPage] = useState(1);
+  const [ordersPage] = useState(1);
+  const [fulfillmentsPage] = useState(1);
+  const [returnsPage] = useState(1);
+  const [invoicesPage] = useState(1);
 
   const {
     data: health,
@@ -77,8 +73,6 @@ export function SupervisorDashboardPage() {
   };
   const { data: ordersResult, isLoading: isLoadingOrders, isError: isErrorOrders, refetch: refetchOrders } = useOrdersPagedQuery(ordersParams);
   const orders = ordersResult?.items ?? [];
-  const ordersTotalItems = ordersResult?.totalItems ?? 0;
-  const ordersTotalPages = ordersResult?.totalPages ?? 0;
 
   const fulfillmentsParams: ListFulfillmentsPagedParams = {
     page: fulfillmentsPage - 1,
@@ -86,8 +80,6 @@ export function SupervisorDashboardPage() {
   };
   const { data: fulfillmentsResult, isLoading: isLoadingFulfillments, isError: isErrorFulfillments, refetch: refetchFulfillments } = useFulfillmentsPagedQuery(fulfillmentsParams);
   const fulfillments = fulfillmentsResult?.items ?? [];
-  const fulfillmentsTotalItems = fulfillmentsResult?.totalItems ?? 0;
-  const fulfillmentsTotalPages = fulfillmentsResult?.totalPages ?? 0;
 
   const returnsParams: ListReturnsPagedParams = {
     page: returnsPage - 1,
@@ -95,8 +87,6 @@ export function SupervisorDashboardPage() {
   };
   const { data: returnsResult, isLoading: isLoadingReturns, isError: isErrorReturns, refetch: refetchReturns } = useReturnsPagedQuery(returnsParams);
   const returns = returnsResult?.items ?? [];
-  const returnsTotalItems = returnsResult?.totalItems ?? 0;
-  const returnsTotalPages = returnsResult?.totalPages ?? 0;
 
   const invoicesParams: ListInvoicesPagedParams = {
     page: invoicesPage - 1,
@@ -104,8 +94,6 @@ export function SupervisorDashboardPage() {
   };
   const { data: invoicesResult, isLoading: isLoadingInvoices, isError: isErrorInvoices, refetch: refetchInvoices } = useInvoicesPagedQuery(invoicesParams);
   const invoices = invoicesResult?.items ?? [];
-  const invoicesTotalItems = invoicesResult?.totalItems ?? 0;
-  const invoicesTotalPages = invoicesResult?.totalPages ?? 0;
 
   const isLoading =
     isLoadingHealth ||

@@ -6,8 +6,6 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import {
   Alert,
@@ -20,7 +18,7 @@ import {
   Pagination,
 } from '@zentric/ui';
 import { useInvoicesPagedQuery } from '../../application/services';
-import type { Invoice, ListInvoicesPagedParams, PagedResult } from '../../domain';
+import type { Invoice, ListInvoicesPagedParams } from '../../domain';
 import { InvoiceType } from '../../domain';
 
 /**

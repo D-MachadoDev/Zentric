@@ -8,8 +8,6 @@ import {
   Search,
   ShieldCheck,
   XCircle,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import {
   Alert,
@@ -22,7 +20,7 @@ import {
   Pagination,
 } from '@zentric/ui';
 import { useReturnQuery, useReturnsPagedQuery } from '../../application/services';
-import type { ListReturnsPagedParams, PagedResult, ReturnRequest } from '../../domain';
+import type { ListReturnsPagedParams, ReturnRequest } from '../../domain';
 import { ReturnStatus } from '../../domain';
 
 /**

@@ -1,7 +1,7 @@
 ﻿import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useCreateProductMutation, useProductQuery } from '../../application/services/catalog';
-import { ProductType, type Product, type CreatedProduct, ProductStatus } from '../../domain';
+import { ProductType, type CreatedProduct } from '../../domain';
 import {
   Button,
   Input,
@@ -77,7 +77,7 @@ export function CreateProductPage({ productId }: { productId?: string }) {
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [createdResult, setCreatedResult] = useState<CreatedProduct | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
 
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
@@ -87,30 +87,7 @@ export function CreateProductPage({ productId }: { productId?: string }) {
 
 
 
-  const previewProduct: Product = {
-    id: 'preview',
-    name: name || 'Nombre del Producto',
-    description,
-    price: priceAmount > 0 ? priceAmount : 0,
-    currency: 'COP',
-    vendorId: '',
-    type,
-    status: ProductStatus.Published,
-    variants: variants
-      .filter((v) => v.sku.trim().length > 0)
-      .map((v, i) => ({
-        id: `preview-${i}`,
-        sku: v.sku,
-        canBeSold: true,
-        price: v.priceAmount && v.priceAmount > 0 ? v.priceAmount : undefined,
-        attributes:
-          v.attrName && v.attrValue
-            ? [{ name: v.attrName, value: v.attrValue }]
-            : undefined,
-      })),
-    createdAt: new Date().toISOString(),
-    imageUrl: imageUrl.trim() || null,
-  };
+
 
   const handleAddVariant = () => {
     setVariants((prev) => [

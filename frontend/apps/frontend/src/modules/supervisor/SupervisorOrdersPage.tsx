@@ -7,8 +7,6 @@ import {
   Search,
   ShieldCheck,
   ShoppingBag,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import {
   Alert,
@@ -21,7 +19,7 @@ import {
   Pagination,
 } from '@zentric/ui';
 import { useOrdersPagedQuery } from '../../application/services';
-import type { ListOrdersPagedParams, OrderListItem, PagedResult } from '../../domain';
+import type { ListOrdersPagedParams, OrderListItem } from '../../domain';
 import { OrderStatus } from '../../domain';
 
 /**

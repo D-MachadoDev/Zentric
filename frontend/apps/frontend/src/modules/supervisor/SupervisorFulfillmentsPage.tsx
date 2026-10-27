@@ -7,8 +7,6 @@ import {
   Search,
   ShieldCheck,
   Truck,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import {
   Alert,
@@ -21,7 +19,7 @@ import {
   Pagination,
 } from '@zentric/ui';
 import { useFulfillmentsPagedQuery } from '../../application/services';
-import type { FulfillmentOrder, ListFulfillmentsPagedParams, PagedResult } from '../../domain';
+import type { FulfillmentOrder, ListFulfillmentsPagedParams } from '../../domain';
 import { FulfillmentStatus } from '../../domain';
 
 /**

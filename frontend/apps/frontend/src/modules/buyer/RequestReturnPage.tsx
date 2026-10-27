@@ -6,7 +6,6 @@ import { OrderStatus, type Order, type OrderItem } from '../../domain';
 import {
   Button,
   Input,
-  Badge,
   Skeleton,
   Alert,
   AlertTitle,
@@ -131,9 +130,9 @@ export function RequestReturnPage() {
               className="w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2 text-sm font-mono text-foreground focus:border-brand focus:outline-none"
             >
               <option value="">-- Seleccionar Pedido --</option>
-              {(deliveredOrders ?? []).map((order: Order) => (
+              {(deliveredOrders ?? []).map((order: any) => (
                 <option key={order.id} value={order.id}>
-                  Orden #{order.id.slice(0, 8)} - {new Date(order.updatedAt).toLocaleDateString()}
+                  Orden #{order.id.slice(0, 8)} - {new Date(order.createdAt || Date.now()).toLocaleDateString()}
                 </option>
               ))}
             </select>

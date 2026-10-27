@@ -994,7 +994,8 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
         shipments: [
           {
             id: 'ship-1',
-             trackingNumber: 'TRK-ZENTRIC-9988',
+            warehouseId: 'wh-1',
+            trackingNumber: 'TRK-ZENTRIC-9988',
           },
         ],
         createdAt: new Date().toISOString(),
