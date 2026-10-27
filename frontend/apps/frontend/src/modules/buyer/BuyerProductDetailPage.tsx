@@ -87,7 +87,7 @@ export function BuyerProductDetailPage() {
     !activeVariant ||
     !activeVariant.canBeSold ||
     (availableStock !== undefined && availableStock <= 0);
-  const isExceedingStock = quantity > maxStock;
+  const isExceedingStock = !isSoldOut && quantity > maxStock;
 
   const { mutate: trackProductView } = useTrackProductViewMutation();
 
@@ -443,7 +443,7 @@ export function BuyerProductDetailPage() {
                           </span>
                         </span>
 
-                        {variant.price != null && product?.price != null && variant.price !== product.price && (
+                        {variant.price != null && product?.price != null && variant.price !== product.price && !isSelected && (
                           <span className="shrink-0 text-sm font-medium tabular-nums text-foreground">
                             ${variant.price.toLocaleString('es-CO')}
                           </span>
@@ -470,12 +470,13 @@ export function BuyerProductDetailPage() {
               </div>
             )}
 
+            {!isSoldOut ? (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label htmlFor="quantity-input" className="text-sm font-medium text-foreground">
                   Cantidad
                 </label>
-                {availableStock !== undefined && (
+                {availableStock !== undefined && !isSoldOut && (
                   <span className="text-[11px] text-foreground-muted">
                     Máximo {availableStock}
                   </span>
@@ -529,6 +530,11 @@ export function BuyerProductDetailPage() {
                 </p>
               )}
             </div>
+            ) : (
+              <p className="text-sm font-medium text-danger">
+                Variante agotada — sin existencias disponibles.
+              </p>
+            )}
 
             <div className="space-y-2.5 border-t border-border pt-5">
               <Button
