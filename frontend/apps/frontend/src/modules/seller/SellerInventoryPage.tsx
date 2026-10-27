@@ -333,7 +333,7 @@ export function SellerInventoryPage() {
               <Input
                 id="inventory-search-input"
                 type="text"
-                placeholder="Buscar por producto o SKU..."
+                placeholder="Buscar por producto, SKU, variante o ubicación..."
                 aria-label="Buscar por producto o SKU"
                 value={searchInput}
                 onChange={(e) => {
@@ -356,7 +356,7 @@ export function SellerInventoryPage() {
               <option value="All">Todas las bodegas</option>
               {allWarehouses.map((w: Warehouse) => (
                 <option key={w.id} value={w.id}>
-                  {w.name ? `${w.name} (${w.location})` : w.location} ({w.type})
+                  {w.name && w.location && w.name !== w.location ? `${w.name} (${w.location})` : (w.name || w.location)} ({w.type})
                 </option>
               ))}
             </select>
@@ -410,7 +410,9 @@ export function SellerInventoryPage() {
                       (inv.usedQuantity ?? 0);
                     const hasPhysicalStock = physicalStock > 0;
                     const warehouseName = warehouse
-                      ? (warehouse.name ? `${warehouse.name} (${warehouse.location})` : warehouse.location)
+                      ? (warehouse.name && warehouse.location && warehouse.name !== warehouse.location
+                          ? `${warehouse.name} (${warehouse.location})`
+                          : (warehouse.name || warehouse.location))
                       : 'Bodega Física';
 
                     return (
@@ -434,7 +436,7 @@ export function SellerInventoryPage() {
                       >
                         <TableCell className="py-4 px-4">
                           <div className="font-medium text-foreground" title={inv.variantId}>
-                            {inv.productName || 'Producto sin nombre'}
+                            {inv.productName || 'Variante Registrada'}
                           </div>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs font-mono text-brand font-semibold">
