@@ -145,11 +145,14 @@ export function BuyerCatalogPage() {
   const carouselRef = useRef<HTMLDivElement>(null);
 
   const scrollToProductGrid = useCallback(() => {
-    const target = document.getElementById('product-grid') ?? document.getElementById('catalogo');
-    target?.scrollIntoView({
-      behavior: resolveScrollBehavior(),
-      block: 'start',
-    });
+    const target = document.getElementById('catalogo') ?? document.getElementById('product-grid');
+    if (target) {
+      const topOffset = target.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({
+        top: Math.max(0, topOffset),
+        behavior: resolveScrollBehavior(),
+      });
+    }
   }, []);
 
   const scrollCarouselBy = useCallback(
@@ -244,6 +247,7 @@ export function BuyerCatalogPage() {
           cat: categoryId === ALL_CATEGORIES ? null : categoryId,
           page: null,
         }) as never,
+        resetScroll: false,
       });
       scrollToProductGrid();
     },
@@ -253,7 +257,10 @@ export function BuyerCatalogPage() {
   const handlePageChange = useCallback(
     (nextPage: number) => {
       setPage(nextPage);
-      navigate({ search: buildSearchParams({ page: nextPage }) as never });
+      navigate({
+        search: buildSearchParams({ page: nextPage }) as never,
+        resetScroll: false,
+      });
       scrollToProductGrid();
     },
     [buildSearchParams, navigate, scrollToProductGrid],
@@ -265,8 +272,12 @@ export function BuyerCatalogPage() {
     setSelectedCategory(ALL_CATEGORIES);
     setSort('relevance');
     setPage(1);
-    navigate({ search: buildSearchParams({ cat: null, page: null, q: null }) as never });
-  }, [buildSearchParams, navigate]);
+    navigate({
+      search: buildSearchParams({ cat: null, page: null, q: null }) as never,
+      resetScroll: false,
+    });
+    scrollToProductGrid();
+  }, [buildSearchParams, navigate, scrollToProductGrid]);
 
   return (
     <div className="space-y-6 py-2 sm:space-y-8 sm:py-4">

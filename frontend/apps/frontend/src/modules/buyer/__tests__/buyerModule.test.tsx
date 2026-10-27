@@ -534,7 +534,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
           expect.anything(),
         );
       });
-      expect(mockNavigate).toHaveBeenLastCalledWith({ search: { cat: 'perifericos' } });
+      expect(mockNavigate).toHaveBeenLastCalledWith(expect.objectContaining({ search: { cat: 'perifericos' } }));
 
       // Volver a "Todas las categorías"
       fireEvent.click(screen.getByRole('button', { name: 'Todas las categorías' }));
@@ -545,7 +545,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
           expect.anything(),
         );
       });
-      expect(mockNavigate).toHaveBeenLastCalledWith({ search: {} });
+      expect(mockNavigate).toHaveBeenLastCalledWith(expect.objectContaining({ search: {} }));
     });
 
     it('envía el orden elegido al backend y reinicia la página (S3)', async () => {
@@ -595,7 +595,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
 
       await waitFor(() => {
         expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ page: 3 }), expect.anything());
-        expect(mockNavigate).toHaveBeenLastCalledWith({ search: { page: 3 } });
+        expect(mockNavigate).toHaveBeenLastCalledWith(expect.objectContaining({ search: { page: 3 } }));
       });
 
       // Esperar a que el botón de página 3 tenga aria-current="page" (re-render completado)
@@ -610,7 +610,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Ir a la página 1' }));
 
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenLastCalledWith({ search: {} });
+        expect(mockNavigate).toHaveBeenLastCalledWith(expect.objectContaining({ search: {} }));
         expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ page: 1 }), expect.anything());
       });
     });

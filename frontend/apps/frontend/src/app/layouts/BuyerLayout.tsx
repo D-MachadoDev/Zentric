@@ -59,6 +59,8 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
     currentPath.startsWith('/buyer/profile') ||
     currentPath.startsWith('/buyer/returns');
 
+  const isMainCatalogPage = currentPath === '/buyer' || currentPath === '/buyer/';
+
   useEffect(() => {
     return subscribeGuestCart(() => {
       setGuestItemCount(getGuestCartCount());
@@ -129,7 +131,9 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
   const handleHeaderSearch = (value: string) => {
     if (!value.trim()) return;
     navigate({
-      to: '/buyer/catalog' as never,
+      to: '/buyer' as never,
+      hash: 'catalogo',
+      resetScroll: false,
       search: { q: value.trim() } as never,
     });
   };
@@ -247,13 +251,6 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
               }`}
             >
               <ShoppingBag className="h-4 w-4" aria-hidden="true" />
-              {/* `sr-only lg:not-sr-only` y no `hidden lg:inline`: con `hidden`
-                  el texto sale del arbol accesible y, por debajo de `lg`, el
-                  enlace queda como icono SIN NOMBRE -> axe lo marca como
-                  violacion `link-name` seria (WCAG 2.4.4/4.1.2). `sr-only`
-                  mantiene "Mis Pedidos" en el nombre accesible en TODOS los
-                  anchos y lo hace visible solo desde `lg`, igual que el
-                  carrito de aqui abajo. Sin impacto visual. */}
               <span className="sr-only lg:not-sr-only">Mis Pedidos</span>
             </Link>
 
@@ -265,20 +262,8 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
                   ? 'bg-brand/10 text-brand font-semibold'
                   : 'text-foreground-muted hover:bg-surface-muted hover:text-foreground'
               }`}
-              // SIN `aria-label`: el nombre accesible se calcula del contenido
-              // ("Carrito" + insignia del conteo), de modo que siempre coincide
-              // con el texto visible. Con un `aria-label` explicito, WCAG
-              // 2.5.3 (Label in Name) exige que contenga el texto visible
-              // EXACTO, y aqui el texto visible incluye el salto de linea
-              // que introduce la insignia dentro del flex: la comparacion
-              // fallaba aunque el nombre fuese correcto. Sin etiqueta
-              // explicita la regla no aplica y el nombre es el que se ve.
             >
               <ShoppingCart className="h-4 w-4" aria-hidden="true" />
-              {/* `sr-only lg:not-sr-only`: la palabra "Carrito" forma parte del
-                  nombre accesible en TODOS los anchos, pero solo se ve a partir
-                  de `lg`. Con `hidden` el nombre en movil se reducia al
-                  numero de la insignia. */}
               <span className="sr-only lg:not-sr-only">Carrito</span>
               {cartItemCount > 0 && (
                 <span
@@ -335,50 +320,57 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
         </div>
 
         {/* ── 3. Sub-barra de Navegación por Categorías Rápidas ── */}
-        <nav
-          aria-label="Categorías comerciales"
-          className="flex items-center gap-2 overflow-x-auto border-t border-border/50 px-4 py-2 sm:px-6 text-xs scrollbar-none"
-        >
-          <div className="mx-auto flex max-w-7xl w-full items-center gap-2">
-            <Link
-              to="/buyer"
-              aria-current={currentPath === '/buyer' && !activeCategoryId ? 'page' : undefined}
-              className={`shrink-0 rounded-full px-3 py-1 font-medium transition-colors ${
-                currentPath === '/buyer' && !activeCategoryId
-                  ? 'bg-brand text-background font-semibold'
-                  : 'text-foreground-muted hover:bg-surface-muted hover:text-foreground'
-              }`}
-            >
-              Todo el Catálogo
-            </Link>
+        {/* Solo se muestra en subpáginas del comprador para no duplicar los filtros de categorías de la vista principal (/buyer) */}
+        {!isMainCatalogPage && (
+          <nav
+            aria-label="Categorías comerciales"
+            className="flex items-center gap-2 overflow-x-auto border-t border-border/50 px-4 py-2 sm:px-6 text-xs scrollbar-none"
+          >
+            <div className="mx-auto flex max-w-7xl w-full items-center gap-2">
+              <Link
+                to="/buyer"
+                hash="catalogo"
+                resetScroll={false}
+                aria-current={currentPath === '/buyer' && !activeCategoryId ? 'page' : undefined}
+                className={`shrink-0 rounded-full px-3 py-1 font-medium transition-colors ${
+                  currentPath === '/buyer' && !activeCategoryId
+                    ? 'bg-brand text-background font-semibold'
+                    : 'text-foreground-muted hover:bg-surface-muted hover:text-foreground'
+                }`}
+              >
+                Todo el Catálogo
+              </Link>
 
-            {areCategoriesLoading ? (
-              Array.from({ length: CATEGORY_SHORTCUT_SKELETONS }).map((_, index) => (
-                <Skeleton key={index} className="h-6 w-28 shrink-0 rounded-full" />
-              ))
-            ) : (
-              (categories ?? []).map((category) => {
-                const isActive = activeCategoryId === category.id;
+              {areCategoriesLoading ? (
+                Array.from({ length: CATEGORY_SHORTCUT_SKELETONS }).map((_, index) => (
+                  <Skeleton key={index} className="h-6 w-28 shrink-0 rounded-full" />
+                ))
+              ) : (
+                (categories ?? []).map((category) => {
+                  const isActive = activeCategoryId === category.id;
 
-                return (
-                  <Link
-                    key={category.id}
-                    to="/buyer"
-                    search={{ cat: category.id } as never}
-                    aria-current={isActive ? 'page' : undefined}
-                    className={`shrink-0 rounded-full px-3 py-1 font-medium transition-colors ${
-                      isActive
-                        ? 'bg-brand text-background font-semibold'
-                        : 'text-foreground-muted hover:bg-surface-muted hover:text-foreground'
-                    }`}
-                  >
-                    {category.name}
-                  </Link>
-                );
-              })
-            )}
-          </div>
-        </nav>
+                  return (
+                    <Link
+                      key={category.id}
+                      to="/buyer"
+                      hash="catalogo"
+                      resetScroll={false}
+                      search={{ cat: category.id } as never}
+                      aria-current={isActive ? 'page' : undefined}
+                      className={`shrink-0 rounded-full px-3 py-1 font-medium transition-colors ${
+                        isActive
+                          ? 'bg-brand text-background font-semibold'
+                          : 'text-foreground-muted hover:bg-surface-muted hover:text-foreground'
+                      }`}
+                    >
+                      {category.name}
+                    </Link>
+                  );
+                })
+              )}
+            </div>
+          </nav>
+        )}
       </header>
 
       {/* ── 4. Navegación Móvil Inferior ── */}
