@@ -227,7 +227,7 @@ describe('Listado de catalogo paginado (sección 2.2, Q-27) — camino moderno (
     renderHook(() => useProductsPagedQuery({ vendorId: 'vendedor-1' }, api), { wrapper: queryWrapper });
 
     await waitFor(() => {
-      expect(listProductsPaged).toHaveBeenCalledWith({ vendorId: 'vendedor-1' });
+      expect(listProductsPaged).toHaveBeenCalledWith({ vendorId: 'vendedor-1' }, expect.anything());
     });
   });
 
@@ -238,7 +238,7 @@ describe('Listado de catalogo paginado (sección 2.2, Q-27) — camino moderno (
     renderHook(() => useProductsPagedQuery({}, api), { wrapper: queryWrapper });
 
     await waitFor(() => {
-      expect(listProductsPaged).toHaveBeenCalledWith({});
+      expect(listProductsPaged).toHaveBeenCalledWith({}, expect.anything());
     });
   });
 });

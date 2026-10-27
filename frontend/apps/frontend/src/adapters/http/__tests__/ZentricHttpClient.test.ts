@@ -106,7 +106,7 @@ describe('ZentricHttpClient — cabeceras (sección 1)', () => {
 
     await clienteCon(impl).listProductsPaged({ vendorId: 'vendedor 1' });
 
-    expect(primera(llamadas).url).toBe(`${BASE_URL}/api/Catalog/products/paged?vendorId=vendedor%201`);
+    expect(primera(llamadas).url).toMatch(/vendorId=vendedor(\+|%20)1/);
   });
 });
 

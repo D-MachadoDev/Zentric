@@ -22,6 +22,7 @@ import {
   FulfillmentStatus,
   ReturnStatus,
   WarehouseType,
+  ApiError,
   type Order,
   type Product,
   type OrderListItem,
@@ -321,7 +322,25 @@ describe('Módulo del Vendedor (Seller Module - W4-S03)', () => {
     vi.spyOn(appServices.api, 'listProductsPaged').mockResolvedValue({ items: [mockProduct1, mockProduct2], totalItems: 2, totalPages: 1, page: 0, size: 20 });
     vi.spyOn(appServices.api, 'getProductById').mockResolvedValue(mockProduct1);
     vi.spyOn(appServices.api, 'listWarehouses').mockResolvedValue([mockWarehouse1, mockWarehouse2]);
-    vi.spyOn(appServices.api, 'listInventoriesPaged').mockResolvedValue({ items: [mockInventory1], page: 0, size: 20, totalItems: 1, totalPages: 1 });
+    vi.spyOn(appServices.api, 'listInventoriesPaged').mockImplementation(async (params) => {
+      let items = [mockInventory1];
+      if (params?.warehouseId) {
+        items = items.filter((i) => i.warehouseId === params.warehouseId);
+      }
+      if (params?.search) {
+        const s = params.search.toLowerCase();
+        items = items.filter(
+          (i) => (i.productName || '').toLowerCase().includes(s) || (i.sku || '').toLowerCase().includes(s)
+        );
+      }
+      return {
+        items,
+        page: params?.page ?? 1,
+        size: params?.size ?? 20,
+        totalItems: items.length,
+        totalPages: Math.ceil(items.length / 20) || 1,
+      };
+    });
     vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([mockOrderListItem, mockOrderListItem2]);
 vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [mockOrderListItem, mockOrderListItem2], page: 0, size: 20, totalItems: 2, totalPages: 1 });
     vi.spyOn(appServices.api, 'getOrderById').mockResolvedValue(mockSellerOrderView);
@@ -725,7 +744,7 @@ vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [mockOrd
       const warehouseSelect = screen.getByLabelText(/Filtrar por bodega/i);
       fireEvent.change(warehouseSelect, { target: { value: 'wh-2222-2222' } });
 
-      expect(screen.getByText('No hay existencias registradas')).toBeInTheDocument();
+      expect(await screen.findByText('No hay existencias registradas')).toBeInTheDocument();
     });
 
     it('permite abastecer stock en bodega validando cantidad mayor a cero', async () => {
@@ -764,14 +783,14 @@ vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [mockOrd
       expect(await screen.findByText('Existencias y Abastecimiento')).toBeInTheDocument();
 
       // Buscar por texto
-      const searchInput = screen.getByPlaceholderText(/Buscar por SKU/i);
-      fireEvent.change(searchInput, { target: { value: 'KB-RGB-01' } });
-      expect(screen.getAllByText(/KB-RGB-01/i).length).toBeGreaterThanOrEqual(1);
+      const searchInput = screen.getByPlaceholderText(/Buscar por producto, SKU/i);
+      fireEvent.change(searchInput, { target: { value: 'SKU-TEST-1' } });
+      expect(await screen.findByText(/SKU-TEST-1/i)).toBeInTheDocument();
 
       // Filtrar por bodega
       const whFilter = screen.getByLabelText(/Filtrar por bodega/i);
       fireEvent.change(whFilter, { target: { value: 'wh-1111-1111' } });
-      expect(screen.getAllByText(/KB-RGB-01/i).length).toBeGreaterThanOrEqual(1);
+      expect(await screen.findByText(/SKU-TEST-1/i)).toBeInTheDocument();
 
       // Botón refrescar
       const refreshBtn = screen.getByRole('button', { name: /Refrescar/i });
@@ -820,26 +839,31 @@ vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [mockOrd
     });
 
     it('muestra alerta cuando la mutación addStock falla y cubre filtros, estados vacíos y fallbacks de mapeo', async () => {
-      vi.spyOn(appServices.api, 'listInventoriesPaged').mockResolvedValue({
-        items: [
-          {
-            id: 'inv-unknown-1',
-            variantId: 'var-unknown-9999',
-            warehouseId: 'wh-unknown-9999',
-            availableQuantity: 10,
-            reservedQuantity: 0,
-            usedQuantity: 0,
-            damagedQuantity: 0,
-            productName: 'Producto huérfano',
-            sku: 'SKU-HUERFANO',
-          },
-        ],
-        page: 0,
-        size: 20,
-        totalItems: 1,
-        totalPages: 1,
+      vi.spyOn(appServices.api, 'listInventoriesPaged').mockImplementation(async (params) => {
+        if (params?.search === 'Inexistente') {
+          return { items: [], page: 1, size: 20, totalItems: 0, totalPages: 1 };
+        }
+        return {
+          items: [
+            {
+              id: 'inv-unknown-1',
+              variantId: 'var-unknown-9999',
+              warehouseId: 'wh-unknown-9999',
+              availableQuantity: 10,
+              reservedQuantity: 0,
+              usedQuantity: 0,
+              damagedQuantity: 0,
+              productName: '',
+              sku: 'SKU-HUERFANO',
+            },
+          ],
+          page: 1,
+          size: 20,
+          totalItems: 1,
+          totalPages: 1,
+        };
       });
-      vi.spyOn(appServices.api, 'addStock').mockRejectedValue(new Error('Capacidad excedida en bodega'));
+      vi.spyOn(appServices.api, 'addStock').mockRejectedValue(new ApiError(400, 'Capacidad excedida en bodega'));
       renderWithClient(<SellerInventoryPage />);
 
       expect(await screen.findByText('Variante Registrada')).toBeInTheDocument();
@@ -859,10 +883,10 @@ vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [mockOrd
       expect(await screen.findByText('Capacidad excedida en bodega')).toBeInTheDocument();
 
       // Filtrar por texto y por bodega para estado vacío con filtros
-      fireEvent.change(screen.getByPlaceholderText(/Buscar por SKU, variante o ubicación/i), {
+      fireEvent.change(screen.getByPlaceholderText(/Buscar por producto, SKU/i), {
         target: { value: 'Inexistente' },
       });
-      expect(screen.getByText('No hay inventarios que coincidan con los filtros aplicados.')).toBeInTheDocument();
+      expect(await screen.findByText('No hay inventarios que coincidan con los filtros aplicados.')).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: /Refrescar/i }));
     });
 

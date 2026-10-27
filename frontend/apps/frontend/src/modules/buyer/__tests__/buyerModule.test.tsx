@@ -323,6 +323,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       await waitFor(() => {
         expect(listSpy).toHaveBeenCalledWith(
           expect.objectContaining({ search: 'Licencia', page: 1 }),
+          expect.anything(),
         );
       });
       await waitFor(() => {
@@ -337,6 +338,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       await waitFor(() => {
         expect(listSpy).toHaveBeenCalledWith(
           expect.objectContaining({ type: ProductType.Physical, page: 1 }),
+          expect.anything(),
         );
       });
       await waitFor(() => {
@@ -349,6 +351,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       await waitFor(() => {
         expect(listSpy).toHaveBeenCalledWith(
           expect.objectContaining({ type: ProductType.Digital }),
+          expect.anything(),
         );
       });
       await waitFor(() => {
@@ -359,7 +362,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       // Filtrar por Todos (sin filtro de tipo)
       fireEvent.click(screen.getByRole('button', { name: 'Todos' }));
       await waitFor(() => {
-        expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ type: undefined }));
+        expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ type: undefined }), expect.anything());
       });
       await waitFor(() => {
         expect(screen.getByText('Teclado Mecánico Ergonómico')).toBeInTheDocument();
@@ -521,13 +524,14 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
 
       renderWithClient(<BuyerCatalogPage />);
       expect(await screen.findByText('Teclado Mecánico Ergonómico')).toBeInTheDocument();
-      expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ category: undefined }));
+      expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ category: undefined }), expect.anything());
 
       fireEvent.click(screen.getByRole('button', { name: /Periféricos & Teclados, 8 productos/ }));
 
       await waitFor(() => {
         expect(listSpy).toHaveBeenCalledWith(
           expect.objectContaining({ category: 'perifericos', page: 1 }),
+          expect.anything(),
         );
       });
       expect(mockNavigate).toHaveBeenLastCalledWith({ search: { cat: 'perifericos' } });
@@ -538,6 +542,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       await waitFor(() => {
         expect(listSpy).toHaveBeenCalledWith(
           expect.objectContaining({ category: undefined, page: 1 }),
+          expect.anything(),
         );
       });
       expect(mockNavigate).toHaveBeenLastCalledWith({ search: {} });
@@ -553,6 +558,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       await waitFor(() => {
         expect(listSpy).toHaveBeenCalledWith(
           expect.objectContaining({ sort: 'price-asc', page: 1 }),
+          expect.anything(),
         );
       });
 
@@ -560,6 +566,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       await waitFor(() => {
         expect(listSpy).toHaveBeenCalledWith(
           expect.objectContaining({ sort: 'price-desc', page: 1 }),
+          expect.anything(),
         );
       });
     });
@@ -587,7 +594,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Ir a la página 3' }));
 
       await waitFor(() => {
-        expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ page: 3 }));
+        expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ page: 3 }), expect.anything());
         expect(mockNavigate).toHaveBeenLastCalledWith({ search: { page: 3 } });
       });
 
@@ -604,7 +611,7 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
 
       await waitFor(() => {
         expect(mockNavigate).toHaveBeenLastCalledWith({ search: {} });
-        expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ page: 1 }));
+        expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ page: 1 }), expect.anything());
       });
     });
 

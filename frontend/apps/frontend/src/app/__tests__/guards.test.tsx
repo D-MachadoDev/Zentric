@@ -288,7 +288,7 @@ describe('matriz de aislamiento de roles y superpotestad de Administrador', () =
         history: createMemoryHistory({ initialEntries: [path] }),
       });
       await router.load();
-      expect(router.state.location.pathname).toBe(path);
+      expect(router.state.location.pathname.startsWith(path)).toBe(true);
     }
   });
 

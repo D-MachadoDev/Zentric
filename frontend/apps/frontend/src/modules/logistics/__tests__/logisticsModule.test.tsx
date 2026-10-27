@@ -123,8 +123,22 @@ describe('Módulo Logístico (Logistics Module - W4-S04)', () => {
     vi.clearAllMocks();
 
     vi.spyOn(appServices.api, 'listFulfillments').mockResolvedValue(mockFulfillments);
+    vi.spyOn(appServices.api, 'listFulfillmentsPaged').mockResolvedValue({
+      items: mockFulfillments,
+      page: 1,
+      size: 20,
+      totalItems: mockFulfillments.length,
+      totalPages: 1,
+    });
     vi.spyOn(appServices.api, 'getFulfillmentById').mockResolvedValue(mockFulfillments[0]!);
     vi.spyOn(appServices.api, 'listReturns').mockResolvedValue(mockReturns);
+    vi.spyOn(appServices.api, 'listReturnsPaged').mockResolvedValue({
+      items: mockReturns,
+      page: 1,
+      size: 20,
+      totalItems: mockReturns.length,
+      totalPages: 1,
+    });
   });
 
   // ── 1. LogisticsFulfillmentsPage ──────────────────────────────────────
@@ -183,7 +197,7 @@ describe('Módulo Logístico (Logistics Module - W4-S04)', () => {
     });
 
     it('muestra error y permite reintentar cuando falla la carga', async () => {
-      vi.spyOn(appServices.api, 'listFulfillments').mockRejectedValue(new Error('Fallo de red logística'));
+      vi.spyOn(appServices.api, 'listFulfillmentsPaged').mockRejectedValue(new Error('Fallo de red logística'));
       renderWithClient(<LogisticsFulfillmentsPage />);
 
       expect(await screen.findByText('Error al cargar despachos')).toBeInTheDocument();
@@ -455,7 +469,7 @@ describe('Módulo Logístico (Logistics Module - W4-S04)', () => {
     });
 
     it('muestra error y permite reintentar cuando falla la carga', async () => {
-      vi.spyOn(appServices.api, 'listReturns').mockRejectedValue(new Error('Fallo de devoluciones'));
+      vi.spyOn(appServices.api, 'listReturnsPaged').mockRejectedValue(new Error('Fallo de devoluciones'));
       renderWithClient(<LogisticsReturnsInspectPage />);
 
       expect(await screen.findByText('Error al cargar devoluciones')).toBeInTheDocument();

@@ -91,7 +91,7 @@ describe('domainLabels (sección 3)', () => {
   it('rotula los estados de pedido con los términos de la Ley (Dominio 6)', () => {
     expect(NOMBRES_DE_ESTADO_DE_PEDIDO).toEqual({
       [OrderStatus.Cart]: 'Carrito',
-      [OrderStatus.PendingPayment]: 'Pendiente de Pago',
+      [OrderStatus.PendingPayment]: 'Pago Pendiente',
       [OrderStatus.Paid]: 'Pagado',
       [OrderStatus.Dispatched]: 'Despachado',
       [OrderStatus.Delivered]: 'Entregado',

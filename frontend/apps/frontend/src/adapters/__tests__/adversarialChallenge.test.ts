@@ -483,7 +483,7 @@ describe('ADVERSARIAL CHALLENGE SUITE (W2-S01)', () => {
 
         const result = CreateUserSchema.safeParse(nonEmailPayload);
         // We empirically document that CreateUserSchema currently permits this payload
-        expect(result.success).toBe(true);
+        expect(result.success).toBe(false);
       });
 
       it('EMPIRICAL AUDIT: identifies missing .email() check in LoginSchema', () => {
@@ -495,8 +495,8 @@ describe('ADVERSARIAL CHALLENGE SUITE (W2-S01)', () => {
         };
 
         const result = LoginSchema.safeParse(nonEmailLogin);
-        // We empirically document that LoginSchema accepts non-email strings
-        expect(result.success).toBe(true);
+        // Strictly asserts LoginSchema rejects non-email strings matching backend
+        expect(result.success).toBe(false);
       });
 
       it('EMPIRICAL AUDIT: identifies missing .min(1) on description and missing .max(200) on name in CreateProductSchema', () => {
@@ -513,8 +513,8 @@ describe('ADVERSARIAL CHALLENGE SUITE (W2-S01)', () => {
         };
 
         const result = CreateProductSchema.safeParse(emptyDescPayload);
-        // We empirically document that frontend schema does not reject 250-char name or empty description
-        expect(result.success).toBe(true);
+        // Strictly asserts CreateProductSchema rejects 250-char name or empty description matching backend
+        expect(result.success).toBe(false);
       });
     });
 

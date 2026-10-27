@@ -48,7 +48,7 @@ describe('Layouts de Rol y Componentes de Shell', () => {
   it('PublicLayout renderiza cabecera mínima, enlace a salud y pie suizo en /login', async () => {
     renderAppAt('/login');
 
-    expect(await screen.findByText('Zentric Core')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Zentric - Inicio')).toBeInTheDocument();
     expect(screen.getByText('Estado del Sistema')).toBeInTheDocument();
     expect(screen.getByText(/Consola Operativa Suiza/)).toBeInTheDocument();
   });
@@ -85,7 +85,7 @@ describe('Layouts de Rol y Componentes de Shell', () => {
     authAs(UserRole.Buyer);
     renderAppAt('/buyer');
 
-    expect(await screen.findByText('Portal de Compras')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Zentric Marketplace - Inicio')).toBeInTheDocument();
     expect(screen.getAllByText('Catálogo').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Carrito').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Mis Pedidos').length).toBeGreaterThanOrEqual(1);

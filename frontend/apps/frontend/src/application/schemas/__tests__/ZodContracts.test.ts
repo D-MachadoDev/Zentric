@@ -102,6 +102,7 @@ describe('Zod Contracts Derived 1:1 from OpenAPI / FluentValidation', () => {
     it('acepta cantidades enteras positivas', () => {
       const res = AddStockSchema.safeParse({
         variantId: 'var-1',
+        warehouseId: 'wh-1',
         quantity: 50,
       });
       expect(res.success).toBe(true);

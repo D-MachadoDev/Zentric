@@ -360,7 +360,7 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
       fireEvent.change(screen.getByPlaceholderText(/usuario@empresa.com/i), {
         target: { value: 'supervisor@zentric.com' },
       });
-      fireEvent.change(screen.getByPlaceholderText(/Mínimo 6 caracteres/i), {
+      fireEvent.change(screen.getByPlaceholderText(/Mínimo/i), {
         target: { value: 'PasswordSeguro123!' },
       });
       fireEvent.change(screen.getByLabelText(/Seleccionar rol de usuario/i), {
@@ -397,7 +397,7 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
 
       expect(await screen.findByText('El documento de identidad es obligatorio')).toBeInTheDocument();
       expect(screen.getByText('El nombre completo es obligatorio')).toBeInTheDocument();
-      expect(screen.getByText('La contraseña es obligatoria')).toBeInTheDocument();
+      expect(screen.getByText(/La contraseña debe tener al menos 8 caracteres/i)).toBeInTheDocument();
     });
 
     it('muestra alerta si el servidor rechaza el alta', async () => {
@@ -407,7 +407,7 @@ describe('Módulo de Administración (Admin Module - W4-S04)', () => {
       fireEvent.change(screen.getByPlaceholderText(/1020304050/i), { target: { value: '11223344' } });
       fireEvent.change(screen.getByPlaceholderText(/Carlos Vendedor/i), { target: { value: 'Usuario Duplicado' } });
       fireEvent.change(screen.getByPlaceholderText(/usuario@empresa.com/i), { target: { value: 'duplicado@zentric.com' } });
-      fireEvent.change(screen.getByPlaceholderText(/Mínimo 6 caracteres/i), { target: { value: '123456' } });
+      fireEvent.change(screen.getByPlaceholderText(/Mínimo/i), { target: { value: 'Password123!' } });
 
       const submitBtn = screen.getByRole('button', { name: /Crear Usuario/i });
       fireEvent.click(submitBtn);

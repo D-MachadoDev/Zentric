@@ -213,13 +213,48 @@ describe('Módulo del Supervisor de Auditoría (Supervisor Module - W4-S05)', ()
       timestamp: new Date().toISOString(),
     });
     vi.spyOn(appServices.api, 'listOrders').mockResolvedValue(mockOrders);
+    vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({
+      items: mockOrders,
+      page: 1,
+      size: 20,
+      totalItems: mockOrders.length,
+      totalPages: 1,
+    });
     vi.spyOn(appServices.api, 'getOrderById').mockResolvedValue(mockOrderDetail);
     vi.spyOn(appServices.api, 'listFulfillments').mockResolvedValue(mockFulfillments);
+    vi.spyOn(appServices.api, 'listFulfillmentsPaged').mockResolvedValue({
+      items: mockFulfillments,
+      page: 1,
+      size: 20,
+      totalItems: mockFulfillments.length,
+      totalPages: 1,
+    });
     vi.spyOn(appServices.api, 'listReturns').mockResolvedValue(mockReturns);
+    vi.spyOn(appServices.api, 'listReturnsPaged').mockResolvedValue({
+      items: mockReturns,
+      page: 1,
+      size: 20,
+      totalItems: mockReturns.length,
+      totalPages: 1,
+    });
     vi.spyOn(appServices.api, 'getReturnById').mockResolvedValue(mockReturns[0]!);
     vi.spyOn(appServices.api, 'listInvoices').mockResolvedValue(mockInvoices);
+    vi.spyOn(appServices.api, 'listInvoicesPaged').mockResolvedValue({
+      items: mockInvoices,
+      page: 1,
+      size: 20,
+      totalItems: mockInvoices.length,
+      totalPages: 1,
+    });
     vi.spyOn(appServices.api, 'getInvoicesByOrder').mockResolvedValue(mockInvoices);
     vi.spyOn(appServices.api, 'listInventories').mockResolvedValue(mockInventories);
+    vi.spyOn(appServices.api, 'listInventoriesPaged').mockResolvedValue({
+      items: mockInventories,
+      page: 1,
+      size: 20,
+      totalItems: mockInventories.length,
+      totalPages: 1,
+    });
   });
 
   // ── 1. SupervisorDashboardPage ────────────────────────────────────────
@@ -248,7 +283,8 @@ describe('Módulo del Supervisor de Auditoría (Supervisor Module - W4-S05)', ()
 
     it('muestra estado vacío de pedidos y alerta de fallo parcial con opción de reintentar', async () => {
       vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([]);
-      vi.spyOn(appServices.api, 'listFulfillments').mockRejectedValue(
+      vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [], page: 1, size: 20, totalItems: 0, totalPages: 0 });
+      vi.spyOn(appServices.api, 'listFulfillmentsPaged').mockRejectedValue(
         new Error('Fallo en red logística')
       );
 
@@ -301,7 +337,7 @@ describe('Módulo del Supervisor de Auditoría (Supervisor Module - W4-S05)', ()
     });
 
     it('muestra alerta de error y permite reintentar cuando falla la consulta', async () => {
-      vi.spyOn(appServices.api, 'listOrders').mockRejectedValue(
+      vi.spyOn(appServices.api, 'listOrdersPaged').mockRejectedValue(
         new Error('Error de conexión con pedidos')
       );
 
@@ -422,7 +458,7 @@ describe('Módulo del Supervisor de Auditoría (Supervisor Module - W4-S05)', ()
     });
 
     it('muestra alerta de error y permite reintentar cuando falla la consulta', async () => {
-      vi.spyOn(appServices.api, 'listFulfillments').mockRejectedValue(
+      vi.spyOn(appServices.api, 'listFulfillmentsPaged').mockRejectedValue(
         new Error('Error en servicio logístico')
       );
 
@@ -482,7 +518,7 @@ describe('Módulo del Supervisor de Auditoría (Supervisor Module - W4-S05)', ()
     });
 
     it('muestra error y permite reintentar cuando falla la consulta de devoluciones', async () => {
-      vi.spyOn(appServices.api, 'listReturns').mockRejectedValue(
+      vi.spyOn(appServices.api, 'listReturnsPaged').mockRejectedValue(
         new Error('Error en devoluciones')
       );
 
@@ -536,7 +572,7 @@ describe('Módulo del Supervisor de Auditoría (Supervisor Module - W4-S05)', ()
     });
 
     it('muestra alerta de error y permite reintentar cuando falla la carga de facturas', async () => {
-      vi.spyOn(appServices.api, 'listInvoices').mockRejectedValue(
+      vi.spyOn(appServices.api, 'listInvoicesPaged').mockRejectedValue(
         new Error('Error en libro tributario')
       );
 
@@ -645,7 +681,7 @@ describe('Módulo del Supervisor de Auditoría (Supervisor Module - W4-S05)', ()
     });
 
     it('muestra mensaje cuando no hay posiciones de inventario cargadas en la red', async () => {
-      vi.spyOn(appServices.api, 'listInventories').mockResolvedValue([]);
+      vi.spyOn(appServices.api, 'listInventoriesPaged').mockResolvedValue({ items: [], page: 1, size: 20, totalItems: 0, totalPages: 0 });
 
       renderWithClient(<SupervisorInventoryAuditPage />);
 
@@ -655,7 +691,7 @@ describe('Módulo del Supervisor de Auditoría (Supervisor Module - W4-S05)', ()
     });
 
     it('muestra estado de error de carga de inventario y permite reintentar', async () => {
-      vi.spyOn(appServices.api, 'listInventories').mockRejectedValue(
+      vi.spyOn(appServices.api, 'listInventoriesPaged').mockRejectedValue(
         new Error('Error de red en inventarios')
       );
 

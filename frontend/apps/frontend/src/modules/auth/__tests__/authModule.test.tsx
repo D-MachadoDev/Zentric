@@ -53,7 +53,7 @@ describe('Módulo de Autenticación y Salud (W4-S01-auth-module)', () => {
       expect(screen.getByText(/Devolución Protegida/i)).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: /Ingresa a tu cuenta/i })).toBeInTheDocument();
       expect(screen.getByLabelText(/Correo Electrónico/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Contraseña/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^Contraseña$/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Continuar/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Usar Cuenta Demo/i })).toBeInTheDocument();
     });
@@ -107,7 +107,7 @@ describe('Módulo de Autenticación y Salud (W4-S01-auth-module)', () => {
       fireEvent.change(screen.getByLabelText(/Correo Electrónico/i), {
         target: { value: 'buyer@zentric.me' },
       });
-      fireEvent.change(screen.getByLabelText(/Contraseña/i), {
+      fireEvent.change(screen.getByLabelText(/^Contraseña$/i), {
         target: { value: 'Secret123!' },
       });
 
@@ -128,7 +128,7 @@ describe('Módulo de Autenticación y Salud (W4-S01-auth-module)', () => {
       fireEvent.change(screen.getByLabelText(/Correo Electrónico/i), {
         target: { value: 'wrong@zentric.me' },
       });
-      fireEvent.change(screen.getByLabelText(/Contraseña/i), {
+      fireEvent.change(screen.getByLabelText(/^Contraseña$/i), {
         target: { value: 'BadPassword' },
       });
 

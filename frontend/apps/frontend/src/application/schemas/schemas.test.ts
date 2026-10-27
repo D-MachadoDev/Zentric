@@ -13,7 +13,7 @@ describe('Esquemas de formulario (Q13)', () => {
       identityDocument: '12345678',
       fullName: 'Ana Vega',
       email: 'ana@zentric.dev',
-      password: 'secret',
+      password: 'Password123!',
       role: UserRole.Buyer,
     });
 
@@ -25,7 +25,7 @@ describe('Esquemas de formulario (Q13)', () => {
       identityDocument: '12345678',
       fullName: 'Ana Vega',
       email: 'ana@zentric.dev',
-      password: 'secret',
+      password: 'Password123!',
       // El backend sólo acepta el nombre; un entero responde 400.
       role: 1,
     });
