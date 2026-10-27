@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { alertAdapter } from '../../app/providers/alertAdapter';
 import { useSearch } from '@tanstack/react-router';
 import { useInventoriesPagedQuery, useAddStockMutation, useDeleteInventoryMutation } from '../../application/services/inventory';
@@ -17,6 +17,14 @@ import {
   StateView,
   Pagination,
   useDebounce,
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+  StatusBadge,
+  Label,
 } from '@zentric/ui';
 import {
   Warehouse as WarehouseIcon,
@@ -46,12 +54,25 @@ export function SellerInventoryPage() {
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('All');
   const [page, setPage] = useState(1);
 
-  // Formulario AddStock
-  const [targetVariantId, setTargetVariantId] = useState('');
+  // Formulario AddStock: desacoplado del URL fallback para permitir limpiar sin atrapar
+  const [targetVariantId, setTargetVariantId] = useState(search.variantId ?? '');
   const [targetWarehouseId, setTargetWarehouseId] = useState('');
   const [stockQuantity, setStockQuantity] = useState<string>('1');
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
+
+  // Notificaciones contextuales para la tabla y acciones destructivas
+  const [tableError, setTableError] = useState<string | null>(null);
+  const [tableSuccess, setTableSuccess] = useState<string | null>(null);
+
+  // Sincronizar cuando search.variantId cambie externamente sin efecto en cascada (React adjust state during render)
+  const [prevSearchVariantId, setPrevSearchVariantId] = useState(search.variantId);
+  if (search.variantId !== prevSearchVariantId) {
+    setPrevSearchVariantId(search.variantId);
+    if (search.variantId) {
+      setTargetVariantId(search.variantId);
+    }
+  }
 
   const debouncedSearch = useDebounce(searchInput.trim(), SEARCH_DEBOUNCE_MS);
 
@@ -70,22 +91,47 @@ export function SellerInventoryPage() {
 
   const { data: warehouses, isLoading: isLoadingWarehouses } = useWarehousesQuery();
   const { data: productsResult } = useProductsPagedQuery();
-  const products = productsResult?.items ?? [];
+  const products = useMemo(() => productsResult?.items ?? [], [productsResult?.items]);
 
   const addStockMutation = useAddStockMutation();
   const deleteInventoryMutation = useDeleteInventoryMutation();
 
-  const allWarehouses = warehouses ?? [];
+  const allWarehouses = useMemo(() => warehouses ?? [], [warehouses]);
   const hasFilters = debouncedSearch !== '' || selectedWarehouseId !== 'All';
 
-  // Prefill sin efectos: la URL ("Abastecer" de la ficha de producto) y la
-  // unica bodega disponible son el valor por defecto del formulario; en
-  // cuanto el usuario escribe, su valor manda.
-  const effectiveVariantId = targetVariantId || (search.variantId ?? '');
-  const effectiveWarehouseId =
-    targetWarehouseId || (allWarehouses.length === 1 ? (allWarehouses[0]?.id ?? '') : '');
+  const warehouseMap = useMemo(
+    () => new Map<string, Warehouse>(allWarehouses.map((w: Warehouse) => [w.id, w])),
+    [allWarehouses],
+  );
 
-  // Limpia todos los campos del formulario de abastecer
+  const activeWarehouses = useMemo(
+    () => allWarehouses.filter((w: Warehouse) => w.isActive),
+    [allWarehouses],
+  );
+
+  const allProductVariants = useMemo(
+    () =>
+      products.flatMap((p: Product) =>
+        (p.variants ?? []).map((v: ProductVariant) => ({
+          id: v.id,
+          label: `${p.name} — SKU: ${v.sku}`,
+          productName: p.name,
+          sku: v.sku,
+        })),
+      ),
+    [products],
+  );
+
+  const effectiveVariantId = targetVariantId;
+  const effectiveWarehouseId =
+    targetWarehouseId ||
+    (activeWarehouses.length === 1
+      ? (activeWarehouses[0]?.id ?? '')
+      : allWarehouses.length === 1
+        ? (allWarehouses[0]?.id ?? '')
+        : '');
+
+  // Limpia todos los campos del formulario de abastecer sin re-atrapar el variantId de la URL
   const clearForm = () => {
     setTargetVariantId('');
     setTargetWarehouseId('');
@@ -93,11 +139,9 @@ export function SellerInventoryPage() {
     setFormError(null);
     setFormSuccess(null);
   };
-  const warehouseMap = new Map<string, Warehouse>(allWarehouses.map((w: Warehouse) => [w.id, w]));
 
-  // Orden de presencia: la variante preseleccionada (URL "Abastecer" o formulario)
-  // se destaca en la tabla. La página la decide el servidor.
-  const presenceVariantId = effectiveVariantId.trim();
+  // Orden de presencia: la variante seleccionada en el formulario se destaca en la tabla
+  const presenceVariantId = targetVariantId.trim();
 
   const handleAddStock = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,10 +158,25 @@ export function SellerInventoryPage() {
       return;
     }
 
-    const quantity = parseInt(stockQuantity, 10) || 0;
+    const trimmedQuantity = stockQuantity.trim();
+    if (!trimmedQuantity) {
+      setFormError('Debe ingresar la cantidad de unidades.');
+      return;
+    }
 
+    if (!/^\d+$/.test(trimmedQuantity)) {
+      setFormError('La cantidad debe ser un número entero sin decimales.');
+      return;
+    }
+
+    const quantity = Number(trimmedQuantity);
     if (quantity <= 0) {
       setFormError('La cantidad a ingresar debe ser mayor que cero (INV-01).');
+      return;
+    }
+
+    if (quantity > 1000000) {
+      setFormError('La cantidad no puede superar 1.000.000 de unidades por operación.');
       return;
     }
 
@@ -144,15 +203,29 @@ export function SellerInventoryPage() {
   };
 
   const handleDeleteInventory = async (inv: Inventory) => {
-    setFormError(null);
-    setFormSuccess(null);
+    setTableError(null);
+    setTableSuccess(null);
+
+    const physicalStock =
+      inv.availableQuantity +
+      inv.reservedQuantity +
+      inv.damagedQuantity +
+      (inv.usedQuantity ?? 0);
+
+    if (physicalStock > 0) {
+      await alertAdapter.confirm({
+        title: 'No se puede eliminar el inventario',
+        description: `Este registro todavía tiene ${physicalStock} unidades físicas activas (disponibles, reservadas, usadas o dañadas). Debe ajustar todas las existencias a cero antes de eliminar el registro.`,
+        confirmLabel: 'Entendido',
+        variant: 'default',
+      });
+      return;
+    }
 
     const accepted = await alertAdapter.confirm({
       title: 'Eliminar registro de inventario',
       description:
-        inv.availableQuantity + inv.reservedQuantity + inv.damagedQuantity > 0
-          ? 'Este registro todavía tiene unidades disponibles, reservadas o dañadas. Solo se puede eliminar un registro sin existencias físicas.'
-          : 'El registro dejará de aparecer en el inventario. Esta acción no se puede deshacer desde la interfaz.',
+        'El registro dejará de aparecer en el inventario. Esta acción no se puede deshacer desde la interfaz.',
       confirmLabel: 'Eliminar',
       variant: 'destructive',
     });
@@ -160,13 +233,12 @@ export function SellerInventoryPage() {
 
     try {
       await deleteInventoryMutation.mutateAsync(inv.id);
-      setFormSuccess('Registro de inventario eliminado.');
-      // Si era el último de la página, retrocede para no quedarse en un vacío.
+      setTableSuccess(`Registro de inventario de "${inv.productName || 'producto'}" eliminado.`);
       if (inventories.length === 1 && page > 1) {
         setPage(page - 1);
       }
     } catch (err) {
-      setFormError(mensajeDeError(err));
+      setTableError(mensajeDeError(err));
     }
   };
 
@@ -239,13 +311,30 @@ export function SellerInventoryPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Lado Izquierdo (65%): Posiciones de Stock ───────────────────── */}
         <section className="lg:col-span-8 space-y-6">
+          {/* Notificaciones contextuales para la tabla y acciones destructivas */}
+          {tableError && (
+            <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+              <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+              <AlertDescription className="text-xs">{tableError}</AlertDescription>
+            </Alert>
+          )}
+
+          {tableSuccess && (
+            <Alert className="border-success/40 bg-success/10 text-success">
+              <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+              <AlertDescription className="text-xs">{tableSuccess}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Controles de Búsqueda y Filtrado */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
               <Input
+                id="inventory-search-input"
                 type="text"
                 placeholder="Buscar por producto o SKU..."
+                aria-label="Buscar por producto o SKU"
                 value={searchInput}
                 onChange={(e) => {
                   setSearchInput(e.target.value);
@@ -255,6 +344,7 @@ export function SellerInventoryPage() {
               />
             </div>
             <select
+              id="inventory-warehouse-filter"
               value={selectedWarehouseId}
               onChange={(e) => {
                 setSelectedWarehouseId(e.target.value);
@@ -266,7 +356,7 @@ export function SellerInventoryPage() {
               <option value="All">Todas las bodegas</option>
               {allWarehouses.map((w: Warehouse) => (
                 <option key={w.id} value={w.id}>
-                  {w.location} ({w.type})
+                  {w.name ? `${w.name} (${w.location})` : w.location} ({w.type})
                 </option>
               ))}
             </select>
@@ -275,117 +365,146 @@ export function SellerInventoryPage() {
           {/* Tabla de Existencias */}
           {inventories.length === 0 ? (
             <StateView
-              state="empty"
+              tone="empty"
               title="No hay existencias registradas"
               description={
                 hasFilters
                   ? 'No hay inventarios que coincidan con los filtros aplicados.'
                   : 'Aún no has registrado existencias de tus variantes en ninguna bodega física.'
               }
+              action={
+                hasFilters
+                  ? {
+                      label: 'Limpiar filtros',
+                      onClick: () => {
+                        setSearchInput('');
+                        setSelectedWarehouseId('All');
+                        setPage(1);
+                      },
+                    }
+                  : undefined
+              }
             />
           ) : (
-
             <div className="rounded-2xl border border-border bg-surface overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-foreground font-sans">
-                  <thead className="bg-surface-muted text-xs font-semibold text-foreground-muted uppercase tracking-wider border-b border-border">
-                    <tr>
-                      <th className="py-3 px-4">Variante / SKU</th>
-                      <th className="py-3 px-4">Bodega</th>
-                      <th className="py-3 px-4 text-right">Disponible</th>
-                      <th className="py-3 px-4 text-right">Reservado</th>
-                      <th className="py-3 px-4 text-right">Usado</th>
-                      <th className="py-3 px-4 text-right">Dañado</th>
-                      <th className="py-3 px-4 text-right">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
-                    {inventories.map((inv: Inventory) => {
-                      const warehouse = warehouseMap.get(inv.warehouseId);
+              <Table aria-label="Inventario de productos por almacén" className="w-full text-left text-sm text-foreground font-sans">
+                <TableHeader className="bg-surface-muted text-xs font-semibold text-foreground-muted uppercase tracking-wider border-b border-border">
+                  <TableRow>
+                    <TableHead scope="col" className="py-3 px-4">Variante / SKU</TableHead>
+                    <TableHead scope="col" className="py-3 px-4">Bodega</TableHead>
+                    <TableHead scope="col" className="py-3 px-4 text-right">Disponible</TableHead>
+                    <TableHead scope="col" className="py-3 px-4 text-right">Reservado</TableHead>
+                    <TableHead scope="col" className="py-3 px-4 text-right">Usado</TableHead>
+                    <TableHead scope="col" className="py-3 px-4 text-right">Dañado</TableHead>
+                    <TableHead scope="col" className="py-3 px-4 text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-border/60">
+                  {inventories.map((inv: Inventory) => {
+                    const warehouse = warehouseMap.get(inv.warehouseId);
+                    const isPresence = Boolean(presenceVariantId) && inv.variantId === presenceVariantId;
+                    const physicalStock =
+                      inv.availableQuantity +
+                      inv.reservedQuantity +
+                      inv.damagedQuantity +
+                      (inv.usedQuantity ?? 0);
+                    const hasPhysicalStock = physicalStock > 0;
+                    const warehouseName = warehouse
+                      ? (warehouse.name ? `${warehouse.name} (${warehouse.location})` : warehouse.location)
+                      : 'Bodega Física';
 
-                      const isPresence = Boolean(presenceVariantId) && inv.variantId === presenceVariantId;
-
-                      return (
-                        <tr
-                          key={inv.id}
-                          onClick={() => handleSelectInventory(inv)}
-                          className={
-                            isPresence
-                              ? 'bg-brand/10 border-l-4 border-brand hover:bg-brand/15 transition-colors cursor-pointer'
-                              : 'hover:bg-surface-muted/40 transition-colors cursor-pointer'
+                    return (
+                      <TableRow
+                        key={inv.id}
+                        tabIndex={0}
+                        role="row"
+                        onClick={() => handleSelectInventory(inv)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleSelectInventory(inv);
                           }
-                        >
-                          <td className="py-4 px-4">
-                            <div className="font-medium text-foreground" title={inv.variantId}>
-                              {inv.productName || 'Producto sin nombre'}
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs font-mono text-brand font-semibold">
-                                SKU: {inv.sku || '—'}
-                              </span>
-                              {isPresence && (
-                                <Badge className="bg-brand/20 text-brand border-brand/40 text-[10px] font-mono ml-2">
-                                  ↑ Presencia
-                                </Badge>
-                              )}
-                              {inv.availableQuantity === 0 ? (
-                                <Badge className="bg-destructive/15 text-destructive border-destructive/30 text-[10px] font-mono">
-                                  Agotado
-                                </Badge>
-                              ) : inv.availableQuantity <= 5 ? (
-                                <Badge className="bg-warning/15 text-warning border-warning/30 text-[10px] font-mono">
-                                  Bajo Stock
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-success/15 text-success border-success/30 text-[10px] font-mono">
-                                  En Stock
-                                </Badge>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="font-medium text-foreground flex items-center gap-1.5">
-                              <WarehouseIcon className="h-3.5 w-3.5 text-foreground-muted" />
-                              {warehouse?.location ?? 'Bodega Física'}
-                            </div>
-                            <div className="text-xs text-foreground-muted">
-                              Tipo: {warehouse?.type ?? 'Marketplace'}
-                            </div>
-                          </td>
-                          <td className="py-4 px-4 text-right font-mono font-semibold text-foreground tabular-nums">
-                            {inv.availableQuantity}
-                          </td>
-                          <td className="py-4 px-4 text-right font-mono text-warning tabular-nums">
-                            {inv.reservedQuantity}
-                          </td>
-                          <td className="py-4 px-4 text-right font-mono text-foreground-muted tabular-nums">
-                            {inv.usedQuantity}
-                          </td>
-                          <td className="py-4 px-4 text-right font-mono text-destructive tabular-nums">
-                            {inv.damagedQuantity}
-                          </td>
-                          <td className="py-4 px-4 text-right">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteInventory(inv);
-                              }}
-                              disabled={deleteInventoryMutation.isPending}
-                              className="border-destructive/40 text-destructive hover:bg-destructive/10"
-                              title="Eliminar registro de inventario"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                        }}
+                        aria-selected={isPresence}
+                        className={
+                          isPresence
+                            ? 'bg-brand/10 border-l-4 border-brand hover:bg-brand/15 transition-colors cursor-pointer'
+                            : 'hover:bg-surface-muted/40 transition-colors cursor-pointer'
+                        }
+                      >
+                        <TableCell className="py-4 px-4">
+                          <div className="font-medium text-foreground" title={inv.variantId}>
+                            {inv.productName || 'Producto sin nombre'}
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs font-mono text-brand font-semibold">
+                              SKU: {inv.sku || '—'}
+                            </span>
+                            {isPresence && (
+                              <StatusBadge tone="info" className="ml-2">
+                                ↑ Presencia
+                              </StatusBadge>
+                            )}
+                            {inv.availableQuantity === 0 ? (
+                              <StatusBadge tone="danger">Agotado</StatusBadge>
+                            ) : inv.availableQuantity <= 5 ? (
+                              <StatusBadge tone="warning">Bajo Stock</StatusBadge>
+                            ) : (
+                              <StatusBadge tone="success">En Stock</StatusBadge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 px-4">
+                          <div className="font-medium text-foreground flex items-center gap-1.5">
+                            <WarehouseIcon className="h-3.5 w-3.5 text-foreground-muted" />
+                            {warehouseName}
+                          </div>
+                          <div className="text-xs text-foreground-muted">
+                            Tipo: {warehouse?.type ?? 'Marketplace'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 px-4 text-right font-mono font-semibold text-foreground tabular-nums">
+                          {inv.availableQuantity}
+                        </TableCell>
+                        <TableCell className="py-4 px-4 text-right font-mono text-warning tabular-nums">
+                          {inv.reservedQuantity}
+                        </TableCell>
+                        <TableCell className="py-4 px-4 text-right font-mono text-foreground-muted tabular-nums">
+                          {inv.usedQuantity}
+                        </TableCell>
+                        <TableCell className="py-4 px-4 text-right font-mono text-destructive tabular-nums">
+                          {inv.damagedQuantity}
+                        </TableCell>
+                        <TableCell className="py-4 px-4 text-right">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteInventory(inv);
+                            }}
+                            disabled={deleteInventoryMutation.isPending || hasPhysicalStock}
+                            className={
+                              hasPhysicalStock
+                                ? 'border-border/40 text-foreground-muted/40 cursor-not-allowed'
+                                : 'border-destructive/40 text-destructive hover:bg-destructive/10'
+                            }
+                            title={
+                              hasPhysicalStock
+                                ? 'No se puede eliminar: el registro tiene existencias físicas activas (deben ajustarse a 0 primero)'
+                                : `Eliminar inventario de ${inv.productName || 'producto'} en almacén ${warehouseName}`
+                            }
+                            aria-label={`Eliminar inventario de ${inv.productName || 'producto'} en almacén ${warehouseName}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </div>
           )}
 
@@ -424,42 +543,40 @@ export function SellerInventoryPage() {
             )}
 
             {formSuccess && (
-              <Alert className="border-brand/40 bg-brand/10 text-brand">
-                <CheckCircle2 className="h-4 w-4 text-brand" />
+              <Alert className="border-success/40 bg-success/10 text-success">
+                <CheckCircle2 className="h-4 w-4 text-success" />
                 <AlertDescription className="text-xs">{formSuccess}</AlertDescription>
               </Alert>
             )}
 
             <form onSubmit={handleAddStock} noValidate className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-foreground-muted">
+                <Label htmlFor="target-variant-select" className="text-xs font-semibold text-foreground-muted">
                   Variante a Abastecer
-                </label>
+                </Label>
                 <select
+                  id="target-variant-select"
                   value={effectiveVariantId}
                   onChange={(e) => setTargetVariantId(e.target.value)}
                   aria-label="Seleccionar variante de producto"
                   className="w-full bg-surface-muted border border-border text-foreground text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:border-brand"
                 >
                   <option value="">-- Seleccionar Variante --</option>
-                  {products.flatMap((p: Product) =>
-                    (p.variants ?? []).map((v: ProductVariant) => (
-                      <option key={v.id} value={v.id}>
-                        {p.name} — SKU: {v.sku}
-                      </option>
-                    ))
-                  )}
+                  {allProductVariants.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.label}
+                    </option>
+                  ))}
                   {effectiveVariantId &&
-                    !products.some((p: Product) =>
-                      (p.variants ?? []).some((v: ProductVariant) => v.id === effectiveVariantId),
-                    ) && (
+                    !allProductVariants.some((v) => v.id === effectiveVariantId) && (
                       <option value={effectiveVariantId}>{effectiveVariantId}</option>
                     )}
                 </select>
-                <p className="text-[11px] text-foreground-muted">
+                <Label htmlFor="target-variant-id" className="text-[11px] text-foreground-muted font-normal block">
                   O ingresa el ID si no aparece en el listado:
-                </p>
+                </Label>
                 <Input
+                  id="target-variant-id"
                   type="text"
                   placeholder="ID de Variante (UUID)"
                   value={effectiveVariantId}
@@ -469,35 +586,38 @@ export function SellerInventoryPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-foreground-muted">
+                <Label htmlFor="target-warehouse-select" className="text-xs font-semibold text-foreground-muted">
                   Bodega de Recepción
-                </label>
+                </Label>
                 <select
+                  id="target-warehouse-select"
                   value={effectiveWarehouseId}
                   onChange={(e) => setTargetWarehouseId(e.target.value)}
-                  aria-label="Seleccionar bodega"
+                  aria-label="Seleccionar bodega de recepción"
                   className="w-full bg-surface-muted border border-border text-foreground text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:border-brand"
                 >
                   <option value="">-- Seleccionar Bodega --</option>
-                  {allWarehouses.map((w: Warehouse) => (
+                  {activeWarehouses.map((w: Warehouse) => (
                     <option key={w.id} value={w.id}>
-                      {w.location} — {w.type === 'Marketplace' ? '⚡ Centro Fulfillment Zentric' : '📦 Bodega Propia'}
+                      {w.name ? `${w.name} (${w.location})` : w.location} — {w.type === 'Marketplace' ? '⚡ Centro Fulfillment Zentric' : '📦 Bodega Propia'}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-foreground-muted">
+                <Label htmlFor="stock-quantity" className="text-xs font-semibold text-foreground-muted">
                   Cantidad de Unidades
-                </label>
+                </Label>
                 <Input
+                  id="stock-quantity"
                   type="number"
                   min={1}
+                  step="1"
                   value={stockQuantity}
                   onChange={(e) => setStockQuantity(e.target.value)}
                   className="bg-surface-muted border-border text-foreground font-mono text-sm focus:border-brand"
-                aria-label="Cantidad de unidades a ingresar"
+                  aria-label="Cantidad de unidades a ingresar"
                 />
                 <p className="text-[11px] text-foreground-muted">
                   Debe ser un entero mayor a cero (INV-01).
@@ -507,9 +627,10 @@ export function SellerInventoryPage() {
               <div className="space-y-2">
                 <Button
                   type="button"
+                  variant="outline"
                   onClick={clearForm}
                   disabled={addStockMutation.isPending}
-                  className="w-full bg-muted text-foreground hover:bg-muted/90 font-semibold mr-2"
+                  className="w-full font-semibold"
                   title="Limpiar campos del formulario"
                 >
                   Limpiar
@@ -517,7 +638,8 @@ export function SellerInventoryPage() {
                 <Button
                   type="submit"
                   disabled={addStockMutation.isPending}
-                  className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold" title="Ingresar existencias en la bodega seleccionada"
+                  className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold"
+                  title="Ingresar existencias en la bodega seleccionada"
                 >
                   {addStockMutation.isPending ? (
                     <>
