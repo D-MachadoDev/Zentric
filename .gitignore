@@ -211,6 +211,8 @@ Thumbs.db
 
 # Agent tooling (local development process, not product code)
 .agents/
+.cline/
+.kilo/
 .atl/
 .engram/
 .codegraph/
