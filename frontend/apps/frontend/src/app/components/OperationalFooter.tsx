@@ -35,6 +35,11 @@ export function OperationalFooter({ roleLabel = 'Consola Operativa' }: Operation
             Sesión Segura RBAC
           </span>
           <span className="text-foreground-subtle">·</span>
+          <span className="inline-flex items-center gap-1 text-foreground-muted">
+            <span>Developed with</span>
+            <span className="text-rose-500 motion-safe:animate-pulse" aria-label="love">❤️</span>
+          </span>
+          <span className="text-foreground-subtle">·</span>
           <span>© {new Date().getFullYear()} Zentric Inc.</span>
         </div>
       </div>

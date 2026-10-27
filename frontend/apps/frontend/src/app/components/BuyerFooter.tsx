@@ -158,7 +158,14 @@ export function BuyerFooter() {
       {/* ── 3. Barra Final de Derechos y Copyright ── */}
       <div className="border-t border-border bg-surface-muted/30 px-4 py-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-foreground-muted">
-          <p>© {new Date().getFullYear()} Zentric Marketplace Inc. Todos los derechos reservados.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p>© {new Date().getFullYear()} Zentric Marketplace Inc. Todos los derechos reservados.</p>
+            <span className="text-border" aria-hidden="true">·</span>
+            <span className="inline-flex items-center gap-1 text-foreground-muted font-mono text-[11px]">
+              <span>Developed with</span>
+              <span className="text-rose-500 motion-safe:animate-pulse" aria-label="love">❤️</span>
+            </span>
+          </div>
           <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono">
             <Link to="/buyer" className="hover:text-brand transition-colors">
               Red de Bodegas Físicas
