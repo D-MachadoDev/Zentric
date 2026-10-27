@@ -1,15 +1,17 @@
-﻿import { useState, useCallback } from 'react';
-import { useParams } from '@tanstack/react-router';
-import { useCreateProductMutation, useUpdateProductMutation, useProductQuery } from '../../application/services/catalog';
-import { ProductType, type Product, type ProductVariant, type CreatedProduct, ProductStatus, type UpdateProductInput } from '../../domain';
-import { ProductCard } from '../buyer/components/ProductCard';
+﻿import { useState } from 'react';
+import { Link } from '@tanstack/react-router';
+import { useCreateProductMutation, useProductQuery } from '../../application/services/catalog';
+import { ProductType, type Product, type CreatedProduct, ProductStatus } from '../../domain';
 import {
   Button,
   Input,
   Alert,
   AlertTitle,
   AlertDescription,
+  Skeleton,
 } from '@zentric/ui';
+
+export type CreateProductPageMode = 'create' | 'edit';
 
 import {
   ArrowLeft,
@@ -49,14 +51,11 @@ const ATTRIBUTE_PRESETS: Array<{ name: string; sampleValue: string }> = [
  */
 export function CreateProductPage({ productId }: { productId?: string }) {
   const createProductMutation = useCreateProductMutation();
-  const updateProductMutation = useUpdateProductMutation();
-  const navigate = useParams({ strict: false });
-  const mode: CreateProductPageMode = productId ? 'edit' : 'create';
 
   // Para modo edición: cargar datos del producto
-  const { data: productData, isLoading: isProductLoading, isError, error } = productId
+  const { data: productData, isLoading: isProductLoading } = productId
     ? useProductQuery(productId)
-    : { data: null, isLoading: false, isError: false, error: null };
+    : { data: null, isLoading: false };
 
   // Estado inicial del formulario - modo creación o edición
   const initialName = productId ? (productData?.name ?? '') : '';
@@ -86,12 +85,7 @@ export function CreateProductPage({ productId }: { productId?: string }) {
   const [priceAmount, setPriceAmount] = useState(initialPriceAmount);
   const [type, setType] = useState(initialType);
 
-  const [variants, setVariants] = useState<VariantDraft[]>([
-    { sku: '', attrName: 'Color', attrValue: 'Negro' },
-  ]);
 
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [createdResult, setCreatedResult] = useState<CreatedProduct | null>(null);
 
   const previewProduct: Product = {
     id: 'preview',
@@ -196,7 +190,7 @@ export function CreateProductPage({ productId }: { productId?: string }) {
     }
   };
 
-if (isLoading) {
+if (isLoading || isProductLoading) {
     return (
       <div className="space-y-8 w-full max-w-full">
         <Skeleton className="h-8 w-48 bg-surface" />
