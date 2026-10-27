@@ -372,7 +372,7 @@ namespace Zentric.Tests.Presentation
                 .Where(t => t.IsClass && !t.IsAbstract && typeof(Migration).IsAssignableFrom(t))
                 .ToList();
 
-            Assert.Equal(22, migrations.Count);
+            Assert.Equal(23, migrations.Count);
         }
     }
 }
