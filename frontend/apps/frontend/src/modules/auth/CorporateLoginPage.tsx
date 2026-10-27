@@ -191,8 +191,8 @@ export function CorporateLoginPage() {
   const loginMutation = useLoginMutation();
 
   const [activeRole, setActiveRole] = useState<Exclude<BrandRole, 'buyer'>>('seller');
-  const [email, setEmail] = useState(CORPORATE_ROLE_IDENTITIES[0]!.email);
-  const [password, setPassword] = useState(CORPORATE_ROLE_IDENTITIES[0]!.password);
+  const [email, setEmail] = useState(import.meta.env.DEV ? CORPORATE_ROLE_IDENTITIES[0]!.email : '');
+  const [password, setPassword] = useState(import.meta.env.DEV ? CORPORATE_ROLE_IDENTITIES[0]!.password : '');
   const [showPassword, setShowPassword] = useState(false);
   const [acceptCorporateTerms, setAcceptCorporateTerms] = useState(true);
   const [acceptDataCompliance, setAcceptDataCompliance] = useState(true);
@@ -209,8 +209,10 @@ export function CorporateLoginPage() {
 
   const selectRoleStation = (identity: CorporateRoleIdentity) => {
     setActiveRole(identity.role);
-    setEmail(identity.email);
-    setPassword(identity.password);
+    if (import.meta.env.DEV) {
+      setEmail(identity.email);
+      setPassword(identity.password);
+    }
     setFieldErrors({});
     setSubmitError(null);
   };
@@ -480,7 +482,7 @@ export function CorporateLoginPage() {
                 id="corp-email"
                 name="email"
                 type="email"
-                placeholder={selectedIdentity.email}
+                placeholder={import.meta.env.DEV ? selectedIdentity.email : 'usuario@empresa.com'}
                 autoComplete="email"
                 value={email}
                 onChange={(e) => {
@@ -624,30 +626,32 @@ export function CorporateLoginPage() {
             </Button>
           </form>
 
-          {/* UNA sola tarjeta de demostración contextual para el rol seleccionado */}
-          <div className="rounded-xl border border-brand/30 bg-brand/8 p-3.5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <ShieldCheck className="h-4 w-4 text-brand shrink-0" />
-                <div className="min-w-0">
-                  <div className="truncate font-sans text-xs font-bold text-foreground">
-                    Cuenta Demo · {selectedIdentity.label}
-                  </div>
-                  <div className="truncate font-mono text-[11px] text-foreground-muted">
-                    {selectedIdentity.email}
+          {/* UNA sola tarjeta de demostración contextual para el rol seleccionado (entorno de desarrollo) */}
+          {import.meta.env.DEV && (
+            <div className="rounded-xl border border-brand/30 bg-brand/8 p-3.5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <ShieldCheck className="h-4 w-4 text-brand shrink-0" />
+                  <div className="min-w-0">
+                    <div className="truncate font-sans text-xs font-bold text-foreground">
+                      Cuenta Demo · {selectedIdentity.label}
+                    </div>
+                    <div className="truncate font-mono text-[11px] text-foreground-muted">
+                      {selectedIdentity.email}
+                    </div>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  disabled={loginMutation.isPending}
+                  onClick={() => void handleQuickRoleDemo()}
+                  className="shrink-0 rounded-lg bg-brand px-3 py-1.5 font-mono text-xs font-semibold text-primary-foreground transition-colors hover:bg-brand-strong disabled:opacity-50"
+                >
+                  Acceso Demo 1-Clic
+                </button>
               </div>
-              <button
-                type="button"
-                disabled={loginMutation.isPending}
-                onClick={() => void handleQuickRoleDemo()}
-                className="shrink-0 rounded-lg bg-brand px-3 py-1.5 font-mono text-xs font-semibold text-primary-foreground transition-colors hover:bg-brand-strong disabled:opacity-50"
-              >
-                Acceso Demo 1-Clic
-              </button>
             </div>
-          </div>
+          )}
 
           <div className="flex flex-col items-center justify-between gap-3 border-t border-border/80 pt-4 text-xs text-foreground-muted sm:flex-row">
             <div>
