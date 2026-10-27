@@ -24,7 +24,9 @@ import {
   AlertCircle,
   Clock,
   Sparkles,
+  Lightbulb,
 } from 'lucide-react';
+import { generateSmartSku, VARIANT_PRESETS, type VariantPreset } from './skuHelper';
 
 interface VariantDraft {
   sku: string;
@@ -33,16 +35,8 @@ interface VariantDraft {
   attr2Name?: string;
   attr2Value?: string;
   priceAmount?: number;
+  isSkuManual?: boolean;
 }
-
-const ATTRIBUTE_PRESETS: Array<{ name: string; sampleValue: string }> = [
-  { name: 'Color', sampleValue: 'Negro Carbón' },
-  { name: 'Talla', sampleValue: 'M / 40 EU' },
-  { name: 'Presentación', sampleValue: '1 kg / Doble Cesta' },
-  { name: 'Capacidad', sampleValue: '1TB NVMe / 7.6 Litros' },
-  { name: 'Material', sampleValue: 'Acero Inoxidable' },
-  { name: 'Plan / Licencia', sampleValue: 'Anual Familiar' },
-];
 
 /**
  * Alta de Producto con Constructor de Variantes y Precio por SKU (CreateProductPage - Frontend-Role-Modules sección 2.3).
@@ -89,11 +83,18 @@ export function CreateProductPage({ productId }: { productId?: string }) {
 
 
 
+  const [showVariantGuide, setShowVariantGuide] = useState(true);
+
   const handleAddVariant = () => {
-    setVariants((prev) => [
-      ...prev,
-      { sku: '', attrName: 'Talla/Tamaño', attrValue: 'Estándar' },
-    ]);
+    setVariants((prev) => {
+      const nextNum = prev.length + 1;
+      const otherSkus = prev.map((v) => v.sku);
+      const autoSku = generateSmartSku(name || 'PROD', `VAR${nextNum}`, otherSkus);
+      return [
+        ...prev,
+        { sku: autoSku, attrName: 'Variedad', attrValue: '', isSkuManual: false },
+      ];
+    });
   };
 
   const handleRemoveVariant = (index: number) => {
@@ -103,11 +104,54 @@ export function CreateProductPage({ productId }: { productId?: string }) {
   const handleVariantChange = (
     index: number,
     field: keyof VariantDraft,
-    value: string | number | undefined,
+    value: string | number | boolean | undefined,
   ) => {
     setVariants((prev) =>
       prev.map((v, i) => (i === index ? { ...v, [field]: value } : v))
     );
+  };
+
+  const handleAttrValueChange = (index: number, val: string) => {
+    setVariants((prev) => {
+      const current = prev[index];
+      if (!current) return prev;
+      const otherSkus = prev.filter((_, i) => i !== index).map((v) => v.sku);
+      const nextSku = !current.isSkuManual
+        ? generateSmartSku(name || 'PROD', val || current.attrName, otherSkus)
+        : current.sku;
+      return prev.map((v, i) => (i === index ? { ...v, attrValue: val, sku: nextSku } : v));
+    });
+  };
+
+  const handleApplyPreset = (index: number, preset: VariantPreset) => {
+    const cleanName = (preset.name.split('/')[0] ?? preset.name).trim();
+    setVariants((prev) => {
+      const current = prev[index];
+      if (!current) return prev;
+      const otherSkus = prev.filter((_, i) => i !== index).map((v) => v.sku);
+      const nextSku = generateSmartSku(name || 'PROD', preset.sampleValue, otherSkus);
+      return prev.map((v, i) =>
+        i === index
+          ? {
+              ...v,
+              attrName: cleanName,
+              attrValue: preset.sampleValue,
+              sku: nextSku,
+              isSkuManual: false,
+            }
+          : v,
+      );
+    });
+  };
+
+  const handleAutoGenerateSku = (index: number) => {
+    setVariants((prev) => {
+      const current = prev[index];
+      if (!current) return prev;
+      const otherSkus = prev.filter((_, i) => i !== index).map((v) => v.sku);
+      const autoSku = generateSmartSku(name || 'PROD', current.attrValue || current.attrName, otherSkus);
+      return prev.map((v, i) => (i === index ? { ...v, sku: autoSku, isSkuManual: false } : v));
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -319,14 +363,52 @@ if (isLoading || isProductLoading) {
 
             {/* Constructor de Variantes */}
             <div className="space-y-4 pt-4 border-t border-border">
+              {/* Guía didáctica para vendedores */}
+              <div className="rounded-2xl border border-brand/30 bg-brand/5 p-4 sm:p-5 space-y-3 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-brand">
+                    <Lightbulb className="h-4 w-4 shrink-0 text-brand" />
+                    <h4 className="text-xs font-bold font-mono uppercase tracking-wide">
+                      ¿Cómo funcionan las variantes y el código SKU?
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowVariantGuide(!showVariantGuide)}
+                    className="text-[10px] font-mono text-foreground-muted hover:text-foreground underline cursor-pointer"
+                  >
+                    {showVariantGuide ? 'Ocultar guía' : 'Ver explicación'}
+                  </button>
+                </div>
+
+                {showVariantGuide && (
+                  <div className="text-xs text-foreground-muted space-y-2.5 pt-1">
+                    <p className="leading-relaxed">
+                      Si vendes por ejemplo <strong className="text-foreground">Limones</strong> y tienes variedades como <strong className="text-foreground">Eureka</strong> y <strong className="text-foreground">Taití</strong>, no necesitas crear dos productos diferentes. Creas este único producto y le agregas sus <strong className="text-foreground">variantes</strong>:
+                    </p>
+                    <div className="rounded-xl border border-border bg-surface p-3 space-y-1.5 font-mono text-[11px]">
+                      <div>
+                        <span className="text-brand font-bold">1. Atributo:</span> La cualidad que cambia (ej. <em>Variedad</em>, <em>Presentación</em>, <em>Tamaño</em> o <em>Color</em>).
+                      </div>
+                      <div>
+                        <span className="text-brand font-bold">2. Valor:</span> La opción específica (ej. <em>Eureka</em>, <em>Taití</em>, <em>1 kg</em>, <em>Mediano</em>).
+                      </div>
+                      <div>
+                        <span className="text-brand font-bold">3. Código SKU:</span> Identificador único para bodega. <em>¡Se genera automáticamente al escribir el valor!</em>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xs uppercase font-mono tracking-wider text-foreground-muted">
+                  <h3 className="text-xs uppercase font-mono tracking-wider font-bold text-foreground">
                     Variantes del Producto (SKU) y Precios Individuales
                   </h3>
                   <p className="text-[11px] text-foreground-muted">
                     {type === ProductType.Physical
-                      ? 'Cada SKU puede tener su propio precio, talla, presentación o capacidad.'
+                      ? 'Cada opción (variedad, tamaño, color) puede tener su propio precio y stock.'
                       : 'Define planes o licencias con precios diferenciados.'}
                   </p>
                 </div>
@@ -362,38 +444,52 @@ if (isLoading || isProductLoading) {
                       )}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[10px] font-mono text-foreground-muted">
-                        Plantillas rápidas:
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-mono text-foreground-muted flex items-center gap-1">
+                        <Sparkles className="h-3 w-3 text-brand" /> Plantillas sugeridas:
                       </span>
-                      {ATTRIBUTE_PRESETS.map((preset) => (
-                        <button
-                          key={preset.name}
-                          type="button"
-                          onClick={() => {
-                            handleVariantChange(index, 'attrName', preset.name);
-                            if (!variant.attrValue || variant.attrValue === 'Estándar') {
-                              handleVariantChange(index, 'attrValue', preset.sampleValue);
-                            }
-                          }}
-                          className="rounded-md border border-border bg-surface px-2 py-0.5 font-mono text-[10px] text-foreground-muted transition-colors hover:border-brand/50 hover:text-brand"
-                        >
-                          + {preset.name}
-                        </button>
-                      ))}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {VARIANT_PRESETS.map((preset) => (
+                          <button
+                            key={preset.name}
+                            type="button"
+                            onClick={() => handleApplyPreset(index, preset)}
+                            className="rounded-md border border-border bg-surface px-2 py-0.5 font-mono text-[10px] text-foreground-muted transition-colors hover:border-brand/50 hover:text-brand cursor-pointer"
+                            title={preset.exampleDescription}
+                          >
+                            + {preset.name}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                       <div>
-                        <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
-                          Código SKU
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[10px] font-mono uppercase text-foreground-muted block">
+                            Código SKU
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handleAutoGenerateSku(index)}
+                            className="text-[9px] font-mono text-brand hover:underline flex items-center gap-0.5 cursor-pointer"
+                            title="Regenerar SKU automáticamente"
+                          >
+                            <Sparkles className="h-2.5 w-2.5" /> Auto
+                          </button>
+                        </div>
                         <Input
-                          placeholder="SKU-REF-01"
+                          placeholder="Ej. LIM-EUR-01"
                           value={variant.sku}
-                          onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
+                          onChange={(e) => {
+                            handleVariantChange(index, 'sku', e.target.value.toUpperCase());
+                            handleVariantChange(index, 'isSkuManual', true);
+                          }}
                           className="bg-surface border-border font-mono text-xs text-foreground"
                         />
+                        <p className="text-[9px] font-mono text-foreground-muted mt-1">
+                          {variant.isSkuManual ? 'Manual' : 'Automático'}
+                        </p>
                       </div>
                       <div>
                         <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
@@ -413,28 +509,37 @@ if (isLoading || isProductLoading) {
                           }
                           className="bg-surface border-border font-mono text-xs text-foreground"
                         />
+                        <p className="text-[9px] font-mono text-foreground-muted mt-1">
+                          Opcional (vacío = base)
+                        </p>
                       </div>
                       <div>
                         <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
-                          Atributo Principal
+                          Atributo (¿Qué cambia?)
                         </label>
                         <Input
-                          placeholder="Nombre"
+                          placeholder="Ej. Variedad"
                           value={variant.attrName}
                           onChange={(e) => handleVariantChange(index, 'attrName', e.target.value)}
                           className="bg-surface border-border text-xs text-foreground"
                         />
+                        <p className="text-[9px] font-mono text-foreground-muted mt-1">
+                          Ej. Variedad, Talla, Peso
+                        </p>
                       </div>
                       <div>
                         <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
-                          Valor
+                          Valor (¿Qué opción es?)
                         </label>
                         <Input
-                          placeholder="Valor"
+                          placeholder="Ej. Eureka"
                           value={variant.attrValue}
-                          onChange={(e) => handleVariantChange(index, 'attrValue', e.target.value)}
+                          onChange={(e) => handleAttrValueChange(index, e.target.value)}
                           className="bg-surface border-border text-xs text-foreground"
                         />
+                        <p className="text-[9px] font-mono text-foreground-muted mt-1">
+                          Ej. Eureka, Taití, 1 kg
+                        </p>
                       </div>
                     </div>
 
