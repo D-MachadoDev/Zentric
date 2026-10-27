@@ -443,7 +443,7 @@ export function BuyerProductDetailPage() {
                           </span>
                         </span>
 
-                        {variant.price != null && variant.price !== product.price && (
+                        {variant.price != null && product?.price != null && variant.price !== product.price && (
                           <span className="shrink-0 text-sm font-medium tabular-nums text-foreground">
                             ${variant.price.toLocaleString('es-CO')}
                           </span>

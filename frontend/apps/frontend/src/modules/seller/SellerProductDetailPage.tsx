@@ -59,6 +59,16 @@ export function SellerProductDetailPage() {
   const [editCategory, setEditCategory] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  // Formatea un valor numerico como texto con separador de miles (puntos) para COP.
+  const formatPriceWithDots = (value: string): string => {
+    const digits = value.replace(/\D/g, '');
+    if (!digits) return '';
+    return Number(digits).toLocaleString('es-CO').replace(/\s/g, '.');
+  };
+
+  const stripPriceDots = (value: string): string => value.replace(/\D/g, '');
+
+
 
   const handleStartEdit = () => {
     if (!product) return;
@@ -75,7 +85,7 @@ export function SellerProductDetailPage() {
     e.preventDefault();
     if (!productId || !product) return;
     setEditError(null);
-    const priceAmount = Number(editPrice);
+    const priceAmount = Number(stripPriceDots(editPrice));
     if (isNaN(priceAmount) || priceAmount <= 0) {
       setEditError('El precio debe ser un valor positivo.');
       return;
@@ -106,11 +116,16 @@ export function SellerProductDetailPage() {
       setVariantError('El SKU es obligatorio.');
       return;
     }
+    const normalizedSku = newSku.trim().toUpperCase();
+    if (product?.variants?.some((v) => v.sku?.toUpperCase() === normalizedSku)) {
+      setVariantError(`Ya existe una variante con el SKU "${normalizedSku}". Usa un código distinto.`);
+      return;
+    }
     if (!newAttrName.trim() || !newAttrValue.trim()) {
       setVariantError('Debe definir al menos un atributo (nombre y valor).');
       return;
     }
-    const priceAmount = newPrice.trim() ? Number(newPrice) : undefined;
+    const priceAmount = newPrice.trim() ? Number(stripPriceDots(newPrice)) : undefined;
     if (priceAmount !== undefined && (isNaN(priceAmount) || priceAmount <= 0)) {
       setVariantError('El precio debe ser un valor positivo.');
       return;
@@ -119,7 +134,7 @@ export function SellerProductDetailPage() {
       await addVariantMutation.mutateAsync({
         productId,
         input: {
-          sku: newSku.trim(),
+          sku: normalizedSku,
           attributes: [{ name: newAttrName.trim(), value: newAttrValue.trim() }],
           priceAmount,
         },
@@ -128,7 +143,13 @@ export function SellerProductDetailPage() {
       setNewAttrValue('');
       setNewPrice('');
     } catch (err: unknown) {
-      setVariantError(err instanceof Error ? err.message : 'No se pudo crear la variante.');
+      const msg =
+        err instanceof Error
+          ? (err as { userMessage?: string; detail?: string }).userMessage ??
+            (err as { detail?: string }).detail ??
+            err.message
+          : 'No se pudo crear la variante.';
+      setVariantError(msg || 'No se pudo crear la variante.');
     }
   };
 
@@ -262,7 +283,12 @@ export function SellerProductDetailPage() {
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-mono uppercase text-foreground-muted">Precio base</label>
-              <Input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} />
+              <Input
+                type="text"
+                inputMode="numeric"
+                value={formatPriceWithDots(editPrice)}
+                onChange={(e) => setEditPrice(stripPriceDots(e.target.value))}
+              />
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-mono uppercase text-foreground-muted">Imagen URL</label>
@@ -379,6 +405,10 @@ export function SellerProductDetailPage() {
             <h3 className="text-xs font-mono uppercase text-foreground-muted">
               Agregar Nueva Variante (SKU)
             </h3>
+            <p className="text-[10px] font-mono text-foreground-muted leading-relaxed">
+              El SKU debe ser único. Atributo + valor describen la variante (ej. Color: Negro).
+              El precio es opcional: vacío usa el precio base ({formatPriceWithDots(String(product.price))}).
+            </p>
             <form onSubmit={handleAddVariant} className="space-y-3">
               {variantError && (
                 <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
@@ -388,6 +418,9 @@ export function SellerProductDetailPage() {
               <div className="space-y-1">
                 <label className="text-[10px] font-mono uppercase text-foreground-muted">Código SKU</label>
                 <Input value={newSku} onChange={(e) => setNewSku(e.target.value)} placeholder="SKU-REF-02" />
+                <p className="text-[10px] font-mono text-foreground-muted mt-1">
+                  Debe ser único por producto. Ej: TPX1-8-2TB.
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
@@ -404,11 +437,15 @@ export function SellerProductDetailPage() {
                   Precio SKU (COP) — vacío usa precio base
                 </label>
                 <Input
-                  type="number"
-                  value={newPrice}
-                  onChange={(e) => setNewPrice(e.target.value)}
-                  placeholder={String(product.price)}
+                  type="text"
+                  inputMode="numeric"
+                  value={formatPriceWithDots(newPrice)}
+                  onChange={(e) => setNewPrice(stripPriceDots(e.target.value))}
+                  placeholder={formatPriceWithDots(String(product.price))}
                 />
+                <p className="text-[10px] font-mono text-foreground-muted mt-1">
+                  Ej: {formatPriceWithDots(String(product.price))}. Dejar vacío para usar el precio base.
+                </p>
               </div>
               <Button
                 type="submit"
