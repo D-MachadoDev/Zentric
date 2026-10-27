@@ -15,7 +15,7 @@ import {
 interface AvailabilityPresentation {
   label: string;
   className: string;
-  variant: 'success' | 'warning' | 'danger';
+  variant: 'default' | 'success' | 'warning' | 'danger';
   Icon: typeof CheckCircle2;
 }
 
@@ -30,20 +30,20 @@ const AVAILABILITY: Record<
 > = {
   'in-stock': {
     label: 'En Stock',
-    className: 'border-transparent bg-success/95 text-background',
-    variant: 'success',
+    className: '!bg-emerald-800 !text-white !border-transparent font-medium shadow-xs',
+    variant: 'default',
     Icon: CheckCircle2,
   },
   'low-stock': {
     label: '¡Últimas unidades!',
-    className: 'border-transparent bg-warning/95 text-background',
-    variant: 'warning',
+    className: '!bg-amber-800 !text-white !border-transparent font-medium shadow-xs',
+    variant: 'default',
     Icon: Flame,
   },
   'out-of-stock': {
     label: 'Agotado',
-    className: 'border-transparent bg-danger/90 text-background',
-    variant: 'danger',
+    className: '!bg-rose-800 !text-white !border-transparent font-medium shadow-xs',
+    variant: 'default',
     Icon: XCircle,
   },
 };

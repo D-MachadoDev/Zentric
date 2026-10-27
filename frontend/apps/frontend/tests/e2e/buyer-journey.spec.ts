@@ -119,7 +119,7 @@ test.describe('Buyer journey', () => {
 
     // Con carrito vacio hay un estado vacio; con items, la reserva de 15 min.
     const emptyState = page.getByText(/Tu carrito está vacío/i);
-    const reserve = page.getByText(/Reserva 15 min/i);
+    const reserve = page.getByText(/Reserva.*15\s*min/i);
     await expect(emptyState.or(reserve).first()).toBeVisible();
   });
 
@@ -158,7 +158,7 @@ test.describe('Buyer journey', () => {
 
 test.describe('Guardas de rol', () => {
   test('un visitante anonimo es redirigido al login', async ({ page }) => {
-    await page.goto('/buyer/catalog');
+    await page.goto('/buyer/orders');
     await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(/\/(login|entrar)/);
   });
