@@ -12,7 +12,6 @@ namespace Zentric.Application.Billing.Pdf;
 /// </summary>
 public sealed class PdfInvoiceGenerator
 {
-    private const double PdfPageWidth = 595; // A4 width in points (1 pt = 1/72 inch)
     private const double PdfPageHeight = 842; // A4 height in points
     private const double Margin = 50; // Page margin in points
 
