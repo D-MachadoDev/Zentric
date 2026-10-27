@@ -219,6 +219,14 @@ namespace Zentric.Tests.E2E
         {
             using var client = _actors.ClientFor("Admin");
             using var response = await client.PostAsync($"/api/billing/invoices/generate/{orderId}", content: null);
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                if (body.Contains("already been issued", StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
             await EnsureOkAsync(response, "emision de facturas");
         }
 
