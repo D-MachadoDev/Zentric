@@ -46,7 +46,7 @@ import { getProductImageUrl } from './productImages';
  * - Todos los elementos (título del pedido, productos, miniaturas y devoluciones) son clicables.
  */
 export function BuyerOrdersPage() {
-  const [selectedStatus, setSelectedStatus] = useState<string>('Todos');
+  const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const { data: orders, isLoading, isError, error, refetch, isFetching } = useOrdersQuery();

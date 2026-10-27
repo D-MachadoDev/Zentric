@@ -112,7 +112,7 @@ export function RequestReturnPage() {
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6 bg-surface border border-border rounded-2xl p-6 shadow-sm">
+      <form onSubmit={handleSubmit} noValidate className="space-y-6 bg-surface border border-border rounded-2xl p-6 shadow-sm">
         {/* Selección de Pedido */}
         <div className="space-y-2">
           <label className="text-xs font-mono uppercase text-foreground-muted block">
@@ -120,6 +120,10 @@ export function RequestReturnPage() {
           </label>
           {isLoadingOrders ? (
             <Skeleton className="h-10 w-full" />
+          ) : (deliveredOrders ?? []).length === 0 ? (
+            <div className="rounded-lg border border-warning/30 bg-warning/10 p-4 text-xs text-warning">
+              No cuenta con pedidos en estado Entregado para solicitar devoluciones.
+            </div>
           ) : (
             <select
               value={selectedOrderId}
