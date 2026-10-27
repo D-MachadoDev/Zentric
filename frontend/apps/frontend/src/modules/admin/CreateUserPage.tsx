@@ -238,7 +238,7 @@ export function CreateUserPage() {
                   </label>
                   <Input
                     type="password"
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mínimo 8 caracteres"
                     value={formData.password}
                     onChange={(e) => handleChange('password', e.target.value)}
                     className="bg-surface-muted border-border text-foreground text-sm placeholder:text-foreground-muted focus:border-brand"
