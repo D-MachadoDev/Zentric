@@ -60,7 +60,6 @@ export default defineConfig(({ mode }) => {
           'src/adapters/http/ZentricHttpClient.ts',
           'src/adapters/session/InMemorySession.ts',
           'src/app/routes/guards.ts',
-          'src/components/AlertHost.tsx',
         ],
       },
     },
