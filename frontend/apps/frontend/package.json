@@ -27,14 +27,12 @@
     "quality:gate": "pnpm run typecheck && pnpm run test:run && pnpm run audit:design"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.9.1",
     "@tanstack/react-query": "5.104.1",
     "@tanstack/react-router": "1.170.42",
     "@zentric/ui": "workspace:*",
     "lucide-react": "1.55.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "react-hook-form": "^7.89.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
