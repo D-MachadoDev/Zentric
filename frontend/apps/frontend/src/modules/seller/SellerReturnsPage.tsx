@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+﻿import { useState, useMemo } from 'react';
 import {
   useReturnsPagedQuery,
   useApproveReturnMutation,
@@ -42,6 +42,8 @@ import {
   Check,
   X,
   ChevronRight,
+  Filter,
+  RotateCcw,
 } from 'lucide-react';
 
 
@@ -59,6 +61,9 @@ export function SellerReturnsPage() {
   const [selectedReturnId, setSelectedReturnId] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [inspectionFilter, setInspectionFilter] = useState<'All' | 'good' | 'damaged'>('All');
+  const [warehouseFilter, setWarehouseFilter] = useState<'All' | string>('All');
+  const [sortOrder, setSortOrder] = useState<'recent' | 'oldest' | 'highest-qty'>('recent');
 
   const parsedStatus = statusFilter === 'All' ? undefined : (statusFilter as ReturnStatus);
 
@@ -93,16 +98,52 @@ export function SellerReturnsPage() {
     });
   });
 
-  const filteredReturns = allReturns.filter((r: ReturnRequest) => {
-    const matchesSearch =
-      !searchTerm.trim() ||
-      r.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.customerOrderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.variantId.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredReturns = useMemo(() => {
+    const list = allReturns.filter((r: ReturnRequest) => {
+      const matchesSearch =
+        !searchTerm.trim() ||
+        r.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.customerOrderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.variantId.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === 'All' || r.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+      const matchesStatus = statusFilter === 'All' || r.status === statusFilter;
+
+      const matchesInspection =
+        inspectionFilter === 'All' ||
+        (inspectionFilter === 'good' && r.isGoodCondition === true) ||
+        (inspectionFilter === 'damaged' && r.isGoodCondition === false);
+
+      const matchesWarehouse =
+        warehouseFilter === 'All' || r.warehouseId === warehouseFilter;
+
+      return matchesSearch && matchesStatus && matchesInspection && matchesWarehouse;
+    });
+
+    return list.sort((a, b) => {
+      if (sortOrder === 'oldest') {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      if (sortOrder === 'highest-qty') {
+        return (b.quantity ?? 0) - (a.quantity ?? 0);
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [allReturns, searchTerm, statusFilter, inspectionFilter, warehouseFilter, sortOrder]);
+
+  const activeFiltersCount =
+    (searchTerm.trim() ? 1 : 0) +
+    (statusFilter !== 'All' ? 1 : 0) +
+    (inspectionFilter !== 'All' ? 1 : 0) +
+    (warehouseFilter !== 'All' ? 1 : 0) +
+    (sortOrder !== 'recent' ? 1 : 0);
+
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('All');
+    setInspectionFilter('All');
+    setWarehouseFilter('All');
+    setSortOrder('recent');
+  };
 
   const selectedReturn =
     allReturns.find((r: ReturnRequest) => r.id === selectedReturnId) ??
@@ -232,6 +273,70 @@ export function SellerReturnsPage() {
                 </option>
               ))}
             </select>
+          </div>
+
+                    {/* Filtros Secundarios: Inspección Física, Bodega y Ordenamiento */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 text-xs text-foreground-muted font-medium">
+              <Filter className="h-3.5 w-3.5 text-brand" />
+              <span>Filtros avanzados:</span>
+            </div>
+
+            {/* Filtro por Dictamen de Inspección Física (ADR-0020) */}
+            <select
+              value={inspectionFilter}
+              onChange={(e) =>
+                setInspectionFilter(e.target.value as 'All' | 'good' | 'damaged')
+              }
+              aria-label="Filtrar por dictamen de inspección"
+              className="bg-surface border border-border text-foreground text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-brand"
+            >
+              <option value="All">Todas las inspecciones</option>
+              <option value="good">Buen estado (Apto)</option>
+              <option value="damaged">Averiado / No apto</option>
+            </select>
+
+            {/* Filtro por Bodega de Recepción */}
+            <select
+              value={warehouseFilter}
+              onChange={(e) => setWarehouseFilter(e.target.value)}
+              aria-label="Filtrar por bodega de recepción"
+              className="bg-surface border border-border text-foreground text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-brand"
+            >
+              <option value="All">Todas las bodegas de recepción</option>
+              {allWarehouses.map((w: Warehouse) => (
+                <option key={w.id} value={w.id}>
+                  {w.name} ({w.type})
+                </option>
+              ))}
+            </select>
+
+            {/* Ordenamiento */}
+            <select
+              value={sortOrder}
+              onChange={(e) =>
+                setSortOrder(e.target.value as 'recent' | 'oldest' | 'highest-qty')
+              }
+              aria-label="Ordenar devoluciones"
+              className="bg-surface border border-border text-foreground text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-brand"
+            >
+              <option value="recent">Más recientes primero</option>
+              <option value="oldest">Más antiguos primero</option>
+              <option value="highest-qty">Mayor cantidad devuelta</option>
+            </select>
+
+            {/* Botón de Limpiar Filtros */}
+            {activeFiltersCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetFilters}
+                className="h-8 text-xs text-brand hover:text-brand-hover hover:bg-brand/10 gap-1.5 px-2"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Limpiar filtros ({activeFiltersCount})
+              </Button>
+            )}
           </div>
 
           {filteredReturns.length === 0 ? (

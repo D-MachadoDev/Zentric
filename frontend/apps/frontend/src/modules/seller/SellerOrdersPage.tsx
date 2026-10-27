@@ -48,6 +48,9 @@ import {
 export function SellerOrdersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | OrderStatus>('All');
+  const [amountRangeFilter, setAmountRangeFilter] = useState<'All' | 'under-100k' | '100k-500k' | 'over-500k'>('All');
+  const [itemCountFilter, setItemCountFilter] = useState<'All' | 'single' | 'multiple'>('All');
+  const [sortOrder, setSortOrder] = useState<'recent' | 'highest-amount' | 'lowest-amount'>('recent');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
@@ -83,14 +86,48 @@ export function SellerOrdersPage() {
 
   const allOrders = (orders ?? []).filter((order: OrderListItem) => order.status !== OrderStatus.PendingPayment);
 
-  const filteredOrders = allOrders.filter((order: OrderListItem) => {
-    const matchesSearch =
-      !searchTerm.trim() ||
-      order.id.toLowerCase().includes(searchTerm.toLowerCase());
+  const hasFilters =
+    searchTerm.trim() !== '' ||
+    statusFilter !== 'All' ||
+    amountRangeFilter !== 'All' ||
+    itemCountFilter !== 'All' ||
+    sortOrder !== 'recent';
 
-    const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('All');
+    setAmountRangeFilter('All');
+    setItemCountFilter('All');
+    setSortOrder('recent');
+    setPage(1);
+  };
+
+  const filteredOrders = allOrders
+    .filter((order: OrderListItem) => {
+      const matchesSearch =
+        !searchTerm.trim() ||
+        order.id.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
+
+      const total = order.totalAmount ?? 0;
+      let matchesAmount = true;
+      if (amountRangeFilter === 'under-100k') matchesAmount = total < 100000;
+      else if (amountRangeFilter === '100k-500k') matchesAmount = total >= 100000 && total <= 500000;
+      else if (amountRangeFilter === 'over-500k') matchesAmount = total > 500000;
+
+      const items = order.itemCount ?? 1;
+      let matchesItems = true;
+      if (itemCountFilter === 'single') matchesItems = items === 1;
+      else if (itemCountFilter === 'multiple') matchesItems = items > 1;
+
+      return matchesSearch && matchesStatus && matchesAmount && matchesItems;
+    })
+    .sort((a, b) => {
+      if (sortOrder === 'highest-amount') return (b.totalAmount ?? 0) - (a.totalAmount ?? 0);
+      if (sortOrder === 'lowest-amount') return (a.totalAmount ?? 0) - (b.totalAmount ?? 0);
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
   // Si no hay seleccionado y hay pedidos, preseleccionar el primero
   const activeOrder = selectedOrderId
@@ -179,32 +216,86 @@ export function SellerOrdersPage() {
         {/* Lado Izquierdo (65%): Listado de Pedidos ────────────────────── */}
         <section className="lg:col-span-8 space-y-6">
           {/* Filtros */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
-              <Input
-                type="text"
-                placeholder="Buscar por ID de pedido..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-surface border-border text-foreground placeholder:text-foreground-muted focus:border-brand"
-              />
+          <div className="space-y-3 rounded-xl border border-border bg-surface p-3.5">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
+                <Input
+                  type="text"
+                  placeholder="Buscar por ID de pedido..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-background/80 border-border text-foreground placeholder:text-foreground-muted focus:border-brand"
+                />
+              </div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as 'All' | OrderStatus)}
+                aria-label="Filtrar por estado del pedido"
+                className="bg-background/80 border border-border text-foreground text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
+              >
+                <option value="All">Todos los estados</option>
+                {Object.values(OrderStatus)
+                  .filter((status) => status !== OrderStatus.PendingPayment)
+                  .map((status) => (
+                  <option key={status} value={status}>
+                    {NOMBRES_DE_ESTADO_DE_PEDIDO[status]}
+                  </option>
+                ))}
+              </select>
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'All' | OrderStatus)}
-              aria-label="Filtrar por estado del pedido"
-              className="bg-surface border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
-            >
-              <option value="All">Todos los estados</option>
-              {Object.values(OrderStatus)
-                .filter((status) => status !== OrderStatus.PendingPayment)
-                .map((status) => (
-                <option key={status} value={status}>
-                  {NOMBRES_DE_ESTADO_DE_PEDIDO[status]}
-                </option>
-              ))}
-            </select>
+
+            {/* Fila Secundaria: Filtros de Rango de Monto, Volumen y Orden */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-border/60 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-[11px] font-medium uppercase tracking-wider text-foreground-muted">
+                  Filtros:
+                </span>
+                <select
+                  aria-label="Filtrar por rango de monto"
+                  value={amountRangeFilter}
+                  onChange={(e) => setAmountRangeFilter(e.target.value as any)}
+                  className="rounded-lg border border-border bg-background/80 px-2.5 py-1 text-xs text-foreground focus:border-brand focus:outline-none"
+                >
+                  <option value="All">Todos los montos</option>
+                  <option value="under-100k">Micro-ventas (&lt; $100.000)</option>
+                  <option value="100k-500k">Estándar ($100k – $500k)</option>
+                  <option value="over-500k">High-Ticket (&gt; $500.000)</option>
+                </select>
+
+                <select
+                  aria-label="Filtrar por volumen de ítems"
+                  value={itemCountFilter}
+                  onChange={(e) => setItemCountFilter(e.target.value as any)}
+                  className="rounded-lg border border-border bg-background/80 px-2.5 py-1 text-xs text-foreground focus:border-brand focus:outline-none"
+                >
+                  <option value="All">Todos los volúmenes</option>
+                  <option value="single">Pedido simple (1 ítem)</option>
+                  <option value="multiple">Pedido múltiple (2+ ítems)</option>
+                </select>
+
+                <select
+                  aria-label="Ordenar pedidos"
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as any)}
+                  className="rounded-lg border border-border bg-background/80 px-2.5 py-1 text-xs text-foreground focus:border-brand focus:outline-none"
+                >
+                  <option value="recent">Más recientes</option>
+                  <option value="highest-amount">Mayor importe</option>
+                  <option value="lowest-amount">Menor importe</option>
+                </select>
+              </div>
+
+              {hasFilters && (
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="text-xs text-foreground-muted hover:text-danger flex items-center gap-1 font-mono"
+                >
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
           </div>
 
           {filteredOrders.length === 0 ? (

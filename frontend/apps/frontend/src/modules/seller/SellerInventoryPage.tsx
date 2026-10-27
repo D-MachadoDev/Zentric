@@ -52,6 +52,8 @@ export function SellerInventoryPage() {
 
   const [searchInput, setSearchInput] = useState('');
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('All');
+  const [stockLevelFilter, setStockLevelFilter] = useState<'All' | 'available' | 'low-stock' | 'out-of-stock' | 'reserved' | 'damaged'>('All');
+  const [warehouseTypeFilter, setWarehouseTypeFilter] = useState<'All' | 'Vendor' | 'Marketplace'>('All');
   const [page, setPage] = useState(1);
 
   // Formulario AddStock: desacoplado del URL fallback para permitir limpiar sin atrapar
@@ -97,12 +99,40 @@ export function SellerInventoryPage() {
   const deleteInventoryMutation = useDeleteInventoryMutation();
 
   const allWarehouses = useMemo(() => warehouses ?? [], [warehouses]);
-  const hasFilters = debouncedSearch !== '' || selectedWarehouseId !== 'All';
+  const hasFilters =
+    debouncedSearch !== '' ||
+    selectedWarehouseId !== 'All' ||
+    stockLevelFilter !== 'All' ||
+    warehouseTypeFilter !== 'All';
+
+  const handleResetFilters = () => {
+    setSearchInput('');
+    setSelectedWarehouseId('All');
+    setStockLevelFilter('All');
+    setWarehouseTypeFilter('All');
+    setPage(1);
+  };
 
   const warehouseMap = useMemo(
     () => new Map<string, Warehouse>(allWarehouses.map((w: Warehouse) => [w.id, w])),
     [allWarehouses],
   );
+
+  const displayedInventories = useMemo(() => {
+    return inventories.filter((inv: Inventory) => {
+      if (stockLevelFilter === 'available' && inv.availableQuantity <= 0) return false;
+      if (stockLevelFilter === 'low-stock' && (inv.availableQuantity <= 0 || inv.availableQuantity > 5)) return false;
+      if (stockLevelFilter === 'out-of-stock' && inv.availableQuantity > 0) return false;
+      if (stockLevelFilter === 'reserved' && inv.reservedQuantity <= 0) return false;
+      if (stockLevelFilter === 'damaged' && inv.damagedQuantity <= 0) return false;
+
+      if (warehouseTypeFilter !== 'All') {
+        const wh = warehouseMap.get(inv.warehouseId);
+        if (wh && wh.type !== warehouseTypeFilter) return false;
+      }
+      return true;
+    });
+  }, [inventories, stockLevelFilter, warehouseTypeFilter, warehouseMap]);
 
   const activeWarehouses = useMemo(
     () => allWarehouses.filter((w: Warehouse) => w.isActive),
@@ -327,43 +357,88 @@ export function SellerInventoryPage() {
           )}
 
           {/* Controles de Búsqueda y Filtrado */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
-              <Input
-                id="inventory-search-input"
-                type="text"
-                placeholder="Buscar por producto, SKU, variante o ubicación..."
-                aria-label="Buscar por producto o SKU"
-                value={searchInput}
+          <div className="space-y-3 rounded-xl border border-border bg-surface p-3.5">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
+                <Input
+                  id="inventory-search-input"
+                  type="text"
+                  placeholder="Buscar por producto, SKU, variante o ubicación..."
+                  aria-label="Buscar por producto o SKU"
+                  value={searchInput}
+                  onChange={(e) => {
+                    setSearchInput(e.target.value);
+                    setPage(1);
+                  }}
+                  className="pl-10 bg-background/80 border-border text-foreground placeholder:text-foreground-muted focus:border-brand"
+                />
+              </div>
+              <select
+                id="inventory-warehouse-filter"
+                value={selectedWarehouseId}
                 onChange={(e) => {
-                  setSearchInput(e.target.value);
+                  setSelectedWarehouseId(e.target.value);
                   setPage(1);
                 }}
-                className="pl-10 bg-surface border-border text-foreground placeholder:text-foreground-muted focus:border-brand"
-              />
+                aria-label="Filtrar por bodega"
+                className="bg-background/80 border border-border text-foreground text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
+              >
+                <option value="All">Todas las bodegas</option>
+                {allWarehouses.map((w: Warehouse) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name && w.location && w.name !== w.location ? `${w.name} (${w.location})` : (w.name || w.location)} ({w.type})
+                  </option>
+                ))}
+              </select>
             </div>
-            <select
-              id="inventory-warehouse-filter"
-              value={selectedWarehouseId}
-              onChange={(e) => {
-                setSelectedWarehouseId(e.target.value);
-                setPage(1);
-              }}
-              aria-label="Filtrar por bodega"
-              className="bg-surface border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
-            >
-              <option value="All">Todas las bodegas</option>
-              {allWarehouses.map((w: Warehouse) => (
-                <option key={w.id} value={w.id}>
-                  {w.name && w.location && w.name !== w.location ? `${w.name} (${w.location})` : (w.name || w.location)} ({w.type})
-                </option>
-              ))}
-            </select>
+
+            {/* Fila Secundaria: Filtros de Salud de Stock y Tipo de Bodega */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-border/60 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-[11px] font-medium uppercase tracking-wider text-foreground-muted">
+                  Salud de Stock:
+                </span>
+                <select
+                  aria-label="Filtrar por nivel de stock"
+                  value={stockLevelFilter}
+                  onChange={(e) => setStockLevelFilter(e.target.value as any)}
+                  className="rounded-lg border border-border bg-background/80 px-2.5 py-1 text-xs text-foreground focus:border-brand focus:outline-none"
+                >
+                  <option value="All">Todos los niveles</option>
+                  <option value="available">Con stock disponible (&gt; 0)</option>
+                  <option value="low-stock">Alerta crítico (1 a 5 unidades)</option>
+                  <option value="out-of-stock">Agotado / Quiebre (0 unidades)</option>
+                  <option value="reserved">Con reservas activas (&gt; 0)</option>
+                  <option value="damaged">Con mermas / dañados (&gt; 0)</option>
+                </select>
+
+                <select
+                  aria-label="Filtrar por tipo de bodega"
+                  value={warehouseTypeFilter}
+                  onChange={(e) => setWarehouseTypeFilter(e.target.value as any)}
+                  className="rounded-lg border border-border bg-background/80 px-2.5 py-1 text-xs text-foreground focus:border-brand focus:outline-none"
+                >
+                  <option value="All">Todos los tipos de bodega</option>
+                  <option value="Vendor">Bodega Propia (Vendor)</option>
+                  <option value="Marketplace">Red Zentric (Marketplace)</option>
+                </select>
+              </div>
+
+              {hasFilters && displayedInventories.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="text-xs text-foreground-muted hover:text-danger flex items-center gap-1 font-mono"
+                >
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Tabla de Existencias */}
-          {inventories.length === 0 ? (
+          {displayedInventories.length === 0 ? (
             <StateView
               tone="empty"
               title="No hay existencias registradas"
@@ -376,22 +451,19 @@ export function SellerInventoryPage() {
                 hasFilters
                   ? {
                       label: 'Limpiar filtros',
-                      onClick: () => {
-                        setSearchInput('');
-                        setSelectedWarehouseId('All');
-                        setPage(1);
-                      },
+                      onClick: handleResetFilters,
                     }
                   : undefined
               }
             />
           ) : (
-            <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+            <div className="rounded-2xl border border-border bg-surface shadow-xs overflow-hidden">
+              <div className="overflow-x-auto max-h-[calc(100vh-270px)] min-h-[340px] overflow-y-auto">
               <Table aria-label="Inventario de productos por almacén" className="w-full text-left text-sm text-foreground font-sans">
-                <TableHeader className="bg-surface-muted text-xs font-semibold text-foreground-muted uppercase tracking-wider border-b border-border">
+                <TableHeader className="sticky top-0 z-10 bg-surface-muted text-xs font-semibold text-foreground-muted uppercase tracking-wider border-b border-border shadow-2xs">
                   <TableRow>
-                    <TableHead scope="col" className="py-3 px-4">Variante / SKU</TableHead>
-                    <TableHead scope="col" className="py-3 px-4">Bodega</TableHead>
+                    <TableHead scope="col" className="py-2.5 px-3.5">Variante / SKU</TableHead>
+                    <TableHead scope="col" className="py-2.5 px-3.5">Bodega</TableHead>
                     <TableHead scope="col" className="py-3 px-4 text-right">Disponible</TableHead>
                     <TableHead scope="col" className="py-3 px-4 text-right">Reservado</TableHead>
                     <TableHead scope="col" className="py-3 px-4 text-right">Usado</TableHead>
@@ -400,7 +472,7 @@ export function SellerInventoryPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-border/60">
-                  {inventories.map((inv: Inventory) => {
+                  {displayedInventories.map((inv: Inventory) => {
                     const warehouse = warehouseMap.get(inv.warehouseId);
                     const isPresence = Boolean(presenceVariantId) && inv.variantId === presenceVariantId;
                     const physicalStock =
@@ -434,7 +506,7 @@ export function SellerInventoryPage() {
                             : 'hover:bg-surface-muted/40 transition-colors cursor-pointer'
                         }
                       >
-                        <TableCell className="py-4 px-4">
+                        <TableCell className="py-2.5 px-3.5">
                           <div className="font-medium text-foreground" title={inv.variantId}>
                             {inv.productName || 'Variante Registrada'}
                           </div>
@@ -456,7 +528,7 @@ export function SellerInventoryPage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="py-4 px-4">
+                        <TableCell className="py-2.5 px-3.5">
                           <div className="font-medium text-foreground flex items-center gap-1.5">
                             <WarehouseIcon className="h-3.5 w-3.5 text-foreground-muted" />
                             {warehouseName}
@@ -465,19 +537,19 @@ export function SellerInventoryPage() {
                             Tipo: {warehouse?.type ?? 'Marketplace'}
                           </div>
                         </TableCell>
-                        <TableCell className="py-4 px-4 text-right font-mono font-semibold text-foreground tabular-nums">
+                        <TableCell className="py-2.5 px-3.5 text-right font-mono font-semibold text-foreground tabular-nums">
                           {inv.availableQuantity}
                         </TableCell>
-                        <TableCell className="py-4 px-4 text-right font-mono text-warning tabular-nums">
+                        <TableCell className="py-2.5 px-3.5 text-right font-mono text-warning tabular-nums">
                           {inv.reservedQuantity}
                         </TableCell>
-                        <TableCell className="py-4 px-4 text-right font-mono text-foreground-muted tabular-nums">
+                        <TableCell className="py-2.5 px-3.5 text-right font-mono text-foreground-muted tabular-nums">
                           {inv.usedQuantity}
                         </TableCell>
-                        <TableCell className="py-4 px-4 text-right font-mono text-destructive tabular-nums">
+                        <TableCell className="py-2.5 px-3.5 text-right font-mono text-destructive tabular-nums">
                           {inv.damagedQuantity}
                         </TableCell>
-                        <TableCell className="py-4 px-4 text-right">
+                        <TableCell className="py-2.5 px-3.5 text-right">
                           <Button
                             type="button"
                             size="sm"
@@ -507,6 +579,7 @@ export function SellerInventoryPage() {
                   })}
                 </TableBody>
               </Table>
+              </div>
             </div>
           )}
 

@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
 import {
   useProductsPagedQuery,
@@ -33,16 +33,23 @@ import {
   FileCode,
   RefreshCw,
   Copy,
+  SlidersHorizontal,
+  X,
 } from 'lucide-react';
 
 /**
  * Catálogo Propio del Vendedor (SellerProductsPage - Frontend-Role-Modules sección 2.3).
  * Consulta el catálogo con `vendorId` del vendedor activo para listar tanto
- * productos Published como Suspended, con alternancia inmediata de estado comercial.
+ * productos Published como Suspended, con alternancia inmediata de estado comercial
+ * y filtros multidimensionales de interés operativo (tipo, categoría, variantes y orden).
  */
 export function SellerProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | ProductStatus>('All');
+  const [typeFilter, setTypeFilter] = useState<'All' | 'Physical' | 'Digital'>('All');
+  const [categoryFilter, setCategoryFilter] = useState<string>('All');
+  const [variantsFilter, setVariantsFilter] = useState<'All' | 'has-variants' | 'single'>('All');
+  const [sortFilter, setSortFilter] = useState<'recent' | 'name-asc' | 'price-asc' | 'price-desc'>('recent');
 
   const vendorId = getDefaultSession()?.getUserId() ?? undefined;
   const { data: productsResult, isLoading, isError, error, refetch, isFetching } = useProductsPagedQuery({ vendorId });
@@ -51,15 +58,60 @@ export function SellerProductsPage() {
 
   const allProducts = productsResult?.items ?? [];
 
-  const filteredProducts = allProducts.filter((product: Product) => {
-    const matchesSearch =
-      !searchTerm.trim() ||
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchTerm.toLowerCase());
+  const availableCategories = useMemo(() => {
+    const categoriesSet = new Set<string>();
+    allProducts.forEach((p: Product) => {
+      if (p.category && p.category.trim()) {
+        categoriesSet.add(p.category.trim());
+      }
+    });
+    return Array.from(categoriesSet).sort();
+  }, [allProducts]);
 
-    const matchesStatus = statusFilter === 'All' || product.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const hasActiveFilters =
+    searchTerm.trim() !== '' ||
+    statusFilter !== 'All' ||
+    typeFilter !== 'All' ||
+    categoryFilter !== 'All' ||
+    variantsFilter !== 'All' ||
+    sortFilter !== 'recent';
+
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('All');
+    setTypeFilter('All');
+    setCategoryFilter('All');
+    setVariantsFilter('All');
+    setSortFilter('recent');
+  };
+
+  const filteredProducts = useMemo(() => {
+    return allProducts
+      .filter((product: Product) => {
+        const matchesSearch =
+          !searchTerm.trim() ||
+          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (product.variants ?? []).some((v) => v.sku?.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        const matchesStatus = statusFilter === 'All' || product.status === statusFilter;
+        const matchesType = typeFilter === 'All' || product.type === typeFilter;
+        const matchesCategory = categoryFilter === 'All' || product.category === categoryFilter;
+        const matchesVariants =
+          variantsFilter === 'All' ||
+          (variantsFilter === 'has-variants'
+            ? (product.variants?.length ?? 0) > 0
+            : (product.variants?.length ?? 0) === 0);
+
+        return matchesSearch && matchesStatus && matchesType && matchesCategory && matchesVariants;
+      })
+      .sort((a, b) => {
+        if (sortFilter === 'name-asc') return a.name.localeCompare(b.name);
+        if (sortFilter === 'price-asc') return a.price - b.price;
+        if (sortFilter === 'price-desc') return b.price - a.price;
+        return 0; // recent (default)
+      });
+  }, [allProducts, searchTerm, statusFilter, typeFilter, categoryFilter, variantsFilter, sortFilter]);
 
   const handleToggleStatus = async (product: Product) => {
     if (product.status === ProductStatus.Published) {
@@ -95,7 +147,7 @@ export function SellerProductsPage() {
   }
 
   return (
-    <div className="space-y-8 w-full max-w-full">
+    <div className="space-y-6 sm:space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
@@ -104,11 +156,11 @@ export function SellerProductsPage() {
               Mis Productos
             </h1>
             <Badge variant="outline" className="border-border text-brand font-mono text-xs">
-              {allProducts.length} registros
+              {filteredProducts.length} de {allProducts.length} Productos
             </Badge>
           </div>
           <p className="text-sm text-foreground-muted">
-            Catálogo propio comercial. Puede pausar temporalmente productos o crear nuevas referencias con precios por SKU.
+            Gestión comercial de fichas de producto, control de publicación y precios por SKU.
           </p>
         </div>
 
@@ -133,51 +185,130 @@ export function SellerProductsPage() {
         </div>
       </div>
 
-      {/* ── Barra de Búsqueda y Filtros de Estado Comercial ─────────────── */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
-          <Input
-            type="search"
-            placeholder="Buscar por nombre o descripción..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-surface border-border focus:border-brand text-foreground"
-          />
+      {/* ── Controles de Búsqueda y Filtros de Interés ───────────────────── */}
+      <div className="space-y-3.5 rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-xs">
+        {/* Fila Principal: Búsqueda y Pestañas de Estado */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
+            <Input
+              type="search"
+              placeholder="Buscar por nombre o descripción..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-background/80 border-border focus:border-brand text-foreground"
+            />
+          </div>
+
+          <div className="inline-flex rounded-lg border border-border bg-background/80 p-1 text-xs font-mono shrink-0">
+            <button
+              type="button"
+              onClick={() => setStatusFilter('All')}
+              className={`px-3 py-1 rounded-md transition-colors ${
+                statusFilter === 'All' ? 'bg-brand text-primary-foreground font-semibold' : 'text-foreground-muted hover:text-primary-foreground'
+              }`}
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter(ProductStatus.Published)}
+              className={`px-3 py-1 rounded-md transition-colors ${
+                statusFilter === ProductStatus.Published
+                  ? 'bg-brand text-primary-foreground font-semibold'
+                  : 'text-foreground-muted hover:text-primary-foreground'
+              }`}
+            >
+              Publicados
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter(ProductStatus.Suspended)}
+              className={`px-3 py-1 rounded-md transition-colors ${
+                statusFilter === ProductStatus.Suspended
+                  ? 'bg-brand text-primary-foreground font-semibold'
+                  : 'text-foreground-muted hover:text-primary-foreground'
+              }`}
+            >
+              Suspendidos
+            </button>
+          </div>
         </div>
 
-        <div className="inline-flex rounded-lg border border-border bg-surface p-1 text-xs font-mono">
-          <button
-            type="button"
-            onClick={() => setStatusFilter('All')}
-            className={`px-3 py-1 rounded-md transition-colors ${
-              statusFilter === 'All' ? 'bg-brand text-primary-foreground font-semibold' : 'text-foreground-muted hover:text-primary-foreground'
-            }`}
-          >
-            Todos
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter(ProductStatus.Published)}
-            className={`px-3 py-1 rounded-md transition-colors ${
-              statusFilter === ProductStatus.Published
-                ? 'bg-brand text-primary-foreground font-semibold'
-                : 'text-foreground-muted hover:text-primary-foreground'
-            }`}
-          >
-            Publicados
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter(ProductStatus.Suspended)}
-            className={`px-3 py-1 rounded-md transition-colors ${
-              statusFilter === ProductStatus.Suspended
-                ? 'bg-brand text-primary-foreground font-semibold'
-                : 'text-foreground-muted hover:text-primary-foreground'
-            }`}
-          >
-            Suspendidos
-          </button>
+        {/* Fila Secundaria: Filtros avanzados de interés operativo */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border/60">
+          <div className="flex flex-wrap items-center gap-2.5 text-xs">
+            <span className="flex items-center gap-1 font-mono text-[11px] font-medium uppercase tracking-wider text-foreground-muted">
+              <SlidersHorizontal className="h-3 w-3 text-brand" />
+              Filtros:
+            </span>
+
+            {/* Filtro Tipo */}
+            <select
+              aria-label="Filtrar por tipo de producto"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value as 'All' | 'Physical' | 'Digital')}
+              className="rounded-lg border border-border bg-background/80 px-2.5 py-1 text-xs text-foreground focus:border-brand focus:outline-none"
+            >
+              <option value="All">Todos los tipos</option>
+              <option value="Physical">Físicos (con bodega)</option>
+              <option value="Digital">Digitales (licencias)</option>
+            </select>
+
+            {/* Filtro Categoría */}
+            {availableCategories.length > 0 && (
+              <select
+                aria-label="Filtrar por categoría"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="rounded-lg border border-border bg-background/80 px-2.5 py-1 text-xs text-foreground focus:border-brand focus:outline-none"
+              >
+                <option value="All">Todas las categorías</option>
+                {availableCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Filtro Variantes */}
+            <select
+              aria-label="Filtrar por estructura de variantes"
+              value={variantsFilter}
+              onChange={(e) => setVariantsFilter(e.target.value as 'All' | 'has-variants' | 'single')}
+              className="rounded-lg border border-border bg-background/80 px-2.5 py-1 text-xs text-foreground focus:border-brand focus:outline-none"
+            >
+              <option value="All">Todas las estructuras</option>
+              <option value="has-variants">Con múltiples variantes (SKUs)</option>
+              <option value="single">Producto simple (sin variantes)</option>
+            </select>
+
+            {/* Ordenamiento */}
+            <select
+              aria-label="Ordenar productos"
+              value={sortFilter}
+              onChange={(e) => setSortFilter(e.target.value as 'recent' | 'name-asc' | 'price-asc' | 'price-desc')}
+              className="rounded-lg border border-border bg-background/80 px-2.5 py-1 text-xs text-foreground focus:border-brand focus:outline-none"
+            >
+              <option value="recent">Más recientes</option>
+              <option value="name-asc">Nombre (A–Z)</option>
+              <option value="price-asc">Menor precio base</option>
+              <option value="price-desc">Mayor precio base</option>
+            </select>
+          </div>
+
+          {hasActiveFilters && filteredProducts.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleResetFilters}
+              className="text-xs text-foreground-muted hover:text-danger gap-1 h-7 px-2"
+            >
+              <X className="h-3.5 w-3.5" />
+              Limpiar filtros
+            </Button>
+          )}
         </div>
       </div>
 
@@ -187,18 +318,15 @@ export function SellerProductsPage() {
           state="empty"
           title="No se encontraron productos"
           description={
-            searchTerm || statusFilter !== 'All'
-              ? 'No hay productos que coincidan con los criterios de búsqueda.'
+            hasActiveFilters
+              ? 'No hay productos que coincidan con los criterios de búsqueda y filtros seleccionados.'
               : 'Aún no tiene productos registrados en su catálogo de vendedor.'
           }
           action={
-            searchTerm || statusFilter !== 'All'
+            hasActiveFilters
               ? {
                   label: 'Limpiar filtros',
-                  onClick: () => {
-                    setSearchTerm('');
-                    setStatusFilter('All');
-                  },
+                  onClick: handleResetFilters,
                 }
               : {
                   label: 'Crear Producto',
@@ -245,6 +373,11 @@ export function SellerProductsPage() {
                           </span>
                         )}
                       </Badge>
+                      {product.category && (
+                        <Badge variant="outline" className="border-border text-foreground-subtle text-[11px] font-mono">
+                          {product.category}
+                        </Badge>
+                      )}
                     </div>
 
                     <p className="text-xs text-foreground-muted line-clamp-2">
@@ -263,17 +396,17 @@ export function SellerProductsPage() {
                       <span>Creado: {new Date(product.createdAt).toLocaleDateString('es-CO')}</span>
                       <span>•</span>
                       <span className="flex items-center gap-1">
-  ID: {product.id}
-  <button
-    type="button"
-    onClick={() => navigator.clipboard?.writeText(product.id)}
-    className="text-foreground-muted hover:text-foreground"
-    title="Copiar ID"
-    aria-label="Copiar ID del producto"
-  >
-    <Copy className="h-3 w-3" />
-  </button>
-</span>
+                        ID: {product.id}
+                        <button
+                          type="button"
+                          onClick={() => navigator.clipboard?.writeText(product.id)}
+                          className="text-foreground-muted hover:text-foreground"
+                          title="Copiar ID"
+                          aria-label="Copiar ID del producto"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </button>
+                      </span>
                     </div>
                   </div>
 

@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   useFulfillmentsPagedQuery,
   usePackFulfillmentMutation,
@@ -44,6 +44,8 @@ import {
   Warehouse as WarehouseIcon,
   Ban,
   ChevronRight,
+  Filter,
+  RotateCcw,
 } from 'lucide-react';
 
 
@@ -61,6 +63,9 @@ export function SellerFulfillmentsPage() {
   const [statusFilter, setStatusFilter] = useState<'All' | FulfillmentStatus>('All');
   const [selectedFulfillmentId, setSelectedFulfillmentId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [warehouseFilter, setWarehouseFilter] = useState<'All' | string>('All');
+  const [trackingFilter, setTrackingFilter] = useState<'All' | 'with-tracking' | 'pending-tracking'>('All');
+  const [sortOrder, setSortOrder] = useState<'recent' | 'oldest' | 'most-packages'>('recent');
 
   // Modal / Formulario Cancel Ghost Stock
   const [showGhostModal, setShowGhostModal] = useState(false);
@@ -103,15 +108,56 @@ export function SellerFulfillmentsPage() {
 
   const warehouseMap = new Map<string, Warehouse>(allWarehouses.map((w: Warehouse) => [w.id, w]));
 
-  const filteredFulfillments = allFulfillments.filter((f: FulfillmentOrder) => {
-    const matchesSearch =
-      !searchTerm.trim() ||
-      f.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      f.customerOrderId.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredFulfillments = useMemo(() => {
+    const list = allFulfillments.filter((f: FulfillmentOrder) => {
+      const matchesSearch =
+        !searchTerm.trim() ||
+        f.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        f.customerOrderId.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === 'All' || f.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+      const matchesStatus = statusFilter === 'All' || f.status === statusFilter;
+
+      const matchesWarehouse =
+        warehouseFilter === 'All' ||
+        (f.shipments && f.shipments.some((s) => s.warehouseId === warehouseFilter));
+
+      const hasTracking =
+        f.shipments &&
+        f.shipments.some((s) => !!s.trackingNumber && s.trackingNumber.trim() !== '');
+
+      const matchesTracking =
+        trackingFilter === 'All' ||
+        (trackingFilter === 'with-tracking' && hasTracking) ||
+        (trackingFilter === 'pending-tracking' && !hasTracking);
+
+      return matchesSearch && matchesStatus && matchesWarehouse && matchesTracking;
+    });
+
+    return list.sort((a, b) => {
+      if (sortOrder === 'oldest') {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      if (sortOrder === 'most-packages') {
+        return (b.shipments?.length ?? 0) - (a.shipments?.length ?? 0);
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [allFulfillments, searchTerm, statusFilter, warehouseFilter, trackingFilter, sortOrder]);
+
+  const activeFiltersCount =
+    (searchTerm.trim() ? 1 : 0) +
+    (statusFilter !== 'All' ? 1 : 0) +
+    (warehouseFilter !== 'All' ? 1 : 0) +
+    (trackingFilter !== 'All' ? 1 : 0) +
+    (sortOrder !== 'recent' ? 1 : 0);
+
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('All');
+    setWarehouseFilter('All');
+    setTrackingFilter('All');
+    setSortOrder('recent');
+  };
 
   const selectedFulfillment =
     allFulfillments.find((f: FulfillmentOrder) => f.id === selectedFulfillmentId) ??
@@ -280,6 +326,70 @@ export function SellerFulfillmentsPage() {
                 </option>
               ))}
             </select>
+          </div>
+
+                    {/* Filtros Secundarios: Bodega, Tracking y Ordenamiento */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 text-xs text-foreground-muted font-medium">
+              <Filter className="h-3.5 w-3.5 text-brand" />
+              <span>Filtros avanzados:</span>
+            </div>
+
+            {/* Filtro por Bodega de Origen */}
+            <select
+              value={warehouseFilter}
+              onChange={(e) => setWarehouseFilter(e.target.value)}
+              aria-label="Filtrar por bodega de origen"
+              className="bg-surface border border-border text-foreground text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-brand"
+            >
+              <option value="All">Todas las bodegas</option>
+              {allWarehouses.map((w: Warehouse) => (
+                <option key={w.id} value={w.id}>
+                  {w.name} ({w.type})
+                </option>
+              ))}
+            </select>
+
+            {/* Filtro por Estado de Guía / Tracking */}
+            <select
+              value={trackingFilter}
+              onChange={(e) =>
+                setTrackingFilter(e.target.value as 'All' | 'with-tracking' | 'pending-tracking')
+              }
+              aria-label="Filtrar por estado de guía"
+              className="bg-surface border border-border text-foreground text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-brand"
+            >
+              <option value="All">Todas las guías</option>
+              <option value="with-tracking">Con guía generada</option>
+              <option value="pending-tracking">Pendiente de guía</option>
+            </select>
+
+            {/* Ordenamiento */}
+            <select
+              value={sortOrder}
+              onChange={(e) =>
+                setSortOrder(e.target.value as 'recent' | 'oldest' | 'most-packages')
+              }
+              aria-label="Ordenar despachos"
+              className="bg-surface border border-border text-foreground text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-brand"
+            >
+              <option value="recent">Más recientes primero</option>
+              <option value="oldest">Más antiguos primero</option>
+              <option value="most-packages">Mayor cant. de paquetes</option>
+            </select>
+
+            {/* Botón de Limpiar Filtros */}
+            {activeFiltersCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetFilters}
+                className="h-8 text-xs text-brand hover:text-brand-hover hover:bg-brand/10 gap-1.5 px-2"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Limpiar filtros ({activeFiltersCount})
+              </Button>
+            )}
           </div>
 
           {filteredFulfillments.length === 0 ? (
