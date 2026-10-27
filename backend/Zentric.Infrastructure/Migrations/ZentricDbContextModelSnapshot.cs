@@ -240,6 +240,9 @@ namespace Zentric.Infrastructure.Migrations
                     b.Property<int>("DamagedQuantity")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("ReservedQuantity")
                         .HasColumnType("integer");
 

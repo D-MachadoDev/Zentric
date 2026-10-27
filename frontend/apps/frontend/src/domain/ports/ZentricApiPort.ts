@@ -111,7 +111,7 @@ export interface ZentricApiPort {
   // ── Módulo 3: Inventarios y Control de Stock (/api/inventories) ─────────
   addStock(input: AddStockInput): Promise<string>;
   listInventories(): Promise<Inventory[]>;
-  /** Listado paginado de inventarios (backend: GET /api/Inventories?page&size). */
+  /** Listado paginado de inventarios (backend: GET /api/Inventories?page&size&warehouseId&search). */
   listInventoriesPaged(params?: ListInventoriesPagedParams): Promise<PagedResult<Inventory>>;
   listInventoryByVariant(variantId: string): Promise<Inventory[]>;
   adjustInventory(id: string, input: AdjustInventoryInput): Promise<AdjustInventoryResult>;

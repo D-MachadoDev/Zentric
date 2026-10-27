@@ -20,6 +20,7 @@ import type {
   InspectReturnInput,
   Inventory,
   Invoice,
+  ListInventoriesPagedParams,
   ListProductsPagedParams,
   LoginInput,
   Order,
@@ -107,6 +108,8 @@ export class MockZentricApiAdapter implements ZentricApiPort {
       reservedQuantity: 10,
       usedQuantity: 0,
       damagedQuantity: 0,
+      productName: 'Laptop Profesional',
+      sku: 'LAP-PRO-16-512',
     },
   ];
 
@@ -371,6 +374,9 @@ export class MockZentricApiAdapter implements ZentricApiPort {
       return existing.id;
     }
     const id = `inv-${Date.now()}`;
+    const variant = this.products
+      .flatMap((p) => (p.variants ?? []).map((v) => ({ product: p, variant: v })))
+      .find((entry) => entry.variant.id === input.variantId);
     this.inventories.push({
       id,
       variantId: input.variantId,
@@ -379,6 +385,8 @@ export class MockZentricApiAdapter implements ZentricApiPort {
       reservedQuantity: 0,
       usedQuantity: 0,
       damagedQuantity: 0,
+      productName: variant?.product.name ?? '',
+      sku: variant?.variant.sku ?? '',
     });
     return id;
   }
@@ -387,19 +395,30 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     return [...this.inventories];
   }
 
-  async listInventoriesPaged(params?: { page?: number; size?: number }): Promise<PagedResult<Inventory>> {
-    const page = params?.page ?? 0;
+  async listInventoriesPaged(params?: ListInventoriesPagedParams): Promise<PagedResult<Inventory>> {
+    // Mismo contrato que el backend: `page` es 1-based y los filtros se
+    // aplican antes de recortar la pagina.
+    const page = params?.page ?? 1;
     const size = params?.size ?? 20;
-    const start = page * size;
-    const items = this.inventories.slice(start, start + size);
+    const search = params?.search?.trim().toLowerCase() ?? '';
+    const filtered = this.inventories.filter((i) => {
+      const matchesWarehouse = !params?.warehouseId || i.warehouseId === params.warehouseId;
+      const matchesSearch =
+        !search ||
+        i.productName.toLowerCase().includes(search) ||
+        i.sku.toLowerCase().includes(search);
+      return matchesWarehouse && matchesSearch;
+    });
+    const start = (page - 1) * size;
+    const items = filtered.slice(start, start + size);
     return {
       items,
       page,
       size,
-      totalItems: this.inventories.length,
-      totalPages: Math.ceil(this.inventories.length / size),
-      hasPrevious: page > 0,
-      hasNext: start + items.length < this.inventories.length,
+      totalItems: filtered.length,
+      totalPages: Math.ceil(filtered.length / size),
+      hasPrevious: page > 1,
+      hasNext: start + items.length < filtered.length,
     };
   }
 

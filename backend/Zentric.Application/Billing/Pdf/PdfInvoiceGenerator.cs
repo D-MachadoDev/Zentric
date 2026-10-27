@@ -12,9 +12,9 @@ namespace Zentric.Application.Billing.Pdf;
 /// </summary>
 public sealed class PdfInvoiceGenerator
 {
-    private const decimal PdfPageWidth = 595; // A4 width in points (1 pt = 1/72 inch)
-    private const decimal PdfPageHeight = 842; // A4 height in points
-    private const decimal Margin = 50; // Page margin in points
+    private const double PdfPageWidth = 595; // A4 width in points (1 pt = 1/72 inch)
+    private const double PdfPageHeight = 842; // A4 height in points
+    private const double Margin = 50; // Page margin in points
 
     /// <summary>
     /// Generates a PDF invoice for the specified order.
@@ -25,43 +25,39 @@ public sealed class PdfInvoiceGenerator
     public byte[] GenerateInvoice(CustomerOrder order, string buyerEmail)
     {
         // Create a PDF document
-        var document = new PdfDocument
+        var document = new PdfDocument();
+        document.Info.Title = $"Invoice - Order {order.Id}";
+        document.Info.Subject = "Zentric Invoice";
+        document.Info.Author = "Zentric System";
+        document.Info.Keywords = "invoice, order, payment";
+
+        // Ensure a font resolver is available (PDFsharp 6.0 requires one)
+        if (PdfSharp.Fonts.GlobalFontSettings.FontResolver is null)
         {
-            DocumentInfo = new PdfDocumentInfo
-            {
-                Title = $"Invoice - Order {order.Id}",
-                Subject = "Zentric Invoice",
-                Author = "Zentric System",
-                Keywords = "invoice, order, payment"
-            }
-        };
+            var resolverType = typeof(PdfSharp.Pdf.PdfDocument).Assembly.GetType("PdfSharp.Fonts.EvenNewerFontResolver");
+            if (resolverType is null)
+                throw new InvalidOperationException("EvenNewerFontResolver type not found.");
+            var instance = System.Activator.CreateInstance(resolverType, true);
+            if (instance is null)
+                throw new InvalidOperationException("Failed to create font resolver instance.");
+            PdfSharp.Fonts.GlobalFontSettings.FontResolver = (PdfSharp.Fonts.IFontResolver)instance;
+        }
+
 
         // Add a page
         var page = document.AddPage();
         var gfx = XGraphics.FromPdfPage(page);
 
         // Set up font objects
-        var titleFont = new XFont("Georgia", 24, XFontStyle.Bold);
-        var headingFont = new XFont("Georgia", 14, XFontStyle.Bold);
+        var titleFont = new XFont("Georgia", 24, XFontStyleEx.Bold);
+        var headingFont = new XFont("Georgia", 14, XFontStyleEx.Bold);
         var normalFont = new XFont("Georgia", 11);
         var smallFont = new XFont("Georgia", 9);
-        var boldNormalFont = new XFont("Georgia", 11, XFontStyle.Bold);
+        var boldNormalFont = new XFont("Georgia", 11, XFontStyleEx.Bold);
 
-        // Calculate available width
-        var availableWidth = PdfPageWidth - 2 * Margin;
-
-        // Helper to draw text and return the y position after
-        void DrawLine(XGraphics g, string text, XFont font, XColor color, out decimal yPos)
-        {
-            var rect = new XRect(Margin, 0, availableWidth, PdfPageHeight);
-            g.DrawString(text, font, new XSolidBrush(color), rect, new XStringFormat { LineAlignment = StringAlignment.Near });
-            // For simplicity, just move down by font size + spacing
-            // In a real implementation, would measure actual height
-            yPos = rect.Y + font.Size + 5;
-        }
 
         // Current Y position
-        decimal y = Margin;
+        double y = Margin;
 
         // Company header
         gfx.DrawString("ZENTRIC", titleFont, XBrushes.DarkBlue, new XPoint(Margin, y));
@@ -91,11 +87,11 @@ public sealed class PdfInvoiceGenerator
             gfx.DrawString(item.VariantId.ToString(), normalFont, XBrushes.Black, new XPoint(Margin, y));
             gfx.DrawString($"Variant {item.VariantId:N}", normalFont, XBrushes.Black, new XPoint(Margin + 100, y));
             gfx.DrawString(item.Quantity.ToString(), normalFont, XBrushes.Black, new XPoint(Margin + 300, y));
-            
+
             // Format price using number format (configurable currency)
             var priceString = item.UnitPrice.Amount.ToString("N0");
             gfx.DrawString(priceString, normalFont, XBrushes.Black, new XPoint(Margin + 400, y));
-            
+
             var totalString = item.TotalPrice.Amount.ToString("N0");
             gfx.DrawString(totalString, normalFont, XBrushes.Black, new XPoint(Margin + 480, y));
             y += 18;

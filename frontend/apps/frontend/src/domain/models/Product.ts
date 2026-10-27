@@ -134,10 +134,17 @@ export interface ListWarehousesPagedParams {
 
 /**
  * Parámetros de consulta paginada de inventarios.
+ *
+ * `page` es 1-based en el borde HTTP: el controlador resta 1 antes de
+ * construir el `PageRequest` 0-based del backend.
  */
 export interface ListInventoriesPagedParams {
   page?: number;
   size?: number;
+  /** Filtra por bodega; el servidor decide qué bodegas puede ver cada rol. */
+  warehouseId?: string;
+  /** Búsqueda libre por nombre de producto, SKU o ubicación de bodega. */
+  search?: string;
 }
 
 /** Envoltorio estándar de paginación del backend */

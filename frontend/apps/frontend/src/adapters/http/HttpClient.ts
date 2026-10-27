@@ -407,6 +407,9 @@ export class HttpClient implements ZentricApiPort {
     const queryParams = new URLSearchParams();
     if (params?.page !== undefined) queryParams.set('page', String(params.page));
     if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    if (params?.warehouseId) queryParams.set('warehouseId', params.warehouseId);
+    const search = params?.search?.trim();
+    if (search) queryParams.set('search', search);
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
     return this.#json<PagedResult<Inventory>>(`/api/Inventories${query}`, { method: 'GET' });
   }

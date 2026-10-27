@@ -68,20 +68,32 @@ namespace Zentric.Api.Controllers
         /// </remarks>
         /// <param name="page">P�gina (1-based).</param>
         /// <param name="size">Tama�o de p�gina.</param>
+        /// <param name="warehouseId">Bodega opcional: acota el listado a una sola.</param>
+        /// <param name="search">Texto opcional: compara contra nombre de producto y SKU.</param>
         /// <response code="200">Listado de existencias visibles para el llamante.</response>
         /// <response code="401">Token ausente o inválido.</response>
         [HttpGet]
         [Authorize(Policy = AuthorizationPolicies.InventoryRead)]
         [ProducesResponseType(typeof(Zentric.Application.Common.Models.PagedResult<Zentric.Application.Inventories.Queries.InventoryDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetInventories([FromQuery] int page = 1, [FromQuery] int size = 20)
+        public async Task<IActionResult> GetInventories(
+            [FromQuery] int page = 1,
+            [FromQuery] int size = 20,
+            [FromQuery] Guid? warehouseId = null,
+            [FromQuery] string? search = null)
         {
             var userId = _currentUser.UserId;
             var role = User.GetUserRole();
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
             var result = await _mediator.Send(
-                new Zentric.Application.Inventories.Queries.GetInventoriesQuery(userId.Value, role.Value, page - 1, size));
+                new Zentric.Application.Inventories.Queries.GetInventoriesQuery(
+                    userId.Value,
+                    role.Value,
+                    page - 1,
+                    size,
+                    warehouseId,
+                    search));
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }

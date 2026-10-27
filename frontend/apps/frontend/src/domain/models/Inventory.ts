@@ -13,6 +13,10 @@ export interface Inventory {
   reservedQuantity: number;
   usedQuantity: number;
   damagedQuantity: number;
+  /** Nombre del producto dueño de la variante; lo resuelve el servidor. */
+  productName: string;
+  /** SKU de la variante; lo resuelve el servidor. */
+  sku: string;
 }
 
 /**

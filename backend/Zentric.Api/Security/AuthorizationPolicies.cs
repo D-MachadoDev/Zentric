@@ -291,7 +291,14 @@ namespace Zentric.Api.Security
 
                     [ProductManagement] = new[] { Role(UserRole.Seller) },
 
-                    [InventoryManagement] = new[] { Role(UserRole.Seller), Role(UserRole.LogisticsOperator) },
+                    // El Administrador entra como gestor de las bodegas de Zentric:
+                    // el limite por bodega lo aplican los handlers, no el rol.
+                    [InventoryManagement] = new[]
+                    {
+                        Role(UserRole.Seller),
+                        Role(UserRole.LogisticsOperator),
+                        Role(UserRole.Administrator),
+                    },
 
                     [InventoryRead] = new[]
                     {

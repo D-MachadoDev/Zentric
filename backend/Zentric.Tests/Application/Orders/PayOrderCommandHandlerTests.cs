@@ -4,6 +4,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Zentric.Application.Billing.Commands;
+using Zentric.Application.Common.Models;
+using Zentric.Application.Common.Messaging;
 using Zentric.Application.Common.Ports;
 using Zentric.Application.Orders.Commands;
 using Zentric.Domain.Orders;
@@ -42,6 +45,22 @@ namespace Zentric.Tests.Application.Orders
         public Task<PaymentResult> ChargeAsync(
             Guid orderId, Money amount, CancellationToken cancellationToken = default)
             => Task.FromResult(PaymentResult.Rejected("insufficient-funds"));
+    }
+
+    /// <summary>Mediador falso que devuelve �xito para GenerateInvoicesCommand.</summary>
+    public sealed class FakeMediatorForPay : IMediator
+    {
+        public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
+        {
+            if (request is GenerateInvoicesCommand)
+            {
+                return Task.FromResult((TResponse)(object)Result<bool>.Success(true));
+            }
+            return Task.FromResult(default(TResponse)!);
+        }
+
+        public Task Publish(object notification, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 
     /// <summary>
@@ -171,7 +190,7 @@ namespace Zentric.Tests.Application.Orders
             var repo = new FakeCustomerOrderRepositoryForPay();
             var receipts = new FakePaymentReceiptRepository();
             var handler = new PayOrderCommandHandler(
-                repo, new FakeUnitOfWork(), new ApprovingPaymentGateway(), receipts, new FakeProductRepositoryForPay());
+                new FakeMediatorForPay(), repo, new FakeUnitOfWork(), new ApprovingPaymentGateway(), receipts, new FakeProductRepositoryForPay());
 
             var buyerId = Guid.NewGuid();
             var order = new CustomerOrder(buyerId);
@@ -195,7 +214,7 @@ namespace Zentric.Tests.Application.Orders
             var repo = new FakeCustomerOrderRepositoryForPay();
             var receipts = new FakePaymentReceiptRepository();
             var handler = new PayOrderCommandHandler(
-                repo, new FakeUnitOfWork(), new DecliningPaymentGateway(), receipts, new FakeProductRepositoryForPay());
+                new FakeMediatorForPay(), repo, new FakeUnitOfWork(), new DecliningPaymentGateway(), receipts, new FakeProductRepositoryForPay());
 
             var buyerId = Guid.NewGuid();
             var order = new CustomerOrder(buyerId);
@@ -216,7 +235,7 @@ namespace Zentric.Tests.Application.Orders
             // y el pedido NO debe quedar pagado (seria un pedido cobrado sin cobrar).
             var repo = new FakeCustomerOrderRepositoryForPay();
             var uow = new FakeUnitOfWork();
-            var handler = new PayOrderCommandHandler(repo, uow, new DecliningPaymentGateway(), new FakePaymentReceiptRepository(), new FakeProductRepositoryForPay());
+            var handler = new PayOrderCommandHandler(new FakeMediatorForPay(), repo, uow, new DecliningPaymentGateway(), new FakePaymentReceiptRepository(), new FakeProductRepositoryForPay());
 
             var buyerId = Guid.NewGuid();
             var order = new CustomerOrder(buyerId);
@@ -237,7 +256,7 @@ namespace Zentric.Tests.Application.Orders
             // El importe cobrado debe ser el total del pedido, no una unidad ni un cero.
             var repo = new FakeCustomerOrderRepositoryForPay();
             var gateway = new ApprovingPaymentGateway();
-            var handler = new PayOrderCommandHandler(repo, new FakeUnitOfWork(), gateway, new FakePaymentReceiptRepository(), new FakeProductRepositoryForPay());
+            var handler = new PayOrderCommandHandler(new FakeMediatorForPay(), repo, new FakeUnitOfWork(), gateway, new FakePaymentReceiptRepository(), new FakeProductRepositoryForPay());
 
             var buyerId = Guid.NewGuid();
             var order = new CustomerOrder(buyerId);
@@ -256,7 +275,7 @@ namespace Zentric.Tests.Application.Orders
         {
             var repo = new FakeCustomerOrderRepositoryForPay();
             var uow = new FakeUnitOfWork();
-            var handler = new PayOrderCommandHandler(repo, uow, new ApprovingPaymentGateway(), new FakePaymentReceiptRepository(), new FakeProductRepositoryForPay());
+            var handler = new PayOrderCommandHandler(new FakeMediatorForPay(), repo, uow, new ApprovingPaymentGateway(), new FakePaymentReceiptRepository(), new FakeProductRepositoryForPay());
 
             var buyerId = Guid.NewGuid();
             var order = new CustomerOrder(buyerId);
@@ -277,7 +296,7 @@ namespace Zentric.Tests.Application.Orders
         {
             var repo = new FakeCustomerOrderRepositoryForPay();
             var uow = new FakeUnitOfWork();
-            var handler = new PayOrderCommandHandler(repo, uow, new ApprovingPaymentGateway(), new FakePaymentReceiptRepository(), new FakeProductRepositoryForPay());
+            var handler = new PayOrderCommandHandler(new FakeMediatorForPay(), repo, uow, new ApprovingPaymentGateway(), new FakePaymentReceiptRepository(), new FakeProductRepositoryForPay());
 
             var command = new PayOrderCommand(Guid.NewGuid(), Guid.NewGuid());
             var result = await handler.Handle(command, CancellationToken.None);
@@ -296,7 +315,7 @@ namespace Zentric.Tests.Application.Orders
             var repo = new FakeCustomerOrderRepositoryForPay();
             var uow = new FakeUnitOfWork();
             var gateway = new ApprovingPaymentGateway();
-            var handler = new PayOrderCommandHandler(repo, uow, gateway, new FakePaymentReceiptRepository(), new FakeProductRepositoryForPay());
+            var handler = new PayOrderCommandHandler(new FakeMediatorForPay(), repo, uow, gateway, new FakePaymentReceiptRepository(), new FakeProductRepositoryForPay());
 
             var ownerId = Guid.NewGuid();
             var order = new CustomerOrder(ownerId);

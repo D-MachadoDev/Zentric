@@ -134,6 +134,8 @@ const mockInventory1: Inventory = {
   reservedQuantity: 5,
   usedQuantity: 2,
   damagedQuantity: 0,
+  productName: 'Producto de prueba',
+  sku: 'SKU-TEST-1',
 };
 
 const mockOrderListItem: OrderListItem = {
@@ -828,6 +830,8 @@ vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [mockOrd
             reservedQuantity: 0,
             usedQuantity: 0,
             damagedQuantity: 0,
+            productName: 'Producto huérfano',
+            sku: 'SKU-HUERFANO',
           },
         ],
         page: 0,

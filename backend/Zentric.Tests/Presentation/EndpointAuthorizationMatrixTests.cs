@@ -181,14 +181,15 @@ namespace Zentric.Tests.Presentation
         /// impide administrar informacion fuera de su rol.
         /// </summary>
         [Fact]
-        public void InventoryManagement_LawMatrix_KeepsAdministratorOut()
+        public void InventoryManagement_Matrix_AdmitsAdministratorForZentricWarehouses()
         {
             IReadOnlyList<string> allowed = AuthorizationPolicies.RolesByPolicy[AuthorizationPolicies.InventoryManagement];
 
             Assert.Contains(UserRole.Seller.ToString(), allowed);
             Assert.Contains(UserRole.LogisticsOperator.ToString(), allowed);
-            Assert.DoesNotContain(UserRole.Administrator.ToString(), allowed);
+            Assert.Contains(UserRole.Administrator.ToString(), allowed);
             Assert.DoesNotContain(UserRole.Buyer.ToString(), allowed);
+            Assert.DoesNotContain(UserRole.Supervisor.ToString(), allowed);
         }
 
         /// <summary>

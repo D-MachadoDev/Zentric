@@ -5,6 +5,7 @@ using Zentric.Domain.Inventories;
 using Zentric.Domain.Inventories.Ports;
 using Zentric.Domain.Products.Ports;
 using Zentric.Domain.Users.Enums;
+using Zentric.Domain.Warehouses.Enum;
 using Zentric.Domain.Warehouses.Ports;
 
 namespace Zentric.Application.Inventories.Commands
@@ -58,11 +59,22 @@ namespace Zentric.Application.Inventories.Commands
                 // el Vendedor puede abastecer sus propias bodegas
                 // o cualquier bodega central activa de Zentric (Marketplace).
                 var isOwnWarehouse = warehouse != null && warehouse.VendorId == request.CallerId;
-                var isMarketplaceWarehouse = warehouse != null && warehouse.Type == Zentric.Domain.Warehouses.Enum.WarehouseType.Marketplace && warehouse.IsActive;
+                var isMarketplaceWarehouse = warehouse != null && warehouse.Type == WarehouseType.Marketplace && warehouse.IsActive;
 
                 if (warehouse == null || (!isOwnWarehouse && !isMarketplaceWarehouse))
                 {
                     return Result<Guid>.NotFound($"Warehouse {request.WarehouseId} not found.");
+                }
+            }
+
+            if (request.CallerRole == UserRole.Administrator)
+            {
+                // Misma frontera que la eliminacion: el Administrador abastece la
+                // bodega de Zentric, no la de un vendedor.
+                var warehouse = await _warehouseRepository.GetByIdAsync(request.WarehouseId, cancellationToken);
+                if (warehouse is null || warehouse.Type != WarehouseType.Marketplace)
+                {
+                    return Result<Guid>.Failure("El administrador solo puede abastecer bodegas de Zentric.");
                 }
             }
 

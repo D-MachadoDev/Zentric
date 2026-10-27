@@ -21,6 +21,7 @@ namespace Zentric.Infrastructure.Persistence.Mappers
             typeof(Inventory).GetProperty("UsedQuantity")?.SetValue(inv, dbModel.UsedQuantity);
             typeof(Inventory).GetProperty("CreatedAt")?.SetValue(inv, dbModel.CreatedAt);
             typeof(Inventory).GetProperty("UpdatedAt")?.SetValue(inv, dbModel.UpdatedAt);
+            typeof(Inventory).GetProperty("DeletedAt")?.SetValue(inv, dbModel.DeletedAt);
 
             return inv;
         }
@@ -55,7 +56,8 @@ namespace Zentric.Infrastructure.Persistence.Mappers
                 DamagedQuantity = domain.DamagedQuantity,
                 UsedQuantity = domain.UsedQuantity,
                 CreatedAt = domain.CreatedAt,
-                UpdatedAt = domain.UpdatedAt
+                UpdatedAt = domain.UpdatedAt,
+                DeletedAt = domain.DeletedAt
             };
         }
     }

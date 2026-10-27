@@ -1,11 +1,24 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Zentric.Domain.Inventories;
 
 namespace Zentric.Domain.Inventories.Ports
 {
+    /// <summary>
+    /// Fila del listado de existencias con la identidad comercial de su variante.
+    ///
+    /// El nombre y el SKU viven en el producto y la variante, no en la existencia.
+    /// Se resuelven en la misma consulta paginada para no hacer N+1 ni obligar a
+    /// la pantalla a inventar un identificador cuando no encuentra el producto.
+    /// </summary>
+    public sealed record InventoryListRow(
+        Inventory Inventory,
+        string ProductName,
+        string Sku);
+
     /// <summary>
     /// Puerto de salida (Output Port) para la persistencia y operaciones atómicas de inventario.
     /// </summary>
@@ -29,6 +42,37 @@ namespace Zentric.Domain.Inventories.Ports
         /// proceso el stock de la competencia, que es justo la superficie que la propiedad oculta.
         /// </summary>
         Task<IReadOnlyList<Inventory>> GetListAsync(Guid? vendorId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Listado paginado con la identidad del producto resuelta en la consulta.
+        ///
+        /// <paramref name="vendorId"/> acota por dueno del producto; <paramref name="warehouseId"/>
+        /// por bodega; <paramref name="search"/> compara contra nombre de producto y SKU. El total
+        /// se cuenta antes del <c>Skip/Take</c>, con los mismos filtros, para que la pantalla no
+        /// muestre un contador que no corresponde a lo que esta viendo.
+        /// </summary>
+        async Task<(IReadOnlyList<InventoryListRow> Items, int TotalItems)> GetPagedAsync(
+            Guid? vendorId,
+            Guid? warehouseId,
+            string? search,
+            int skip,
+            int take,
+            CancellationToken cancellationToken = default)
+        {
+            // Implementacion por defecto para no romper los dobles de prueba que
+            // solo conocen el listado completo. El adaptador real la sobrescribe
+            // con una unica consulta paginada; aqui se reproduce el mismo contrato.
+            var all = await GetListAsync(vendorId, cancellationToken);
+            var filtered = all
+                .Where(i => !warehouseId.HasValue || i.WarehouseId == warehouseId.Value)
+                .ToList();
+
+            var page = filtered.Skip(skip).Take(take)
+                .Select(i => new InventoryListRow(i, string.Empty, string.Empty))
+                .ToList();
+
+            return (page, filtered.Count);
+        }
 
         Task AddAsync(Inventory inventory, CancellationToken cancellationToken = default);
         Task UpdateAsync(Inventory inventory, CancellationToken cancellationToken = default);

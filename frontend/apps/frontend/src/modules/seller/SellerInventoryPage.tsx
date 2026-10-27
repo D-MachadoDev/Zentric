@@ -1,9 +1,10 @@
-﻿import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { alertAdapter } from '../../app/providers/alertAdapter';
 import { useSearch } from '@tanstack/react-router';
 import { useInventoriesPagedQuery, useAddStockMutation, useDeleteInventoryMutation } from '../../application/services/inventory';
 import { useWarehousesQuery } from '../../application/services/warehouses';
 import { useProductsPagedQuery } from '../../application/services/catalog';
+import { mensajeDeError } from '../../components/errorMessage';
 import type { Inventory, Warehouse, Product, ProductVariant, ListInventoriesPagedParams } from '../../domain';
 import {
   Button,
@@ -15,6 +16,7 @@ import {
   AlertDescription,
   StateView,
   Pagination,
+  useDebounce,
 } from '@zentric/ui';
 import {
   Warehouse as WarehouseIcon,
@@ -27,6 +29,9 @@ import {
   Trash2,
 } from 'lucide-react';
 
+const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 300;
+
 
 /**
  * Gestión de Inventario del Vendedor (SellerInventoryPage - Frontend-Role-Modules sección 2.3).
@@ -37,7 +42,7 @@ import {
 export function SellerInventoryPage() {
   const search = useSearch({ strict: false }) as { variantId?: string };
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('All');
   const [page, setPage] = useState(1);
 
@@ -48,10 +53,14 @@ export function SellerInventoryPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
-  // Pagination params for server-side pagination
+  const debouncedSearch = useDebounce(searchInput.trim(), SEARCH_DEBOUNCE_MS);
+
+  // El servidor filtra, pagina y ordena: nada de re-filtrar la página recibida.
   const params: ListInventoriesPagedParams = {
-    page: page - 1, // backend uses 0-based
-    size: 20,
+    page,
+    size: PAGE_SIZE,
+    warehouseId: selectedWarehouseId === 'All' ? undefined : selectedWarehouseId,
+    search: debouncedSearch || undefined,
   };
 
   const { data: pagedResult, isLoading: isLoadingInventories, isError: isErrorInventories, error: errorInventories, refetch: refetchInventories, isFetching: isFetchingInventories } = useInventoriesPagedQuery(params);
@@ -62,59 +71,19 @@ export function SellerInventoryPage() {
   const { data: warehouses, isLoading: isLoadingWarehouses } = useWarehousesQuery();
   const { data: productsResult } = useProductsPagedQuery();
   const products = productsResult?.items ?? [];
+
   const addStockMutation = useAddStockMutation();
   const deleteInventoryMutation = useDeleteInventoryMutation();
 
-  const allInventories = inventories ?? [];
   const allWarehouses = warehouses ?? [];
-  const allProducts = products;
+  const hasFilters = debouncedSearch !== '' || selectedWarehouseId !== 'All';
 
-  // Prefill desde la URL (botón "Abastecer" de la ficha de producto)
-  useEffect(() => {
-    if (search.variantId) {
-      setTargetVariantId(search.variantId);
-    }
-  }, [search.variantId]);
-
-  useEffect(() => {
-    if (allWarehouses.length === 1 && !targetWarehouseId && allWarehouses[0]) {
-      setTargetWarehouseId(allWarehouses[0].id);
-    }
-  }, [allWarehouses, targetWarehouseId]);
-
-  // Navega a la página de la variante en foco si es necesario, sin perder el contexto de página
-  useEffect(() => {
-    if (!targetVariantId) return;
-
-    const focusedVariantIndex = inventories.findIndex(
-      (inv: Inventory) => inv.variantId === targetVariantId
-    );
-
-    if (focusedVariantIndex >= 0) {
-      const focusedVariantPage = Math.floor(focusedVariantIndex / 20) + 1; // 20 items por página
-
-      if (page !== focusedVariantPage) {
-        setPage(focusedVariantPage);
-      }
-    }
-  }, [targetVariantId, page, inventories.length]);
-
-  // Navega a la página de la variante en foco si es necesario, sin perder el contexto de página
-  useEffect(() => {
-    if (!targetVariantId) return;
-
-    const focusedVariantIndex = inventories.findIndex(
-      (inv: Inventory) => inv.variantId === targetVariantId
-    );
-
-    if (focusedVariantIndex >= 0) {
-      const focusedVariantPage = Math.floor(focusedVariantIndex / 20) + 1; // 20 items por página
-
-      if (page !== focusedVariantPage) {
-        setPage(focusedVariantPage);
-      }
-    }
-  }, [targetVariantId, page, inventories.length]);
+  // Prefill sin efectos: la URL ("Abastecer" de la ficha de producto) y la
+  // unica bodega disponible son el valor por defecto del formulario; en
+  // cuanto el usuario escribe, su valor manda.
+  const effectiveVariantId = targetVariantId || (search.variantId ?? '');
+  const effectiveWarehouseId =
+    targetWarehouseId || (allWarehouses.length === 1 ? (allWarehouses[0]?.id ?? '') : '');
 
   // Limpia todos los campos del formulario de abastecer
   const clearForm = () => {
@@ -125,65 +94,22 @@ export function SellerInventoryPage() {
     setFormSuccess(null);
   };
   const warehouseMap = new Map<string, Warehouse>(allWarehouses.map((w: Warehouse) => [w.id, w]));
-  const variantInfoMap = new Map<string, { sku: string; productName: string }>();
-
-   // Map inventories for table row click handling
-   const inventoryMap = new Map<string, { variantId: string; warehouseId: string }>(
-     inventories.map((inv: Inventory) => [inv.id, { variantId: inv.variantId, warehouseId: inv.warehouseId }])
-   );
-
-   // Manejo de clic en filas de tabla para prellenar el formulario
-   const handleInventoryRowClick = (inv: Inventory) => {
-     setTargetVariantId(inv.variantId);
-     setTargetWarehouseId(inv.warehouseId);
-   };
-
-  allProducts.forEach((p: Product) => {
-    (p.variants ?? []).forEach((v: ProductVariant) => {
-      variantInfoMap.set(v.id, { sku: v.sku, productName: p.name });
-    });
-  });
-
-  const filteredInventories = allInventories.filter((inv: Inventory) => {
-    const variantInfo = variantInfoMap.get(inv.variantId);
-    const sku = variantInfo?.sku ?? '';
-    const productName = variantInfo?.productName ?? '';
-    const warehouse = warehouseMap.get(inv.warehouseId);
-    const warehouseLoc = warehouse?.location ?? '';
-
-    const matchesSearch =
-      !searchTerm.trim() ||
-      inv.variantId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      warehouseLoc.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesWarehouse =
-      selectedWarehouseId === 'All' || inv.warehouseId === selectedWarehouseId;
-
-    return matchesSearch && matchesWarehouse;
-  });
 
   // Orden de presencia: la variante preseleccionada (URL "Abastecer" o formulario)
-  // aparece primero en la tabla con indicador visual.
-  const presenceVariantId = (search.variantId ?? targetVariantId ?? '').trim();
-  const displayedInventories = [...filteredInventories].sort((a, b) => {
-    const aMatch = presenceVariantId && a.variantId === presenceVariantId ? 0 : 1;
-    const bMatch = presenceVariantId && b.variantId === presenceVariantId ? 0 : 1;
-    return aMatch - bMatch;
-  });
+  // se destaca en la tabla. La página la decide el servidor.
+  const presenceVariantId = effectiveVariantId.trim();
 
   const handleAddStock = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
     setFormSuccess(null);
 
-    if (!targetVariantId.trim()) {
+    if (!effectiveVariantId.trim()) {
       setFormError('Debe especificar el identificador de la variante.');
       return;
     }
 
-    if (!targetWarehouseId.trim()) {
+    if (!effectiveWarehouseId.trim()) {
       setFormError('Debe seleccionar una bodega de destino.');
       return;
     }
@@ -197,17 +123,15 @@ export function SellerInventoryPage() {
 
     try {
       await addStockMutation.mutateAsync({
-        variantId: targetVariantId.trim(),
-        warehouseId: targetWarehouseId.trim(),
+        variantId: effectiveVariantId.trim(),
+        warehouseId: effectiveWarehouseId.trim(),
         quantity,
       });
 
       setFormSuccess(`Ingreso de ${quantity} unidades registrado exitosamente.`);
       setStockQuantity('1');
     } catch (err) {
-      setFormError(
-        err instanceof Error ? err.message : 'Error al registrar existencias en la bodega.'
-      );
+      setFormError(mensajeDeError(err));
     }
   };
 
@@ -226,7 +150,9 @@ export function SellerInventoryPage() {
     const accepted = await alertAdapter.confirm({
       title: 'Eliminar registro de inventario',
       description:
-        'El registro se marcará como eliminado (soft delete). Esta acción no se puede deshacer desde la UI.',
+        inv.availableQuantity + inv.reservedQuantity + inv.damagedQuantity > 0
+          ? 'Este registro todavía tiene unidades disponibles, reservadas o dañadas. Solo se puede eliminar un registro sin existencias físicas.'
+          : 'El registro dejará de aparecer en el inventario. Esta acción no se puede deshacer desde la interfaz.',
       confirmLabel: 'Eliminar',
       variant: 'destructive',
     });
@@ -234,9 +160,13 @@ export function SellerInventoryPage() {
 
     try {
       await deleteInventoryMutation.mutateAsync(inv.id);
-      setFormSuccess('Registro de inventario eliminado (soft delete).');
+      setFormSuccess('Registro de inventario eliminado.');
+      // Si era el último de la página, retrocede para no quedarse en un vacío.
+      if (inventories.length === 1 && page > 1) {
+        setPage(page - 1);
+      }
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Error al eliminar el registro.');
+      setFormError(mensajeDeError(err));
     }
   };
 
@@ -285,7 +215,7 @@ export function SellerInventoryPage() {
               Existencias y Abastecimiento
             </h1>
             <Badge variant="outline" className="border-border text-brand font-mono text-xs">
-              {allInventories.length} Posiciones
+              {totalItems} Posiciones
             </Badge>
           </div>
           <p className="text-sm text-foreground-muted">
@@ -315,15 +245,21 @@ export function SellerInventoryPage() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
               <Input
                 type="text"
-                placeholder="Buscar por SKU, variante o ubicación..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar por producto o SKU..."
+                value={searchInput}
+                onChange={(e) => {
+                  setSearchInput(e.target.value);
+                  setPage(1);
+                }}
                 className="pl-10 bg-surface border-border text-foreground placeholder:text-foreground-muted focus:border-brand"
               />
             </div>
             <select
               value={selectedWarehouseId}
-              onChange={(e) => setSelectedWarehouseId(e.target.value)}
+              onChange={(e) => {
+                setSelectedWarehouseId(e.target.value);
+                setPage(1);
+              }}
               aria-label="Filtrar por bodega"
               className="bg-surface border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
             >
@@ -337,12 +273,12 @@ export function SellerInventoryPage() {
           </div>
 
           {/* Tabla de Existencias */}
-          {displayedInventories.length === 0 ? (
+          {inventories.length === 0 ? (
             <StateView
               state="empty"
               title="No hay existencias registradas"
               description={
-                searchTerm || selectedWarehouseId !== 'All'
+                hasFilters
                   ? 'No hay inventarios que coincidan con los filtros aplicados.'
                   : 'Aún no has registrado existencias de tus variantes en ninguna bodega física.'
               }
@@ -364,8 +300,7 @@ export function SellerInventoryPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
-                    {displayedInventories.map((inv: Inventory) => {
-                      const variantInfo = variantInfoMap.get(inv.variantId);
+                    {inventories.map((inv: Inventory) => {
                       const warehouse = warehouseMap.get(inv.warehouseId);
 
                       const isPresence = Boolean(presenceVariantId) && inv.variantId === presenceVariantId;
@@ -381,12 +316,12 @@ export function SellerInventoryPage() {
                           }
                         >
                           <td className="py-4 px-4">
-                            <div className="font-medium text-foreground">
-                              {variantInfo?.productName ?? 'Variante Registrada'}
+                            <div className="font-medium text-foreground" title={inv.variantId}>
+                              {inv.productName || 'Producto sin nombre'}
                             </div>
                             <div className="flex items-center gap-2 mt-1">
                               <span className="text-xs font-mono text-brand font-semibold">
-                                SKU: {variantInfo?.sku ?? inv.variantId.substring(0, 8)}
+                                SKU: {inv.sku || '—'}
                               </span>
                               {isPresence && (
                                 <Badge className="bg-brand/20 text-brand border-brand/40 text-[10px] font-mono ml-2">
@@ -406,9 +341,6 @@ export function SellerInventoryPage() {
                                   En Stock
                                 </Badge>
                               )}
-                            </div>
-                            <div className="text-[11px] font-mono text-foreground-muted">
-                              ID: {inv.variantId}
                             </div>
                           </td>
                           <td className="py-4 px-4">
@@ -443,7 +375,7 @@ export function SellerInventoryPage() {
                               }}
                               disabled={deleteInventoryMutation.isPending}
                               className="border-destructive/40 text-destructive hover:bg-destructive/10"
-                              title="Eliminar registro (soft delete)"
+                              title="Eliminar registro de inventario"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -504,24 +436,24 @@ export function SellerInventoryPage() {
                   Variante a Abastecer
                 </label>
                 <select
-                  value={targetVariantId}
+                  value={effectiveVariantId}
                   onChange={(e) => setTargetVariantId(e.target.value)}
                   aria-label="Seleccionar variante de producto"
                   className="w-full bg-surface-muted border border-border text-foreground text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:border-brand"
                 >
                   <option value="">-- Seleccionar Variante --</option>
-                  {allProducts.flatMap((p: Product) =>
+                  {products.flatMap((p: Product) =>
                     (p.variants ?? []).map((v: ProductVariant) => (
                       <option key={v.id} value={v.id}>
                         {p.name} — SKU: {v.sku}
                       </option>
                     ))
                   )}
-                  {targetVariantId &&
-                    !allProducts.some((p: Product) =>
-                      (p.variants ?? []).some((v: ProductVariant) => v.id === targetVariantId),
+                  {effectiveVariantId &&
+                    !products.some((p: Product) =>
+                      (p.variants ?? []).some((v: ProductVariant) => v.id === effectiveVariantId),
                     ) && (
-                      <option value={targetVariantId}>{targetVariantId}</option>
+                      <option value={effectiveVariantId}>{effectiveVariantId}</option>
                     )}
                 </select>
                 <p className="text-[11px] text-foreground-muted">
@@ -530,7 +462,7 @@ export function SellerInventoryPage() {
                 <Input
                   type="text"
                   placeholder="ID de Variante (UUID)"
-                  value={targetVariantId}
+                  value={effectiveVariantId}
                   onChange={(e) => setTargetVariantId(e.target.value)}
                   className="bg-surface-muted border-border text-foreground font-mono text-xs placeholder:text-foreground-muted focus:border-brand"
                 />
@@ -541,7 +473,7 @@ export function SellerInventoryPage() {
                   Bodega de Recepción
                 </label>
                 <select
-                  value={targetWarehouseId}
+                  value={effectiveWarehouseId}
                   onChange={(e) => setTargetWarehouseId(e.target.value)}
                   aria-label="Seleccionar bodega"
                   className="w-full bg-surface-muted border border-border text-foreground text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:border-brand"
