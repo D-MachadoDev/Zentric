@@ -112,7 +112,7 @@ export const CreateProductSchema: z.ZodType<CreateProductInput, CreateProductInp
   .object({
     name: z.string().trim().min(1, 'El nombre del producto es obligatorio').max(200, 'El nombre no puede superar 200 caracteres'),
     description: z.string().trim().min(1, 'La descripción es obligatoria').max(2000, 'La descripción no puede superar 2000 caracteres'),
-    priceAmount: z.number().nonnegative('El precio no puede ser negativo'),
+    priceAmount: z.number().positive('El precio debe ser mayor a cero'),
     priceCurrency: z.string().trim().min(3, 'La moneda debe tener 3 caracteres (ISO-4217)').max(3, 'La moneda debe tener 3 caracteres (ISO-4217)'),
     type: z.enum([ProductType.Physical, ProductType.Digital]),
     variants: z.array(CreateProductVariantInputSchema).optional(),
