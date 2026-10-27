@@ -319,7 +319,6 @@ describe.skipIf(!shouldRunLive)('ZentricHttpClient contra el backend real', () =
         api.requestReturn({
           customerOrderId: estado.orderId,
           variantId: estado.variantId,
-          warehouseId: estado.warehouseId,
           quantity: 1,
         }),
       );

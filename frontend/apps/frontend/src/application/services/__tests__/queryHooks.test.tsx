@@ -280,7 +280,6 @@ describe('TanStack Query Hooks & queryKeys (Decision A2)', () => {
       const returnId = await retRes.current.mutateAsync({
         customerOrderId: 'ord-100',
         variantId: 'var-100',
-        warehouseId: 'wh-100',
         quantity: 1,
       });
 

@@ -669,6 +669,7 @@ describe('ADVERSARIAL CHALLENGE SUITE (W2-S01)', () => {
       });
       await mock.addStock({
         variantId: 'var-new',
+        warehouseId: whId,
         quantity: 12,
       });
       expect((await mock.listInventories()).length).toBeGreaterThanOrEqual(2);

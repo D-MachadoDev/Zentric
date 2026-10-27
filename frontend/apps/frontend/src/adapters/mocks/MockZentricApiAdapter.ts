@@ -380,7 +380,7 @@ export class MockZentricApiAdapter implements ZentricApiPort {
     this.inventories.push({
       id,
       variantId: input.variantId,
-      warehouseId: input.warehouseId,
+      warehouseId: (input as any).warehouseId ?? '',
       availableQuantity: input.quantity,
       reservedQuantity: 0,
       usedQuantity: 0,
@@ -838,7 +838,7 @@ export class MockZentricApiAdapter implements ZentricApiPort {
       id,
       customerOrderId: input.customerOrderId,
       variantId: input.variantId,
-      warehouseId: input.warehouseId,
+      warehouseId: (input as any).warehouseId ?? '',
       quantity: input.quantity,
       status: 'Requested',
       isGoodCondition: false,

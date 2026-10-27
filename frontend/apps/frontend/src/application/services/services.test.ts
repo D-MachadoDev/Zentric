@@ -396,7 +396,6 @@ describe('Servicios de dominio complementarios y apiContext', () => {
       new SolicitarDevolucionService(api).ejecutar({
         customerOrderId: 'o-1',
         variantId: 'v-1',
-        warehouseId: 'w-1',
         quantity: 1,
       }),
     ).resolves.toBe('r-1');
