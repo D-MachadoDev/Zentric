@@ -10,12 +10,7 @@ namespace Zentric.Domain.Users
 
         /// <summary>
         /// Documento de identidad del usuario, almacenado como texto normalizado.
-        ///
-        /// Se conserva como texto
-        /// libre, OBLIGATORIO y no vacio, SIN formato ni longitud impuesta. La Ley
-        /// no define un patron de documento y el pais de emision varia por
-        /// vendedor; inventar una validacion (longitud fija, digito de control)
-        /// rechazaria documentos legitimos.
+        /// Se conserva como texto libre obligatorio y no vacio, sin formato ni longitud fija.
         /// </summary>
         public string IdentityDocument { get; private set; }
         public FullName FullName { get; private set; }
@@ -26,8 +21,7 @@ namespace Zentric.Domain.Users
         
         /// <summary>
         /// Tasa de stock fantasma del vendedor (0.0 a 1.0).
-        /// Se incrementa cuando se detecta stock fantasma en sus productos.
-        /// Se usa en para bloquear ventas de vendedores reincidentes.
+        /// Se incrementa cuando se detecta faltante fisico en bodega para penalizar reincidencia.
         /// </summary>
         public decimal StockFantasmaRate { get; private set; }
         
@@ -234,7 +228,7 @@ namespace Zentric.Domain.Users
 
         /// <summary>
         /// Incrementa la tasa de stock fantasma del vendedor.
-        /// Se invoca cuando se detecta stock fantasma en sus productos (AD).
+        /// Se invoca cuando se detecta stock fantasma en sus productos.
         /// El incremento es fijo (0.1 = 10%) y se cap en 1.0 (100%).
         /// </summary>
         public void IncrementStockFantasmaRate()

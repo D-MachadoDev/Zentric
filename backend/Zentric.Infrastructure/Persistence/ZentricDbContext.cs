@@ -131,9 +131,7 @@ namespace Zentric.Infrastructure.Persistence
                 });
             });
 
-            // Registro de ajuste a la baja (ADdecision 5). El inventario
-            // guarda los contadores; esta tabla dice cuanto habia, cuanto hay,
-            // quien conto y por que. Un registro por ajuste, inmutable.
+            // Registro inmutable de ajuste fisico de inventario.
             modelBuilder.Entity<StockAdjustmentDbModel>(b =>
             {
                 b.HasKey(c => c.Id);
@@ -141,8 +139,7 @@ namespace Zentric.Infrastructure.Persistence
                 b.HasIndex(c => c.CountedBy);
             });
 
-            // Auditoría de reembolso (ADdecision 7). Cada intento de reembolso
-            // deja traza: regla aplicada, tipo de decisión (auto/manual), actor, resultado.
+            // Auditoria de decisiones de reembolso (regla aplicada, actor y resultado).
             modelBuilder.Entity<RefundAuditDbModel>(b =>
             {
                 b.HasKey(a => a.Id);

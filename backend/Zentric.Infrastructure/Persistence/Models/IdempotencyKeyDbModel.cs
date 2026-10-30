@@ -2,8 +2,7 @@ using System;
 
 namespace Zentric.Infrastructure.Persistence.Models
 {
-    // Stores idempotency keys so duplicate POST/PATCH requests
-    // return the cached response instead of re-running the operation.
+    // Stores idempotency keys to replay cached responses for duplicate POST/PATCH requests.
     public class IdempotencyKeyDbModel
     {
         public Guid Id { get; set; }

@@ -307,9 +307,7 @@ namespace Zentric.Application.Catalog.Queries
                     request.VendorId, status, page.Skip, page.Take, request.Category, search, sort, type, cancellationToken);
     }
 
-    // =========================================================================
-    // NUEVAS QUERIES PARA CATEGORÍAS DINÁMICAS Y HERO MOSAICO
-    // =========================================================================
+    // Consultas de categorias dinamicas y agregados de catalogo.
 
     /// <summary>
     /// Obtiene las categorías con conteo de productos publicados.

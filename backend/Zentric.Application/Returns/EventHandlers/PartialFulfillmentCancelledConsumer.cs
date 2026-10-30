@@ -17,7 +17,7 @@ using Zentric.Domain.Orders.Ports;
 namespace Zentric.Application.Returns.EventHandlers
 {
     /// <summary>
-    /// Consumidor de <see cref="PartialFulfillmentCancelledDomainEvent"/> (AD).
+    /// Consumidor de <see cref="PartialFulfillmentCancelledDomainEvent"/>.
     ///
     /// Cuando un despacho se cancela por quiebre de stock ("Stock Fantasma"), el     /// Dominio 8 exige una devolución obligatoria con reembolso. Este handler aplica la
     /// política de reembolso automático (RefundPolicyService → Auto para "stock_breakage"),
@@ -59,22 +59,21 @@ namespace Zentric.Application.Returns.EventHandlers
         {
             var domainEvent = notification.DomainEvent;
 
-            // 1. Cargar el fulfillment para obtener CustomerOrderId
+            // Obtener CustomerOrderId desde la orden de fulfillment.
             var fulfillment = await _fulfillmentRepository.GetByIdAsync(domainEvent.FulfillmentOrderId, cancellationToken);
             if (fulfillment == null)
             {
                 return;
             }
 
-            // 2. Cargar el pedido para obtener los items y VariantId
+            // Cargar pedido para obtener variantes asociadas.
             var order = await _orderRepository.GetByIdAsync(fulfillment.CustomerOrderId, cancellationToken);
             if (order == null)
             {
                 return;
             }
 
-            // 3. Buscar la ReturnRequest creada por el CancelFulfillmentOrderDueToNoStockCommand
-            // Se asocia por CustomerOrderId + VariantId
+            // Localizar la solicitud de devolucion por pedido y variante.
             var returns = await _returnRepository.GetByOrderIdAsync(fulfillment.CustomerOrderId, cancellationToken);
             var returnReq = returns.FirstOrDefault(r =>
                 order.Items.Any(i => i.VariantId == r.VariantId)
@@ -85,7 +84,7 @@ namespace Zentric.Application.Returns.EventHandlers
                 return;
             }
 
-            // 4. Decidir política (AD)
+            // Evaluacion de politica de reembolso aplicable.
             var context = new RefundContext(
                 CustomerOrderId: fulfillment.CustomerOrderId,
                 ReturnRequestId: returnReq.Id,
@@ -95,7 +94,7 @@ namespace Zentric.Application.Returns.EventHandlers
 
             var decision = await _policyService.DecideAsync(context, cancellationToken);
 
-            // 5. Si es Auto, ejecutar el reembolso; si Exception, solo auditar
+            // Ejecutar reembolso automatico o auditar excepcion de politica.
             var outcome = RefundAuditOutcome.Credited;
             string? errorMessage = null;
             decimal attemptedAmount = 0;
@@ -117,7 +116,7 @@ namespace Zentric.Application.Returns.EventHandlers
                 attemptedAmount = 0;
             }
 
-            // 6. Registrar auditoría (ADdecision 7)
+            // Registro de auditoria de reembolso.
             var audit = RefundAudit.CreateAuto(
                 returnRequestId: returnReq.Id,
                 customerOrderId: fulfillment.CustomerOrderId,

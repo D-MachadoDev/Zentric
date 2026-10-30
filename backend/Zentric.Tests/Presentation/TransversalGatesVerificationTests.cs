@@ -46,9 +46,7 @@ namespace Zentric.Tests.Presentation
     /// </summary>
     public sealed class TransversalGatesVerificationTests
     {
-        // =========================================================================================
-        // Gate (d): Confidencialidad de la factura de comisión del 5% (ZentricDetail)
-        // =========================================================================================
+        // Confidencialidad de la factura de comision de plataforma (ZentricDetail).
 
         private sealed class InMemorySplitInvoiceRepository : IInvoiceRepository
         {
@@ -70,10 +68,10 @@ namespace Zentric.Tests.Presentation
                 => Task.FromResult<IReadOnlyList<Invoice>>(
                     _invoices.Where(i => i.CustomerOrderId == orderId).ToList());
 
-            // Replica exacta del filtrado en base de datos de InvoiceRepository.GetListAsync (AD):
-            // - Si se filtra por buyerId: únicamente Facturas Maestras (Master) de pedidos de ese comprador.
-            // - Si se filtra por vendorId: únicamente Facturas de Vendedor (VendorDetail) de ese vendedor.
-            // - Si ambos son null (Administrator / Supervisor): todas las facturas, incluyendo ZentricDetail (5%).
+            // Replica del filtrado de InvoiceRepository.GetListAsync segun el rol del solicitante.
+            // Master para comprador, VendorDetail para vendedor, todas para administracion.
+
+
             public Task<IReadOnlyList<Invoice>> GetListAsync(
                 Guid? buyerId, Guid? vendorId, CancellationToken cancellationToken = default)
             {
@@ -153,10 +151,10 @@ namespace Zentric.Tests.Presentation
             var order = new CustomerOrder(buyerId);
             order.AddItem(Guid.NewGuid(), sellerId, 1, new Money(100_000m, "COP"));
 
-            // Split de facturación (ZENTRIC.md Dominio 9 y AD):
-            // - Master: 100.000 COP (100% para el comprador)
-            // - ZentricDetail: 5.000 COP (5% comisión confidencial de plataforma)
-            // - VendorDetail: 95.000 COP (95% liquidación neta del vendedor)
+            // Split de facturacion: Master (100%), ZentricDetail (5%) y VendorDetail (95%).
+
+
+
             var invoices = new List<Invoice>
             {
                 Invoice.CreateMaster(order.Id, new Money(100_000m, "COP")),
@@ -266,10 +264,7 @@ namespace Zentric.Tests.Presentation
             Assert.Equal(3, byOrderDtos.Count);
             Assert.Contains(byOrderDtos, d => d.Type == "ZentricDetail" && d.TotalAmount == 5_000m);
         }
-
-        // =========================================================================================
-        // Gate (e): Anti-Amnesia — 14 DbSets, 11 Repositorios y 15 Migraciones en ZentricDbContext
-        // =========================================================================================
+        // Verificacion estructural de DbSets, repositorios y migraciones en ZentricDbContext.
 
         private static readonly IReadOnlyDictionary<string, Type> Canonical18DbSets =
             new Dictionary<string, Type>(StringComparer.Ordinal)

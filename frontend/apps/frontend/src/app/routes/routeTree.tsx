@@ -446,9 +446,7 @@ export const indexRoute = createRoute({
   },
 });
 
-// ============================================================================
-// SUBÁRBOL ADMINISTRADOR (/admin)
-// ============================================================================
+// Subarbol Administrador (/admin)
 export const adminLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin',
@@ -502,9 +500,7 @@ export const adminInvoicesRoute = createRoute({
   component: () => <InvoiceManagementPage />,
 });
 
-// ============================================================================
-// SUBÁRBOL VENDEDOR (/seller)
-// ============================================================================
+// Subarbol Vendedor (/seller)
 export const sellerLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/seller',
@@ -571,11 +567,7 @@ export const sellerWarehousesRoute = createRoute({
 });
 
 
-// ============================================================================
-// SUBÁRBOL COMPRADOR (/buyer)
-// Permite navegación de catálogo y carrito en Modo Invitado; exige sesión de
-// Comprador al confirmar compra o acceder a pedidos, devoluciones y perfil.
-// ============================================================================
+// Subarbol Comprador (/buyer): catalogo e invitado; exige sesion para compra y perfil.
 export const buyerLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/buyer',
@@ -655,9 +647,7 @@ export const buyerProfileRoute = createRoute({
   component: () => <BuyerProfilePage />,
 });
 
-// ============================================================================
-// SUBÁRBOL LOGÍSTICA (/logistics)
-// ============================================================================
+// Subarbol Logistica (/logistics)
 export const logisticsLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/logistics',
@@ -702,9 +692,7 @@ export const logisticsReturnsRoute = createRoute({
   component: () => <LogisticsReturnsInspectPage />,
 });
 
-// ============================================================================
-// SUBÁRBOL SUPERVISOR (/supervisor)
-// ============================================================================
+// Subarbol Supervisor (/supervisor)
 export const supervisorLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/supervisor',
@@ -759,9 +747,7 @@ export const supervisorAuditRoute = createRoute({
   component: () => <SupervisorInventoryAuditPage />,
 });
 
-// ============================================================================
-// ENSAMBLAJE DE TODAS LAS RUTAS
-// ============================================================================
+// Ensamblaje de rutas del arbol
 export const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,

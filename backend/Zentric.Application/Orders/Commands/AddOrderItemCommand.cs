@@ -12,8 +12,8 @@ namespace Zentric.Application.Orders.Commands
     /// <summary>
     /// Agrega una linea al carrito.
     ///
-    /// El contrato **no admite precio ni vendedor** (AD). Ambos los
-    /// pone el servidor con lo que hay en el catalogo (<c>Product.Price</c> o
+    /// El contrato no admite precio ni vendedor provistos por el cliente. Ambos los
+    /// resuelve el servidor desde el catalogo (<c>Product.Price</c> o
     /// <c>ProductVariant.PriceAmount</c> y <c>Product.VendorId</c>), de modo que la linea
     /// queda con un precio congelado que el cliente no puede negociar y el reparto de la
     /// facturacion no depende de lo que afirme la peticion.

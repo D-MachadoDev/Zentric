@@ -33,8 +33,7 @@ namespace Zentric.Api.Contracts
 
         public override async Task WriteResponseBodyAsync(OutputFormatterWriteContext context)
         {
-            // Se resuelven aqui, no en el constructor: MvcOptions se configuran mientras se
-            // construye el host y pedir JsonOptions en ese momento abriria un ciclo de DI.
+            // Resolucion por peticion para evitar ciclos en DI durante la configuracion de MvcOptions.
             var options = context.HttpContext.RequestServices.GetRequiredService<IOptions<JsonOptions>>();
 
             var response = context.HttpContext.Response;

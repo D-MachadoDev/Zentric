@@ -11,7 +11,7 @@ using Zentric.Domain.Users.Enums;
 namespace Zentric.Application.Inventories.Commands
 {
     /// <summary>
-    /// Ajusta el inventario fisico por conteo (AD).
+    /// Ajusta el inventario fisico por conteo auditado.
     /// Solo Administrador y Supervisor (politica InventoryAdjust).
     /// El conteo fisico SOLO puede reducir el disponible (no inventar stock).
     /// </summary>

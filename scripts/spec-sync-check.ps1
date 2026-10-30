@@ -37,9 +37,7 @@ function Add-Ok { param($msg) if ($Verbose) { Write-Host "OK: $msg" -ForegroundC
 Write-Host 'Iniciando spec-sync-check...' -ForegroundColor Cyan
 Write-Host "Repo root: $repoRoot" -ForegroundColor Gray
 
-# ============================================================================
-# 1. Validar ADRs referenciados existen
-# ============================================================================
+# Validar existencia de ADRs referenciados
 Write-Host 'Validando referencias a ADRs...' -ForegroundColor Cyan
 
 $adrFiles = Get-ChildItem "$adrDir/ADR-*.md" -File
@@ -74,9 +72,7 @@ if ($missingAdrs.Count -gt 0) {
     Add-Ok "Todos los ADRs referenciados existen ($($adrFiles.Count) ADRs en docs/adr/)"
 }
 
-# ============================================================================
-# 2. Extraer endpoints de controllers backend
-# ============================================================================
+# Extraer endpoints de controllers backend
 Write-Host 'Validando endpoints backend...' -ForegroundColor Cyan
 
 $controllerFiles = Get-ChildItem "$codeBackend/Zentric.Api/Controllers" -Filter '*.cs' -File
@@ -110,9 +106,7 @@ foreach ($file in $controllerFiles) {
 
 Add-Ok "Endpoints en codigo: $($codeEndpoints.Count)"
 
-# ============================================================================
-# 3. Extraer queries/commands de spec backend
-# ============================================================================
+# Extraer queries y commands de spec backend
 Write-Host 'Validando queries/commands en spec...' -ForegroundColor Cyan
 
 $specApiFiles = Get-ChildItem "$specBackend/04-api-contratos" -Filter '*.md' -File
@@ -132,17 +126,13 @@ foreach ($file in $specApiFiles) {
 
 Add-Ok "Endpoints en spec: $($specQueriesCommands.Count)"
 
-# ============================================================================
-# 4. Comparar endpoints code vs spec
-# ============================================================================
+# Comparar endpoints entre codigo y spec
 Write-Host 'Comparando endpoints code vs spec...' -ForegroundColor Cyan
 
 $codeRoutes = $codeEndpoints | Select-Object -ExpandProperty Route -Unique
 $specRoutes = $specQueriesCommands | Select-Object -ExpandProperty Route -Unique
 
-# ============================================================================
-# 5. Validar entidades/agregados backend
-# ============================================================================
+# Validar entidades y agregados backend
 Write-Host 'Validando entidades/agregados backend...' -ForegroundColor Cyan
 
 $domainEntities = Get-ChildItem "$codeBackend/Zentric.Domain" -Recurse -Filter '*.cs' -File | Where-Object {
@@ -172,9 +162,7 @@ if ($specEntities) {
     Add-Warning 'No se encontro spec de entidades (01-dominio/01-entidades-y-value-objects.md)'
 }
 
-# ============================================================================
-# 6. Validar DTOs request/response
-# ============================================================================
+# Validar DTOs de request y response
 Write-Host 'Validando DTOs request/response...' -ForegroundColor Cyan
 
 $dtoFiles = Get-ChildItem "$codeBackend/Zentric.Application" -Recurse -Filter '*Dto*.cs' -File
@@ -191,9 +179,7 @@ $codeDtos = $dtoFiles | ForEach-Object {
 
 Add-Ok "DTOs/Commands/Queries en codigo: $($codeDtos.Count)"
 
-# ============================================================================
-# 7. Validar modelos frontend (TypeScript interfaces)
-# ============================================================================
+# Validar interfaces de modelos frontend
 Write-Host 'Validando modelos frontend...' -ForegroundColor Cyan
 
 $frontendModels = Get-ChildItem "$codeFrontend/apps/frontend/src/domain/models" -Filter '*.ts' -File -ErrorAction SilentlyContinue
@@ -209,9 +195,7 @@ if ($frontendModels) {
     Add-Warning 'No se encontro carpeta de modelos frontend'
 }
 
-# ============================================================================
-# 8. Resumen final
-# ============================================================================
+# Resumen de verificacion
 Write-Host '============================================================' -ForegroundColor Cyan
 Write-Host 'RESUMEN SPEC-SYNC-CHECK' -ForegroundColor Cyan
 Write-Host '============================================================' -ForegroundColor Cyan

@@ -19,10 +19,7 @@ namespace Zentric.Infrastructure.Persistence.Models
         public DateTime? RefundedAt { get; set; }
 
         /// <summary>
-        /// Un registro por cada credito a favor (ADdecision 7). La
-        /// navegacion existe para que EF inserte las filas nuevas en la misma
-        /// transaccion que el comprobante: sin ella la traza viviria solo en
-        /// memoria y se perderia al salir del proceso.
+        /// Registros de devoluciones acreditadas asociadas al comprobante.
         /// </summary>
         public List<RefundCreditDbModel> Credits { get; set; } = new();
     }

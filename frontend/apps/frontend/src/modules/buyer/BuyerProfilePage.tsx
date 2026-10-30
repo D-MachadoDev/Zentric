@@ -55,10 +55,7 @@ export function BuyerProfilePage() {
 
   const email = profile?.email || user?.email || '';
 
-  // El formulario se siembra cuando LLEGA el perfil del backend. Se ajusta
-  // DURANTE el render y no dentro de un efecto: llamar a setState de forma
-  // sincrona en un efecto provoca renders en cascada (regla de React,
-  // "adjusting state when props change").
+  // Sincroniza estado durante el render al cambiar de perfil para evitar renders en cascada.
   const profileSeed = profile ? `p:${profile.id}` : user ? `u:${user.userId}` : null;
   const [seenProfileSeed, setSeenProfileSeed] = useState<string | null>(null);
 

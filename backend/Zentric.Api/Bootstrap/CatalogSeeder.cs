@@ -37,9 +37,7 @@ namespace Zentric.Api.Bootstrap
 
         private static readonly ProductSeed[] SeedProducts =
         [
-            // ==========================================
-            // 1-3. Categoría: Hogar & Electrodomésticos
-            // ==========================================
+            // Hogar y electrodomesticos
             new(
                 Name: "Cafetera Espresso Barista Pro Acero Inoxidable",
                 Description: "Cafetera espresso automática con molino cónico integrado de 15 niveles, bomba italiana de 15 bares y vaporizador profesional para latte art en casa.",
@@ -79,10 +77,7 @@ namespace Zentric.Api.Bootstrap
                     new("ROBO-LIDAR-DOCK", [("Versión", "Robot + Estación Autovaciado"), ("Color", "Negro Titanio")], Stock: 20, PriceAmount: 2290000m)
                 ]
             ),
-
-            // ==========================================
-            // 4-5. Categoría: Moda, Calzado & Equipaje
-            // ==========================================
+            // Moda, calzado y equipaje
             new(
                 Name: "Tenis Running Ultralight Carbon Pulse",
                 Description: "Calzado deportivo de alto retorno de energía con placa de propulsión en fibra de carbono, tejido transpirable engineered mesh y suela de tracción en asfalto húmedo.",
@@ -109,10 +104,7 @@ namespace Zentric.Api.Bootstrap
                     new("BAG-TRAV-32L-OLV", [("Capacidad", "32L Expandible Viaje"), ("Color", "Verde Oliva")], Stock: 35, PriceAmount: 349000m)
                 ]
             ),
-
-            // ==========================================
-            // 6-7. Categoría: Supermercado, Café & Despensa
-            // ==========================================
+            // Supermercado, cafe y despensa
             new(
                 Name: "Café Especial de Origen Huila Reserva Tostión Media",
                 Description: "Café 100% arábica de altura cultivado a 1.850 msnm en el sur del Huila, notas sensoriales a cacao dulce, panela y frutos rojos, recién tostado en lotes pequeños.",
@@ -139,10 +131,7 @@ namespace Zentric.Api.Bootstrap
                     new("OLIVA-EV-3L-TIN", [("Contenido", "Lata Familiar Cosecha 3 Litros")], Stock: 30, PriceAmount: 229000m)
                 ]
             ),
-
-            // ==========================================
-            // 8-9. Categoría: Deportes & Fitness
-            // ==========================================
+            // Deportes y fitness
             new(
                 Name: "Set de Mancuernas Ajustables Pro Selectorized",
                 Description: "Par de mancuernas de ajuste rápido por dial mecánico que reemplaza 15 pares tradicionales, recubrimiento silencioso de uretano y base ergonómica antideslizante.",
@@ -169,10 +158,7 @@ namespace Zentric.Api.Bootstrap
                     new("MTB-29-L-PRO", [("Talla Marco", "L (1.78m - 1.90m) Suspensión Aire"), ("Color", "Verde Esmeralda")], Stock: 20, PriceAmount: 2890000m)
                 ]
             ),
-
-            // ==========================================
-            // 10-12. Categoría: Tecnología, Computación & Audio
-            // ==========================================
+            // Tecnologia, computacion y audio
             new(
                 Name: "MacBook Pro 16\" M3 Max Liquid Retina XDR",
                 Description: "Portátil profesional Apple con chip M3 Max, pantalla Liquid Retina XDR de 120Hz con ProMotion, chasis de aluminio reciclado y batería de hasta 22 horas.",
@@ -212,10 +198,7 @@ namespace Zentric.Api.Bootstrap
                     new("TV-OLED-65-4K", [("Tamaño", "65 Pulgadas 4K 120Hz + Soporte Pared")], Stock: 25, PriceAmount: 5490000m)
                 ]
             ),
-
-            // ==========================================
-            // 13-14. Categoría: Suscripciones & Productos Digitales
-            // ==========================================
+            // Suscripciones y productos digitales
             new(
                 Name: "Membresía Zentric Prime & Entretenimiento Anual",
                 Description: "Suscripción digital con envíos prioritarios ilimitados, acceso a cine y series 4K en streaming, música sin anuncios y descuentos exclusivos todo el año.",
@@ -253,13 +236,13 @@ namespace Zentric.Api.Bootstrap
             var buyers = services.GetRequiredService<IBuyerRepository>();
             var unitOfWork = services.GetRequiredService<IUnitOfWork>();
 
-            // 1. Identificar a Valeria Mendoza (vendedor canónico)
+            // Identificar a Valeria Mendoza como vendedor canonico
             var valeria = users.GetByEmailAsync(new Email("seller@zentric.local")).GetAwaiter().GetResult();
             var valeriaId = valeria?.Id ?? AdministratorBootstrapper.CanonicalSellerId;
 
             bool changed = false;
 
-            // 2. Sembrar perfil de Comprador canónico para Andrés Castillo
+            // Perfil de Comprador canonico para Andres Castillo
             var buyerUser = users.GetByEmailAsync(new Email("buyer@zentric.local")).GetAwaiter().GetResult();
             if (buyerUser != null)
             {
@@ -279,7 +262,7 @@ namespace Zentric.Api.Bootstrap
                 }
             }
 
-            // 3. Sembrar bodegas (Central Marketplace y Almacén Valeria)
+            // Bodegas Central Marketplace y Almacen Valeria
             var existingWarehouses = warehouses.GetAllAsync().GetAwaiter().GetResult();
 
             var centralWarehouse = existingWarehouses.FirstOrDefault(w => w.Type == WarehouseType.Marketplace);
@@ -310,7 +293,7 @@ namespace Zentric.Api.Bootstrap
                 logger.LogInformation("Almacén Valeria creado con ID {WarehouseId}", valeriaWarehouse.Id);
             }
 
-            // 4. Sembrar catálogo e inventarios para Valeria Mendoza
+            // Catalogo e inventarios de Valeria Mendoza
             var existingProducts = products.GetAllAsync(vendorId: valeriaId).GetAwaiter().GetResult();
 
             foreach (var seed in SeedProducts)
@@ -335,10 +318,10 @@ namespace Zentric.Api.Bootstrap
                     imageUrl: seed.ImageUrl,
                     category: seed.Category);
 
-                // Configurar propiedad Category vía reflexión (retrocompatible con Slice 4)
+                // Categoria asignada por reflexion para retrocompatibilidad
                 typeof(Product).GetProperty("Category")?.SetValue(product, seed.Category);
 
-                // Asignar precio propio a cada SKU de la variante
+                // Precio propio para cada SKU de la variante
                 foreach (var variant in product.Variants)
                 {
                     var seedVar = seed.Variants.FirstOrDefault(sv => string.Equals(sv.Sku, variant.Sku, StringComparison.OrdinalIgnoreCase));
@@ -351,7 +334,7 @@ namespace Zentric.Api.Bootstrap
                 products.AddAsync(product).GetAwaiter().GetResult();
                 changed = true;
 
-                // Para productos físicos, registrar inventario en el almacén de Valeria
+                // Inventario en bodega para productos fisicos
                 if (seed.Type == ProductType.Physical && valeriaWarehouse != null)
                 {
                     foreach (var variant in product.Variants)

@@ -6,7 +6,7 @@ using Zentric.Domain.Users.Enums;
 namespace Zentric.Domain.Returns
 {
     /// <summary>
-    /// Registro de auditoría de una decisión de reembolso (AD).
+    /// Registro de auditoria de una decision de reembolso.
     /// Cada intento de reembolso deja traza de qué regla se aplicó, quién decidió
     /// (sistema o Administrador) y el resultado.
     /// </summary>
@@ -132,7 +132,7 @@ namespace Zentric.Domain.Returns
     }
 
     /// <summary>
-    /// Tipo de decisión de reembolso (AD).
+    /// Modalidad de decision de reembolso.
     /// </summary>
     public enum RefundDecisionType
     {

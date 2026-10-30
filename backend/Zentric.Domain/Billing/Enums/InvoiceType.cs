@@ -4,7 +4,7 @@ namespace Zentric.Domain.Billing.Enums
     /// Clasificación fiscal de los comprobantes emitidos en el modelo de split de facturación.
     /// </summary>
     /// <remarks>
-    /// ZENTRIC.md Dominio 9, ADy ADEn un marketplace multi-vendedor, un solo pedido
+    /// En un marketplace multi-vendedor, un solo pedido
     /// contiene productos de múltiples comercios. Para cumplir con la normativa tributaria y mantener
     /// el aislamiento fiscal entre vendedores, el sistema divide la liquidación en 3 comprobantes distintos.
     /// </remarks>
@@ -32,7 +32,7 @@ namespace Zentric.Domain.Billing.Enums
         /// Factura individual emitida por un Vendedor específico por los productos de su catálogo despachados.
         /// </summary>
         /// <remarks>
-        /// Garantiza confidencialidad comercial (AD): cada vendedor solo factura y ve sus propios ítems,
+        /// Garantiza confidencialidad comercial: cada vendedor solo factura y ve sus propios ítems,
         /// sin tener visibilidad del margen ni los precios de otros vendedores en el mismo pedido.
         /// </remarks>
         VendorDetail = 3

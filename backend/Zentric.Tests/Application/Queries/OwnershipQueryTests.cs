@@ -192,7 +192,7 @@ namespace Zentric.Tests.Application.Queries
             public Task<IReadOnlyList<Product>> GetHeroProductsAsync(int count, CancellationToken cancellationToken = default)
                 => Task.FromResult<IReadOnlyList<Product>>(Array.Empty<Product>());
         }
-        // ---- Vista del pedido para el vendedor (P2 de la ronda 2) ----
+        // Vista de pedido para el vendedor
 
         [Fact]
         public async Task SellerOrderView_ShowsOnlyOwnLinesAndSubtotal()
@@ -226,7 +226,7 @@ namespace Zentric.Tests.Application.Queries
             Assert.Equal("Order not found.", result.Error);
         }
 
-        // ---- Facturas por rol (P3) ----
+        // Facturas por rol
 
         [Fact]
         public async Task BuyerSeesOnlyTheMasterInvoiceOfOwnOrder()
@@ -304,7 +304,7 @@ namespace Zentric.Tests.Application.Queries
             Assert.True(result.IsSuccess);
             Assert.Equal(3, result.Value.Items.Count);
         }
-        // ---- Devoluciones por rol ----
+        // Devoluciones por rol
 
         [Fact]
         public async Task BuyerCannotReadAnotherBuyersReturn()
@@ -361,7 +361,7 @@ namespace Zentric.Tests.Application.Queries
             Assert.True(asOperator.IsSuccess);
         }
 
-        // ---- Despachos por rol ----
+        // Despachos por rol
 
         [Fact]
         public async Task BuyerCannotReadAnotherBuyersFulfillment()
@@ -488,7 +488,7 @@ namespace Zentric.Tests.Application.Queries
             }
 
         }
-        // ---- Bodegas encerradas en el vendedor ----
+        // Bodegas filtradas por vendedor
 
         [Fact]
         public async Task SellerListsOnlyOwnWarehouses()
@@ -571,7 +571,7 @@ namespace Zentric.Tests.Application.Queries
             Assert.True(result.IsSuccess);
             Assert.Equal("Mia", result.Value.Name);
         }
-        // ---- Inventario por dueno de producto ----
+        // Inventario filtrado por propietario del producto
 
         [Fact]
         public async Task SellerSeesStockOfOwnProductInAnyWarehouse()

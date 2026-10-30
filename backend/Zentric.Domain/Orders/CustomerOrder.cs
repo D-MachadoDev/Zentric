@@ -28,9 +28,7 @@ namespace Zentric.Domain.Orders
         public DateTime? CheckoutStartedAt { get; private set; }
 
         /// <summary>
-        /// Por que quedo cancelado el pedido (ADdecision 2). Antes de este
-        /// ADR el campo no existia, aunque el ADR lo daba por hecho: el pedido no
-        /// distinguia un caducado de un liquidado.
+        /// Causa de cancelacion del pedido para diferenciar caducidad de liquidacion.
         /// </summary>
         public OrderCancellationCause? CancellationCause { get; private set; }
 

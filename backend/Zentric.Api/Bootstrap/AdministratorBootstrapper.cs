@@ -7,25 +7,15 @@ using Zentric.Domain.Users.ValueObjects;
 namespace Zentric.Api.Bootstrap
 {
     /// <summary>
-    /// Alta del primer Administrador (AD).
+    /// Alta inicial del primer Administrador.
     ///
-    /// Sin esto el sistema no arranca de forma utilizable: el auto-registro anonimo solo permite
-    /// crear Compradores (ZENTRIC.md, Dominio 3), y un Comprador no puede crear al Administrador.
-    /// Es la unica via por la que un rol privilegiado entra al sistema, y por eso exige configuracion
-    /// explicita: si no se definen Bootstrap__*, no se crea nadie.
-    ///
-    /// Vive en su propia clase, y no como bloque suelto dentro de <c>Program.cs</c>, por una razon
-    /// concreta: las pruebas E2E necesitan ejecutarlo. Bajo <c>WebApplicationFactory</c> el evento
-    /// <c>ApplicationStarted</c> no se dispara (el runner arranca el host con
-    /// <c>IHost.StartAsync()</c>, que no notifica el arranque), asi que el bloque en linea nunca se
-    /// ejecutaba en las pruebas y el arnes se quedaba sin Administrador. Extraerlo deja UNA sola
-    /// implementacion que el arranque real y las pruebas comparten, en vez de dos que divergen.
+    /// El auto-registro anonimo solo permite crear Compradores, y un Comprador no puede crear al Administrador.
+    /// Es la unica via para crear un rol privilegiado y exige configuracion explicita.
     /// </summary>
     public static class AdministratorBootstrapper
     {
         /// <summary>
-        /// Identificador canónico y determinista para la vendedora Valeria Mendoza (AD/ R1).
-        /// Requerido por frontend y contratos para evitar discrepancias de sesión.
+        /// Identificador canónico para la vendedora demo Valeria Mendoza.
         /// </summary>
         public static readonly Guid CanonicalSellerId = Guid.Parse("0b01129d-c0a9-4325-8394-4b9e636a4e88");
 

@@ -1068,7 +1068,7 @@ vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [mockOrd
       fireEvent.click(cancelBtn);
       expect(screen.queryByText('Reporte de Stock Fantasma')).not.toBeInTheDocument();
 
-      // Volver a abrir y probar la '✕'
+      // Reabrir modal y cerrar mediante el boton de cierre
       fireEvent.click(screen.getByRole('button', { name: /Reportar Quiebre de Stock Fantasma/i }));
       const closeBtn = screen.getByRole('button', { name: '✕' });
       fireEvent.click(closeBtn);

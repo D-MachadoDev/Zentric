@@ -75,10 +75,7 @@ namespace Zentric.Tests.Application.Inventories
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenString);
             return client;
         }
-
-        // =========================================================================
-        // 1. RECHAZO A USUARIOS ANONIMOS (HTTP 401 UNAUTHORIZED)
-        // =========================================================================
+        // Rechazo a usuarios anonimos (HTTP 401)
 
         [Fact]
         public async Task GetInventories_AnonymousUser_ReturnsUnauthorized401()
@@ -128,10 +125,7 @@ namespace Zentric.Tests.Application.Inventories
             });
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
-
-        // =========================================================================
-        // 2. RECHAZO A ROLES NO AUTORIZADOS (HTTP 403 FORBIDDEN)
-        // =========================================================================
+        // Rechazo a roles no autorizados (HTTP 403)
 
         [Fact]
         public async Task GetInventories_BuyerRole_ReturnsForbidden403()
@@ -214,10 +208,7 @@ namespace Zentric.Tests.Application.Inventories
             });
             Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
-
-        // =========================================================================
-        // 3. AISLAMIENTO MULTINQUILINO SERVER-SIDE (CQRS & REPOSITORIOS)
-        // =========================================================================
+        // Aislamiento multinquilino server-side
 
         [Fact]
         public async Task GetInventories_WhenCallerIsSeller_FiltersByCallerVendorId()
@@ -573,10 +564,7 @@ namespace Zentric.Tests.Application.Inventories
             Assert.False(inventory.IsDeleted);
             Assert.False(unitOfWork.SaveChangesCalled);
         }
-
-        // =========================================================================
-        // IMPLEMENTACION DE FAKES PARA PRUEBAS MULTINQUILINO EN MEMORIA
-        // =========================================================================
+        // Implementacion de fakes en memoria para pruebas de aislamiento
 
         private sealed class MultiTenantTestUnitOfWork : IUnitOfWork
         {

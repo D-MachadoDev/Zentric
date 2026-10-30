@@ -44,27 +44,23 @@ namespace Zentric.Tests.Presentation
                 ["AuthController.Login"] = Anonymous,
                 ["AuthController.Me"] = AuthorizationPolicies.AnyAuthenticatedUser,
 
-                // 1. Usuarios. El alta es anonima solo para Buyer; el resto se niega dentro del
-                // controlador porque la condicion es el rol pedido, no el rol del llamante
-                // (ZENTRIC.md Dominio 3).
+                // Usuarios: alta anonima unicamente para Buyer.
                 ["UsersController.CreateUser"] = Anonymous,
                 ["UsersController.GetUsers"] = AuthorizationPolicies.UserAdministration,
                 ["UsersController.GetUserById"] = AuthorizationPolicies.UserAdministration,
-                // (dictamen del Owner 2026-10-06): el bloqueo es administracion de
-                // usuarios, asi que cae en la misma politica que el alta y la consulta. El
-                // Supervisor no participa: es perfil de consulta, no de escritura.
+                // Bloqueo y activacion bajo administracion de usuarios.
                 ["UsersController.BlockUser"] = AuthorizationPolicies.UserAdministration,
                 ["UsersController.ActivateUser"] = AuthorizationPolicies.UserAdministration,
                 ["UsersController.GetProfile"] = AuthorizationPolicies.AnyAuthenticatedUser,
                 ["UsersController.UpdateProfile"] = AuthorizationPolicies.AnyAuthenticatedUser,
 
-                // 2. Bodegas. Alta y edicion (WarehouseManagement).
+                // Bodegas: gestion y consulta.
                 ["WarehousesController.CreateWarehouse"] = AuthorizationPolicies.WarehouseManagement,
                 ["WarehousesController.UpdateWarehouse"] = AuthorizationPolicies.WarehouseManagement,
                 ["WarehousesController.GetWarehouses"] = AuthorizationPolicies.WarehouseRead,
                 ["WarehousesController.GetWarehouseById"] = AuthorizationPolicies.WarehouseRead,
 
-                // 3. Catalogo. Alta solo del Vendedor (seccion 12: "Registro Productos").
+                // Catalogo: gestion de productos y variantes.
                 ["CatalogController.CreateProduct"] = AuthorizationPolicies.ProductManagement,
                 ["CatalogController.AddProductVariant"] = AuthorizationPolicies.ProductManagement,
                 ["CatalogController.PublishProduct"] = AuthorizationPolicies.ProductManagement,
@@ -77,14 +73,14 @@ namespace Zentric.Tests.Presentation
                 ["CatalogController.GetRecentlyViewed"] = AuthorizationPolicies.AnyAuthenticatedUser,
                 ["CatalogController.TrackProductView"] = AuthorizationPolicies.AnyAuthenticatedUser,
 
-                // 4. Inventario (seccion 12: "Administracion Inventario").
+                // Inventario: stock, ajustes y consultas.
                 ["InventoriesController.AddStock"] = AuthorizationPolicies.InventoryManagement,
                 ["InventoriesController.GetInventories"] = AuthorizationPolicies.InventoryRead,
                 ["InventoriesController.GetInventoryByVariant"] = AuthorizationPolicies.InventoryRead,
                 ["InventoriesController.AdjustInventory"] = AuthorizationPolicies.InventoryAdjust,
                 ["InventoriesController.DeleteInventory"] = AuthorizationPolicies.InventoryManagement,
 
-                // 5. Pedidos. Escribirlos es del Comprador (seccion 6.1 paso 5).
+                // Pedidos: carrito, checkout y consultas.
                 ["OrdersController.CreateCart"] = AuthorizationPolicies.Checkout,
                 ["OrdersController.AddOrderItem"] = AuthorizationPolicies.Checkout,
                 ["OrdersController.RemoveOrderItem"] = AuthorizationPolicies.Checkout,
@@ -96,7 +92,7 @@ namespace Zentric.Tests.Presentation
                 ["OrdersController.GetOrderById"] = AuthorizationPolicies.OrderRead,
                 ["OrdersController.UpdateCartItemQuantity"] = AuthorizationPolicies.Checkout,
 
-                // 6. Logistica .
+                // Logistica: empaque, despacho y entrega.
                 ["LogisticsController.CreateFulfillment"] = AuthorizationPolicies.FulfillmentOperate,
                 ["LogisticsController.PackFulfillment"] = AuthorizationPolicies.FulfillmentOperate,
                 ["LogisticsController.DispatchFulfillment"] = AuthorizationPolicies.FulfillmentOperate,
@@ -105,7 +101,7 @@ namespace Zentric.Tests.Presentation
                 ["LogisticsController.GetFulfillments"] = AuthorizationPolicies.FulfillmentRead,
                 ["LogisticsController.GetFulfillmentById"] = AuthorizationPolicies.FulfillmentRead,
 
-                // 7. Devoluciones .
+                // Devoluciones: solicitud, inspeccion y reembolso.
                 ["ReturnsController.RequestReturn"] = AuthorizationPolicies.ReturnRequest,
                 ["ReturnsController.InspectReturn"] = AuthorizationPolicies.ReturnInspect,
                 ["ReturnsController.ApproveReturn"] = AuthorizationPolicies.ReturnApprove,
@@ -114,7 +110,7 @@ namespace Zentric.Tests.Presentation
                 ["ReturnsController.GetReturns"] = AuthorizationPolicies.ReturnRead,
                 ["ReturnsController.GetReturnById"] = AuthorizationPolicies.ReturnRead,
 
-                // 8. Facturacion .
+                // Facturacion: emision y consultas.
                 ["BillingController.GenerateInvoices"] = AuthorizationPolicies.BillingGenerate,
                 ["BillingController.AnnullMasterInvoice"] = AuthorizationPolicies.BillingGenerate,
                 ["BillingController.GetInvoices"] = AuthorizationPolicies.BillingRead,

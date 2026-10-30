@@ -40,7 +40,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=ZentricDb;Username=postgres;Password=${POSTGRES_PASSWORD}
-      # Clave de firma de los tokens (ADR-0009). Sin ella la API no arranca:
+      # Clave de firma de tokens. Sin ella la API no arranca:
       # es preferible a firmar con un secreto por defecto.
       Jwt__Issuer: zentric-api
       Jwt__Audience: zentric-client

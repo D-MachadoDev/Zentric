@@ -130,9 +130,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             // un objeto independiente y su escritura no colisiona con el
             // IdentityMap de EF Core.
             //
-            // Se actualiza la cabecera de forma explicita y se sincroniza la
-            // coleccion de lineas: se agregan las nuevas, se actualizan las
-            // existentes y se eliminan las que ya no formen parte del pedido.
+            // Actualiza cabecera y sincroniza coleccion de lineas.
             var tracked = _dbContext.CustomerOrders
                 .Include(o => o.Items)
                 .Include(o => o.DigitalDeliveries)

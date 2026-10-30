@@ -314,7 +314,7 @@ public sealed class ProductTests
             () => variants.Add(product.AddVariant("CAM-M", new List<VariantAttribute> { new("Talla", "M") })));
     }
 
-    // --- ADla variante es obligatoria solo para productos Fisicos ---
+    // La variante es obligatoria unicamente para productos fisicos.
 
     [Fact]
     public void Constructor_PhysicalWithoutVariants_ThrowsArgumentException()

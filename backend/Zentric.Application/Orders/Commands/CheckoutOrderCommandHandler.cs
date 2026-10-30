@@ -65,10 +65,9 @@ namespace Zentric.Application.Orders.Commands
                     order.Checkout();
                 }
 
-                // Agrupar por vendedor ANTES de reservar: la reserva ya escribe en la
-                // base (AD), asi que cualquier validacion que pueda fallar
-                // (producto inexistente) debe llegar antes de tocar stock o dejaria
-                // reservas confirmadas de un pedido que ni siquiera se guarda.
+                // Agrupar por vendedor antes de reservar: la reserva persiste cambios en la
+                // base de datos, asi que cualquier validacion que pueda fallar
+                // debe ejecutarse antes de tocar stock.
                 var itemsByVendor = new Dictionary<Guid, List<Domain.Orders.Entities.OrderItem>>();
                 foreach (var item in order.Items)
                 {
@@ -78,8 +77,7 @@ namespace Zentric.Application.Orders.Commands
                         return Result<bool>.NotFound($"Product for variant {item.VariantId} not found.");
                     }
 
-                    // CAun producto digital no genera despacho (entrega inmediata
-                    // tras el pago). Antes abria un FulfillmentOrder que nadie empacaba.
+                    // Un producto digital no genera despacho (entrega inmediata tras el pago).
                     if (product.Type == Zentric.Domain.Products.Enums.ProductType.Digital)
                     {
                         continue;
@@ -92,7 +90,7 @@ namespace Zentric.Application.Orders.Commands
                     itemsByVendor[product.VendorId].Add(item);
                 }
 
-                // (decision del Owner 2026-10-04): el checkout rechaza cualquier
+                // El checkout rechaza cualquier
                 // carrito que contenga un producto de un Vendedor bloqueado o desactivado.
                 // Los productos del Vendedor siguen Published (no hay cascada), asi que la
                 // unica barrera es esta. Se comprueba ANTES de reservar stock, porque la

@@ -15,7 +15,7 @@ namespace Zentric.Domain.Buyers
     public sealed class Buyer
     {
         /// <summary>
-        /// Identificador único del comprador, compartido de forma biunívoca con <c>User.Id</c>.
+        /// Identificador único del comprador, compartido 1:1 con <c>User.Id</c>.
         /// </summary>
         public Guid UserId { get; init; }
 

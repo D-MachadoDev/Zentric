@@ -7,270 +7,124 @@ namespace Zentric.Api.Security
 {
     /// <summary>
     /// Matriz de autorizacion por rol a nivel de endpoint.
-    ///
-    /// Que es este archivo. Es el UNICO punto de verdad de quien puede llamar a que. No es
-    /// detalle tecnico de ASP.NET: es la Matriz de Responsabilidades de <c>ZENTRIC.md</c>
-    /// seccion 12, mas el addendum de dominio, escrita una sola vez. De aqui sale el registro de
-    /// politicas de <c>Program.cs</c>, la decoracion de los controladores y la matriz que
-    /// asertan <c>EndpointAuthorizationMatrixTests</c>. Cambiar una regla aqui cambia las tres.
-    ///
-    /// Como se lee cada regla:
-    /// [CONFIRMADO] la especificacion lo dice textual.
-    /// [INFERIDO]   la especificacion no lo explicita; se deduce de una definicion de rol de la seccion 5.
-    /// [ABIERTO] hace falta dictamen del Owner; mientras tanto la politica es fail-closed
-    ///                (el conjunto mas chico que la Ley sostiene).
-    ///
-    /// Dictamen del Owner que rige aqui (2026-09-29): las escrituras van
-    /// exactas como las fija la Ley, y el Administrador y el Supervisor reciben SOLO lectura de
-    /// pedidos, despachos, devoluciones y facturas. La propiedad por recurso (que un comprador
-    /// vea solo SUS pedidos) no se cubre aqui: sigue abierta.
-    ///
-    /// Ningun participante podra administrar informacion fuera de su rol, asi que
-    /// lo que no esta en la matriz queda denegado: la politica de reserva de <c>Program.cs</c>
-    /// exige token en todo endpoint, y una politica denegada responde 403.
+    /// Define los roles autorizados para cada politica segun la matriz de responsabilidades.
+    /// Las politicas se registran en <c>Program.cs</c> y se aplican mediante <c>[Authorize]</c>.
     /// </summary>
     public static class AuthorizationPolicies
     {
         /// <summary>
-        /// Basta estar autenticado. No habilita privilegio alguno: es la traduccion de la regla
-        /// ("toda operacion debe ejecutarse por un usuario autenticado") para los recursos que
-        /// la especificacion describe sin restringirlos a un actor.
-        ///
-        /// [CONFIRMADO] ZENTRIC.md seccion 6.1 paso 4: "Publicacion: los productos se hacen
-        /// visibles en el catalogo publico". Publico en el sentido de visible para todos los
-        /// participantes, no anonimo: sigue exigiendo token.
+        /// Acceso permitido a cualquier usuario autenticado en la plataforma.
         /// </summary>
         public const string AnyAuthenticatedUser = "Zentric.AnyAuthenticatedUser";
 
         /// <summary>
-        /// Altas de usuarios de cualquier rol.
-        ///
-        /// [CONFIRMADO] ZENTRIC.md Dominio 3: "los vendedores no pueden auto-registrarse; son
-        /// incorporados por el Administrador", y la seccion 12 asigna "Registro Vendedores" solo
-        /// al Admin. El auto-registro de Compradores es la unica excepcion y se resuelve en
-        /// <c>UsersController.CreateUser</c>, no aqui, porque la condicion es el rol pedido y no
-        /// el rol del llamante.
+        /// Altas de usuarios restringidas al rol Administrador.
+        /// El auto-registro de compradores se gestiona en la logica del endpoint correspondiente.
         /// </summary>
         public const string UserAdministration = "Zentric.UserAdministration";
 
         /// <summary>
-        /// Altas de bodega.
-        ///
-        /// [CONFIRMADO] ZENTRIC.md seccion 5: "Administrador: responsable de la administracion
-        /// de vendedores y bodegas", y seccion 6.1 paso 1: "El Administrador registra al
-        /// vendedor y su primera bodega".
+        /// Creacion y administracion de bodegas asignada a Administrador y Vendedor.
         /// </summary>
         public const string WarehouseManagement = "Zentric.WarehouseManagement";
 
         /// <summary>
-        /// Consulta de bodegas.
-        ///
-        /// [INFERIDO] La seccion 12 no tiene fila para bodegas. Se habilita al Admin (seccion 5
-        /// lo declara responsable de las bodegas), al Vendedor (Dominio 4 distingue "bodegas de
-        /// Vendedores") y al Operador Logistico (seccion 5: "encargado de la operacion fisica de
-        /// bodegas y despachos"). El Comprador queda fuera: la Ley no le da ninguna funcion
-        /// sobre la red fisica.
+        /// Consulta de bodegas para Administrador, Vendedor y Operador Logistico.
         /// </summary>
         public const string WarehouseRead = "Zentric.WarehouseRead";
 
         /// <summary>
-        /// Alta y publicacion de productos del catalogo.
-        ///
-        /// [CONFIRMADO] ZENTRIC.md seccion 12: "Registro Productos" tiene palomita
-        /// exclusivamente en la columna del Vendedor. El Administrador NO figura, y la seccion 5
-        /// no le da productos entre sus responsabilidades.
+        /// Alta y publicacion de productos del catalogo a cargo del Vendedor.
         /// </summary>
         public const string ProductManagement = "Zentric.ProductManagement";
 
         /// <summary>
-        /// Carga de existencias en bodega.
-        ///
-        /// [CONFIRMADO] ZENTRIC.md seccion 12: "Administracion Inventario: Vendedor y Operador
-        /// Logistico".
+        /// Carga y administracion de existencias en bodega por Vendedor, Operador Logistico y Administrador.
         /// </summary>
         public const string InventoryManagement = "Zentric.InventoryManagement";
 
         /// <summary>
-        /// Consulta de existencias de una variante.
-        /// Abierto a Administrador y Supervisor para auditoria
-        /// y gestion de existencias (conteo fisico y monitoreo global de red).
+        /// Consulta de existencias de una variante para roles operativos y de supervision.
         /// </summary>
         public const string InventoryRead = "Zentric.InventoryRead";
 
         /// <summary>
-        /// Ajuste fisico de inventario por conteo (AD).
-        ///
-        /// [DICTADO Owner 2026-10-07]: el ajuste por conteo fisico (ApplyPhysicalCount)
-        /// es operacion de auditoria, no operacion comercial. Quién cuenta no vende ni despacha.
-        /// Solo Administrador y Supervisor (perfiles de control/consulta operativa, seccion 5).
-        /// No es "gestion de inventario" comercial (eso es InventoryManagement = Seller + Operador).
+        /// Ajuste de existencias por conteo fisico asignado a Administrador y Supervisor para auditoria.
         /// </summary>
         public const string InventoryAdjust = "Zentric.InventoryAdjust";
 
         /// <summary>
-        /// Consulta del estado de un pedido.
-        ///
-        /// [CONFIRMADO] ZENTRIC.md seccion 12: "Gestion de Pedidos: Comprador, Vendedor,
-        /// Operador Logistico". El Admin y el Supervisor entran por lectura: dictamen del Owner
-        /// de 2026-09-29 sobre el hueco de la Matriz (deja en blanco la columna del Admin) y la
-        /// definicion de Supervisor en la seccion 5: "perfil de consulta y seguimiento
-        /// operativo".
+        /// Consulta de pedidos para los participantes de la compra y roles de supervision.
         /// </summary>
         public const string OrderRead = "Zentric.OrderRead";
 
         /// <summary>
-        /// Creacion de la orden de preparacion y despacho fisico.
-        ///
-        /// [CONFIRMADO] el fulfillment "deriva del pedido del cliente para
-        /// organizar la entrega fisica por parte de cada vendedor", y sus estados (Pendiente de
-        /// Empaque, Empacado, Despachado) son operacion de bodega. Vendedor y Operador Logistico
-        /// son los dos actores de "Gestion de Pedidos" que tocan la entrega fisica.
+        /// Preparacion, empaque y despacho de envios a cargo de Vendedor y Operador Logistico.
         /// </summary>
         public const string FulfillmentOperate = "Zentric.FulfillmentOperate";
 
         /// <summary>
-        /// Confirmacion de la entrega (<c>Dispatched → Delivered</c>).
-        ///
-        /// [DICTADO POR OWNER 2026-10-01] Solo el Operador Logistico.
-        ///
-        /// El Dominio 8 estado 4 define el estado ("Entregado: Recibido por el
-        /// comprador") pero no dice quien lo marca, asi que es una pregunta y no una traduccion.
-        /// Se decide el Operador porque el cierre de la entrega es, igual que el despacho, trabajo
-        /// fisico de bodega: es quien ve salir la transportadora. El Comprador queda como solo
-        /// lectura, coherente con que sea el rol mas restringido del sistema (unico con
-        /// auto-registro anonimo). El Vendedor queda excluido a proposito: no debe poder cerrar la
-        /// entrega de su propio paquete, porque eso lo deja certificando su propio servicio.
-        ///
-        /// Deliberadamente MAS ESTRECHA que <see cref="FulfillmentOperate"/>: puede empacar y
-        /// despachar su paquete, pero no confirmarlo recibido.
+        /// Confirmacion de entrega final del pedido reservada al Operador Logistico.
         /// </summary>
         public const string FulfillmentDeliver = "Zentric.FulfillmentDeliver";
 
         /// <summary>
-        /// Cancelacion por quiebre de stock fantasma.
-        ///
-        /// [CONFIRMADO] Dominio 8 estado 5: "Cancelado por Quiebre: cancelacion
-        /// unilateral DEL VENDEDOR por falta fisica de stock".
-        ///
-        /// [DICTADO POR OWNER 2026-09-29] Se abre al Operador Logistico. El
-        /// La cancelacion se asigna al Vendedor como responsable comercial, pero
-        /// el faltante lo detecta quien esta en la bodega. Leer al Operador como quien
-        /// obra en nombre del vendedor alli es lo unico que deja la regla operable: el
-        /// Operador ya crea despachos, ingresa stock, inspecciona devoluciones y
-        /// despacha (FulfillmentOperate, InventoryManagement, ReturnInspect), y sin esta
-        /// apertura podia preparar, recibir y enviar un paquete pero no reportar que la
-        /// mercancia no esta. No es una cancelacion silenciosa: el comando reconcilia el
-        /// stock fantasma y crea la devolucion obligatoria, que queda en el historial del
-        /// pedido y genera el credito al comprador.
+        /// Cancelacion de despacho por quiebre de stock a cargo de Vendedor u Operador Logistico.
         /// </summary>
         public const string FulfillmentCancelByQuiebre = "Zentric.FulfillmentCancelByQuiebre";
 
         /// <summary>
-        /// Consulta del despacho y su numero de guia.
-        ///
-        /// [CONFIRMADO] Mismo fundamento que <see cref="OrderRead"/>: el numero de guia
-        /// (<c>TrackingNumber</c>) es la trazabilidad de "Gestion de Pedidos" y la necesita el
-        /// comprador que espera la entrega.
+        /// Consulta de estado de despacho y guia de transporte.
         /// </summary>
         public const string FulfillmentRead = "Zentric.FulfillmentRead";
 
         /// <summary>
-        /// Radicacion de una solicitud de devolucion.
-        ///
-        /// [CONFIRMADO] ZENTRIC.md seccion 12: "Gestion Reembolsos" con palomita en Comprador;
-        /// se abre el flujo con la solicitud.
+        /// Radicacion de solicitudes de devolucion reservada al Comprador.
         /// </summary>
         public const string ReturnRequest = "Zentric.ReturnRequest";
 
         /// <summary>
-        /// Dictamen de la inspeccion fisica en bodega.
-        ///
-        /// [CONFIRMADO] "El operador logistico inspecciona
-        /// que el producto este en buen estado".
+        /// Inspeccion fisica de productos devueltos en bodega por el Operador Logistico.
         /// </summary>
         public const string ReturnInspect = "Zentric.ReturnInspect";
 
         /// <summary>
-        /// Aprobacion comercial de la devolucion.
-        ///
-        /// [CONFIRMADO] la inspeccion favorable "requiere la aprobacion del
-        /// Vendedor". El Dominio ya lo modela asi: <c>ReturnRequest.ApproveByVendor</c>.
-        ///
-        /// Contra la Matriz: la seccion 12 pone la palomita de "Gestion Reembolsos" en el Admin.
-        /// ADresuelve la colision a favor del  asi que el Admin NO aprueba. Se
-        /// corrijo ademas la documentacion de modulos de rol del frontend, que heredaba la lectura
-        /// equivocada de la Matriz.
+        /// Aprobacion o rechazo comercial de devoluciones a cargo del Vendedor titular.
         /// </summary>
         public const string ReturnApprove = "Zentric.ReturnApprove";
 
         /// <summary>
-        /// Emision del reembolso de una devolucion ya aprobada.
-        ///
-        /// [DICTADO POR OWNER 2026-10-01] Solo el Administrador.
-        ///
-        /// El Dominio 10 lista "Reembolsada" como estado, pero no dice quien lo ejecuta. Se
-        /// decide el Administrador por separacion de poderes: el Vendedor es quien aprueba que el
-        /// producto vuelva al stock, y si ademas liberara el dinero concentraria las dos decisiones
-        /// sobre la misma operacion. Ademas es dinero que sale de la plataforma, que es exactamente
-        /// el criterio con el que ADdejo la emision de facturas.
-        ///
-        /// Deliberadamente distinta de <see cref="ReturnApprove"/>, que sigue siendo solo-Seller.
+        /// Emision de reembolsos monetarios asignada exclusivamente al Administrador por separacion de poderes.
         /// </summary>
         public const string ReturnRefund = "Zentric.ReturnRefund";
 
         /// <summary>
-        /// Consulta del estado de una devolucion.
-        ///
-        /// [CONFIRMADO] Participan los tres actores del flujo: Comprador que la solicita,
-        /// Operador que la inspecciona, Vendedor que la aprueba. El Admin figura en "Gestion
-        /// Reembolsos" de la seccion 12 y conserva ahi su lectura. El Supervisor entra
-        /// [INFERIDO] por "consulta y seguimiento operativo" (seccion 5).
+        /// Consulta de solicitudes de devolucion para participantes y roles de auditoria.
         /// </summary>
         public const string ReturnRead = "Zentric.ReturnRead";
 
         /// <summary>
-        /// Emision de las facturas de un pedido.
-        ///
-        /// [ABIERTO] Se describen los tres documentos (Factura Maestra,
-        /// Detalle Zentric, Factura de Vendedor) pero no dice quien los emite, y la seccion 12
-        /// no tiene fila de facturacion. Fail-closed en Administrador: es el unico actor de la
-        /// seccion 5 que representa a la plataforma, y el Detalle Zentric es documento de la
-        /// plataforma.
+        /// Generacion de facturacion de pedidos asignada al Administrador.
         /// </summary>
         public const string BillingGenerate = "Zentric.BillingGenerate";
 
         /// <summary>
-        /// Consulta de las facturas emitidas de un pedido.
-        ///
-        /// [CONFIRMADO] Se asigna un destinatario a cada documento: "Factura
-        /// Maestra: entregada al cliente" (Comprador) y "Factura de Vendedor: monto que le
-        /// corresponde al Vendedor". Admin y Supervisor por el dictamen de lectura operativa. El
-        /// Operador Logistico queda fuera: la facturacion no es operacion fisica.
-        /// [ABIERTO] Hoy cualquier Comprador puede leer la factura de cualquier
-        /// <c>orderId</c>; la restriccion de propiedad va en esa tanda, no en esta.
+        /// Consulta de facturas para los involucrados comerciales y supervision.
         /// </summary>
         public const string BillingRead = "Zentric.BillingRead";
 
         /// <summary>
-        /// Carrito, checkout y pago.
-        ///
-        /// [CONFIRMADO] ZENTRIC.md seccion 5: "Comprador: persona que adquiere productos
-        /// publicados", y seccion 6.1 paso 5: "El comprador selecciona productos mediante el
-        /// carrito y confirma el pedido".
+        /// Flujo de carrito, checkout y pago reservado al Comprador.
         /// </summary>
         public const string Checkout = "Zentric.Checkout";
 
         /// <summary>
-        /// Nombre de los roles tal como viajan en la claim <c>role</c> del token. Se deriva del
-        /// enum <see cref="UserRole"/> en lugar de escribir literales: si el enum cambia, la
-        /// matriz se rompe en tiempo de compilacion y no en produccion.
+        /// Nombre del rol tal como viaja en la claim de identidad del token.
         /// </summary>
         private static string Role(UserRole role) => role.ToString();
 
         /// <summary>
-        /// La matriz completa: politica =&gt; roles admitidos. La recorre el registro de
-        /// <c>Program.cs</c> y la aserta <c>EndpointAuthorizationMatrixTests</c>. Una politica
-        /// con lista vacia solo exige identidad.
+        /// Matriz de autorizacion: mapea cada politica con la lista de roles autorizados.
         /// </summary>
         public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> RolesByPolicy =
             new ReadOnlyDictionary<string, IReadOnlyList<string>>(
@@ -291,8 +145,7 @@ namespace Zentric.Api.Security
 
                     [ProductManagement] = new[] { Role(UserRole.Seller) },
 
-                    // El Administrador entra como gestor de las bodegas de Zentric:
-                    // el limite por bodega lo aplican los handlers, no el rol.
+                    // Administrador gestiona bodegas generales; el alcance por bodega se valida a nivel de dominio.
                     [InventoryManagement] = new[]
                     {
                         Role(UserRole.Seller),
@@ -327,10 +180,7 @@ namespace Zentric.Api.Security
 
                     [FulfillmentOperate] = new[] { Role(UserRole.Seller), Role(UserRole.LogisticsOperator) },
 
-                    // Cierre de la entrega . Deliberadamente mas
-                    // estrecha que FulfillmentOperate: solo el Operador confirma la entrega
-                    // (dictamen del Owner 2026-10-01). El Vendedor puede empacar y despachar su
-                    // paquete, pero no cerrar su propia entrega.
+                    // Confirmacion de entrega reservada al operador logistico para evitar auto-entrega.
                     [FulfillmentDeliver] = new[] { Role(UserRole.LogisticsOperator) },
 
                     [FulfillmentCancelByQuiebre] = new[] { Role(UserRole.Seller), Role(UserRole.LogisticsOperator) },
@@ -350,13 +200,7 @@ namespace Zentric.Api.Security
 
                     [ReturnApprove] = new[] { Role(UserRole.Seller) },
 
-                    // Rechazo: reutiliza ReturnApprove a proposito. Quien puede aprobar puede
-                    // rechazar; separarlos no aporta nada porque es la misma decision (                    // Dominio 10 asigna la decision al Vendedor).
-
-                    // Reembolso: dinero que sale de la plataforma, solo Administrador.
-                    // [DICTADO POR OWNER 2026-10-01] Separacion de poderes: el Vendedor aprueba
-                    // el reingreso del producto pero no libera el dinero. Mismo criterio que la
-                    // emision de facturas, que ADdejo en el Administrador.
+                    // Reembolso monetario exclusivo de Administrador por separacion de funciones frente al Vendedor.
                     [ReturnRefund] = new[] { Role(UserRole.Administrator) },
 
                     [ReturnRead] = new[]

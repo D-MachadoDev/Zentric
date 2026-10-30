@@ -82,7 +82,7 @@ namespace Zentric.Api.Controllers
         /// </summary>
         /// <remarks>
         /// Valida que el producto haya sido inspeccionado favorablemente. Al aprobarse,
-        /// dispara el evento de dominio ReturnApprovedEvent que incrementa de forma atómica
+        /// dispara ReturnApprovedEvent para incrementar atómicamente
         /// el inventario usado (UsedQuantity) en la bodega correspondiente.
         /// </remarks>
         /// <param name="id">Identificador de la solicitud en la ruta URL.</param>

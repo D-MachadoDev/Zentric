@@ -1,17 +1,8 @@
 #!/usr/bin/env node
 /**
- * Brandkit Image Processor - Zentric
- * ---------------------------------------------------------------------------
- * Procesa las imágenes generadas del brandkit (sin dibujar logos por código):
- *   - Extrae el isotipo `Z` desde `logo/zentric-icon-dark.jpg` con fondo
- *     transparente (`zentric-icon-mark.png`) y genera las 5 variantes de rol
- *     ("Sistema por Rol": buyer, seller, admin, logistics, supervisor) en
- *     `public/brandkit/logo/zentric-icon-{role}.png` a partir de la misma
- *     imagen generada.
- *   - Genera todos los tamaños de favicon (`16x16` a `512x512` y
- *     `apple-touch-icon-180x180.png`) y Open Graph (`1200x630`).
- *
- * Ejecutar: node scripts/rasterize-brandkit.cjs
+ * Procesador de imagenes del brandkit de Zentric.
+ * Genera variantes del isotipo por rol con transparencia, iconos en resoluciones
+ * estandar (16x16 a 512x512) y assets de Open Graph.
  */
 
 const fs = require('fs');
@@ -173,7 +164,7 @@ async function main() {
   let made = 0;
 
   try {
-    // 1. Isotipo original con fondo transparente (trazos blancos + nodos jade)
+    // Isotipo original con fondo transparente
     await extractTransparentLogoVariant(
       browser,
       iconDarkJpg,
@@ -184,7 +175,7 @@ async function main() {
     console.log('  ✅ logo/zentric-icon-mark.png (transparente, original)');
     made++;
 
-    // 2. Las 5 variantes de rol con fondo transparente ("Sistema por Rol")
+    // Variantes de color por rol con fondo transparente
     for (const [role, tint] of Object.entries(ROLE_TINTS)) {
       const outRole = path.join(LOGO_DIR, `zentric-icon-${role}.png`);
       await extractTransparentLogoVariant(browser, iconDarkJpg, outRole, 512, tint);
@@ -192,7 +183,7 @@ async function main() {
       made++;
     }
 
-    // 3. Logos completos con su fondo original
+    // Variantes de logotipo con fondo completo
     await renderImageToPng(browser, iconDarkJpg, path.join(LOGO_DIR, 'zentric-icon-dark.png'), 512, 512);
     console.log('  ✅ logo/zentric-icon-dark.png (512x512)');
     made++;
@@ -209,7 +200,7 @@ async function main() {
       made++;
     }
 
-    // 4. Favicons desde la imagen de ícono generada
+    // Generacion de favicons multi-resolucion
     for (const size of FAVICON_SIZES) {
       const out = path.join(FAVICON_DIR, `favicon-${size}x${size}.png`);
       await renderImageToPng(browser, iconDarkJpg, out, size, size);
@@ -221,7 +212,7 @@ async function main() {
     console.log('  ✅ favicon/apple-touch-icon-180x180.png');
     made++;
 
-    // 5. Open Graph 1200x630 desde la portada generada
+    // Generacion de imagen Open Graph
     if (fs.existsSync(coverDarkJpg)) {
       await renderImageToPng(browser, coverDarkJpg, path.join(OG_DIR, 'og-default.png'), 1200, 630);
       await renderImageToPng(browser, coverDarkJpg, path.join(OG_DIR, 'og-default-dark.png'), 1200, 630);

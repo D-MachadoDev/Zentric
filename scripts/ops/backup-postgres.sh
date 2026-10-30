@@ -1,12 +1,5 @@
 #!/usr/bin/env sh
-# ==============================================================================
-# Zentric Marketplace — Respaldo Lógico Comprimido de PostgreSQL 16.15-alpine (W6-S03)
-# ==============================================================================
-# Genera un volcado en formato custom (-Fc, comprimido y verificable con pg_restore)
-# dentro de ./backups/ o del directorio indicado en BACKUP_DIR.
-# Uso:
-#   ./scripts/ops/backup-postgres.sh
-# ==============================================================================
+# Respaldo logico comprimido de PostgreSQL (-Fc) en BACKUP_DIR o ./backups.
 set -eu
 
 CONTAINER_NAME="${POSTGRES_CONTAINER:-zentric-postgres-prod}"

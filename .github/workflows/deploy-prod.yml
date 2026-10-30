@@ -144,7 +144,7 @@ jobs:
             mkdir -p "$DEPLOY_DIR"
             cd "$DEPLOY_DIR"
 
-            # 1. Sincronizar repositorio con rama main
+            # Sincronizar repositorio con rama main
             echo "--- Paso 1: Sincronizando código desde origin/main ---"
             if [ -d .git ]; then
               git fetch origin main
@@ -154,7 +154,7 @@ jobs:
               git clone -b main https://github.com/zentric/zentric.git .
             fi
 
-            # 2. Validar presencia y completitud de variables críticas en .env
+            # Validar presencia de variables criticas en .env
             echo "--- Paso 2: Validando variables de entorno en .env ---"
             if [ ! -f .env ]; then
               echo "::error::Archivo .env no encontrado en $DEPLOY_DIR. Abortando despliegue para evitar inconsistencias."
@@ -166,15 +166,15 @@ jobs:
             grep -E '^Jwt__SigningKey=' .env | grep -qv 'Jwt__SigningKey=$' || (echo "::error::Jwt__SigningKey no configurado en .env" && exit 1)
             grep -E '^Cors__AllowedOrigins=' .env | grep -qv 'Cors__AllowedOrigins=$' || (echo "::error::Cors__AllowedOrigins no configurado en .env" && exit 1)
 
-            # 3. Compuerta de Migración de Base de Datos (Migration Gate)
+            # Compuerta de migracion de base de datos
             echo "--- Paso 3: Ejecutando Compuerta de Migración de Base de Datos ---"
             docker compose -f docker-compose.prod.yml --profile migrate run --rm migrator
 
-            # 4. Despliegue Atómico de Contenedores de Producción
+            # Despliegue de contenedores de produccion
             echo "--- Paso 4: Desplegando Contenedores de Producción ---"
             docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
 
-            # 5. Verificación de Salud en Producción (Health Check Probe)
+            # Sondeo de verificacion de salud en produccion
             echo "--- Paso 5: Ejecutando Sondeo de Disponibilidad y Salud ---"
             MAX_ATTEMPTS=15
             ATTEMPT=1

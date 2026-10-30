@@ -283,9 +283,6 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
     expect(BuyerExports.BuyerProfilePage).toBeDefined();
   });
 
-  // ==========================================================================
-  // 1. BuyerCatalogPage
-  // ==========================================================================
   describe('BuyerCatalogPage', () => {
     beforeEach(() => {
       // El catálogo lee categorías reales y destacados reales en cada render.
@@ -652,9 +649,6 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
     });
   });
 
-  // ==========================================================================
-  // 2. BuyerProductDetailPage
-  // ==========================================================================
   describe('BuyerProductDetailPage', () => {
     it('renderiza la ficha técnica con Split-Frame 60%/40% y selector de variantes', async () => {
       mockParams = { productId: mockPhysicalProduct.id };
@@ -823,9 +817,6 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
     });
   });
 
-  // ==========================================================================
-  // 3. BuyerCartPage
-  // ==========================================================================
   describe('BuyerCartPage', () => {
     it('muestra estado vacío cuando el carrito no tiene líneas', async () => {
       vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([]);
@@ -904,9 +895,6 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
     });
   });
 
-  // ==========================================================================
-  // 4. BuyerOrdersPage
-  // ==========================================================================
   describe('BuyerOrdersPage', () => {
     it('renderiza Hero KPI Strip con contadores y listado filtrable de pedidos', async () => {
       vi.spyOn(appServices.api, 'listOrders').mockResolvedValue([
@@ -984,9 +972,6 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
     });
   });
 
-  // ==========================================================================
-  // 5. BuyerOrderDetailPage
-  // ==========================================================================
   describe('BuyerOrderDetailPage', () => {
     it('renderiza desglose de líneas, guías de despacho, Factura Maestra y OrderTimeline', async () => {
       mockParams = { orderId: mockDeliveredOrder.id };
@@ -1076,9 +1061,6 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
     });
   });
 
-  // ==========================================================================
-  // 6. BuyerOrderPaymentPage
-  // ==========================================================================
   describe('BuyerOrderPaymentPage', () => {
     it('renderiza temporizador de 15 min, campos de tarjeta y procesa el pago atómico', async () => {
       mockParams = { orderId: mockPendingPaymentOrder.id };
@@ -1241,9 +1223,6 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
     });
   });
 
-  // ==========================================================================
-  // 7. RequestReturnPage
-  // ==========================================================================
   describe('RequestReturnPage', () => {
     it('permite registrar la solicitud de devolución sobre un pedido entregado', async () => {
       mockSearch = { orderId: mockDeliveredOrder.id };
@@ -1357,9 +1336,6 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
     });
   });
 
-  // ==========================================================================
-  // 8. BuyerProfilePage (Slice 3: Perfil Persistente de Comprador)
-  // ==========================================================================
   describe('BuyerProfilePage (Slice 3: Perfil Persistente)', () => {
     const mockProfileData: UserProfile = {
       id: 'usr-buyer-001',

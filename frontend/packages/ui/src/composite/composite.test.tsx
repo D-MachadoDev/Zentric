@@ -18,9 +18,6 @@ import { MoneyAmount } from './MoneyAmount';
 import { StateView } from './StateView';
 
 describe('Componentes Compuestos (@zentric/ui/composite) — Decisión A3', () => {
-  // =========================================================================
-  // 1. StatusBadge
-  // =========================================================================
   describe('StatusBadge', () => {
     it('exige obligatoriamente texto explícito en español y punto cromático de 6px', () => {
       render(<StatusBadge tone="success">Pagado</StatusBadge>);
@@ -49,9 +46,6 @@ describe('Componentes Compuestos (@zentric/ui/composite) — Decisión A3', () =
     });
   });
 
-  // =========================================================================
-  // 2. MoneyAmount
-  // =========================================================================
   describe('MoneyAmount', () => {
     it('formatea el importe monetario con tabular-nums y font-mono', () => {
       render(<MoneyAmount amount={250000} currency="COP" />);
@@ -73,9 +67,6 @@ describe('Componentes Compuestos (@zentric/ui/composite) — Decisión A3', () =
     });
   });
 
-  // =========================================================================
-  // 3. StateView (Los 4 estados obligatorios)
-  // =========================================================================
   describe('StateView — 4 Estados Canónicos', () => {
     it('Estado 1 (Loading): proyecta esqueletos de carga con aria-busy="true" y role="status"', () => {
       render(
@@ -165,9 +156,6 @@ describe('Componentes Compuestos (@zentric/ui/composite) — Decisión A3', () =
     });
   });
 
-  // =========================================================================
-  // 4. StatCard
-  // =========================================================================
   describe('StatCard', () => {
     it('renderiza la variante "hero" con cifra dominante en Geist Mono 600 y tabular-nums', () => {
       render(
@@ -237,9 +225,6 @@ describe('Componentes Compuestos (@zentric/ui/composite) — Decisión A3', () =
     });
   });
 
-  // =========================================================================
-  // 5. OrderTimeline
-  // =========================================================================
   describe('OrderTimeline', () => {
     it('deduce automáticamente los pasos del ciclo de vida canónico de Zentric a partir de currentStatus', () => {
       render(<OrderTimeline currentStatus="Paid" />);
@@ -288,9 +273,6 @@ describe('Componentes Compuestos (@zentric/ui/composite) — Decisión A3', () =
     });
   });
 
-  // =========================================================================
-  // 6. ModalDialog
-  // =========================================================================
   describe('ModalDialog', () => {
     it('abre diálogo con role="alertdialog", trampa de foco y accesibilidad ARIA', async () => {
       render(
@@ -385,9 +367,6 @@ describe('Componentes Compuestos (@zentric/ui/composite) — Decisión A3', () =
     });
   });
 
-  // =========================================================================
-  // 7. ResponsiveDrawer
-  // =========================================================================
   describe('ResponsiveDrawer', () => {
     it('renderiza panel lateral de inspección rápida con role="dialog" y aria-modal="true"', () => {
       render(
@@ -446,9 +425,6 @@ describe('Componentes Compuestos (@zentric/ui/composite) — Decisión A3', () =
     });
   });
 
-  // =========================================================================
-  // 8. DataTable (Tabla Interactiva de Alta Densidad)
-  // =========================================================================
   describe('DataTable', () => {
     interface TestProduct {
       id: string;
@@ -733,9 +709,6 @@ describe('Componentes Compuestos (@zentric/ui/composite) — Decisión A3', () =
     });
   });
 
-  // =========================================================================
-  // 9. Casos límite de StateView, OrderTimeline, StatCard, ResponsiveDrawer y ModalDialog
-  // =========================================================================
   describe('Cobertura completa de ramas y variantes', () => {
     it('StateView deduce estados desde banderas booleanas (isLoading, isError, isEmpty)', () => {
       const { rerender } = render(<StateView isLoading={true} title="Cargando..." />);

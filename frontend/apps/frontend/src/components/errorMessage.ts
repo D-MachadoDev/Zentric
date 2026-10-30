@@ -1,21 +1,8 @@
-﻿import { isApiError } from '../domain';
+import { isApiError } from '../domain';
 
 /**
- * Mensaje apto para mostrar tras el fallo de un caso de uso.
- *
- * Vive en `components/`, no en los módulos: según Frontend-Architecture sección 2 es
- * el único punto permitido para importar `domain/` en tiempo de ejecución, y
- * aquí hace falta porque `ApiError` es una clase, no un tipo.
- *
- * Aplica la tabla de sección 5 —comportamiento por estado— de memoria, sin exponer
- * nunca una traza de pila ni texto crudo de base de datos:
- *
- * | Estado | Aquí |
- * | --- | --- |
- * | `400` / `404` / `409` | El `detail` del servidor: ya está escrito para el usuario |
- * | `401` | El adaptador ya limpió la sesión; se explica la caducidad |
- * | `403` | Permiso insuficiente **sin** cerrar la sesión |
- * | `5xx` | Mensaje genérico con el `traceId` para soporte |
+ * Traduce fallos de casos de uso a mensajes para la UI sin exponer trazas de pila.
+ * Mapea 400/404/409 a detail del servidor, 401/403 a sesion/permiso, y 5xx a mensaje generico.
  */
 export interface OpcionesMensaje {
   /**

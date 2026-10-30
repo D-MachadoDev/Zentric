@@ -19,9 +19,7 @@ namespace Zentric.Application.Users.Validators
 
             RuleFor(x => x.Password)
                 .NotEmpty().WithMessage("Password cannot be empty.")
-                // Minimo tecnico de 8 caracteres (AD). La Ley no define
-                // politica de contrasenas; queda como sub-decicion pendiente de
-                // ratificacion del Owner.
+                // Longitud minima de 8 caracteres.
                 .MinimumLength(8).WithMessage("Password must be at least 8 characters long.")
                 .MaximumLength(128).WithMessage("Password must be at most 128 characters long.");
 

@@ -30,10 +30,10 @@ namespace Zentric.Domain.Payments
         public DateTime? RefundedAt { get; private set; }
 
         /// <summary>
-        /// Un registro por cada credito acreditado (ADdecision 7). El
+        /// Un registro por cada devolucion acreditada. El
         /// acumulado de <see cref="RefundedAmount"/> dice cuanto se devolvio en
-        /// total; esto dice a quien, por que linea y bajo que regla. Son cosas
-        /// distintas y se necesitan las dos para responder una disputa.
+        /// total; cada registro conserva la linea y la regla aplicada.
+        /// </summary>
         ///
         /// Null en lugar de inicializado en el campo a proposito:
         /// <c>PaymentReceiptMapper</c> crea el agregado con

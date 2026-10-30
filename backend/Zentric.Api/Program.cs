@@ -1,16 +1,7 @@
-// =================================================================================================
-// Zentric.Api — Punto de Entrada y Adaptador Primario (Composition Root)
-// =================================================================================================
-// Rol arquitectónico (Hexagonal + DDD):
-// - Adaptador Primario (Inbound/Driving Adapter): Recibe solicitudes HTTP y delega a Application.
-// - Composition Root: Único proyecto autorizado a referenciar tanto Application como Infrastructure
-//   para registrar la inyección de dependencias (IoC) y ensamblar el pipeline HTTP.
-//
-// Regla de nombramiento (NO renombrar a 'backend'):
-// - La carpeta raíz del backend ya es 'backend/'. 'Zentric.Api' es el host web ejecutable.
-// - Renombrarlo rompería la solución Zentric.slnx, Dockerfiles, scripts de CI (.github/workflows)
-//   y violaría la convención de separación de capas de la Arquitectura Hexagonal.
-// =================================================================================================
+// Punto de entrada y composition root de la API web (arquitectura hexagonal).
+// Ensambla el pipeline HTTP y registra dependencias entre Application e Infrastructure.
+// Mantiene el nombre de ensamblado Zentric.Api requerido por la solucion y los scripts de CI.
+
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -29,13 +20,8 @@ using Zentric.Api.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ADel contrato de los enum va por nombre y solo por nombre. El Owner dicto la
-// forma estricta, asi que un cuerpo con "role": 2 responde 400 en lugar de colarse como
-// Administrador. Las salidas ya devolvian nombres y la query ya los aceptaba; el cuerpo era lo
-// unico que hablaba en numeros. Todo el contrato vive en EnumJsonContract.
-//
-// El contrato de error va aqui y no en ToProblem() porque 19 puntos de la capa de presentacion
-// construyen el error a mano: arreglar solo el mapa deja 18 sin corregir.
+// Serializacion de enums por nombre estricto; valores numericos son rechazados con 400.
+// El manejo global de errores en este punto asegura consistencia con los controladores de presentacion.
 builder.Services
     .AddControllers()
     .AddZentricEnumContract()
@@ -55,7 +41,7 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 
-    // Configuración del esquema de seguridad Bearer (JWT) para Swagger UI
+    // Esquema Bearer JWT para Swagger UI.
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -86,11 +72,8 @@ builder.Services.AddOpenApi();
 // Mapeo de errores a RFC 7807 (Problem Details).
 builder.Services.AddProblemDetails();
 
-// Identidad del llamante y autenticacion (AD, cierra ).
-//
-// La API NO acepta la cabecera X-Buyer-Id: la identidad sale unicamente de un
-// token verificado. JwtOptions.Validate() hace fallar el arranque si falta la
-// clave de firma, en lugar de firmar con un secreto por defecto.
+// Autenticacion JWT. La identidad proviene exclusivamente del token verificado; no se admiten cabeceras manuales.
+// JwtOptions.Validate() falla en el arranque si falta la clave de firma.
 builder.Services.Configure<Zentric.Infrastructure.Security.JwtOptions>(
     builder.Configuration.GetSection(Zentric.Infrastructure.Security.JwtOptions.SectionName));
 
@@ -120,20 +103,13 @@ builder.Services
 
 builder.Services.AddAuthorization(options =>
 {
-    // "toda operacion debe ejecutarse por un usuario autenticado". La
-    // politica de reserva hace que TODO endpoint exija token sin tener que
-    // decorar los 30 controladores. Quien necesite excepcion lo declara con
-    // [AllowAnonymous], como hacen POST /api/auth/login y GET /health.
+    // Politica fallback: exige token por defecto en todos los endpoints salvo excepciones explicitas con [AllowAnonymous].
     options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
 
-    // (AD): las politicas por rol se generan recorriendo la matriz de
-    // AuthorizationPolicies, que es la Matriz de Responsabilidades de ZENTRIC.md escrita una
-    // sola vez. No se agrega ninguna politica a mano: ponerla en el diccionario la registra
-    // aqui, la exige el [Authorize] del controlador y la aserta EndpointAuthorizationMatrixTests.
-    // Ningun acceso queda autorizado "por defecto": una politica con lista vacia de roles es
-    // identidad sola, y esa es la unica forma de que un endpoint no pida rol.
+    // Registro dinamico de politicas por rol a partir de la matriz de AuthorizationPolicies.
+    // Ningun acceso queda autorizado por defecto sin validar politicas.
     foreach (var rule in Zentric.Api.Security.AuthorizationPolicies.RolesByPolicy)
     {
         var policyBuilder = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
@@ -151,38 +127,26 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<Zentric.Api.Security.ICurrentUserAccessor, Zentric.Api.Security.ClaimsUserAccessor>();
 
-// Puerto de credenciales y emision de token. Los adaptadores son
-// intercambiables: cambiar el algoritmo de hash o el formato del token no exige
-// tocar Dominio ni los casos de uso. La caducidad del token se calcula con el
-// mismo IClock registrado abajo : un Func<DateTimeOffset> suelto habria
-// dejado el reloj sin contrato trazable en la arquitectura.
+// Puerto de credenciales y emision de token desacoplado del dominio y los casos de uso.
 builder.Services.AddSingleton<Zentric.Domain.Users.Ports.IPasswordHasher, Zentric.Infrastructure.Security.Pbkdf2PasswordHasher>();
 builder.Services.AddSingleton<Zentric.Domain.Users.Ports.IAuthTokenService>(sp =>
 {
     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Zentric.Infrastructure.Security.JwtOptions>>();
     var clock = sp.GetRequiredService<Zentric.Domain.Common.Ports.IClock>();
-    // Reloj inyectado para que la caducidad del token sea comprobable en pruebas
-    // sin esperar una hora. AD.
+    // IClock inyectado para desacoplar el tiempo del sistema y permitir su control en pruebas.
     return new Zentric.Infrastructure.Security.JwtAuthTokenService(options, () => clock.UtcNow);
 });
 
-// /el reloj del sistema se registra como IClock (singleton sin
-// estado). Los adaptadores que toman decisiones con "ahora" (caducidad de
-// tokens, barrido de carritos vencidos) consumen este puerto y NO
-// DateTime.UtcNow directamente: asi la suite puede congelar el tiempo con un
-// reloj falso.
+// IClock singleton consumido por adaptadores que evaluan caducidades o barrido temporal.
 builder.Services.AddSingleton<Zentric.Domain.Common.Ports.IClock, Zentric.Infrastructure.Common.SystemClock>();
 
-// Register DbContext
 builder.Services.AddDbContext<ZentricDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
         b => b.MigrationsAssembly("Zentric.Infrastructure")));
 
-// HealthChecks
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<ZentricDbContext>(name: "database", tags: new[] { "ready" });
 
-// Register Repositories and UnitOfWork
 builder.Services.AddScoped<Zentric.Application.Common.Ports.IUnitOfWork, Zentric.Infrastructure.Persistence.UnitOfWork>();
 builder.Services.AddScoped<Zentric.Infrastructure.Persistence.IDomainEventDispatcher, Zentric.Infrastructure.Persistence.DomainEventDispatcher>();
 builder.Services.AddScoped<Zentric.Domain.Users.Ports.IUserRepository, UserRepository>();
@@ -198,15 +162,13 @@ builder.Services.AddScoped<Zentric.Domain.Billing.Ports.IInvoiceRepository, Invo
 builder.Services.AddScoped<Zentric.Domain.Payments.Ports.IPaymentReceiptRepository, PaymentReceiptRepository>();
 builder.Services.AddScoped<Zentric.Domain.Returns.Ports.IRefundAuditRepository, RefundAuditRepository>();
 
-// Register Background Services
 builder.Services.AddHostedService<Zentric.Infrastructure.BackgroundServices.CheckoutTimeoutService>();
 builder.Services.AddHostedService<Zentric.Infrastructure.BackgroundServices.OutboxProcessor>();
 
-// Registro de la capa Application: dispatcher propio, validacion de entrada
-// (FluentValidation) y handlers. El dispatcher propio sustituye a AddMediatR.
+// Registro de Application: dispatcher propio, validaciones con FluentValidation y handlers.
 builder.Services.AddZentricApplication();
 
-// Comportamientos del pipeline de mensajes: la validacion se ejecuta antes del handler.
+// Pipeline de mensajes: validacion previa a la ejecucion del handler.
 builder.Services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
 builder.Services.AddScoped<Zentric.Domain.Returns.Services.ReturnsApprovalService>();
@@ -214,10 +176,7 @@ builder.Services.AddScoped<Zentric.Domain.Inventories.Services.InventoryReservat
 builder.Services.AddScoped<Zentric.Domain.Orders.Services.OrderFulfillmentProgressSynchronizer>();
 builder.Services.AddScoped<Zentric.Domain.Returns.Services.RefundPolicyService>();
 
-// Pasarela de pago SIMULADA. El puerto vive en el Dominio; sustituir este
-// adaptador por uno real (PSE, Wompi, Stripe) no exige tocar Dominio ni casos de uso.
-// La seleccion sale de configuracion Payments:Provider; hoy solo "simulated" es
-// valido. Otro valor hace fallar el arranque para no cobrar en falso.
+// Pasarela de pago simulada. El puerto vive en Dominio; Payments:Provider define el proveedor activo.
 var paymentsProvider = builder.Configuration.GetSection(
     Zentric.Infrastructure.Payments.PaymentGatewayOptions.SectionName)
     .Get<Zentric.Infrastructure.Payments.PaymentGatewayOptions>()?.Provider ?? "simulated";
@@ -229,10 +188,7 @@ if (!string.Equals(paymentsProvider, "simulated", StringComparison.OrdinalIgnore
 builder.Services.AddScoped<Zentric.Domain.Payments.Ports.IPaymentGatewayService, Zentric.Infrastructure.Payments.SimulatedPaymentGateway>();
 
 
-// CORS: habilita que el frontend (Vite, otro puerto) llame a la API. La lista de
-// origenes viene de configuracion y NO se usa el comodin: un comodin con
-// credenciales esta prohibido por el protocolo, y la API emite JWT desde AD,
-// asi que los origenes deben quedar declarados de forma explicita.
+// Politica de CORS restringida a los origenes configurados sin comodines para admitir credenciales.
 var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Value;
 var allowedOrigins = string.IsNullOrWhiteSpace(configuredOrigins)
     ? new[] { "http://localhost:15434", "http://localhost:15435" }
@@ -249,13 +205,8 @@ builder.Services.AddCors(options =>
 });
 var app = builder.Build();
 
-// Las migraciones se aplican al arrancar. Sin esto, `docker compose down -v` (documentado
-// como "volumen de datos limpio") dejaba la base SIN TABLAS: el compose solo levanta
-// PostgreSQL y la API, y ningun otro paso creaba el esquema. Se limita a Desarrollo
-// porque en produccion aplicar el esquema al arrancar oculta el control de cambios.
-//
-// El Administrador inicial NO se crea aqui: lo hace el bloque de bootstrap de mas abajo,
-// que ademas evita duplicarlo en cada reinicio.
+// Migraciones automaticas en desarrollo para asegurar esquema inicial en contenedores efimeros.
+// El Administrador inicial se crea en el bloque de bootstrap posterior.
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
@@ -263,7 +214,6 @@ if (app.Environment.IsDevelopment())
     await db.Database.MigrateAsync();
 }
 
-// Configure the HTTP request pipeline.
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -278,8 +228,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("Frontend");
 
-// Cabeceras de seguridad para API: sin sniffing, sin marcos, sin referer.
-// No se fija CSP estricta global porque Swagger UI la rompe; nginx ya cubre el frontend.
+// Cabeceras de seguridad HTTP: proteccion contra sniffing, frames y referer.
 app.Use(async (context, next) =>
 {
     context.Response.Headers["X-Content-Type-Options"] = "nosniff";
@@ -298,22 +247,14 @@ app.UseExceptionHandler();
 
 app.UseHttpsRedirection();
 
-// La autenticacion debe ejecutarse ANTES de la autorizacion: es la que
-// rellena HttpContext.User a partir del token. Sin este orden, la politica de
-// reserva veria una peticion sin identidad y responderia 401 a todo.
+// Autenticacion ejecutada antes de autorizacion para poblar HttpContext.User antes de evaluar politicas.
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Return cached response for duplicate POST/PATCH requests.
+// Cache de respuesta para idempotencia en peticiones duplicadas.
 app.UseMiddleware<Zentric.Api.Security.IdempotencyMiddleware>();
 
-// Health checks endpoints para Docker, balanceadores y orquestadores.
-// /health  -> liveness (proceso vivo)
-// /ready   -> readiness (DB disponible, listo para servir tráfico)
-//
-// Ambos son anonimos a proposito: la politica de reserva exige token en
-// TODA ruta, y una sonda de salud sin token recibia 401 en vez de
-// responder. Un orquestador no tiene token: por eso lleva AllowAnonymous.
+// Endpoints de salud publicos para sondas de liveness (/health) y readiness (/ready).
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
     Predicate = _ => false, // solo liveness: no verifica dependencias
@@ -353,17 +294,12 @@ app.MapHealthChecks("/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.
 .AllowAnonymous()
 .WithName("Ready");
 
-// Alta del primer Administrador. Solo actua cuando NO existe ningun usuario con rol
-// Administrador, de modo que un despliegue no duplica el administrador en cada reinicio.
-// La implementacion vive en AdministratorBootstrapper porque las pruebas E2E la ejecutan
-// de forma explicita: bajo WebApplicationFactory este evento no se dispara.
+// Inicializacion del primer Administrador cuando no existen usuarios con dicho rol.
 app.Lifetime.ApplicationStarted.Register(() =>
     Zentric.Api.Bootstrap.AdministratorBootstrapper.Run(app.Services, app.Configuration));
 
 app.MapControllers();
 app.Run();
 
-// WebApplicationFactory solo puede reutilizar este arranque si la clase Program es
-// visible desde fuera del ensamblado. No cambia el comportamiento: solo abre la puerta a las
-// pruebas E2E HTTP, que levantan la API real contra un PostgreSQL efimero (Testcontainers).
+// Visibilidad publica de Program para pruebas de integracion con WebApplicationFactory.
 public partial class Program { }

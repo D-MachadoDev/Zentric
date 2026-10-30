@@ -155,9 +155,7 @@ namespace Zentric.Tests.Application.Catalog
             string? category = null,
             ProductType type = ProductType.Physical)
         {
-            // Un producto fisico exige al menos una variante (AD), y el
-            // constructor la valida, asi que se pasa desde el inicio. Un Digital
-            // puede nacer sin ninguna (CA).
+            // Productos fisicos requieren al menos una variante inicial; productos digitales no.
             var seeds = type == ProductType.Physical
                 ? new (string Sku, IEnumerable<VariantAttribute> Attributes)[]
                 {
@@ -261,9 +259,7 @@ namespace Zentric.Tests.Application.Catalog
             Assert.Equal(100, result.Value.Items.Count);
         }
 
-        // ---------------------------------------------------------------------
-        // Filtros del comprador (S3): search, sort y type sobre TODO el catalogo.
-        // ---------------------------------------------------------------------
+        // Filtros del comprador: busqueda, ordenamiento y tipo sobre el catalogo completo.
 
         [Fact]
         public async Task Handle_SearchByNameDifferentCase_FiltersIgnoringCase()

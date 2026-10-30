@@ -34,9 +34,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
                     .Any(p => p.VendorId == vendor && p.Variants.Any(v => v.Id == i.VariantId)));
             }
 
-            // Por variante y bodega: la unidad en la que el stock se cuenta de verdad. Ordenar por
-            // variante primero hace que las filas de un mismo producto queden juntas, que es como se
-            // lee una pantalla de inventario.
+            // Ordena por variante y bodega para agrupar filas del mismo producto.
             var list = await query
                 .OrderBy(i => i.VariantId)
                 .ThenBy(i => i.WarehouseId)
@@ -206,11 +204,9 @@ namespace Zentric.Infrastructure.Persistence.Repositories
 
         public async Task<bool> TryReserveStockAsync(Guid inventoryId, int quantity, CancellationToken cancellationToken = default)
         {
-            // ADleer-comprobar-escribir es UNA sola sentencia. La condicion
-            // available >= quantity vive en el WHERE, asi que la base garantiza sola
-            // que dos reservas simultaneas sobre la misma fila no pueden dejar el
-            // contador negativo ni perder actualizaciones . Cero filas
-            // afectadas = no habia stock = se rechaza; no hay nada que reintentar.
+            // Actualizacion atomica en una sola sentencia SQL. La condicion de stock disponible
+            // se valida en el WHERE para prevenir condiciones de carrera y saldos negativos.
+            // Si el numero de filas afectadas es cero, no habia stock suficiente.
             if (quantity <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity to reserve must be greater than zero.");

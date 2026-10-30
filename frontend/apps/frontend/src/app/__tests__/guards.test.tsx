@@ -1,4 +1,4 @@
-﻿import { createMemoryHistory, createRouter, isRedirect } from '@tanstack/react-router';
+import { createMemoryHistory, createRouter, isRedirect } from '@tanstack/react-router';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { InMemorySession } from '../../adapters';
 import { UserRole } from '../../domain';
@@ -107,8 +107,7 @@ describe('guardas de rol (sección 3)', () => {
   it('sin sesión, exigirRol redirige en vez de devolver un 403', () => {
     const session = new InMemorySession();
 
-    // Un 403 sin sesión diría "no tienes permiso" a alguien que simplemente no
-    // ha entrado: el mensaje correcto allí es "inicia sesión".
+    // Sin sesion corresponde redirigir al login en vez de emitir 403.
     try {
       exigirRol({ session }, UserRole.Administrator);
       expect.unreachable('Debía lanzar la redirección');

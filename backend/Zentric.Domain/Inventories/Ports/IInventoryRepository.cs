@@ -23,7 +23,7 @@ namespace Zentric.Domain.Inventories.Ports
     /// Puerto de salida (Output Port) para la persistencia y operaciones atómicas de inventario.
     /// </summary>
     /// <remarks>
-    /// Define contratos para consultas seguras aisladas por vendedor y mutaciones atómicas condicionales (AD)
+    /// Define contratos para consultas seguras aisladas por vendedor y mutaciones atómicas condicionales
     /// que garantizan que el stock jamás sea negativo ante concurrencia sin usar locks pesados de base de datos.
     /// </remarks>
     public interface IInventoryRepository
@@ -92,22 +92,15 @@ namespace Zentric.Domain.Inventories.Ports
         Task SaveAdjustmentAsync(Inventory inventory, StockAdjustmentRecord record, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Reserva de forma ATOMICA una cantidad de UNA fila de existencias
-        /// (AD): un solo UPDATE condicional
+        /// Reserva atómicamente una cantidad de una fila de existencias mediante UPDATE condicional
         /// (disponible -= n, reservado += n WHERE Id = id AND disponible >= n).
-        /// Devuelve false si no había stock suficiente (cero filas afectadas),
-        /// que es el unico caso en que la base se niega; jamas deja la fila
-        /// negativa aunque dos peticiones corran a la vez. El candado dura lo
-        /// que dura la sentencia, no una transaccion larga (AD, decision 4).
+        /// Devuelve false si no habia stock suficiente.
         /// </summary>
         Task<bool> TryReserveStockAsync(Guid inventoryId, int quantity, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Libera una reserva ya aplicada (UPDATE inverso condicional:
-        /// reservado -= n, disponible += n WHERE reservado >= n). Es la
-        /// compensacion que exige ADpara que un fallo a mitad de la
-        /// reserva no deje parciales confirmados, y se aplica en el mismo
-        /// estilo atomico que la reserva. Ver AD.
+        /// Libera una reserva aplicada mediante UPDATE condicional
+        /// (reservado -= n, disponible += n WHERE reservado >= n) como compensacion si falla la reserva global.
         /// </summary>
         Task ReleaseReservedStockAsync(Guid inventoryId, int quantity, CancellationToken cancellationToken = default);
 

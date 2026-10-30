@@ -1,11 +1,10 @@
 namespace Zentric.Infrastructure.Security
 {
     /// <summary>
-    /// Configuracion de emision y validacion de tokens (AD).
+    /// Configuracion de emision y validacion de tokens JWT.
     ///
-    /// No hay valores por defecto: <see cref="SigningKey"/> no se inicializa a
-    /// proposito, de modo que una API que arranque sin clave de firma falla de
-    /// forma ruidosa en lugar de firmar con un secreto conocido.
+    /// Sin valores por defecto: <see cref="SigningKey"/> exige valor explicito
+    /// para evitar arrancar la API con un secreto debil o conocido.
     /// </summary>
     public sealed class JwtOptions
     {

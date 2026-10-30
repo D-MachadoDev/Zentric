@@ -17,8 +17,7 @@ namespace Zentric.Application.Common.Models
 
         /// <summary>
         /// El recurso no existe, o existe pero no es del llamante. Se responde 404.
-        /// Los dos casos comparten mensaje a proposito: la diferencia no se le
-        /// revela a quien pregunta (AD).
+        /// Ambos casos comparten mensaje para evitar enumeracion de recursos ajenos.
         /// </summary>
         NotFound = 1
     }

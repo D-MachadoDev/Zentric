@@ -17,10 +17,9 @@ namespace Zentric.Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    // Los listados de usuario exponen PII (documento de identidad y correo), asi que la
-    // Ley los deja solo en manos del Administrador (seccion 5: "responsable de la administracion
-    // de vendedores"). El Supervisor NO los lee: su "consulta y seguimiento operativo" (seccion
-    // 5) no incluye datos personales. Cada usuario conserva su propia identidad por GET /auth/me.
+    // Los listados de usuario exponen PII (documento de identidad y correo), asi que
+    // quedan reservados al Administrador. El Supervisor no los lee porque su rol
+    // operativo no incluye datos personales. Cada usuario consulta su identidad en GET /auth/me.
     [Tags("1. Usuarios y Roles")]
     [Produces("application/json")]
     public class UsersController : ControllerBase
@@ -39,14 +38,8 @@ namespace Zentric.Api.Controllers
         /// </summary>
         /// <remarks>
         /// <para>
-        /// Excepcion justificada a , y la unica. Sin ella no existiria la
-        /// primera cuenta: no se puede autenticar lo que todavia no se ha
-        /// registrado. La excepcion se limita a lo que la propia Ley permite
-        /// (auto-registro), no abre el registro general.
-        /// </para>
-        /// <para>
-        /// <b>Buyer</b>: se puede registrar sin token. ZENTRIC.md incluye
-        /// "Registro de compradores" entre los procesos del alcance.
+        /// Auto-registro permitido unicamente para Compradores (Buyer) sin token previo.
+        /// Cualquier otro rol requiere token de Administrador.
         /// </para>
         /// <para>
         /// <b>Cualquier otro rol</b>: exige token de Administrador. ZENTRIC.md
@@ -57,7 +50,7 @@ namespace Zentric.Api.Controllers
         /// participante administrara informacion fuera de su rol" .
         /// </para>
         /// </remarks>
-        /// <param name="command">Datos de creación del usuario. La contraseña viaja en claro y la calcula el servidor (AD).</param>
+        /// <param name="command">Datos de creación del usuario. La contraseña viaja en texto y el hash lo calcula el servidor.</param>
         /// <response code="200">Usuario registrado con éxito. Retorna el identificador único (Guid) generado.</response>
         /// <response code="400">Error de validación o conflicto por correo/documento duplicado (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Rol distinto de Buyer sin token de Administrador.</response>

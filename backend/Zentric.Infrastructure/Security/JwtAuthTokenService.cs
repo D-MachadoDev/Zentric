@@ -12,7 +12,7 @@ namespace Zentric.Infrastructure.Security
     /// <summary>
     /// Adaptador de <see cref="IAuthTokenService"/> que emite JWT con HS256.
     ///
-    /// Claims emitidos (AD): <c>sub</c> con el identificador del usuario,
+    /// Claims emitidos: <c>sub</c> con el identificador del usuario,
     /// <c>email</c>, <c>name</c> y <c>role</c>. <c>sub</c> es tambien la
     /// identidad de comprador, porque <c>Buyer.UserId</c> es 1:1 con
     /// <c>User.Id</c>.

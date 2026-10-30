@@ -6,20 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Zentric.Api.Contracts;
 
 /// <summary>
-/// Unica configuracion del contrato JSON de los enum (AD).
-///
-/// <remarks>
-/// Decision del Owner del 2026-09-29 (forma estricta): los enum del cuerpo JSON viajan
-/// **solo como nombre** ("Buyer", "Physical"), nunca como entero. Antes de esto la API era
-/// incoherente consigo misma: las salidas ya devolvian el nombre (<c>order.Status.ToString()</c>),
-/// el binding de query ya aceptaba nombres (<c>GET /api/users?role=Seller</c>) y solo el cuerpo
-/// exigia el numero. Con un contrato numerico, un <c>"role": 2</c> mal escrito era un
-/// Administrador valido; ahora ese cuerpo responde 400.
-///
-/// Se registra en un sitio unico y testeable: <see cref="AddZentricEnumContract"/> lo engancha
-/// a la tuberia de MVC, <c>EnumJsonContractTests</c> ejerce la tuberia real y
-/// <c>backend/scripts/authorization-smoke.ps1</c> lo comprueba por HTTP contra la API levantada.
-/// </remarks>
+/// Configuracion de serializacion JSON para serializar y deserializar enumeraciones estrictamente por nombre.
+/// Enteros numericos son rechazados con 400 mediante <c>allowIntegerValues: false</c>.
 /// </summary>
 public static class EnumJsonContract
 {

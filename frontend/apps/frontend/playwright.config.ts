@@ -2,12 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 import path from 'node:path';
 
 /**
- * URL de la API que usan los E2E.
- *
- * Se fija AQUI, de forma explicita, en vez de leer `process.env` a ciegas: un
- * `VITE_API_BASE_URL` obsoleto en el shell del desarrollador (o en la sesion
- * de CI) invalida toda la suite sin avisar. Para cambiar el destino se usa
- * `E2E_API_BASE_URL`, que es un nombre propio de los E2E.
+ * URL de la API para pruebas E2E.
+ * Se fija explicitamente para aislar la suite; sobreescribir con E2E_API_BASE_URL.
  */
 const API_BASE_URL = process.env.E2E_API_BASE_URL ?? 'http://localhost:15433';
 
@@ -68,18 +64,11 @@ export default defineConfig({
   ],
   webServer: [
     {
-      // La API la levanta Playwright, no el shell: si el proceso se muere a
-      // mitad de la suite, los tests fallan con ECONNREFUSED y parecen
-      // regresiones de codigo cuando son caidas de infraestructura.
+      // Proceso lanzado por Playwright para evitar fallos por caidas no detectadas.
       command: 'dotnet run --project backend/Zentric.Api --urls http://localhost:15433',
-      // Chequeo de PUERTO, no de URL: `/health` exige token y responde 401,
-      // que un lector de URL tomaria por "todavia no esta listo". El propio
-      // test se encarga de confirmar que la API responde.
+      // Chequeo de puerto: /health exige token; la conexion HTTP la valida la suite.
       port: 15433,
-      // `true` tambien en CI: alli el workflow ya dejo la API escuchando en
-      // 15433, y con `false` Playwright intentaria levantar una SEGUNDA
-      // instancia que no puede bindear el puerto y moriria antes de correr
-      // un solo test.
+      // Reutiliza servidor en CI para evitar colisiones de bind en puerto 15433.
       reuseExistingServer: true,
       timeout: 180_000,
       cwd: path.resolve(import.meta.dirname, '..', '..', '..'),

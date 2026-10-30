@@ -1,16 +1,8 @@
 #!/usr/bin/env node
 /**
- * Brandkit Token Generator - Zentric
- * ---------------------------------------------------------------------------
- * FUENTE UNICA DE VERDAD: la paleta se PARSEA de
- * `frontendSDD/Frontend-Design-System.md` §9.1 / §9.2 o de
- * `packages/ui/src/styles/theme.css`.
- *
- * Genera UNICAMENTE tokens y metadatos (`design-tokens.json`, `variables.css`,
- * `tailwind.zentric.ts`, `favicon.html`, `manifest.json`).
- * Las imagenes y logos NO se generan con codigo: provienen de las imagenes
- * de diseño en `public/logo/` y `public/brandkit/boards/` y se
- * procesan con `node scripts/rasterize-brandkit.cjs`.
+ * Generador de tokens y metadatos de identidad para Zentric.
+ * Lee las definiciones de color de Frontend-Design-System.md o theme.css
+ * y produce tokens consumibles en formato JSON, CSS y configuracion de Tailwind.
  */
 
 const fs = require('fs');
@@ -188,7 +180,7 @@ function buildVariablesCss() {
 
   css += `}
 
-/* Identidad por rol (§9.2): el scope remapea SOLO el eje de acento. */
+/* Identidad por rol: el scope remapea unicamente el eje de acento. */
 `;
   for (const [role, a] of Object.entries(R)) {
     if (role === 'buyer') continue;

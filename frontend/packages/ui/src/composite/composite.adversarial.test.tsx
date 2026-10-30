@@ -13,9 +13,6 @@ import { StatusBadge, type StatusTone } from './StatusBadge';
 import { StateView } from './StateView';
 
 describe('Empirical Adversarial Challenge Suite (@zentric/ui/composite)', () => {
-  // =========================================================================
-  // CHALLENGE 1: DataTable Boundary & Stress Testing
-  // =========================================================================
   describe('Challenge 1: DataTable Boundary & Stress', () => {
     interface TestItem {
       id: string;
@@ -299,9 +296,6 @@ describe('Empirical Adversarial Challenge Suite (@zentric/ui/composite)', () => 
     });
   });
 
-  // =========================================================================
-  // CHALLENGE 2: ModalDialog & ResponsiveDrawer Adversarial Checks
-  // =========================================================================
   describe('Challenge 2: ModalDialog & ResponsiveDrawer Adversarial Checks', () => {
     it('2.1 ModalDialog: double-click during isLoading and fast asynchronous handling', async () => {
       const onConfirmMock = vi.fn();
@@ -402,9 +396,6 @@ describe('Empirical Adversarial Challenge Suite (@zentric/ui/composite)', () => 
     });
   });
 
-  // =========================================================================
-  // CHALLENGE 3: MoneyAmount Boundary & Robustness
-  // =========================================================================
   describe('Challenge 3: MoneyAmount Boundary & Robustness', () => {
     it('3.1 Negative amounts: formatted with proper sign and tabular figures', () => {
       const { rerender } = render(<MoneyAmount amount={-150000.5} currency="COP" locale="es-CO" />);
@@ -467,9 +458,6 @@ describe('Empirical Adversarial Challenge Suite (@zentric/ui/composite)', () => 
     });
   });
 
-  // =========================================================================
-  // CHALLENGE 4: StatusBadge Domain Status Mapping & WCAG AA Chromatic Dot
-  // =========================================================================
   describe('Challenge 4: StatusBadge Domain Status Mapping & WCAG AA', () => {
     // Domain matrix based on ZENTRIC.md and apps/frontend/src/components/domainLabels.ts
     const domainStatuses: { label: string; tone: StatusTone; expectedDotClass: string }[] = [
@@ -531,15 +519,12 @@ describe('Empirical Adversarial Challenge Suite (@zentric/ui/composite)', () => 
     });
   });
 
-  // =========================================================================
-  // CHALLENGE 5: StateView Transitions & Precedence
-  // =========================================================================
   describe('Challenge 5: StateView Clean Transitions & Precedence', () => {
     it('5.1 verifies clean sequential rendering transitions (Loading -> Error -> Empty -> Data)', () => {
       const handleRetry = vi.fn();
       const handleEmptyAction = vi.fn();
 
-      // Step 1: Loading
+      // Loading state
       const { rerender } = render(
         <StateView
           state="loading"
@@ -553,7 +538,7 @@ describe('Empirical Adversarial Challenge Suite (@zentric/ui/composite)', () => 
       expect(screen.getByText('Cargando datos...')).toBeInTheDocument();
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
-      // Step 2: Error (with retry trigger)
+      // Error state with retry trigger
       rerender(
         <StateView
           state="error"
@@ -570,7 +555,7 @@ describe('Empirical Adversarial Challenge Suite (@zentric/ui/composite)', () => 
       fireEvent.click(retryBtn);
       expect(handleRetry).toHaveBeenCalledTimes(1);
 
-      // Step 3: Empty (with escape/action)
+      // Empty state with action handler
       rerender(
         <StateView
           state="empty"
@@ -586,7 +571,7 @@ describe('Empirical Adversarial Challenge Suite (@zentric/ui/composite)', () => 
       fireEvent.click(actionBtn);
       expect(handleEmptyAction).toHaveBeenCalledTimes(1);
 
-      // Step 4: Data
+      // Data state with live content
       rerender(
         <StateView state="data">
           <div data-testid="live-content">Tabla de liquidaciones cargada</div>

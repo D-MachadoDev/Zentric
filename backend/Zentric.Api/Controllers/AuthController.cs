@@ -10,8 +10,7 @@ using Zentric.Application.Users.Commands;
 namespace Zentric.Api.Controllers
 {
     /// <summary>
-    /// Autenticacion de usuarios. Introduce ("toda operacion debe
-    /// ejecutarse por un usuario autenticado"), segun AD.
+    /// Autenticacion de usuarios y emision de tokens JWT.
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
@@ -81,7 +80,7 @@ namespace Zentric.Api.Controllers
 
             // Las claims se buscan primero por su nombre literal: el validador de
             // .NET 10 no reescribe los tipos de claim entrantes, y el rol se emite
-            // con el URI de ClaimTypes.Role (AD). Ambas busquedas quedan aqui
+            // con el URI de ClaimTypes.Role. Ambas busquedas quedan aqui
             // para que el contrato no dependa de que el mapeo este activo o no.
             return Ok(new CurrentUserResponse(
                 principal.FindFirst("sub")?.Value ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty,

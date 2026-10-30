@@ -292,7 +292,7 @@ namespace Zentric.Api.Controllers
         /// El producto debe existir y estar en estado Published.
         /// </remarks>
         /// <param name="productId">Identificador único (Guid) del producto visualizado.</param>
-        /// <response code="204">Visualización registrada correctamente.</response>
+        /// <response code="204">Visualización registrada.</response>
         /// <response code="401">Token ausente o inválido.</response>
         /// <response code="404">Producto no encontrado o no publicado.</response>
         [HttpPost("products/{productId}/track-view")]

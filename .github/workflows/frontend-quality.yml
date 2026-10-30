@@ -1,15 +1,8 @@
 name: frontend-quality
 
-# Compuertas de calidad del frontend que complementan a `frontend.yml`
-# (typecheck + tests + build). Aqui viven las compuertas que necesitan
-# navegador o stack completo:
-#   - audit:design  -> verifica el design system contra `design-tokens.json`
-#   - e2e           -> Playwright (buyer journey, snapshots, WCAG 2.2, CWV)
-#   - lighthouse    -> budgets de performance, accesibilidad y SEO
-#
-# Regla de datos: la paleta se parsea de `design-tokens.json`, asi que un
-# cambio de Owner en los tokens rompe la compuerta (que es exactamente
-# lo que se busca).
+# Compuertas de calidad de frontend complementarias a frontend.yml.
+# Requieren navegador o stack completo para audit de tokens, Playwright y Lighthouse.
+# La paleta se lee de design-tokens.json.
 
 on:
   push:
@@ -28,9 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ───────────────────────────────────────────────────────────────────────────
-  # 1. Compuerta de design system (sin dependencias: lee el repo)
-  # ───────────────────────────────────────────────────────────────────────────
+  # Compuerta de design system leyendo design-tokens.json
   design-audit:
     name: Design system audit
     runs-on: ubuntu-latest
@@ -43,9 +34,7 @@ jobs:
         working-directory: frontend
         run: node scripts/audit-design-system.cjs
 
-  # ───────────────────────────────────────────────────────────────────────────
-  # 2. Playwright E2E + snapshots + WCAG 2.2 contra el stack real
-  # ───────────────────────────────────────────────────────────────────────────
+  # Playwright E2E con snapshots y validacion WCAG 2.2
   e2e:
     name: Playwright E2E
     runs-on: ubuntu-latest
@@ -138,9 +127,7 @@ jobs:
           path: frontend/apps/frontend/playwright-report
           retention-days: 7
 
-  # ───────────────────────────────────────────────────────────────────────────
-  # 3. Lighthouse CI sobre el build de produccion
-  # ───────────────────────────────────────────────────────────────────────────
+  # Lighthouse CI sobre build de produccion
   lighthouse:
     name: Lighthouse CI
     runs-on: ubuntu-latest
