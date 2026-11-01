@@ -1,4 +1,4 @@
-﻿import { Link } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { useProductsPagedQuery } from '../../application/services/catalog';
 import { useOrdersQuery } from '../../application/services/orders';
 import { useFulfillmentsQuery } from '../../application/services/logistics';
@@ -192,44 +192,49 @@ export function SellerDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Lado Izquierdo: Pedidos Recientes (65% -> col-span-8) */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="rounded-2xl border border-border bg-surface overflow-hidden">
-            <div className="p-4 sm:p-5 border-b border-border bg-surface-muted/40 flex items-center justify-between">
-              <span className="text-xs uppercase font-mono tracking-wider text-foreground-muted">
-                Pedidos Recientes de mis Productos
-              </span>
+          <div className="rounded-2xl border border-border bg-surface overflow-hidden shadow-xs">
+            <div className="p-5 sm:p-6 border-b border-border bg-surface-muted/30 flex items-center justify-between">
+              <div>
+                <h2 className="text-base sm:text-lg font-bold font-sans tracking-tight text-foreground">
+                  Pedidos Recientes de mis Productos
+                </h2>
+                <p className="text-xs sm:text-sm text-foreground-muted mt-0.5">
+                  Órdenes directas que contienen artículos de tu catálogo
+                </p>
+              </div>
               <Link to="/seller/orders">
-                <Button variant="ghost" size="sm" className="text-brand hover:text-brand/80 text-xs">
-                  Ver Todos ({orders?.length ?? 0}) <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                <Button variant="ghost" size="sm" className="text-brand hover:text-brand/80 text-xs sm:text-sm font-semibold">
+                  Ver Todos ({orders?.length ?? 0}) <ArrowRight className="h-4 w-4 ml-1" />
                 </Button>
               </Link>
             </div>
 
             {recentOrders.length === 0 ? (
-              <div className="p-8 text-center text-xs font-mono text-foreground-muted">
+              <div className="p-10 text-center text-sm font-medium text-foreground-muted">
                 Sin ventas registradas recientemente en su cuenta de vendedor.
               </div>
             ) : (
               <div className="divide-y divide-border">
                 {recentOrders.map((order: OrderListItem) => (
-                  <div key={order.id} className="p-5 flex items-center justify-between hover:bg-surface-muted/30 transition-colors">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-foreground">
+                  <div key={order.id} className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-surface-muted/30 transition-colors">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className="text-sm sm:text-base font-bold font-mono text-foreground tracking-tight">
                           Pedido #{order.id.slice(0, 8)}
                         </span>
                         <StatusBadge tone="neutral">{order.status}</StatusBadge>
                       </div>
-                      <p className="text-xs font-mono text-foreground-muted">
+                      <p className="text-xs sm:text-sm text-foreground-muted font-sans">
                         Fecha: {new Date(order.createdAt).toLocaleDateString('es-CO')} • {order.itemCount} línea(s)
                       </p>
                     </div>
 
-                    <div className="text-right">
-                      <div className="text-sm font-mono font-bold text-foreground tabular-nums">
+                    <div className="text-left sm:text-right flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2">
+                      <div className="text-base sm:text-lg font-bold font-sans text-foreground tabular-nums">
                         <MoneyAmount amount={order.totalAmount} currency={order.currency} />
                       </div>
                       <Link to="/seller/orders">
-                        <span className="text-xs font-mono text-brand hover:underline cursor-pointer">
+                        <span className="text-xs sm:text-sm font-medium text-brand hover:underline cursor-pointer">
                           Ver Desglose
                         </span>
                       </Link>
@@ -244,31 +249,31 @@ export function SellerDashboardPage() {
         {/* Lado Derecho: Cola Operativa (35% -> col-span-4) */}
         <div className="lg:col-span-4 space-y-6">
           {/* Desglose Financiero Split (100% / 5% / 95%) */}
-          <div className="rounded-2xl border border-border bg-surface p-5 space-y-3 shadow-xl">
-            <div className="flex items-center justify-between border-b border-border pb-2.5">
-              <h2 className="text-xs uppercase font-mono tracking-wider text-foreground-muted">
+          <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 space-y-4 shadow-xs">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h2 className="text-sm font-bold font-sans tracking-wide text-foreground">
                 Liquidación Split (5% / 95%)
               </h2>
-              <Badge variant="outline" className="border-brand/40 text-brand font-mono text-[10px]">
+              <Badge variant="outline" className="border-brand/40 text-brand font-mono text-xs">
                 ADR-0023
               </Badge>
             </div>
-            <div className="space-y-2 text-xs font-mono">
-              <div className="flex items-center justify-between text-foreground-muted">
-                <span>Ventas Brutas (100%):</span>
-                <span className="text-foreground tabular-nums">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-foreground-muted">Ventas Brutas (100%):</span>
+                <span className="text-foreground font-semibold tabular-nums text-base">
                   <MoneyAmount amount={grossSoldEstimated} currency="COP" />
                 </span>
               </div>
-              <div className="flex items-center justify-between text-foreground-muted">
-                <span>Comisión Zentric (-5%):</span>
-                <span className="text-warning tabular-nums">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-foreground-muted">Comisión Zentric (-5%):</span>
+                <span className="text-warning font-semibold tabular-nums text-base">
                   - <MoneyAmount amount={platformCommissionEstimated} currency="COP" />
                 </span>
               </div>
-              <div className="flex items-center justify-between border-t border-border pt-2 font-bold text-foreground">
-                <span>Neto Vendedor (95%):</span>
-                <span className="text-brand tabular-nums">
+              <div className="flex items-center justify-between border-t border-border pt-3">
+                <span className="text-sm sm:text-base font-bold text-foreground">Neto Vendedor (95%):</span>
+                <span className="text-xl sm:text-2xl font-black text-brand tabular-nums tracking-tight">
                   <MoneyAmount amount={netSettledTotal} currency="COP" />
                 </span>
               </div>
@@ -276,61 +281,65 @@ export function SellerDashboardPage() {
           </div>
 
           {/* Radar de Stock y Postventa */}
-          <div className="rounded-2xl border border-border bg-surface p-5 space-y-3 shadow-xl">
-            <h2 className="text-xs uppercase font-mono tracking-wider text-foreground-muted">
+          <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 space-y-4 shadow-xs">
+            <h2 className="text-sm font-bold font-sans tracking-wide text-foreground">
               Radar de Stock y Postventa
             </h2>
-            <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+            <div className="grid grid-cols-2 gap-3.5">
               <Link
                 to="/seller/inventory"
-                className="rounded-xl border border-border bg-surface-muted/40 p-3 hover:border-brand/40 transition-colors"
+                className="rounded-xl border border-border bg-surface-muted/30 p-4 hover:border-brand/50 hover:bg-surface-muted/60 transition-all"
               >
-                <span className="text-[10px] text-foreground-muted block uppercase">Stock Crítico</span>
-                <span className={`text-lg font-bold tabular-nums ${lowStockCount > 0 ? 'text-warning' : 'text-brand'}`}>
+                <span className="text-xs font-semibold text-foreground-muted block uppercase tracking-wider">
+                  Stock Crítico
+                </span>
+                <span className={`text-2xl sm:text-3xl font-extrabold tabular-nums my-1 block ${lowStockCount > 0 ? 'text-warning' : 'text-brand'}`}>
                   {lowStockCount}
                 </span>
-                <span className="text-[10px] text-foreground-muted block">variantes ≤ 5 uds</span>
+                <span className="text-xs text-foreground-muted block">variantes ≤ 5 uds</span>
               </Link>
               <Link
                 to="/seller/returns"
-                className="rounded-xl border border-border bg-surface-muted/40 p-3 hover:border-brand/40 transition-colors"
+                className="rounded-xl border border-border bg-surface-muted/30 p-4 hover:border-brand/50 hover:bg-surface-muted/60 transition-all"
               >
-                <span className="text-[10px] text-foreground-muted block uppercase">Devoluciones</span>
-                <span className={`text-lg font-bold tabular-nums ${pendingReturnsCount > 0 ? 'text-warning' : 'text-brand'}`}>
+                <span className="text-xs font-semibold text-foreground-muted block uppercase tracking-wider">
+                  Devoluciones
+                </span>
+                <span className={`text-2xl sm:text-3xl font-extrabold tabular-nums my-1 block ${pendingReturnsCount > 0 ? 'text-warning' : 'text-brand'}`}>
                   {pendingReturnsCount}
                 </span>
-                <span className="text-[10px] text-foreground-muted block">por decidir</span>
+                <span className="text-xs text-foreground-muted block">por decidir</span>
               </Link>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-surface p-6 space-y-4 shadow-xl">
-            <h2 className="text-sm uppercase font-mono tracking-wider text-foreground-muted">
+          <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 space-y-4 shadow-xs">
+            <h2 className="text-sm font-bold font-sans tracking-wide text-foreground">
               Acciones Rápidas
             </h2>
 
-            <div className="space-y-2">
-              <Link to="/seller/products">
-                <Button variant="outline" className="w-full justify-start border-border text-foreground-muted hover:text-foreground hover:bg-surface-muted">
-                  <Package className="h-4 w-4 mr-2 text-brand" />
+            <div className="space-y-2.5">
+              <Link to="/seller/products" className="block">
+                <Button variant="outline" className="w-full h-12 justify-start border-border text-foreground text-sm font-medium hover:bg-surface-muted rounded-xl px-4 transition-colors">
+                  <Package className="h-4.5 w-4.5 mr-3 text-brand shrink-0" />
                   Gestionar Catálogo de Productos
                 </Button>
               </Link>
-              <Link to="/seller/inventory">
-                <Button variant="outline" className="w-full justify-start border-border text-foreground-muted hover:text-foreground hover:bg-surface-muted">
-                  <Boxes className="h-4 w-4 mr-2 text-brand" />
+              <Link to="/seller/inventory" className="block">
+                <Button variant="outline" className="w-full h-12 justify-start border-border text-foreground text-sm font-medium hover:bg-surface-muted rounded-xl px-4 transition-colors">
+                  <Boxes className="h-4.5 w-4.5 mr-3 text-brand shrink-0" />
                   Abastecimiento de Bodegas
                 </Button>
               </Link>
-              <Link to="/seller/fulfillments">
-                <Button variant="outline" className="w-full justify-start border-border text-foreground-muted hover:text-foreground hover:bg-surface-muted">
-                  <Truck className="h-4 w-4 mr-2 text-warning" />
+              <Link to="/seller/fulfillments" className="block">
+                <Button variant="outline" className="w-full h-12 justify-start border-border text-foreground text-sm font-medium hover:bg-surface-muted rounded-xl px-4 transition-colors">
+                  <Truck className="h-4.5 w-4.5 mr-3 text-warning shrink-0" />
                   Cola de Empaque y Despachos
                 </Button>
               </Link>
-              <Link to="/seller/returns">
-                <Button variant="outline" className="w-full justify-start border-border text-foreground-muted hover:text-foreground hover:bg-surface-muted">
-                  <RotateCcw className="h-4 w-4 mr-2 text-brand" />
+              <Link to="/seller/returns" className="block">
+                <Button variant="outline" className="w-full h-12 justify-start border-border text-foreground text-sm font-medium hover:bg-surface-muted rounded-xl px-4 transition-colors">
+                  <RotateCcw className="h-4.5 w-4.5 mr-3 text-brand shrink-0" />
                   Aprobación de Devoluciones
                 </Button>
               </Link>

@@ -466,7 +466,7 @@ export function SellerProductDetailPage() {
             {showVariantGuide && (
               <div className="text-xs text-foreground-muted space-y-2.5 pt-1">
                 <p className="leading-relaxed">
-                  Si tu producto es <strong className="text-foreground">{product.name || 'Limones'}</strong> y tienes tipos distintos como <strong className="text-foreground">Eureka</strong> y <strong className="text-foreground">Taití</strong>, no crees dos productos distintos. Agregas cada opción como una <strong className="text-foreground">variante</strong>.
+                  Si tu producto es, por ejemplo, <strong className="text-foreground">Limones</strong> y tienes tipos distintos como <strong className="text-foreground">Eureka</strong> y <strong className="text-foreground">Taití</strong>, no crees dos productos distintos. Agregas cada opción como una <strong className="text-foreground">variante</strong>.
                 </p>
                 <div className="rounded-xl border border-border bg-surface p-3 space-y-2 font-mono text-[11px]">
                   <div>

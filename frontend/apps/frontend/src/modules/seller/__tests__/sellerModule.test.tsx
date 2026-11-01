@@ -562,6 +562,8 @@ vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [mockOrd
     it('permite añadir variantes dinámicas, cambiar atributos y eliminar variantes adicionales', async () => {
       renderWithClient(<CreateProductPage />);
 
+      fireEvent.click(screen.getByText(/Producto con Variantes/i));
+
       const addVarBtn = screen.getByRole('button', { name: /Añadir Variante/i });
       fireEvent.click(addVarBtn);
 

@@ -33,7 +33,6 @@ import {
   FileCode,
   RefreshCw,
   Copy,
-  SlidersHorizontal,
   X,
 } from 'lucide-react';
 
@@ -52,7 +51,7 @@ export function SellerProductsPage() {
   const [sortFilter, setSortFilter] = useState<'recent' | 'name-asc' | 'price-asc' | 'price-desc'>('recent');
 
   const vendorId = getDefaultSession()?.getUserId() ?? undefined;
-  const { data: productsResult, isLoading, isError, error, refetch, isFetching } = useProductsPagedQuery({ vendorId });
+  const { data: productsResult, isLoading, isError, error, refetch, isFetching } = useProductsPagedQuery({ vendorId: vendorId || undefined, size: 100 });
   const publishMutation = usePublishProductMutation();
   const suspendMutation = useSuspendProductMutation();
 
@@ -86,13 +85,33 @@ export function SellerProductsPage() {
   };
 
   const filteredProducts = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    const cleanPrice = term.replace(/[$. ]/g, '');
+
     return allProducts
       .filter((product: Product) => {
+        // Búsqueda inteligente multidimensional (nombre, descripción, SKU, atributos, precio, categoría, tipo)
         const matchesSearch =
-          !searchTerm.trim() ||
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (product.variants ?? []).some((v) => v.sku?.toLowerCase().includes(searchTerm.toLowerCase()));
+          !term ||
+          product.name.toLowerCase().includes(term) ||
+          (product.description && product.description.toLowerCase().includes(term)) ||
+          (product.category && product.category.toLowerCase().includes(term)) ||
+          (product.type && product.type.toLowerCase().includes(term)) ||
+          (product.status && product.status.toLowerCase().includes(term)) ||
+          (product.id && product.id.toLowerCase().includes(term)) ||
+          (cleanPrice.length > 0 && String(product.price).includes(cleanPrice)) ||
+          (product.variants ?? []).some(
+            (v) =>
+              v.sku?.toLowerCase().includes(term) ||
+              v.id?.toLowerCase().includes(term) ||
+              (v.price !== undefined && cleanPrice.length > 0 && String(v.price).includes(cleanPrice)) ||
+              (v.attributes ?? []).some(
+                (a) =>
+                  a.name.toLowerCase().includes(term) ||
+                  a.value.toLowerCase().includes(term) ||
+                  `${a.name} ${a.value}`.toLowerCase().includes(term),
+              ),
+          );
 
         const matchesStatus = statusFilter === 'All' || product.status === statusFilter;
         const matchesType = typeFilter === 'All' || product.type === typeFilter;
@@ -109,7 +128,10 @@ export function SellerProductsPage() {
         if (sortFilter === 'name-asc') return a.name.localeCompare(b.name);
         if (sortFilter === 'price-asc') return a.price - b.price;
         if (sortFilter === 'price-desc') return b.price - a.price;
-        return 0; // recent (default)
+        // 'recent' por defecto: más recientes primero para dar visibilidad inmediata a productos recién creados
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
       });
   }, [allProducts, searchTerm, statusFilter, typeFilter, categoryFilter, variantsFilter, sortFilter]);
 
@@ -186,26 +208,37 @@ export function SellerProductsPage() {
       </div>
 
       {/* ── Controles de Búsqueda y Filtros de Interés ───────────────────── */}
-      <div className="space-y-3.5 rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-xs">
-        {/* Fila Principal: Búsqueda y Pestañas de Estado */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+      <div className="space-y-4 rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-xs">
+        {/* Fila Principal: Búsqueda y Pestañas de Estado con respiración amplia */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
             <Input
               type="search"
-              placeholder="Buscar por nombre o descripción..."
+              placeholder="Buscar por nombre o descripción, SKU, atributo, categoría o precio..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-background/80 border-border focus:border-brand text-foreground"
+              className="pl-10 h-10 bg-surface-muted/50 border-border/80 focus:border-brand text-foreground placeholder:text-foreground-muted text-sm rounded-xl"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-foreground-muted hover:text-foreground font-mono"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
-          <div className="inline-flex rounded-lg border border-border bg-background/80 p-1 text-xs font-mono shrink-0">
+          <div className="inline-flex rounded-xl border border-border/80 bg-surface-muted/50 p-1 text-xs shrink-0 font-medium">
             <button
               type="button"
               onClick={() => setStatusFilter('All')}
-              className={`px-3 py-1 rounded-md transition-colors ${
-                statusFilter === 'All' ? 'bg-brand text-primary-foreground font-semibold' : 'text-foreground-muted hover:text-primary-foreground'
+              className={`px-3.5 py-1.5 rounded-lg transition-all ${
+                statusFilter === 'All'
+                  ? 'bg-brand text-primary-foreground font-semibold shadow-xs'
+                  : 'text-foreground-muted hover:text-foreground'
               }`}
             >
               Todos
@@ -213,10 +246,10 @@ export function SellerProductsPage() {
             <button
               type="button"
               onClick={() => setStatusFilter(ProductStatus.Published)}
-              className={`px-3 py-1 rounded-md transition-colors ${
+              className={`px-3.5 py-1.5 rounded-lg transition-all ${
                 statusFilter === ProductStatus.Published
-                  ? 'bg-brand text-primary-foreground font-semibold'
-                  : 'text-foreground-muted hover:text-primary-foreground'
+                  ? 'bg-brand text-primary-foreground font-semibold shadow-xs'
+                  : 'text-foreground-muted hover:text-foreground'
               }`}
             >
               Publicados
@@ -224,10 +257,10 @@ export function SellerProductsPage() {
             <button
               type="button"
               onClick={() => setStatusFilter(ProductStatus.Suspended)}
-              className={`px-3 py-1 rounded-md transition-colors ${
+              className={`px-3.5 py-1.5 rounded-lg transition-all ${
                 statusFilter === ProductStatus.Suspended
-                  ? 'bg-brand text-primary-foreground font-semibold'
-                  : 'text-foreground-muted hover:text-primary-foreground'
+                  ? 'bg-brand text-primary-foreground font-semibold shadow-xs'
+                  : 'text-foreground-muted hover:text-foreground'
               }`}
             >
               Suspendidos
@@ -235,22 +268,17 @@ export function SellerProductsPage() {
           </div>
         </div>
 
-        {/* Fila Secundaria: Filtros avanzados de interés operativo */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border/60">
-          <div className="flex flex-wrap items-center gap-2.5 text-xs">
-            <span className="flex items-center gap-1 font-mono text-[11px] font-medium uppercase tracking-wider text-foreground-muted">
-              <SlidersHorizontal className="h-3 w-3 text-brand" />
-              Filtros:
-            </span>
-
+        {/* Fila Secundaria: Filtros limpios sin clutter técnico */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3.5 border-t border-border/50 text-xs">
+          <div className="flex flex-wrap items-center gap-2.5">
             {/* Filtro Tipo */}
             <select
               aria-label="Filtrar por tipo de producto"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as 'All' | 'Physical' | 'Digital')}
-              className="rounded-lg border border-border bg-background/80 px-2.5 py-1 text-xs text-foreground focus:border-brand focus:outline-none"
+              className="rounded-lg border border-border/70 bg-surface-muted/40 hover:bg-surface-muted/70 px-3 py-1.5 text-xs text-foreground focus:border-brand focus:outline-none transition-colors"
             >
-              <option value="All">Todos los tipos</option>
+              <option value="All">Tipo: Todos</option>
               <option value="Physical">Físicos (con bodega)</option>
               <option value="Digital">Digitales (licencias)</option>
             </select>
@@ -261,9 +289,9 @@ export function SellerProductsPage() {
                 aria-label="Filtrar por categoría"
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="rounded-lg border border-border bg-background/80 px-2.5 py-1 text-xs text-foreground focus:border-brand focus:outline-none"
+                className="rounded-lg border border-border/70 bg-surface-muted/40 hover:bg-surface-muted/70 px-3 py-1.5 text-xs text-foreground focus:border-brand focus:outline-none transition-colors"
               >
-                <option value="All">Todas las categorías</option>
+                <option value="All">Categoría: Todas</option>
                 {availableCategories.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}
@@ -277,11 +305,11 @@ export function SellerProductsPage() {
               aria-label="Filtrar por estructura de variantes"
               value={variantsFilter}
               onChange={(e) => setVariantsFilter(e.target.value as 'All' | 'has-variants' | 'single')}
-              className="rounded-lg border border-border bg-background/80 px-2.5 py-1 text-xs text-foreground focus:border-brand focus:outline-none"
+              className="rounded-lg border border-border/70 bg-surface-muted/40 hover:bg-surface-muted/70 px-3 py-1.5 text-xs text-foreground focus:border-brand focus:outline-none transition-colors"
             >
-              <option value="All">Todas las estructuras</option>
-              <option value="has-variants">Con múltiples variantes (SKUs)</option>
-              <option value="single">Producto simple (sin variantes)</option>
+              <option value="All">Estructura: Todas</option>
+              <option value="has-variants">Con variantes (SKUs)</option>
+              <option value="single">Opción única (simple)</option>
             </select>
 
             {/* Ordenamiento */}
@@ -289,12 +317,12 @@ export function SellerProductsPage() {
               aria-label="Ordenar productos"
               value={sortFilter}
               onChange={(e) => setSortFilter(e.target.value as 'recent' | 'name-asc' | 'price-asc' | 'price-desc')}
-              className="rounded-lg border border-border bg-background/80 px-2.5 py-1 text-xs text-foreground focus:border-brand focus:outline-none"
+              className="rounded-lg border border-border/70 bg-surface-muted/40 hover:bg-surface-muted/70 px-3 py-1.5 text-xs text-foreground focus:border-brand focus:outline-none transition-colors"
             >
-              <option value="recent">Más recientes</option>
-              <option value="name-asc">Nombre (A–Z)</option>
-              <option value="price-asc">Menor precio base</option>
-              <option value="price-desc">Mayor precio base</option>
+              <option value="recent">Orden: Más recientes</option>
+              <option value="name-asc">Orden: Nombre (A–Z)</option>
+              <option value="price-asc">Orden: Menor precio</option>
+              <option value="price-desc">Orden: Mayor precio</option>
             </select>
           </div>
 
@@ -303,7 +331,7 @@ export function SellerProductsPage() {
               variant="ghost"
               size="sm"
               onClick={handleResetFilters}
-              className="text-xs text-foreground-muted hover:text-danger gap-1 h-7 px-2"
+              className="text-xs text-foreground-muted hover:text-danger gap-1 h-8 px-2.5"
             >
               <X className="h-3.5 w-3.5" />
               Limpiar filtros

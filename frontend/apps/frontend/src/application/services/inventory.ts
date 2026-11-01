@@ -33,6 +33,7 @@ export function useInventoriesPagedQuery(
     queryKey: queryKeys.inventories.listPaged(params),
     queryFn: () => resolveApi(api).listInventoriesPaged(params),
     staleTime: 30_000,
+    placeholderData: (prev) => prev,
   });
 }
 

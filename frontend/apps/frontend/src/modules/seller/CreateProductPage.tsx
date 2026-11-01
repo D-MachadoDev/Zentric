@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useCreateProductMutation, useProductQuery } from '../../application/services/catalog';
 import { ProductType, type CreatedProduct } from '../../domain';
@@ -25,8 +25,18 @@ import {
   Clock,
   Sparkles,
   Lightbulb,
+  ImageOff,
 } from 'lucide-react';
 import { generateSmartSku, VARIANT_PRESETS, type VariantPreset } from './skuHelper';
+
+// Formatea un valor numérico como texto con separador de miles (puntos) para COP.
+const formatPriceWithDots = (value: number | string): string => {
+  const digits = String(value).replace(/\D/g, '');
+  if (!digits) return '';
+  return Number(digits).toLocaleString('es-CO').replace(/\s/g, '.');
+};
+
+const stripPriceDots = (value: string): string => value.replace(/\D/g, '');
 
 interface VariantDraft {
   sku: string;
@@ -66,7 +76,7 @@ export function CreateProductPage({ productId }: { productId?: string }) {
         attrValue: v.attr?.[0]?.value ?? '',
       }));
     }
-    return [{ sku: '', attrName: 'Color', attrValue: 'Negro' }];
+    return [{ sku: '', attrName: '', attrValue: '' }];
   });
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -78,21 +88,24 @@ export function CreateProductPage({ productId }: { productId?: string }) {
   const [imageUrl, setImageUrl] = useState(initialImageUrl);
   const [priceAmount, setPriceAmount] = useState(initialPriceAmount);
   const [type, setType] = useState(initialType);
+  const [previewImageFailed, setPreviewImageFailed] = useState(false);
 
+  useEffect(() => {
+    setPreviewImageFailed(false);
+  }, [imageUrl]);
 
-
-
-
-  const [showVariantGuide, setShowVariantGuide] = useState(true);
+  const [isSimpleProductMode, setIsSimpleProductMode] = useState(true);
+  const [showVariantGuide, setShowVariantGuide] = useState(false);
 
   const handleAddVariant = () => {
+    setIsSimpleProductMode(false);
     setVariants((prev) => {
       const nextNum = prev.length + 1;
       const otherSkus = prev.map((v) => v.sku);
       const autoSku = generateSmartSku(name || 'PROD', `VAR${nextNum}`, otherSkus);
       return [
         ...prev,
-        { sku: autoSku, attrName: 'Variedad', attrValue: '', isSkuManual: false },
+        { sku: autoSku, attrName: '', attrValue: '', isSkuManual: false },
       ];
     });
   };
@@ -186,6 +199,9 @@ export function CreateProductPage({ productId }: { productId?: string }) {
           }
           if (v.attr2Name?.trim() && v.attr2Value?.trim()) {
             attrs.push({ name: v.attr2Name.trim(), value: v.attr2Value.trim() });
+          }
+          if (attrs.length === 0) {
+            attrs.push({ name: 'Tipo', value: 'Estándar' });
           }
           return {
             sku: v.sku.trim(),
@@ -345,83 +361,159 @@ if (isLoading || isProductLoading) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-foreground-muted block">
-                Precio Base (COP)
-              </label>
-              <Input
-                type="number"
-                min={0}
-                placeholder="0.00"
-                value={priceAmount || ''}
-                onChange={(e) => setPriceAmount(Number(e.target.value))}
-                className="bg-surface-muted border-border font-mono text-foreground"
-              />
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-mono uppercase text-foreground-muted block">
+                  Precio Base (COP)
+                </label>
+                {priceAmount > 0 && (
+                  <span className="text-[11px] font-mono text-brand font-semibold">
+                    $ {formatPriceWithDots(priceAmount)} COP
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted font-mono text-sm select-none">
+                  $
+                </span>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0.00"
+                  value={priceAmount > 0 ? formatPriceWithDots(priceAmount) : ''}
+                  onChange={(e) => setPriceAmount(Number(stripPriceDots(e.target.value)) || 0)}
+                  className="bg-surface-muted border-border font-mono text-foreground pl-7 text-base font-semibold"
+                />
+              </div>
               <p className="text-[11px] text-foreground-muted">
-                Precio de referencia del producto. Abajo puedes asignar un precio distinto a cada SKU.
+                Precio de referencia del producto con separador de miles. Abajo puedes asignar un precio específico a cada SKU si varía.
               </p>
             </div>
 
-            {/* Constructor de Variantes */}
+            {/* Selector de Modo de Producto y Constructor de Variantes */}
             <div className="space-y-4 pt-4 border-t border-border">
-              {/* Guía didáctica para vendedores */}
-              <div className="rounded-2xl border border-brand/30 bg-brand/5 p-4 sm:p-5 space-y-3 shadow-xs">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-brand">
-                    <Lightbulb className="h-4 w-4 shrink-0 text-brand" />
-                    <h4 className="text-xs font-bold font-mono uppercase tracking-wide">
-                      ¿Cómo funcionan las variantes y el código SKU?
-                    </h4>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowVariantGuide(!showVariantGuide)}
-                    className="text-[10px] font-mono text-foreground-muted hover:text-foreground underline cursor-pointer"
-                  >
-                    {showVariantGuide ? 'Ocultar guía' : 'Ver explicación'}
-                  </button>
+              {/* Selector de Modo: Simple vs Múltiples Variantes */}
+              <div className="rounded-xl border border-border bg-surface-muted/40 p-4 space-y-3">
+                <div>
+                  <span className="text-xs font-mono font-bold uppercase text-foreground block">
+                    Modalidad de Producto
+                  </span>
+                  <p className="text-[11px] text-foreground-muted mt-0.5">
+                    ¿Este producto es una opción única o tiene variaciones (tallas, colores, tipos)?
+                  </p>
                 </div>
 
-                {showVariantGuide && (
-                  <div className="text-xs text-foreground-muted space-y-2.5 pt-1">
-                    <p className="leading-relaxed">
-                      Si vendes por ejemplo <strong className="text-foreground">Limones</strong> y tienes variedades como <strong className="text-foreground">Eureka</strong> y <strong className="text-foreground">Taití</strong>, no necesitas crear dos productos diferentes. Creas este único producto y le agregas sus <strong className="text-foreground">variantes</strong>:
-                    </p>
-                    <div className="rounded-xl border border-border bg-surface p-3 space-y-1.5 font-mono text-[11px]">
-                      <div>
-                        <span className="text-brand font-bold">1. Atributo:</span> La cualidad que cambia (ej. <em>Variedad</em>, <em>Presentación</em>, <em>Tamaño</em> o <em>Color</em>).
-                      </div>
-                      <div>
-                        <span className="text-brand font-bold">2. Valor:</span> La opción específica (ej. <em>Eureka</em>, <em>Taití</em>, <em>1 kg</em>, <em>Mediano</em>).
-                      </div>
-                      <div>
-                        <span className="text-brand font-bold">3. Código SKU:</span> Identificador único para bodega. <em>¡Se genera automáticamente al escribir el valor!</em>
-                      </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div
+                    onClick={() => {
+                      setIsSimpleProductMode(true);
+                      if (variants.length > 1) {
+                        setVariants([variants[0] || { sku: '', attrName: 'Tipo', attrValue: 'Estándar' }]);
+                      }
+                    }}
+                    className={`cursor-pointer rounded-lg border p-3 flex items-start gap-3 transition-all ${
+                      isSimpleProductMode && variants.length <= 1
+                        ? 'border-brand bg-brand/10 text-foreground shadow-xs'
+                        : 'border-border bg-surface text-foreground-muted hover:border-brand/40'
+                    }`}
+                  >
+                    <Package className="h-4 w-4 text-brand mt-0.5 shrink-0" />
+                    <div>
+                      <span className="text-xs font-mono font-bold block">Producto Simple (Opción única)</span>
+                      <p className="text-[10px] text-foreground-muted mt-0.5 leading-relaxed">
+                        No necesitas variantes. El producto se registra con su SKU estándar directamente para inventario.
+                      </p>
                     </div>
                   </div>
-                )}
+
+                  <div
+                    onClick={() => {
+                      setIsSimpleProductMode(false);
+                      setShowVariantGuide(true);
+                    }}
+                    className={`cursor-pointer rounded-lg border p-3 flex items-start gap-3 transition-all ${
+                      !isSimpleProductMode || variants.length > 1
+                        ? 'border-brand bg-brand/10 text-foreground shadow-xs'
+                        : 'border-border bg-surface text-foreground-muted hover:border-brand/40'
+                    }`}
+                  >
+                    <Boxes className="h-4 w-4 text-brand mt-0.5 shrink-0" />
+                    <div>
+                      <span className="text-xs font-mono font-bold block">Producto con Variantes</span>
+                      <p className="text-[10px] text-foreground-muted mt-0.5 leading-relaxed">
+                        Tallas, colores, sabores o modelos diferenciados con su propio SKU y precio.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* Guía didáctica para vendedores */}
+              {(!isSimpleProductMode || variants.length > 1) && (
+                <div className="rounded-2xl border border-brand/30 bg-brand/5 p-4 sm:p-5 space-y-3 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-brand">
+                      <Lightbulb className="h-4 w-4 shrink-0 text-brand" />
+                      <h4 className="text-xs font-bold font-mono uppercase tracking-wide">
+                        ¿Cómo funcionan las variantes y el código SKU?
+                      </h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowVariantGuide(!showVariantGuide)}
+                      className="text-[10px] font-mono text-foreground-muted hover:text-foreground underline cursor-pointer"
+                    >
+                      {showVariantGuide ? 'Ocultar guía' : 'Ver explicación'}
+                    </button>
+                  </div>
+
+                  {showVariantGuide && (
+                    <div className="text-xs text-foreground-muted space-y-2.5 pt-1">
+                      <p className="leading-relaxed">
+                        Si vendes por ejemplo <strong className="text-foreground">Limones</strong> y tienes variedades como <strong className="text-foreground">Eureka</strong> y <strong className="text-foreground">Taití</strong>, no necesitas crear dos productos diferentes. Creas este único producto y le agregas sus <strong className="text-foreground">variantes</strong>:
+                      </p>
+                      <div className="rounded-xl border border-border bg-surface p-3 space-y-1.5 font-mono text-[11px]">
+                        <div>
+                          <span className="text-brand font-bold">1. Atributo:</span> La cualidad que cambia (ej. <em>Variedad</em>, <em>Presentación</em>, <em>Tamaño</em> o <em>Color</em>).
+                        </div>
+                        <div>
+                          <span className="text-brand font-bold">2. Valor:</span> La opción específica (ej. <em>Eureka</em>, <em>Taití</em>, <em>1 kg</em>, <em>Mediano</em>).
+                        </div>
+                        <div>
+                          <span className="text-brand font-bold">3. Código SKU:</span> Identificador único para bodega. <em>¡Se genera automáticamente al escribir el valor!</em>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xs uppercase font-mono tracking-wider font-bold text-foreground">
-                    Variantes del Producto (SKU) y Precios Individuales
+                    {isSimpleProductMode && variants.length <= 1
+                      ? 'Código de Inventario (SKU)'
+                      : 'Variantes del Producto (SKU) y Precios Individuales'}
                   </h3>
                   <p className="text-[11px] text-foreground-muted">
-                    {type === ProductType.Physical
-                      ? 'Cada opción (variedad, tamaño, color) puede tener su propio precio y stock.'
-                      : 'Define planes o licencias con precios diferenciados.'}
+                    {isSimpleProductMode && variants.length <= 1
+                      ? 'Código único de bodega asignado a este producto.'
+                      : type === ProductType.Physical
+                        ? 'Cada opción (variedad, tamaño, color) puede tener su propio precio y stock.'
+                        : 'Define planes o licencias con precios diferenciados.'}
                   </p>
                 </div>
 
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={handleAddVariant}
-                  className="border-border text-brand hover:bg-surface-muted text-xs font-mono"
-                >
-                  <Plus className="h-3.5 w-3.5 mr-1" /> Añadir Variante
-                </Button>
+                {!isSimpleProductMode && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleAddVariant}
+                    className="border-border text-brand hover:bg-surface-muted text-xs font-mono"
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Añadir Variante
+                  </Button>
+                )}
               </div>
 
               <div className="space-y-3">
@@ -429,7 +521,9 @@ if (isLoading || isProductLoading) {
                   <div key={index} className="p-4 rounded-xl border border-border bg-surface-muted/40 hover:border-brand/40 focus-within:border-brand/60 focus-within:bg-surface-muted/60 transition-all shadow-xs space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono font-bold text-foreground">
-                        Variante #{index + 1}
+                        {isSimpleProductMode && variants.length <= 1
+                          ? 'Identificador de Existencias'
+                          : `Variante #${index + 1}`}
                       </span>
                       {variants.length > 1 && (
                         <Button
@@ -444,26 +538,32 @@ if (isLoading || isProductLoading) {
                       )}
                     </div>
 
-                    <div className="space-y-1.5">
-                      <span className="text-[10px] font-mono text-foreground-muted flex items-center gap-1">
-                        <Sparkles className="h-3 w-3 text-brand" /> Plantillas sugeridas:
-                      </span>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {VARIANT_PRESETS.map((preset) => (
-                          <button
-                            key={preset.name}
-                            type="button"
-                            onClick={() => handleApplyPreset(index, preset)}
-                            className="rounded-md border border-border bg-surface px-2 py-0.5 font-mono text-[10px] text-foreground-muted transition-colors hover:border-brand/50 hover:text-brand cursor-pointer"
-                            title={preset.exampleDescription}
-                          >
-                            + {preset.name}
-                          </button>
-                        ))}
+                    {(!isSimpleProductMode || variants.length > 1) && (
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-mono text-foreground-muted flex items-center gap-1">
+                          <Sparkles className="h-3 w-3 text-brand" /> Plantillas sugeridas:
+                        </span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {VARIANT_PRESETS.map((preset) => (
+                            <button
+                              key={preset.name}
+                              type="button"
+                              onClick={() => handleApplyPreset(index, preset)}
+                              className="rounded-md border border-border bg-surface px-2 py-0.5 font-mono text-[10px] text-foreground-muted transition-colors hover:border-brand/50 hover:text-brand cursor-pointer"
+                              title={preset.exampleDescription}
+                            >
+                              + {preset.name}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className={`grid grid-cols-1 ${
+                      isSimpleProductMode && variants.length <= 1
+                        ? 'sm:grid-cols-2'
+                        : 'sm:grid-cols-2 lg:grid-cols-4'
+                    } gap-3`}>
                       <div>
                         <div className="flex items-center justify-between mb-1">
                           <label className="text-[10px] font-mono uppercase text-foreground-muted block">
@@ -479,7 +579,7 @@ if (isLoading || isProductLoading) {
                           </button>
                         </div>
                         <Input
-                          placeholder="Ej. LIM-EUR-01"
+                          placeholder="SKU-REF-01"
                           value={variant.sku}
                           onChange={(e) => {
                             handleVariantChange(index, 'sku', e.target.value.toUpperCase());
@@ -491,34 +591,43 @@ if (isLoading || isProductLoading) {
                           {variant.isSkuManual ? 'Manual' : 'Automático'}
                         </p>
                       </div>
-                      <div>
-                        <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
-                          Precio SKU (COP)
-                        </label>
-                        <Input
-                          type="number"
-                          min={0}
-                          placeholder={priceAmount > 0 ? String(priceAmount) : 'Igual a base'}
-                          value={variant.priceAmount ?? ''}
-                          onChange={(e) =>
-                            handleVariantChange(
-                              index,
-                              'priceAmount',
-                              e.target.value ? Number(e.target.value) : undefined,
-                            )
-                          }
-                          className="bg-surface border-border font-mono text-xs text-foreground"
-                        />
-                        <p className="text-[9px] font-mono text-foreground-muted mt-1">
-                          Opcional (vacío = base)
-                        </p>
-                      </div>
-                      <div>
+
+                      {(!isSimpleProductMode || variants.length > 1) && (
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
+                            Precio SKU (COP)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground-muted font-mono text-xs select-none">
+                              $
+                            </span>
+                            <Input
+                              type="text"
+                              inputMode="numeric"
+                              placeholder={priceAmount > 0 ? formatPriceWithDots(priceAmount) : 'Igual a base'}
+                              value={variant.priceAmount ? formatPriceWithDots(variant.priceAmount) : ''}
+                              onChange={(e) =>
+                                handleVariantChange(
+                                  index,
+                                  'priceAmount',
+                                  e.target.value ? Number(stripPriceDots(e.target.value)) || undefined : undefined,
+                                )
+                              }
+                              className="bg-surface border-border font-mono text-xs text-foreground pl-6"
+                            />
+                          </div>
+                          <p className="text-[9px] font-mono text-foreground-muted mt-1">
+                            Opcional (vacío = ${priceAmount > 0 ? formatPriceWithDots(priceAmount) : '0'})
+                          </p>
+                        </div>
+                      )}
+
+                      <div className={isSimpleProductMode && variants.length <= 1 ? 'hidden' : 'block'}>
                         <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
                           Atributo (¿Qué cambia?)
                         </label>
                         <Input
-                          placeholder="Ej. Variedad"
+                          placeholder="Nombre"
                           value={variant.attrName}
                           onChange={(e) => handleVariantChange(index, 'attrName', e.target.value)}
                           className="bg-surface border-border text-xs text-foreground"
@@ -527,12 +636,13 @@ if (isLoading || isProductLoading) {
                           Ej. Variedad, Talla, Peso
                         </p>
                       </div>
-                      <div>
+
+                      <div className={isSimpleProductMode && variants.length <= 1 ? 'hidden' : 'block'}>
                         <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
                           Valor (¿Qué opción es?)
                         </label>
                         <Input
-                          placeholder="Ej. Eureka"
+                          placeholder="Valor"
                           value={variant.attrValue}
                           onChange={(e) => handleAttrValueChange(index, e.target.value)}
                           className="bg-surface border-border text-xs text-foreground"
@@ -543,30 +653,32 @@ if (isLoading || isProductLoading) {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-border/50">
-                      <div>
-                        <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
-                          2° Atributo Opcional (ej. Talla / Presentación / Garantía)
-                        </label>
-                        <Input
-                          placeholder="Ej. Presentación"
-                          value={variant.attr2Name ?? ''}
-                          onChange={(e) => handleVariantChange(index, 'attr2Name', e.target.value)}
-                          className="bg-surface border-border text-xs text-foreground"
-                        />
+                    {(!isSimpleProductMode || variants.length > 1) && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-border/50">
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
+                            2° Atributo Opcional (ej. Talla / Presentación / Garantía)
+                          </label>
+                          <Input
+                            placeholder="Ej. Presentación"
+                            value={variant.attr2Name ?? ''}
+                            onChange={(e) => handleVariantChange(index, 'attr2Name', e.target.value)}
+                            className="bg-surface border-border text-xs text-foreground"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
+                            Valor 2° Atributo
+                          </label>
+                          <Input
+                            placeholder="Ej. Edición Especial"
+                            value={variant.attr2Value ?? ''}
+                            onChange={(e) => handleVariantChange(index, 'attr2Value', e.target.value)}
+                            className="bg-surface border-border text-xs text-foreground"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
-                          Valor 2° Atributo
-                        </label>
-                        <Input
-                          placeholder="Ej. Edición Especial"
-                          value={variant.attr2Value ?? ''}
-                          onChange={(e) => handleVariantChange(index, 'attr2Value', e.target.value)}
-                          className="bg-surface border-border text-xs text-foreground"
-                        />
-                      </div>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -632,67 +744,155 @@ if (isLoading || isProductLoading) {
                   Las variantes físicas se crean inicialmente sin existencias (`canBeSold = false`). Continúe al módulo de inventario para cargar el stock inicial en bodega.
                 </p>
 
-                <Link to="/seller/inventory">
-                  <Button className="w-full bg-brand text-primary-foreground font-bold">
-                    <Boxes className="h-4 w-4 mr-2" />
-                    Cargar Stock Inicial en Bodega
-                  </Button>
-                </Link>
+                <div className="flex flex-col gap-2.5">
+                  <Link
+                    to="/seller/inventory"
+                    search={{ variantId: createdResult.variantIds[0] } as never}
+                  >
+                    <Button className="w-full bg-brand hover:bg-brand/90 text-primary-foreground font-bold">
+                      <Boxes className="h-4 w-4 mr-2" />
+                      Cargar Stock Inicial en Bodega
+                    </Button>
+                  </Link>
+
+                  <Link to="/seller/products">
+                    <Button
+                      variant="outline"
+                      className="w-full border-border text-foreground hover:bg-surface-muted font-medium text-xs"
+                    >
+                      <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+                      Ir a Mis Productos
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-border bg-surface p-6 space-y-4 shadow-xl">
-              <h2 className="text-sm uppercase font-mono tracking-wider text-foreground-muted">
-                Vista Previa del Catálogo
-              </h2>
-              <div className="rounded-xl border border-border bg-surface-muted/40 p-5 space-y-3">
-                <span className="text-xs font-mono text-brand font-bold">
-                  {name || 'Nombre del Producto'}
+            <div className="rounded-2xl border border-border bg-surface p-6 space-y-4 shadow-xl sticky top-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm uppercase font-mono tracking-wider text-foreground-muted">
+                  Vista Previa del Catálogo
+                </h2>
+                <span className="inline-flex items-center gap-1 text-[10px] font-mono text-brand bg-brand/10 px-2 py-0.5 rounded-full border border-brand/20">
+                  <Sparkles className="h-3 w-3" /> En Vivo
                 </span>
-                <p className="text-xs text-foreground-muted">
-                  {description || 'Aquí aparecerá la descripción del producto...'}
-                </p>
-                <div className="text-lg font-bold font-mono text-foreground tabular-nums pt-2 border-t border-border">
-                  Desde ${priceAmount.toLocaleString('es-CO', { minimumFractionDigits: 2 })} COP
+              </div>
+
+              <div className="overflow-hidden rounded-xl border border-border bg-surface-muted/40 transition-all shadow-md">
+                {/* Visualización de Fotografía de Producto en Vivo */}
+                <div className="relative aspect-[16/10] w-full overflow-hidden bg-surface-muted border-b border-border flex items-center justify-center">
+                  {imageUrl.trim() && !previewImageFailed ? (
+                    <img
+                      src={imageUrl.trim()}
+                      alt={name || 'Vista previa del producto'}
+                      onError={() => setPreviewImageFailed(true)}
+                      className="h-full w-full object-cover object-center transition-all duration-300"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-6 text-foreground-muted">
+                      <div className="h-12 w-12 rounded-xl bg-surface flex items-center justify-center border border-border/60">
+                        {previewImageFailed ? (
+                          <ImageOff className="h-6 w-6 text-foreground-muted/50" />
+                        ) : (
+                          <Package className="h-6 w-6 text-foreground-muted/50" />
+                        )}
+                      </div>
+                      <span className="text-xs font-mono text-foreground-muted">
+                        {previewImageFailed
+                          ? 'No se pudo cargar la imagen del enlace'
+                          : 'Sin imagen cargada'}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="absolute top-2.5 right-2.5">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-surface/90 backdrop-blur-xs px-2 py-0.5 text-[10px] font-semibold text-foreground shadow-xs border border-border/50">
+                      {type === ProductType.Physical ? (
+                        <Package className="h-3 w-3 text-brand" />
+                      ) : (
+                        <FileCode className="h-3 w-3 text-blue-400" />
+                      )}
+                      {type === ProductType.Physical ? 'Físico' : 'Digital'}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Vista previa de cómo verá el Comprador las variantes en el Buy Box */}
-                <div className="space-y-2 pt-3 border-t border-border">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-foreground-muted block">
-                    Selector en Buy Box del Comprador ({variants.length})
-                  </span>
-                  <div className="space-y-1.5">
-                    {variants.map((v, i) => {
-                      const labelParts = [
-                        v.attrName && v.attrValue ? `${v.attrName}: ${v.attrValue}` : null,
-                        v.attr2Name && v.attr2Value ? `${v.attr2Name}: ${v.attr2Value}` : null,
-                      ].filter(Boolean);
-                      const effectivePrice =
-                        v.priceAmount && v.priceAmount > 0 ? v.priceAmount : priceAmount;
-                      return (
-                        <div
-                          key={i}
-                          className="rounded-lg border border-border bg-surface p-2.5 flex items-center justify-between text-xs"
-                        >
-                          <div>
-                            <div className="font-semibold text-foreground">
-                              {labelParts.length > 0 ? labelParts.join(' · ') : `Opción #${i + 1}`}
+                <div className="p-5 space-y-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-[11px] text-foreground-muted">
+                      <span className="font-mono text-brand font-medium">
+                        {type === ProductType.Physical ? 'Producto Físico' : 'Licencia Digital'}
+                      </span>
+                      <span>·</span>
+                      <span className="font-mono">
+                        {variants.length} {variants.length === 1 ? 'opción' : 'variantes'}
+                      </span>
+                    </div>
+                    <h3 className="text-base font-bold font-sans text-foreground leading-snug line-clamp-2">
+                      {name || 'Nombre del Producto'}
+                    </h3>
+                  </div>
+
+                  <p className="text-xs text-foreground-muted leading-relaxed line-clamp-3">
+                    {description || 'Aquí aparecerá la descripción del producto...'}
+                  </p>
+
+                  {/* Jerarquía Tipográfica de Precios Optimizada */}
+                  <div className="pt-3 border-t border-border">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-foreground-muted block mb-0.5">
+                      {variants.length > 1 ? 'Desde (Precio Base)' : 'Precio'}
+                    </span>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-2xl sm:text-3xl font-extrabold font-sans tracking-tight text-foreground tabular-nums">
+                        ${priceAmount > 0 ? formatPriceWithDots(priceAmount) : '0'}
+                      </span>
+                      <span className="text-xs font-mono font-bold text-brand uppercase">COP</span>
+                    </div>
+                  </div>
+
+                  {/* Selector en Buy Box del Comprador */}
+                  <div className="space-y-2 pt-3 border-t border-border">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-foreground-muted block">
+                      Selector en Buy Box del Comprador ({variants.length})
+                    </span>
+                    <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+                      {variants.map((v, i) => {
+                        const labelParts = [
+                          v.attrName && v.attrValue ? `${v.attrName}: ${v.attrValue}` : null,
+                          v.attr2Name && v.attr2Value ? `${v.attr2Name}: ${v.attr2Value}` : null,
+                        ].filter(Boolean);
+                        const effectivePrice =
+                          v.priceAmount && v.priceAmount > 0 ? v.priceAmount : priceAmount;
+                        return (
+                          <div
+                            key={i}
+                            className="rounded-lg border border-border bg-surface p-2.5 flex items-center justify-between text-xs"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <div className="font-semibold text-foreground truncate">
+                                {labelParts.length > 0 ? labelParts.join(' · ') : `Opción #${i + 1}`}
+                              </div>
+                              <div className="font-mono text-[10px] text-foreground-muted truncate">
+                                SKU: {v.sku || 'PENDIENTE'}
+                              </div>
                             </div>
-                            <div className="font-mono text-[10px] text-foreground-muted">
-                              SKU: {v.sku || 'PENDIENTE'}
+                            <div className="text-right shrink-0">
+                              <div className="flex items-baseline justify-end gap-1">
+                                <span className="font-sans text-sm font-bold text-brand tabular-nums">
+                                  ${formatPriceWithDots(effectivePrice || 0)}
+                                </span>
+                                <span className="text-[10px] font-mono text-foreground-muted uppercase font-normal">
+                                  COP
+                                </span>
+                              </div>
+                              <span className="font-mono text-[10px] text-foreground-muted block">
+                                Opción #{i + 1}
+                              </span>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <span className="block font-mono text-xs font-bold text-brand tabular-nums">
-                              ${effectivePrice.toLocaleString('es-CO')} COP
-                            </span>
-                            <span className="font-mono text-[10px] text-foreground-muted">
-                              Opción #{i + 1}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
