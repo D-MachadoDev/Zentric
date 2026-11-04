@@ -1,4 +1,4 @@
-﻿@import 'tailwindcss';
+@import 'tailwindcss';
 @import 'tw-animate-css';
 /* Escaneo obligatorio del paquete @zentric/ui en Tailwind v4 para que todas las
    clases utilitarias de primitives/ y composite/ se incluyan en el bundle de apps/frontend. */
@@ -208,18 +208,19 @@
    para el CSS plano y los componentes.
    ========================================================================== */
 @theme {
+  /* --- Radios de curvatura completos --- */
+  --radius-none: 0px;
+  --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
-  /* 9999 y no 999: el Owner confirmó sección 2.3 como fuente de verdad de los radios.
-     9999 asegura círculo real independientemente del tamaño del elemento. */
-  --radius-full: 9999px;
-  /* Derivados: la spec fija 6/8/12/16/9999. Estos tres escalan la misma rampa
-     para que rounded-2xl/3xl/4xl de shadcn no queden sin token. */
   --radius-2xl: 20px;
   --radius-3xl: 24px;
   --radius-4xl: 28px;
+  /* 9999 y no 999: el Owner confirmó sección 2.3 como fuente de verdad de los radios.
+     9999 asegura círculo real independientemente del tamaño del elemento. */
+  --radius-full: 9999px;
 
   /* --- Tipografía (Q8-B) ---
      El nombre lo dicta el paquete: 'Geist Variable' (verificado contra
@@ -227,6 +228,58 @@
   --font-sans: 'Geist Variable', system-ui, sans-serif;
   --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
   --font-heading: var(--font-sans);
+
+  /* --- Escala tipográfica formal (incluye micro-tipografía 2xs y caption) --- */
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: 0.875rem;
+  --text-caption: 0.6875rem;
+  --text-caption--line-height: 1rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.3125rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.575rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.6875rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.95rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.344rem;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.7rem;
+
+  /* --- Sombras y elevaciones estándar --- */
+  --shadow-xs: 0 1px 2px 0 rgba(14, 20, 32, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(14, 20, 32, 0.08), 0 1px 2px -1px rgba(14, 20, 32, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(14, 20, 32, 0.08), 0 2px 4px -2px rgba(14, 20, 32, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(14, 20, 32, 0.08), 0 4px 6px -4px rgba(14, 20, 32, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(14, 20, 32, 0.09), 0 8px 10px -6px rgba(14, 20, 32, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(14, 20, 32, 0.18);
+  --shadow-inner: inset 0 2px 4px 0 rgba(14, 20, 32, 0.05);
+  --shadow-surface-hairline: 0 1px 3px 0 rgba(14, 20, 32, 0.04), 0 1px 2px -1px rgba(14, 20, 32, 0.04);
+
+  /* --- Rupturas responsivas canónicas --- */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  /* --- Escala Neutra Zentric Slate (estática para utilidades específicas) --- */
+  --color-slate-50: #F8F9FA;
+  --color-slate-100: #EEF0F4;
+  --color-slate-200: #E1E5EB;
+  --color-slate-300: #CBD2DE;
+  --color-slate-400: #98A2B8;
+  --color-slate-500: #7D88A3;
+  --color-slate-600: #5F6B82;
+  --color-slate-700: #454F63;
+  --color-slate-800: #252D40;
+  --color-slate-900: #131824;
+  --color-slate-950: #0C0F16;
 
   /* --- Movimiento (sección 7): nunca bloquea la lectura --- */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);

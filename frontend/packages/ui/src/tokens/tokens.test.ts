@@ -1,9 +1,40 @@
-﻿import { readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { colors, darkColors, roleAccents } from './colors';
-import { typography } from './typography';
-import { radii, space, spacing, transitions } from './spacing';
+import {
+  colors,
+  darkColors,
+  roleAccents,
+  neutralScale,
+  brandScales,
+  statusScales,
+} from './colors';
+import {
+  typography,
+  typeScale,
+  fontWeights,
+  lineHeights,
+  letterSpacing,
+  typographySpecs,
+  dataFontFamily,
+} from './typography';
+import {
+  space,
+  spacing,
+  density,
+  rowHeight,
+  rowHeightCompact,
+  durations,
+  transitions,
+} from './spacing';
+import { radii, radiusValues, getRadius, getRadiusCss } from './radii';
+import { shadows, shadowsLight, shadowsDark } from './shadows';
+import {
+  breakpoints,
+  breakpointValues,
+  mediaQueries,
+  rangeMediaQueries,
+} from './breakpoints';
 
 // Frontend-Design-System.md sección 9: "Si ambos divergen, MANDA EL CSS".
 // Esa precedencia no se puede hacer cumplir en tiempo de ejecucion, pero sí
@@ -304,6 +335,13 @@ describe('doctrina visual anti-IA generica v2 (AGENTS.md sección 4.14 y SDD sec
     expect(fromCss).toBe('cubic-bezier(0.16, 1, 0.3, 1)');
     expect(transitions.easeOutExpo).toBe(fromCss);
   });
+
+  it('declara duraciones de movimiento operativas (<= 200ms para interactividad)', () => {
+    expect(durations.hover).toBe(120);
+    expect(durations.dialog).toBe(200);
+    expect(durations.skeletonLoop).toBe(1400);
+    expect(durations.spinnerLap).toBe(700);
+  });
 });
 
 describe('tipografia y reglas de entorno', () => {
@@ -322,23 +360,45 @@ describe('tipografia y reglas de entorno', () => {
 });
 
 describe('espaciado y forma', () => {
-  it('usa la escala de 4 px y la funcion space(step)', () => {
+  it('usa la escala de 4 px y la funcion space(step) incluyendo medios pasos', () => {
     expect(space(0)).toBe(0);
+    expect(space(0.5)).toBe(2);
     expect(space(1)).toBe(4);
+    expect(space(1.5)).toBe(6);
     expect(space(2)).toBe(8);
+    expect(space(2.5)).toBe(10);
     expect(space(3)).toBe(12);
+    expect(space(3.5)).toBe(14);
     expect(space(4)).toBe(16);
     expect(space(6)).toBe(24);
     expect(space(8)).toBe(32);
 
-    for (const value of Object.values(spacing)) {
+    for (const [stepStr, value] of Object.entries(spacing)) {
       if (value === '0px') continue;
-      expect(Number.parseInt(value, 10) % 4).toBe(0);
+      const px = Number.parseInt(value, 10);
+      expect(px % 2, `Token de espaciado ${stepStr} (${value}) debe respetar la retícula de medios pasos de 2px`).toBe(0);
+      if (!stepStr.includes('.')) {
+        expect(px % 4, `Paso entero ${stepStr} (${value}) debe respetar la retícula base de 4px`).toBe(0);
+      }
     }
   });
 
-  it('declara los mismos radios que la spec (6/8/12/16/9999)', () => {
-    expect(radii).toMatchObject({ sm: 6, md: 8, lg: 12, xl: 16, full: 9999 });
+  it('declara los mismos radios que la spec (none/xs/sm/md/lg/xl/2xl/3xl/4xl/full)', () => {
+    expect(radii).toMatchObject({
+      none: 0,
+      xs: 4,
+      sm: 6,
+      md: 8,
+      lg: 12,
+      xl: 16,
+      '2xl': 20,
+      '3xl': 24,
+      '4xl': 28,
+      full: 9999,
+    });
+    expect(getRadius('xs')).toBe(4);
+    expect(getRadiusCss('xs')).toBe('4px');
+    expect(radiusValues.full).toBe('9999px');
   });
 
   it('espeja los radios en theme.css sin divergir', () => {
@@ -351,4 +411,141 @@ describe('espaciado y forma', () => {
       ).toBe(`${px}px`);
     }
   });
+
+  it('declara presets de densidad de fila e interfaz (compact vs comfortable)', () => {
+    expect(rowHeight).toBe(40);
+    expect(rowHeightCompact).toBe(32);
+    expect(density.comfortable.tableRowHeight).toBe(40);
+    expect(density.compact.tableRowHeight).toBe(32);
+    expect(density.comfortable.inputHeight).toBe(40);
+    expect(density.compact.inputHeight).toBe(34);
+  });
 });
+
+describe('sombras y elevaciones (shadows.ts y theme.css)', () => {
+  it('exporta las sombras canónicas para modo claro y oscuro', () => {
+    expect(shadowsLight.xs).toBeDefined();
+    expect(shadowsLight.sm).toBeDefined();
+    expect(shadowsLight.md).toBeDefined();
+    expect(shadowsLight.lg).toBeDefined();
+    expect(shadowsLight.xl).toBeDefined();
+    expect(shadowsLight['2xl']).toBeDefined();
+    expect(shadowsLight.surfaceHairline).toBeDefined();
+
+    expect(shadowsDark.xs).toBeDefined();
+    expect(shadowsDark.surfaceHairline).toBeDefined();
+    expect(shadows).toBe(shadowsLight);
+  });
+
+  it('espeja los tokens de sombra estándar en theme.css', () => {
+    const shadowKeys = ['xs', 'sm', 'md', 'lg', 'xl', '2xl', 'inner'] as const;
+    for (const key of shadowKeys) {
+      const fromCss = cssToken(`shadow-${key}`);
+      expect(fromCss, `--shadow-${key} no existe en theme.css`).toBeDefined();
+      expect(fromCss).toBe(shadowsLight[key]);
+    }
+    expect(cssToken('shadow-surface-hairline')).toBe(shadowsLight.surfaceHairline);
+  });
+});
+
+describe('rupturas responsivas (breakpoints.ts y theme.css)', () => {
+  it('declara la escala canónica de 5 puntos de ruptura (sm/md/lg/xl/2xl)', () => {
+    expect(breakpoints.sm).toBe(640);
+    expect(breakpoints.md).toBe(768);
+    expect(breakpoints.lg).toBe(1024);
+    expect(breakpoints.xl).toBe(1280);
+    expect(breakpoints['2xl']).toBe(1536);
+
+    expect(breakpointValues.sm).toBe('640px');
+    expect(breakpointValues.md).toBe('768px');
+    expect(breakpointValues.lg).toBe('1024px');
+    expect(breakpointValues.xl).toBe('1280px');
+    expect(breakpointValues['2xl']).toBe('1536px');
+  });
+
+  it('declara media queries mobile-first y de rango acotado', () => {
+    expect(mediaQueries.sm).toBe('(min-width: 640px)');
+    expect(mediaQueries.md).toBe('(min-width: 768px)');
+    expect(mediaQueries.lg).toBe('(min-width: 1024px)');
+    expect(rangeMediaQueries.tabletOnly).toBe('(min-width: 768px) and (max-width: 1023px)');
+    expect(rangeMediaQueries.desktopUp).toBe('(min-width: 1024px)');
+  });
+
+  it('espeja los breakpoints en theme.css', () => {
+    for (const [name, pxStr] of Object.entries(breakpointValues)) {
+      const fromCss = cssToken(`breakpoint-${name}`);
+      expect(fromCss, `--breakpoint-${name} no existe en theme.css`).toBeDefined();
+      expect(fromCss).toBe(pxStr);
+    }
+  });
+});
+
+describe('escala tipográfica formal y micro-tipografía (typography.ts y theme.css)', () => {
+  it('incluye tokens micro-tipográficos dedicados (2xs y caption)', () => {
+    expect(typeScale['2xs']).toEqual(['0.625rem', '1.4']);
+    expect(typeScale.caption).toEqual(['0.6875rem', '1.45']);
+    expect(typographySpecs['2xs'].fontSize).toBe('0.625rem');
+    expect(typographySpecs.caption.fontSize).toBe('0.6875rem');
+  });
+
+  it('espeja 2xs y caption en theme.css', () => {
+    expect(cssToken('text-2xs')).toBe('0.625rem');
+    expect(cssToken('text-2xs--line-height')).toBe('0.875rem');
+    expect(cssToken('text-caption')).toBe('0.6875rem');
+    expect(cssToken('text-caption--line-height')).toBe('1rem');
+  });
+
+  it('provee constantes de pesos, line-heights, tracking y datos numéricos', () => {
+    expect(fontWeights.regular).toBe(400);
+    expect(fontWeights.medium).toBe(500);
+    expect(fontWeights.semibold).toBe(600);
+    expect(fontWeights.bold).toBe(700);
+
+    expect(lineHeights.normal).toBe(1.5);
+    expect(letterSpacing.micro).toBe('0.01em');
+    expect(letterSpacing.caption).toBe('0.005em');
+
+    expect(dataFontFamily).toBe(typography.sans);
+  });
+});
+
+describe('escalas tonales 50-950 (colors.ts y theme.css)', () => {
+  it('la escala neutra Zentric Slate tiene todos los pasos 50-950 y tinte frío (B > R)', () => {
+    const steps = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const;
+    for (const step of steps) {
+      const hex = neutralScale[step];
+      expect(hex, `Paso ${step} en neutralScale`).toBeDefined();
+      assertTintedBlue(`neutralScale ${step}`, hex);
+    }
+  });
+
+  it('las escalas de rol tienen todos los pasos 50-950', () => {
+    const roles = ['buyer', 'seller', 'admin', 'logistics', 'supervisor'] as const;
+    const steps = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const;
+    for (const role of roles) {
+      for (const step of steps) {
+        expect(brandScales[role][step], `brandScales.${role}.${step}`).toBeDefined();
+      }
+    }
+  });
+
+  it('las escalas de estado tienen todos los pasos 50-950', () => {
+    const statuses = ['success', 'warning', 'danger', 'info'] as const;
+    const steps = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const;
+    for (const status of statuses) {
+      for (const step of steps) {
+        expect(statusScales[status][step], `statusScales.${status}.${step}`).toBeDefined();
+      }
+    }
+  });
+
+  it('espeja la escala neutra slate en theme.css', () => {
+    const steps = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const;
+    for (const step of steps) {
+      const fromCss = cssToken(`color-slate-${step}`);
+      expect(fromCss, `--color-slate-${step} no existe en theme.css`).toBeDefined();
+      expect(fromCss?.toLowerCase()).toBe(neutralScale[step].toLowerCase());
+    }
+  });
+});
+

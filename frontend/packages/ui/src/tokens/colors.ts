@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Paleta Zentric v2 — "Porcelana y Grafito" (Frontend-Design-System.md sección 9).
  *
  * Espejo de packages/ui/src/styles/theme.css. Existe en TS SOLO para lo que
@@ -9,6 +9,10 @@
  * `colors` espeja el MODO CLARO (:root) y `darkColors` el MODO OSCURO (.dark);
  * `roleAccents` espeja los scopes [data-role] de sección 9.2.
  */
+
+// ----------------------------------------------------------------------------
+// 1. Core Semantic Dual Palette (14 Canonical Tokens)
+// ----------------------------------------------------------------------------
 
 /** Modo Claro "Estudio Porcelana" — tokens :root de theme.css. */
 export const colors = {
@@ -44,18 +48,6 @@ export const colors = {
   danger: '#B91C1C',
   /** Informativo / tránsito (6.20:1). */
   info: '#1D4ED8',
-  /** Aesthetic wave accent — primary brand green for login/buyer panels. */
-  wavePrimary: '#00D4AA',
-  /** Aesthetic wave secondary — indigo for depth and contrast. */
-  waveSecondary: '#6366F1',
-  /** Aesthetic wave background gradient start — deep space mode. */
-  waveBgStart: '#0F0F23',
-  /** Aesthetic wave background gradient end — dark mode complement. */
-  waveBgEnd: '#1A1A3E',
-  /** Aesthetic wave card semi-transparency — overlay layer. */
-  waveCard: 'rgba(17, 25, 45, 0.8)',
-  /** Aesthetic wave text — light on dark for readability. */
-  waveText: '#F8FAFC',
 } as const;
 
 /** Modo Oscuro "Bóveda Grafito" — tokens .dark de theme.css. */
@@ -80,6 +72,10 @@ export const darkColors = {
   info: '#60A5FA',
 } as const;
 
+// ----------------------------------------------------------------------------
+// 2. Role-Scoped Accents ([data-role] in theme.css)
+// ----------------------------------------------------------------------------
+
 /**
  * Identidad por rol (sección 9.2): par [acento, acento-hover] por modo.
  * Comprador no aparece porque :root YA es el jade Comprador por defecto.
@@ -103,6 +99,158 @@ export const roleAccents = {
   },
 } as const;
 
+// ----------------------------------------------------------------------------
+// 3. Complete 50–950 Tonal Scales
+// ----------------------------------------------------------------------------
+
+export type ColorScaleStep = 50 | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | 950;
+export type ColorScale = Record<ColorScaleStep, string>;
+
+/** Escala Neutra Zentric Slate (con tinte frío B > R) */
+export const neutralScale: ColorScale = {
+  50: '#F8F9FA',
+  100: '#EEF0F4',
+  200: '#E1E5EB',
+  300: '#CBD2DE',
+  400: '#98A2B8',
+  500: '#7D88A3',
+  600: '#5F6B82',
+  700: '#454F63',
+  800: '#252D40',
+  900: '#131824',
+  950: '#0C0F16',
+};
+
+/** Escalas de marca por rol e identidad Comprador */
+export const brandScales: Record<RoleAccent | 'buyer', ColorScale> = {
+  buyer: {
+    50: '#F0FDFA',
+    100: '#CCFBF1',
+    200: '#99F6E4',
+    300: '#5EEAD4',
+    400: '#2DD4BF',
+    500: '#14B8A6',
+    600: '#0D9488',
+    700: '#0F766E',
+    800: '#0B5D56',
+    900: '#134E48',
+    950: '#042F2C',
+  },
+  seller: {
+    50: '#F5F3FF',
+    100: '#EDE9FE',
+    200: '#DDD6FE',
+    300: '#C4B5FD',
+    400: '#A78BFA',
+    500: '#8B5CF6',
+    600: '#7C3AED',
+    700: '#6D28D9',
+    800: '#5B21B6',
+    900: '#4C1D95',
+    950: '#2E1065',
+  },
+  admin: {
+    50: '#EEF2FF',
+    100: '#E0E7FF',
+    200: '#C7D2FE',
+    300: '#A5B4FC',
+    400: '#818CF8',
+    500: '#6366F1',
+    600: '#4F46E5',
+    700: '#4338CA',
+    800: '#3730A3',
+    900: '#312E81',
+    950: '#1E1B4B',
+  },
+  logistics: {
+    50: '#ECFEFF',
+    100: '#CFFAFE',
+    200: '#A5F3FC',
+    300: '#67E8F9',
+    400: '#22D3EE',
+    500: '#06B6D4',
+    600: '#0891B2',
+    700: '#0E7490',
+    800: '#0A5C74',
+    900: '#164E63',
+    950: '#083344',
+  },
+  supervisor: {
+    50: '#FDF4FF',
+    100: '#FAE8FF',
+    200: '#F5D0FE',
+    300: '#F0ABFC',
+    400: '#E879F9',
+    500: '#D946EF',
+    600: '#C026D3',
+    700: '#A21CAF',
+    800: '#86198F',
+    900: '#701A75',
+    950: '#4A044E',
+  },
+};
+
+/** Escalas semánticas de estado de dominio */
+export const statusScales: Record<SemanticStatus, ColorScale> = {
+  success: {
+    50: '#F0FDF4',
+    100: '#DCFCE7',
+    200: '#BBF7D0',
+    300: '#86EFAC',
+    400: '#4ADE80',
+    500: '#22C55E',
+    600: '#16A34A',
+    700: '#15803D',
+    800: '#166534',
+    900: '#14532D',
+    950: '#052E16',
+  },
+  warning: {
+    50: '#FFFBEB',
+    100: '#FEF3C7',
+    200: '#FDE68A',
+    300: '#FCD34D',
+    400: '#FBBF24',
+    500: '#F59E0B',
+    600: '#D97706',
+    700: '#B45309',
+    800: '#92400E',
+    900: '#78350F',
+    950: '#451A03',
+  },
+  danger: {
+    50: '#FEF2F2',
+    100: '#FEE2E2',
+    200: '#FECACA',
+    300: '#FCA5A5',
+    400: '#F87171',
+    500: '#EF4444',
+    600: '#DC2626',
+    700: '#B91C1C',
+    800: '#991B1B',
+    900: '#7F1D1D',
+    950: '#450A0A',
+  },
+  info: {
+    50: '#EFF6FF',
+    100: '#DBEAFE',
+    200: '#BFDBFE',
+    300: '#93C5FD',
+    400: '#60A5FA',
+    500: '#3B82F6',
+    600: '#2563EB',
+    700: '#1D4ED8',
+    800: '#1E40AF',
+    900: '#1E3A8A',
+    950: '#172554',
+  },
+};
+
+// ----------------------------------------------------------------------------
+// 4. Type Definitions
+// ----------------------------------------------------------------------------
+
 export type ColorToken = keyof typeof colors;
 export type DarkColorToken = keyof typeof darkColors;
 export type RoleAccent = keyof typeof roleAccents;
+export type SemanticStatus = 'success' | 'warning' | 'danger' | 'info';
