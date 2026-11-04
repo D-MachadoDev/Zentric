@@ -120,6 +120,21 @@ WCAG 2.2 AA Thresholds:
 - `brandScales`: Scales for `buyer`, `seller`, `admin`, `logistics`, `supervisor`.
 - `statusScales`: Scales for `success`, `warning`, `danger`, `info`.
 
+##### Command Indigo Scale (`brandScales.admin`) — Governance Role
+| Step | Hex | Relative Luminance | Usage / Context |
+|---|---|---|---|
+| `50` | `#EEF2FF` | 0.8847 | Lightest tint, selected row background |
+| `100` | `#E0E7FF` | 0.8173 | Subtle tag fill, hover badge |
+| `200` | `#C7D2FE` | 0.6726 | Soft borders, light focus ring |
+| `300` | `#A5B4FC` | 0.5103 | Dark mode secondary accent (`--brand-strong`) |
+| `400` | `#818CF8` | 0.3020 | Dark mode primary accent (`--brand`) |
+| `500` | `#5C52E5` | 0.1397 | Mid-tone interactive, non-banned Command Indigo |
+| `600` | `#4B40D6` | 0.1002 | Deep interactive, non-banned Command Indigo |
+| `700` | `#4338CA` | 0.0829 | Light mode primary brand accent (`--brand`) |
+| `800` | `#3730A3` | 0.0557 | Light mode brand hover/active (`--brand-strong`) |
+| `900` | `#312E81` | 0.0384 | Deep dark surface container, headers |
+| `950` | `#1E1B4B` | 0.0197 | Darkest navy base |
+
 ---
 
 ### 4.2 Typography System (`typography.ts`)

@@ -330,6 +330,50 @@ describe('doctrina visual anti-IA generica v2 (AGENTS.md sección 4.14 y SDD sec
     expect(roleAccents.admin.dark.brand).not.toBe('#6366F1');
   });
 
+  it('prohibe colores vetados (#00D4AA, #6366F1, #4F46E5, #000000) en TODAS las escalas exportadas', () => {
+    const banned = ['#00D4AA', '#6366F1', '#4F46E5', '#000000', '#000'];
+    const allHexValues: { path: string; hex: string }[] = [];
+
+    function collectHexes(obj: unknown, currentPath: string): void {
+      if (!obj || typeof obj !== 'object') return;
+      for (const [key, val] of Object.entries(obj)) {
+        const itemPath = `${currentPath}.${key}`;
+        if (typeof val === 'string' && val.startsWith('#')) {
+          allHexValues.push({ path: itemPath, hex: val.toUpperCase() });
+        } else if (typeof val === 'object') {
+          collectHexes(val, itemPath);
+        }
+      }
+    }
+
+    collectHexes(
+      { colors, darkColors, roleAccents, neutralScale, brandScales, statusScales },
+      'colorsMod'
+    );
+
+    for (const bannedHex of banned) {
+      const occurrences = allHexValues.filter(
+        (item) => item.hex === bannedHex.toUpperCase()
+      );
+      expect(
+        occurrences,
+        `Color prohibido ${bannedHex} detectado en: ${occurrences.map((o) => o.path).join(', ')}`
+      ).toHaveLength(0);
+    }
+  });
+
+  it('la escala brandScales.admin utiliza el Índigo de Mando conforme a la doctrina anti-IA', () => {
+    expect(brandScales.admin[500]).toBe('#5C52E5');
+    expect(brandScales.admin[600]).toBe('#4B40D6');
+
+    const adminSteps = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const;
+    for (let i = 0; i < adminSteps.length - 1; i++) {
+      const current = relativeLuminance(brandScales.admin[adminSteps[i]]);
+      const next = relativeLuminance(brandScales.admin[adminSteps[i + 1]]);
+      expect(current, `Luminancia paso ${adminSteps[i]} > ${adminSteps[i + 1]}`).toBeGreaterThan(next);
+    }
+  });
+
   it('define la curva de movimiento canonica --ease-out-expo en CSS y TS', () => {
     const fromCss = cssToken('ease-out-expo');
     expect(fromCss).toBe('cubic-bezier(0.16, 1, 0.3, 1)');
