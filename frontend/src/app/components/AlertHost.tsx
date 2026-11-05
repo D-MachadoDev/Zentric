@@ -14,12 +14,8 @@ import type { ConfirmacionAlerta } from '../../core/utils/AlertAdapter';
 import { alertAdapter } from '../providers/alertAdapter';
 
 /**
- * Punto de pintado de `AlertPort`.
- *
- * Es la mitad de presentación del adaptador: el adaptador decide QUÉ hay que
- * avisar o confirmar y resuelve las promesas; aquí sólo se traduce eso a los
- * componentes del design system (`Toaster` para avisos, `AlertDialog` para
- * confirmaciones). Se monta una vez en `main.tsx`.
+ * Conecta el adaptador global de alertas con los componentes visuales.
+ * Se monta una vez en `main.tsx`; el adaptador conserva la resolución de confirmaciones.
  */
 export function AlertHost() {
   const [confirmacion, setConfirmacion] = useState<ConfirmacionAlerta | null>(null);
@@ -34,9 +30,8 @@ export function AlertHost() {
   );
 
   const cerrar = (aceptada: boolean) => {
-    // El propio `cerrar` del adaptador ignora la segunda invocación, así que el
-    // `onOpenChange` que Radix dispara tras pulsar la acción no puede voltear la
-    // respuesta ya dada.
+    // Radix puede notificar el cierre después de la acción; el adaptador ignora
+    // esa segunda resolución.
     confirmacion?.cerrar(aceptada);
     setConfirmacion(null);
   };

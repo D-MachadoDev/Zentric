@@ -215,7 +215,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
           <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
             <Link
               to="/buyer/orders"
-              className={`inline-flex h-9 items-center gap-2 rounded-lg px-2.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${
+              className={`hidden h-9 items-center gap-2 rounded-lg px-2.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 sm:inline-flex ${
                 currentPath.startsWith('/buyer/orders')
                   ? 'text-brand'
                   : 'text-foreground-muted hover:text-foreground'
@@ -247,7 +247,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
 
             <Link
               to="/buyer/profile"
-              className={`inline-flex h-9 items-center gap-2 rounded-lg px-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${
+              className={`hidden h-9 items-center gap-2 rounded-lg px-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 sm:inline-flex ${
                 currentPath === '/buyer/profile' ? 'text-brand' : 'text-foreground-muted hover:text-foreground'
               }`}
             >

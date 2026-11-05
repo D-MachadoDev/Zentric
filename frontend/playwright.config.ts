@@ -71,7 +71,7 @@ export default defineConfig({
       // Reutiliza servidor en CI para evitar colisiones de bind en puerto 15433.
       reuseExistingServer: true,
       timeout: 180_000,
-      cwd: path.resolve(import.meta.dirname, '..', '..', '..'),
+      cwd: path.resolve(import.meta.dirname, '..'),
       stdout: 'ignore',
       stderr: 'pipe',
     },

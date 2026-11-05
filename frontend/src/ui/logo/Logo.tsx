@@ -3,10 +3,7 @@ import { cn } from '../lib/cn';
 import { LogoMark, type BrandRole, normalizeRole } from './LogoMark';
 import { LogoWordmark } from './LogoWordmark';
 
-/**
- * Logo completo: imagen del isotipo (`/brandkit/logo/zentric-icon-{role}.png`) +
- * marca tipográfica, con tagline y rol opcional.
- */
+/** Combina el isotipo, el nombre de marca y un tagline opcional. */
 export const Logo = forwardRef<HTMLSpanElement, LogoProps>(function Logo(
   { className, showTagline = false, role, ...props },
   ref,
@@ -34,8 +31,8 @@ export const Logo = forwardRef<HTMLSpanElement, LogoProps>(function Logo(
 });
 
 export interface LogoProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'role'> {
-  /** Muestra el tagline debajo del wordmark. */
+  /** Muestra el tagline debajo del nombre de marca. */
   showTagline?: boolean;
-  /** Rol opcional para seleccionar la imagen `/brandkit/logo/zentric-icon-{role}.png` y el color `--brand`. */
+  /** Selecciona la variante de imagen y el acento visual del rol. */
   role?: BrandRole | string;
 }

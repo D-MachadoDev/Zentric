@@ -48,7 +48,7 @@ export function CategoryChips({
         role="group"
         aria-label="Categorías de productos"
         aria-busy={isLoading}
-        className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 scrollbar-none"
+        className="relative -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 scrollbar-none"
       >
         {isLoading && !categories ? (
           Array.from({ length: 5 }).map((_, index) => (

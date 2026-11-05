@@ -172,22 +172,14 @@ sudo certbot renew --dry-run --deploy-hook "systemctl reload nginx"
 
 ---
 
-## 6. Configuración de Secretos en GitHub Actions
+## 6. Despliegue
 
-Para habilitar la ejecución automática de los flujos `.github/workflows/deploy-dev.yml` y `.github/workflows/deploy-prod.yml`, configure las siguientes variables y secretos en **Settings > Secrets and variables > Actions** del repositorio de GitHub:
+El despliegue no se ejecuta mediante SSH desde GitHub Actions. Render gestiona el
+backend y Vercel gestiona el frontend mediante sus integraciones con el repositorio.
+Por tanto, no deben configurarse secretos `*_SSH_*` ni directorios remotos para estos
+despliegues en GitHub Actions.
 
-| Secreto / Variable | Entorno | Descripción |
-|---|---|---|
-| `PROD_SSH_HOST` | Producción | IP pública o nombre de host del servidor de producción (`zentric.me`). |
-| `PROD_SSH_USER` | Producción | Usuario SSH con permisos Docker en el servidor (ej. `deploy` o `ubuntu`). |
-| `PROD_SSH_KEY` | Producción | Clave privada SSH (formato OpenSSH / PEM) para autenticación sin contraseña. |
-| `PROD_SSH_PORT` | Producción | Puerto del servicio SSH (por defecto `22`). |
-| `PROD_DEPLOY_DIR` | Producción | Directorio destino en el host (por defecto `/opt/zentric`). |
-| `STAGING_SSH_HOST` | Staging | IP pública del servidor de staging (`dev.zentric.me`). |
-| `STAGING_SSH_USER` | Staging | Usuario SSH en el servidor de staging. |
-| `STAGING_SSH_KEY` | Staging | Clave privada SSH para staging. |
-| `STAGING_SSH_PORT` | Staging | Puerto SSH en staging (por defecto `22`). |
-| `STAGING_DEPLOY_DIR`| Staging | Directorio destino en staging (por defecto `/opt/zentric-dev`). |
+Los registros DNS deben apuntar a los destinos proporcionados por Render y Vercel.
 
 ---
 

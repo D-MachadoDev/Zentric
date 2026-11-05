@@ -569,10 +569,3 @@ if (results.failures.length > 0) {
 } else {
   console.log('\n>>> VERDICT: CONFIRMED <<<');
 }
-
-// Write JSON output for reference
-fs.writeFileSync(
-  path.resolve(REPO_ROOT, '.agents', 'teamwork', 'challenger_m2_tokens_1', 'empirical_results.json'),
-  JSON.stringify(results, null, 2)
-);
-console.log('\nResults written to empirical_results.json in working directory.');

@@ -20,7 +20,17 @@
 | 9 | **Visual Regression** | Playwright pixel diff | `playwright test --project=visual` | Diff ≤ 0.1% (layouts críticos) | ✅ Sí |
 ---
 
-## 2. Pipeline GitHub Actions (`.github/workflows/ci.yml`)
+## 2. Validación y despliegue actual
+
+GitHub Actions valida el backend y el frontend mediante workflows separados:
+`backend.yml`, `frontend.yml` y `system-quality.yml`.
+
+El despliegue no se ejecuta desde GitHub Actions. Render despliega el backend y
+Vercel despliega el frontend después de detectar cambios en las ramas configuradas.
+Los entornos, variables y dominios de despliegue se administran en cada plataforma.
+
+El bloque histórico siguiente se conserva únicamente como referencia de la
+especificación original y no representa una configuración ejecutable del repositorio:
 
 ```yaml
 name: CI/CD Pipeline

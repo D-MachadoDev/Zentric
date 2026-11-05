@@ -406,8 +406,9 @@ category('4. Inventario del design system (rutas reales)');
 
 const LAYERS = [
   { dir: path.join(UI_SRC, 'tokens'), label: 'tokens' },
-  { dir: path.join(UI_SRC, 'primitives'), label: 'primitives' },
-  { dir: path.join(UI_SRC, 'components', 'ui'), label: 'components/ui' },
+  { dir: path.join(UI_SRC, 'atoms'), label: 'atoms' },
+  { dir: path.join(UI_SRC, 'molecules'), label: 'molecules' },
+  { dir: path.join(UI_SRC, 'organisms'), label: 'organisms' },
   { dir: path.join(UI_SRC, 'composite'), label: 'composite' },
   { dir: path.join(UI_SRC, 'logo'), label: 'logo' },
 ];
