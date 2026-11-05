@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -235,16 +234,16 @@ describe('Componentes Compuestos (@zentric/ui/composite) — Decisión A3', () =
       expect(items).toHaveLength(4); // Creado, Pagado, Despachado, Entregado
 
       // "Creado" debe ser completado
-      const dotCreated = items[0].querySelector('[data-slot="timeline-dot"]');
+      const dotCreated = items[0]!.querySelector('[data-slot="timeline-dot"]');
       expect(dotCreated).toHaveAttribute('data-status', 'completed');
 
       // "Pagado" debe ser el paso activo actual
-      expect(items[1]).toHaveAttribute('aria-current', 'step');
-      const dotPaid = items[1].querySelector('[data-slot="timeline-dot"]');
+      expect(items[1]!).toHaveAttribute('aria-current', 'step');
+      const dotPaid = items[1]!.querySelector('[data-slot="timeline-dot"]');
       expect(dotPaid).toHaveAttribute('data-status', 'current');
 
       // "Despachado" debe ser upcoming
-      const dotDispatched = items[2].querySelector('[data-slot="timeline-dot"]');
+      const dotDispatched = items[2]!.querySelector('[data-slot="timeline-dot"]');
       expect(dotDispatched).toHaveAttribute('data-status', 'upcoming');
     });
 
@@ -253,7 +252,7 @@ describe('Componentes Compuestos (@zentric/ui/composite) — Decisión A3', () =
       const items = screen.getAllByRole('listitem');
       expect(items).toHaveLength(2); // Creado -> Cancelado
 
-      const dotCancelled = items[1].querySelector('[data-slot="timeline-dot"]');
+      const dotCancelled = items[1]!.querySelector('[data-slot="timeline-dot"]');
       expect(dotCancelled).toHaveAttribute('data-status', 'cancelled');
       expect(screen.getByText('Cancelado')).toHaveClass('text-destructive');
     });

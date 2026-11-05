@@ -31,10 +31,10 @@ export default defineConfig({
     hookTimeout: 20000,
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@zentric/ui': path.resolve(__dirname, '../../packages/ui/src'),
-      '@zentric/config': path.resolve(__dirname, '../../packages/config/src'),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(import.meta.dirname, './src') },
+      { find: /^@zentric\/ui\/(.*)$/, replacement: path.resolve(import.meta.dirname, './src/ui/$1') },
+      { find: '@zentric/ui', replacement: path.resolve(import.meta.dirname, './src/ui') },
+    ],
   },
 });

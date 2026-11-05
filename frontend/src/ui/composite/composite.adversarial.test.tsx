@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -245,7 +244,7 @@ describe('Empirical Adversarial Challenge Suite (@zentric/ui/composite)', () => 
       const malformedData: (TestItem | Record<string, unknown>)[] = [
         { id: 'row-1', sku: null, title: 'Item Null Sku', stock: null, price: undefined },
         { id: 'row-2', sku: undefined, title: null, stock: 40, price: 1500 },
-        { id: 'row-3', foo: 'unexpected_extra_property', id: 'row-3' }, // missing testColumns
+        { id: 'row-3', foo: 'unexpected_extra_property' }, // missing testColumns
         { id: 'row-4', sku: 'SPECIAL-[*+?^${}()|[]]', title: 'Regex test', stock: 10, price: 0 },
       ];
 

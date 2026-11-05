@@ -39,7 +39,7 @@ import {
 // Frontend-Design-System.md sección 9: "Si ambos divergen, MANDA EL CSS".
 // Esa precedencia no se puede hacer cumplir en tiempo de ejecucion, pero sí
 // aquí: si alguien cambia un valor en TS sin tocar theme.css, la suite falla.
-const css = readFileSync(join(process.cwd(), 'src/styles/theme.css'), 'utf8');
+const css = readFileSync(join(process.cwd(), 'src/ui/styles/theme.css'), 'utf8');
 
 /** Extrae la declaración `--nombre: valor;` de todo el fichero (primera aparición). */
 function cssToken(name: string): string | undefined {
@@ -51,7 +51,7 @@ function cssToken(name: string): string | undefined {
 function cssTokenIn(block: string, name: string): string | undefined {
   const section = css.match(new RegExp(`${block}\\s*\\{([\\s\\S]*?)\\}`));
   if (!section) return undefined;
-  const match = section[1].match(new RegExp(`--${name}:\\s*([^;]+);`));
+  const match = section[1]!.match(new RegExp(`--${name}:\\s*([^;]+);`));
   return match?.[1]?.trim();
 }
 
@@ -60,7 +60,7 @@ function cssRoleToken(role: string, name: string, mode: 'light' | 'dark'): strin
   const prefix = mode === 'dark' ? `.dark [data-role='${role}']` : `[data-role='${role}']`;
   const section = css.match(new RegExp(`${prefix.replace(/[.[\]]/g, (m) => `\\${m}`)}\\s*\\{([\\s\\S]*?)\\}`));
   if (!section) return undefined;
-  const match = section[1].match(new RegExp(`--${name}:\\s*([^;]+);`));
+  const match = section[1]!.match(new RegExp(`--${name}:\\s*([^;]+);`));
   return match?.[1]?.trim();
 }
 
@@ -368,8 +368,8 @@ describe('doctrina visual anti-IA generica v2 (AGENTS.md sección 4.14 y SDD sec
 
     const adminSteps = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const;
     for (let i = 0; i < adminSteps.length - 1; i++) {
-      const current = relativeLuminance(brandScales.admin[adminSteps[i]]);
-      const next = relativeLuminance(brandScales.admin[adminSteps[i + 1]]);
+      const current = relativeLuminance(brandScales.admin[adminSteps[i]!]);
+      const next = relativeLuminance(brandScales.admin[adminSteps[i + 1]!]);
       expect(current, `Luminancia paso ${adminSteps[i]} > ${adminSteps[i + 1]}`).toBeGreaterThan(next);
     }
   });

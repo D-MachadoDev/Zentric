@@ -16,7 +16,11 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), tailwindcss()],
     resolve: {
-      alias: [{ find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) }],
+      alias: [
+        { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
+        { find: /^@zentric\/ui\/(.*)$/, replacement: fileURLToPath(new URL('./src/ui/$1', import.meta.url)) },
+        { find: '@zentric/ui', replacement: fileURLToPath(new URL('./src/ui', import.meta.url)) },
+      ],
     },
     define: {
       __API_BASE_URL__: JSON.stringify(apiBaseUrl),

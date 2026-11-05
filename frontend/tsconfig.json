@@ -1,9 +1,34 @@
 {
-  "//": "Base compartida de TypeScript. Cada paquete la extiende y solo declara lo propio. El compilador vive en packages/config/tsconfig.",
-  "extends": "./packages/config/tsconfig/base.json",
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "types": []
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "useDefineForClassFields": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": false,
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "types": ["node", "vite/client", "vitest/globals", "@testing-library/jest-dom/vitest"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@zentric/ui": ["./src/ui/index.ts"],
+      "@zentric/ui/*": ["./src/ui/*"]
+    }
   },
-  "include": [],
-  "exclude": ["node_modules", "**/dist/**", "**/.turbo/**"]
+  "include": ["src", "tests", "vite.config.ts", "vitest.setup.ts"]
 }

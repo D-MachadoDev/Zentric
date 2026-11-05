@@ -235,7 +235,7 @@ describe('Adversarial Verification: Consumer Imports & Module Resolution', () =>
       const step: ColorScaleStep = 500;
       const status: SemanticStatus = 'success';
       const ts: TypeScaleToken = '2xs';
-      const sp: SpacingToken = '1.5';
+      const sp: SpacingToken = 1.5;
       const rad: RadiusToken = 'xs';
       const sh: ShadowToken = 'surfaceHairline';
       const bp: BreakpointToken = 'md';
@@ -246,7 +246,7 @@ describe('Adversarial Verification: Consumer Imports & Module Resolution', () =>
       expect(step).toBe(500);
       expect(status).toBe('success');
       expect(ts).toBe('2xs');
-      expect(sp).toBe('1.5');
+      expect(sp).toBe(1.5);
       expect(rad).toBe('xs');
       expect(sh).toBe('surfaceHairline');
       expect(bp).toBe('md');
