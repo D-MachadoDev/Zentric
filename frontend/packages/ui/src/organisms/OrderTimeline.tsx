@@ -1,4 +1,4 @@
-﻿import * as React from 'react';
+import * as React from 'react';
 import { Ban, Check } from 'lucide-react';
 import { cn } from '../lib/cn';
 
@@ -138,7 +138,7 @@ function OrderTimeline({
                   data-slot="timeline-dot"
                   data-status={step.status}
                   className={cn(
-                    'relative flex size-8 shrink-0 items-center justify-center rounded-full border text-xs font-mono font-medium transition-colors shadow-xs',
+                    'relative flex size-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold tabular-nums transition-colors shadow-xs',
                     isCompleted &&
                       'border-primary bg-primary text-primary-foreground',
                     isCurrent &&
@@ -169,12 +169,12 @@ function OrderTimeline({
                     {step.label}
                   </span>
                   {step.description && (
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {step.description}
                     </span>
                   )}
                   {step.timestamp && (
-                    <span className="font-mono text-[10px] text-muted-foreground tabular-nums">
+                    <span className="text-xs text-muted-foreground tabular-nums">
                       {step.timestamp instanceof Date
                         ? step.timestamp.toLocaleDateString('es-CO', {
                             day: '2-digit',

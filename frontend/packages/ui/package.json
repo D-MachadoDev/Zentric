@@ -3,18 +3,20 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Design system Zentric: tokens (Q7/Q8), logo (Q6) y shadcn/ui adaptado (Q5/Q14).",
+  "description": "Design system Zentric: Atomic Design (atoms, molecules, organisms, tokens, logo).",
   "exports": {
     ".": "./src/index.ts",
     "./styles/theme.css": "./src/styles/theme.css",
+    "./atoms": "./src/atoms/index.ts",
+    "./molecules": "./src/molecules/index.ts",
+    "./organisms": "./src/organisms/index.ts",
     "./tokens": "./src/tokens/index.ts",
     "./primitives": "./src/primitives/index.ts",
+    "./composite": "./src/composite/index.ts",
     "./lib": "./src/lib/index.ts",
     "./lib/cn": "./src/lib/cn.ts",
     "./hooks": "./src/hooks/index.ts",
-    "./logo": "./src/logo/index.ts",
-    "./composite": "./src/composite/index.ts",
-    "./components/ui/*": "./src/components/ui/*.tsx"
+    "./logo": "./src/logo/index.ts"
   },
   "//": "Sin build: la app importa el TS fuente via Vite y el empaquetado lo resuelve el bundler. Emitir declaraciones solo añadiria un paso que nadie consume.",
   "scripts": {

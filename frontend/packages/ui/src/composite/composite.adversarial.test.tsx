@@ -5,12 +5,12 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   DataTable,
   type DataTableColumn,
-} from './DataTable';
-import { ModalDialog } from './ModalDialog';
-import { ResponsiveDrawer } from './ResponsiveDrawer';
-import { MoneyAmount } from './MoneyAmount';
-import { StatusBadge, type StatusTone } from './StatusBadge';
-import { StateView } from './StateView';
+} from './index';
+import { ModalDialog } from './index';
+import { ResponsiveDrawer } from './index';
+import { MoneyAmount } from './index';
+import { StatusBadge, type StatusTone } from './index';
+import { StateView } from './index';
 
 describe('Empirical Adversarial Challenge Suite (@zentric/ui/composite)', () => {
   describe('Challenge 1: DataTable Boundary & Stress', () => {
@@ -401,7 +401,7 @@ describe('Empirical Adversarial Challenge Suite (@zentric/ui/composite)', () => 
       const { rerender } = render(<MoneyAmount amount={-150000.5} currency="COP" locale="es-CO" />);
       const el = screen.getByText(/-\$?\s?150\.000/);
       expect(el).toBeInTheDocument();
-      expect(el).toHaveClass('font-mono', 'tabular-nums');
+      expect(el).toHaveClass('font-semibold', 'tabular-nums');
 
       rerender(<MoneyAmount amount={-0.01} currency="USD" locale="en-US" />);
       expect(screen.getByText(/-\$0\.01/)).toBeInTheDocument();

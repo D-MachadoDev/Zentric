@@ -1,6 +1,6 @@
-﻿import * as React from 'react';
+import * as React from 'react';
 import { AlertDialog as AlertDialogPrimitive } from 'radix-ui';
-import { Button } from '../primitives/Button';
+import { Button } from '../atoms/Button';
 import { cn } from '../lib/cn';
 
 /**

@@ -1,8 +1,8 @@
-﻿import * as React from 'react';
+import * as React from 'react';
 import { ArrowDown, ArrowUp, ChevronsUpDown, RotateCcw, X } from 'lucide-react';
 
 import { cn } from '../lib/cn';
-import { Skeleton } from '../primitives/Skeleton';
+import { Skeleton } from '../atoms/Skeleton';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Contrato del compuesto (Frontend-Design-System sección 5.3 "DataTable")
@@ -507,7 +507,7 @@ export function DataTable<T>({
                             key={column.id}
                             className={cn(
                               'px-4 py-3 text-foreground/90',
-                              column.numeric && 'text-right font-mono tabular-nums'
+                              column.numeric && 'text-right font-medium tabular-nums'
                             )}
                           >
                             {column.cell

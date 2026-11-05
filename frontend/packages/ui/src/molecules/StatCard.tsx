@@ -1,4 +1,4 @@
-﻿import * as React from 'react';
+import * as React from 'react';
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import { cn } from '../lib/cn';
 import { StatusBadge, type StatusTone } from './StatusBadge';
@@ -86,7 +86,7 @@ function StatCard({
             {title}
           </p>
           {subtitle && (
-            <span className="text-[11px] text-muted-foreground/80">
+            <span className="text-xs text-muted-foreground/80">
               {subtitle}
             </span>
           )}
@@ -111,7 +111,7 @@ function StatCard({
         <div
           data-slot="stat-value"
           className={cn(
-            'font-mono font-semibold tracking-tight text-foreground tabular-nums',
+            'font-sans font-semibold tracking-tight text-foreground tabular-nums',
             isHero ? 'text-3xl md:text-4xl' : 'text-2xl'
           )}
         >
@@ -124,7 +124,7 @@ function StatCard({
             data-slot="stat-trend"
             data-direction={trend.direction}
             className={cn(
-              'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-xs font-medium tabular-nums',
+              'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-sans text-xs font-semibold tabular-nums',
               trend.direction === 'up' &&
                 'border-success/30 bg-success/15 text-success',
               trend.direction === 'down' &&
@@ -138,7 +138,7 @@ function StatCard({
             {trend.direction === 'neutral' && <Minus className="size-3" />}
             <span>{trend.value}</span>
             {trend.label && (
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {trend.label}
               </span>
             )}
@@ -149,9 +149,9 @@ function StatCard({
       {/* Barra de progreso analítica opcional */}
       {progress && progressPercent !== null && (
         <div className="mt-4 flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>{progress.label ?? 'Meta'}</span>
-            <span className="font-mono tabular-nums">
+            <span className="font-sans font-semibold tabular-nums">
               {Math.round(progressPercent)}%
             </span>
           </div>

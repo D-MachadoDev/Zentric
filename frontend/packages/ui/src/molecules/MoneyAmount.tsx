@@ -1,14 +1,6 @@
-﻿import * as React from 'react';
+import * as React from 'react';
 import { cn } from '../lib/cn';
 
-/**
- * Importe monetario con disciplina OpenType (Frontend-Design-System sección 4.2 y sección 5.3).
- *
- * El servidor C# es la única autoridad financiera: la moneda y el total vienen
- * siempre del backend en el DTO (ZENTRIC.md / AD). Aquí sólo se formatea
- * con cifras tabulares (font-variant-numeric: tabular-nums) y versalitas para
- * el código ISO de la divisa (font-variant-caps: all-small-caps).
- */
 export interface MoneyAmountProps extends React.HTMLAttributes<HTMLSpanElement> {
   amount: number;
   /** Código ISO-4217 ("COP", "USD"...), tal cual lo entrega el servidor. */
@@ -28,8 +20,6 @@ function formatCurrency(amount: number, currency: string, locale: string = FALLB
       maximumFractionDigits: 2,
     }).format(amount);
   } catch {
-    // Si el servidor devolviera un código no reconocido por Intl, no rompemos la
-    // interfaz: mostramos el par numérico con el código crudo recibido.
     return `${amount.toFixed(2)} ${currency}`;
   }
 }
@@ -48,7 +38,7 @@ function MoneyAmount({
       data-slot="money-amount"
       data-currency={currency}
       className={cn(
-        'font-mono tabular-nums tracking-tight [font-variant-caps:all-small-caps]',
+        'tabular-nums font-semibold tracking-tight inline-flex items-baseline',
         className
       )}
       {...props}

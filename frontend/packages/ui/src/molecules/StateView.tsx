@@ -1,7 +1,7 @@
-﻿import * as React from 'react';
+import * as React from 'react';
 import { Ban, Inbox, RotateCcw } from 'lucide-react';
-import { Button } from '../primitives/Button';
-import { Skeleton } from '../primitives/Skeleton';
+import { Button } from '../atoms/Button';
+import { Skeleton } from '../atoms/Skeleton';
 import { cn } from '../lib/cn';
 
 /**

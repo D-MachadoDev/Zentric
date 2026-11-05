@@ -1,4 +1,4 @@
-﻿import * as React from 'react';
+import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../lib/cn';
 
@@ -10,7 +10,7 @@ import { cn } from '../lib/cn';
  * textual explícito en español.
  */
 const statusBadgeVariants = cva(
-  'inline-flex h-5.5 w-fit shrink-0 items-center gap-1.5 overflow-hidden rounded-full border px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap shadow-xs transition-colors',
+  'inline-flex h-5.5 w-fit shrink-0 items-center gap-1.5 overflow-hidden rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap shadow-xs transition-colors',
   {
     variants: {
       tone: {

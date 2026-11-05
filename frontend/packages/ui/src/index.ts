@@ -1,17 +1,16 @@
 /**
- * Punto de entrada del design system.
+ * Zentric Design System — Atomic Design Architecture
  *
- * La app importa desde `@zentric/ui`. Los subcaminos (`@zentric/ui/tokens`,
- * `@zentric/ui/lib`, `@zentric/ui/hooks`, `@zentric/ui/logo`) también están
- * declarados en package.json para tree-shaking fino.
- *
- * Los componentes shadcn/ui (Q5/Q14) se exportan explicitamente: no hay
- * re-export genérico, para que el bundle sólo pague lo que se usa.
+ * Jerarquía canónica:
+ * - Atoms: Primitivas atómicas básicas de interfaz.
+ * - Molecules: Controles y visualizadores moleculares.
+ * - Organisms: Módulos complejos de presentación y tablas de datos.
  */
 export * from './tokens';
-export * from './primitives';
+export * from './atoms';
+export * from './molecules';
+export * from './organisms';
 export * from './lib';
 export * from './hooks';
 export { Logo, LogoMark, LogoWordmark } from './logo';
 export type { BrandRole, LogoProps, LogoMarkProps, LogoWordmarkProps } from './logo';
-export * from './composite';

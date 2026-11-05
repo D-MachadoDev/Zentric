@@ -8,14 +8,14 @@ import {
   type DataTableColumn,
   type DataTableFilter,
   type DataTablePagination,
-} from './ZentricDataTable';
-import { ResponsiveDrawer } from './ResponsiveDrawer';
-import { ModalDialog } from './ModalDialog';
-import { StatCard } from './StatCard';
-import { OrderTimeline, type OrderTimelineStep } from './OrderTimeline';
-import { StatusBadge } from './StatusBadge';
-import { MoneyAmount } from './MoneyAmount';
-import { StateView } from './StateView';
+} from './index';
+import { ResponsiveDrawer } from './index';
+import { ModalDialog } from './index';
+import { StatCard } from './index';
+import { OrderTimeline, type OrderTimelineStep } from './index';
+import { StatusBadge } from './index';
+import { MoneyAmount } from './index';
+import { StateView } from './index';
 
 describe('Componentes Compuestos (@zentric/ui/composite) — Decisión A3', () => {
   describe('StatusBadge', () => {
@@ -47,18 +47,18 @@ describe('Componentes Compuestos (@zentric/ui/composite) — Decisión A3', () =
   });
 
   describe('MoneyAmount', () => {
-    it('formatea el importe monetario con tabular-nums y font-mono', () => {
+    it('formatea el importe monetario con tabular-nums y font-semibold', () => {
       render(<MoneyAmount amount={250000} currency="COP" />);
       const el = screen.getByText(/250\.000/);
       expect(el).toBeInTheDocument();
-      expect(el).toHaveClass('font-mono', 'tabular-nums');
+      expect(el).toHaveClass('font-semibold', 'tabular-nums');
       expect(el).toHaveAttribute('data-currency', 'COP');
     });
 
-    it('aplica disciplina de versalitas [font-variant-caps:all-small-caps]', () => {
+    it('aplica tracking-tight y alineación limpia', () => {
       render(<MoneyAmount amount={1500} currency="USD" locale="en-US" />);
       const el = screen.getByText(/1,500/);
-      expect(el).toHaveClass('[font-variant-caps:all-small-caps]');
+      expect(el).toHaveClass('tracking-tight');
     });
 
     it('maneja fallbacks sin romper la interfaz ante códigos no estándar', () => {
@@ -168,7 +168,7 @@ describe('Componentes Compuestos (@zentric/ui/composite) — Decisión A3', () =
       );
       expect(screen.getByText('Ingresos Totales')).toBeInTheDocument();
       const val = screen.getByText('$128.450.000 COP');
-      expect(val).toHaveClass('font-mono', 'tabular-nums', 'font-semibold');
+      expect(val).toHaveClass('font-sans', 'tabular-nums', 'font-semibold');
       const card = screen.getByText('Ingresos Totales').closest('[data-slot="stat-card"]');
       expect(card).toHaveAttribute('data-variant', 'hero');
     });
@@ -471,7 +471,7 @@ describe('Componentes Compuestos (@zentric/ui/composite) — Decisión A3', () =
       expect(stockHeader).toHaveClass('text-right');
 
       const stockCell = screen.getByText('15').closest('td');
-      expect(stockCell).toHaveClass('text-right', 'font-mono', 'tabular-nums');
+      expect(stockCell).toHaveClass('text-right', 'font-medium', 'tabular-nums');
     });
 
     it('soporta ordenamiento interactivo por columna y actualiza aria-sort', async () => {

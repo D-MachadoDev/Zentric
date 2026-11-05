@@ -1,4 +1,4 @@
-import { Button } from '../primitives/Button';
+import { Button } from '../atoms/Button';
 
 export type PageSlot = number | 'gap';
 
@@ -44,7 +44,7 @@ export function Pagination({
       aria-label="Paginación"
       className={`flex flex-col gap-4 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between ${className ?? ''}`}
     >
-      <p className="font-mono text-xs text-foreground-muted tabular-nums" aria-live="polite">
+      <p className="text-xs text-foreground-muted tabular-nums" aria-live="polite">
         Página <span className="font-semibold text-foreground">{currentPage}</span> de{' '}
         <span className="font-semibold text-foreground">{totalPages}</span>
         <span aria-hidden="true"> · </span>
