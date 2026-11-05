@@ -82,11 +82,13 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
 
 export interface TableHeadProps extends React.ComponentProps<"th"> {
   density?: TableDensity
+  numeric?: boolean
 }
 
 function TableHead({
   className,
   density: propDensity,
+  numeric = false,
   scope = "col",
   ...props
 }: TableHeadProps) {
@@ -98,11 +100,12 @@ function TableHead({
       data-slot="table-head"
       data-density={density}
       scope={scope}
-      className={cn(
-        "text-left align-middle text-caption font-semibold uppercase tracking-wider text-foreground-muted whitespace-nowrap [&:has([role=checkbox])]:pr-0",
+      className={`${cn(
+        "align-middle font-semibold uppercase tracking-wider text-foreground-muted whitespace-nowrap [&:has([role=checkbox])]:pr-0",
+        numeric ? "text-right tabular-nums font-mono" : "text-left",
         density === "compact" ? "h-8 px-3 py-1.5" : "h-10 px-4 py-2.5",
         className
-      )}
+      )} text-caption`}
       {...props}
     />
   )
@@ -144,7 +147,7 @@ function TableCaption({
   return (
     <caption
       data-slot="table-caption"
-      className={cn("mt-4 text-caption text-foreground-subtle", className)}
+      className={`${cn("mt-4 text-foreground-subtle", className)} text-caption`}
       {...props}
     />
   )

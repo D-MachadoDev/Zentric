@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "../lib/cn"
 
 export const skeletonVariants = cva(
-  "animate-pulse bg-surface-muted bg-muted",
+  "animate-pulse bg-surface-muted",
   {
     variants: {
       radius: {
@@ -42,7 +42,7 @@ function Skeleton({
       role="status"
       aria-live="polite"
       aria-busy="true"
-      className={cn(skeletonVariants({ radius }), className)}
+      className={`${cn(skeletonVariants({ radius }), className)} bg-muted`}
       {...props}
     >
       {children}
