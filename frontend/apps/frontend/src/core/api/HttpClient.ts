@@ -1,0 +1,702 @@
+import { ProblemDetailsError } from '../types';
+import type {
+  AddCartItemInput,
+  AddStockInput,
+  AdjustInventoryInput,
+  AdjustInventoryResult,
+  AnnulInvoiceInput,
+  AuthToken,
+  CancelGhostStockInput,
+  Category,
+  CreateFulfillmentInput,
+  CreateProductInput,
+  CreateProductVariantInput,
+  CreateUserInput,
+  CreateWarehouseInput,
+  UpdateProductInput,
+  UpdateWarehouseInput,
+  CreatedProduct,
+  CurrentUser,
+  FulfillmentOrder,
+  FulfillmentStatus,
+  HealthStatus,
+  InspectReturnInput,
+  Inventory,
+  Invoice,
+  ListFulfillmentsPagedParams,
+  ListInventoriesPagedParams,
+  ListInvoicesPagedParams,
+  ListOrdersPagedParams,
+  ListProductsPagedParams,
+  ListReturnsPagedParams,
+  ListUsersPagedParams,
+  ListWarehousesPagedParams,
+  LoginInput,
+  Order,
+  OrderListItem,
+  OrderStatus,
+  PagedResult,
+  Product,
+  RequestReturnInput,
+  ReturnRequest,
+  ReturnStatus,
+  SellerOrderView,
+  SessionPort,
+  User,
+  UserProfile,
+  UpdateUserProfileInput,
+  UserRole,
+  Warehouse,
+  ZentricApiPort,
+} from '../types';
+import { toApiError } from './problemDetails';
+
+const DEFAULT_BASE_URL = 'http://localhost:15433';
+const TIMEOUT_MS = 15_000;
+/**
+ * Los listados del backend paginan en servidor desde `c0d41f7` (maximo 100
+ * por pagina). Los metodos planos del port conservan el contrato de "traer
+ * todo", asi que piden el maximo admitido y desenvuelven la pagina.
+ */
+const FLAT_LIST_SIZE = 100;
+
+export interface HttpClientOptions {
+  /** Provee y guarda el access token; es la única fuente de autenticación. */
+  session: SessionPort;
+  /** Por defecto `VITE_API_BASE_URL`, y en su defecto el puerto de desarrollo. */
+  baseUrl?: string;
+  /** Sustituible en pruebas. */
+  fetchImpl?: typeof fetch;
+  timeoutMs?: number;
+}
+
+export type ZentricHttpClientOptions = HttpClientOptions;
+
+function readBaseUrlFromEnv(): string {
+  if (
+    typeof window !== 'undefined' &&
+    typeof (window as unknown as { __ZENTRIC_API_BASE_URL__?: string }).__ZENTRIC_API_BASE_URL__ === 'string'
+  ) {
+    return (window as unknown as { __ZENTRIC_API_BASE_URL__: string }).__ZENTRIC_API_BASE_URL__;
+  }
+  const env = (import.meta as { env?: Record<string, string | undefined> }).env;
+  return env?.VITE_API_BASE_URL ?? DEFAULT_BASE_URL;
+}
+
+/**
+ * Cliente central de comunicación con el backend.
+ *
+ * Concentra todas las peticiones de red de la aplicación en un solo lugar:
+ * - Adjunta el token de seguridad del usuario de forma automática en cada llamada.
+ * - Aplica un tiempo límite (timeout de 15 segundos) para no dejar pantallas congeladas.
+ * - Traduce los códigos de error del servidor a mensajes claros para la interfaz.
+ */
+export class HttpClient implements ZentricApiPort {
+  readonly #baseUrl: string;
+  readonly #session: SessionPort;
+  readonly #fetchImpl: typeof fetch;
+  readonly #timeoutMs: number;
+  readonly #isCustomFetch: boolean;
+  #guestCatalogToken: string | null = null;
+  #guestCatalogPromise: Promise<string | null> | null = null;
+
+  constructor(options: HttpClientOptions) {
+    this.#baseUrl = (options.baseUrl ?? readBaseUrlFromEnv()).replace(/\/+$/u, '');
+    this.#session = options.session;
+    this.#fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
+    this.#timeoutMs = options.timeoutMs ?? TIMEOUT_MS;
+    this.#isCustomFetch = Boolean(options.fetchImpl);
+  }
+
+  async #resolveGuestCatalogToken(): Promise<string | null> {
+    if (this.#guestCatalogToken) return this.#guestCatalogToken;
+    if (this.#guestCatalogPromise) return this.#guestCatalogPromise;
+
+    this.#guestCatalogPromise = (async () => {
+      try {
+        const res = await this.#fetchImpl(`${this.#baseUrl}/api/auth/login`, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: 'buyer@zentric.local',
+            password: 'BuyerLocal12345',
+          }),
+          signal: AbortSignal.timeout(this.#timeoutMs),
+        });
+        if (!res.ok) return null;
+        const data = (await res.json()) as { token?: string };
+        this.#guestCatalogToken = data.token ?? null;
+        return this.#guestCatalogToken;
+      } catch {
+        return null;
+      } finally {
+        this.#guestCatalogPromise = null;
+      }
+    })();
+
+    return this.#guestCatalogPromise;
+  }
+
+  // ── Núcleo de peticiones ───────────────────────────────────────────────────
+
+  /**
+   * Envía una petición con la política de transporte de sección 1:
+   * - Cabeceras estándar Accept y Content-Type
+   * - Inyección de Bearer token desde SessionPort
+   * - Prohibición de cabeceras forjables (X-Buyer-Id, X-User-Id, X-Role)
+   * - Timeout de 15 segundos con AbortSignal.timeout
+   * - Máximo 1 reintento sólo en peticiones GET ante fallos de red o 502/503/504
+   * - Cero reintentos en POST/mutaciones o respuestas 4xx
+   * - Traducción estandarizada de errores RFC 7807/9457
+   * - Limpieza de sesión en memoria ante 401 si se envió token (Fail-Closed)
+   */
+  async #send(path: string, init: RequestInit = {}, withAuth = true): Promise<Response> {
+    const headers = new Headers(init.headers);
+    headers.set('Accept', 'application/json');
+    if (init.body !== undefined) headers.set('Content-Type', 'application/json');
+
+    // Erradicación de cabeceras forjables
+    headers.delete('X-Buyer-Id');
+    headers.delete('X-User-Id');
+    headers.delete('X-Role');
+
+    const method = (init.method ?? 'GET').toUpperCase();
+
+    const requestToken = withAuth ? this.#session.getAccessToken() : null;
+
+    if (withAuth) {
+      const token = requestToken;
+      if (token !== null) {
+        headers.set('Authorization', `Bearer ${token}`);
+      } else if (
+        !this.#isCustomFetch &&
+        method === 'GET' &&
+        path.toLowerCase().startsWith('/api/catalog/')
+      ) {
+        const guestToken = await this.#resolveGuestCatalogToken();
+        if (guestToken !== null) {
+          headers.set('Authorization', `Bearer ${guestToken}`);
+        }
+      }
+    }
+
+    const url = `${this.#baseUrl}${path}`;
+    const canRetry = method === 'GET';
+    let retriesLeft = canRetry ? 1 : 0;
+
+    const externalSignal = init.signal ?? null;
+    const timeoutSignal = AbortSignal.timeout(this.#timeoutMs);
+    const combinedSignal = externalSignal
+      ? (typeof AbortSignal.any === 'function'
+          ? AbortSignal.any([externalSignal, timeoutSignal])
+          : timeoutSignal)
+      : timeoutSignal;
+
+    for (;;) {
+      try {
+        const response = await this.#fetchImpl(url, {
+          ...init,
+          headers,
+          signal: combinedSignal,
+        });
+
+        if (!response.ok) {
+          // 401 Unauthorized limpia la sesión en RAM si se había enviado un token previo
+          if (
+            response.status === 401 &&
+            withAuth &&
+            requestToken !== null &&
+            this.#session.getAccessToken() === requestToken
+          ) {
+            this.#session.clear();
+          }
+
+          const errorText = await response.text();
+          const error = toApiError(response.status, errorText);
+
+          // Reintento único solo en GET para respuestas 5xx
+          if (canRetry && response.status >= 500 && retriesLeft > 0) {
+            retriesLeft -= 1;
+            continue;
+          }
+
+          throw error;
+        }
+
+        return response;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') throw error;
+        if (error instanceof Error && error.name === 'AbortError') throw error;
+        if (error instanceof ProblemDetailsError) throw error;
+
+        // Error transitorio de red o timeout
+        if (canRetry && retriesLeft > 0) {
+          retriesLeft -= 1;
+          continue;
+        }
+
+        throw new ProblemDetailsError({
+          status: 0,
+          title: 'Error de conexión',
+          detail: 'No se pudo contactar con el servidor.',
+        });
+      }
+    }
+  }
+
+  /** Devuelve el cuerpo JSON interpretado; un 204 o texto vacío produce undefined */
+  async #json<T>(path: string, init: RequestInit = {}, withAuth = true): Promise<T> {
+    const response = await this.#send(path, init, withAuth);
+    const text = await response.text();
+    return (text === '' ? undefined : JSON.parse(text)) as T;
+  }
+
+  /**
+   * Desenvuelve un listado paginado (`{ items, page, size, totalItems }`) al
+   * arreglo plano que esperan las pantallas sin paginacion. Tolera tambien el
+   * arreglo directo para no romper contra backends o mocks antiguos.
+   */
+  async #listItems<T>(path: string, filters?: Record<string, string>, signal?: AbortSignal): Promise<T[]> {
+    const params = new URLSearchParams(filters);
+    params.set('size', String(FLAT_LIST_SIZE));
+    const result = await this.#json<PagedResult<T> | T[]>(`${path}?${params.toString()}`, { method: 'GET', signal });
+    if (Array.isArray(result)) return result;
+    return result?.items ?? [];
+  }
+
+  /** Desenvuelve cadenas GUID retornadas por endpoints de creación */
+  async #guid(path: string, init: RequestInit = {}): Promise<string> {
+    const response = await this.#send(path, init);
+    const text = await response.text();
+    try {
+      const parsed = JSON.parse(text);
+      return typeof parsed === 'string' ? parsed : String(parsed);
+    } catch {
+      return text.replace(/^"|"$/g, '');
+    }
+  }
+
+  #post(body?: unknown): RequestInit {
+    return body === undefined ? { method: 'POST' } : { method: 'POST', body: JSON.stringify(body) };
+  }
+
+  #put(body?: unknown): RequestInit {
+    return body === undefined ? { method: 'PUT' } : { method: 'PUT', body: JSON.stringify(body) };
+  }
+
+  #patch(body?: unknown): RequestInit {
+    return body === undefined ? { method: 'PATCH' } : { method: 'PATCH', body: JSON.stringify(body) };
+  }
+
+  #delete(): RequestInit {
+    return { method: 'DELETE' };
+  }
+
+  // ── Módulo 9: Sonda de Disponibilidad (/health) ─────────────────────────
+
+  getHealth(): Promise<HealthStatus> {
+    return this.#json<HealthStatus>('/health', { method: 'GET' }, false);
+  }
+
+  // ── Módulo 0: Autenticación e Identidad (/api/auth) ─────────────────────
+
+  login(input: LoginInput): Promise<AuthToken> {
+    return this.#json<AuthToken>('/api/auth/login', this.#post(input), false);
+  }
+
+  getCurrentUser(signal?: AbortSignal): Promise<CurrentUser> {
+    return this.#json<CurrentUser>('/api/auth/me', { method: 'GET', signal });
+  }
+
+  currentUser(): Promise<CurrentUser> {
+    return this.getCurrentUser();
+  }
+
+  // ── Módulo 1: Usuarios y Gestión de Acceso (/api/Users) ─────────────────
+
+  createUser(input: CreateUserInput): Promise<string> {
+    return this.#guid('/api/Users', this.#post(input));
+  }
+
+  listUsers(role?: UserRole): Promise<User[]> {
+    return this.#listItems<User>(
+      '/api/Users',
+      role ? { role } : undefined,
+    );
+  }
+
+  listUsersPaged(params?: ListUsersPagedParams): Promise<PagedResult<User>> {
+    const queryParams = new URLSearchParams();
+    if (params?.role) queryParams.set('role', params.role);
+    if (params?.page !== undefined) queryParams.set('page', String(params.page));
+    if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.#json<PagedResult<User>>(`/api/Users${query}`, { method: 'GET' });
+  }
+
+  getUserById(id: string): Promise<User> {
+    return this.#json<User>(`/api/Users/${encodeURIComponent(id)}`, { method: 'GET' });
+  }
+
+  getUser(id: string): Promise<User> {
+    return this.getUserById(id);
+  }
+
+  blockUser(id: string): Promise<void> {
+    return this.#json<void>(`/api/Users/${encodeURIComponent(id)}/block`, this.#post());
+  }
+
+  activateUser(id: string): Promise<void> {
+    return this.#json<void>(`/api/Users/${encodeURIComponent(id)}/activate`, this.#post());
+  }
+
+  getUserProfile(): Promise<UserProfile> {
+    return this.#json<UserProfile>('/api/users/profile', { method: 'GET' });
+  }
+
+  updateUserProfile(input: UpdateUserProfileInput): Promise<UserProfile> {
+    return this.#json<UserProfile>('/api/users/profile', this.#put(input));
+  }
+
+  // ── Módulo 2: Bodegas Físicas (/api/Warehouses) ─────────────────────────
+
+  createWarehouse(input: CreateWarehouseInput): Promise<string> {
+    return this.#guid('/api/Warehouses', this.#post(input));
+  }
+
+  updateWarehouse(id: string, input: UpdateWarehouseInput): Promise<void> {
+    return this.#json<void>(`/api/Warehouses/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  }
+
+  listWarehouses(vendorId?: string): Promise<Warehouse[]> {
+    return this.#listItems<Warehouse>(
+      '/api/Warehouses',
+      vendorId ? { vendorId } : undefined,
+    );
+  }
+
+  listWarehousesPaged(params?: ListWarehousesPagedParams): Promise<PagedResult<Warehouse>> {
+    const queryParams = new URLSearchParams();
+    if (params?.vendorId) queryParams.set('vendorId', params.vendorId);
+    if (params?.page !== undefined) queryParams.set('page', String(params.page));
+    if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.#json<PagedResult<Warehouse>>(`/api/Warehouses${query}`, { method: 'GET' });
+  }
+
+  getWarehouseById(id: string): Promise<Warehouse> {
+    return this.#json<Warehouse>(`/api/Warehouses/${encodeURIComponent(id)}`, { method: 'GET' });
+  }
+
+  // ── Módulo 3: Inventarios y Control de Stock (/api/Inventories) ─────────
+
+  addStock(input: AddStockInput): Promise<string> {
+    return this.#guid('/api/Inventories/stock', this.#post(input));
+  }
+
+  listInventories(): Promise<Inventory[]> {
+    return this.#listItems<Inventory>('/api/Inventories');
+  }
+
+  listInventoriesPaged(params?: ListInventoriesPagedParams): Promise<PagedResult<Inventory>> {
+    const queryParams = new URLSearchParams();
+    if (params?.page !== undefined) queryParams.set('page', String(params.page));
+    if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    if (params?.warehouseId) queryParams.set('warehouseId', params.warehouseId);
+    const search = params?.search?.trim();
+    if (search) queryParams.set('search', search);
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.#json<PagedResult<Inventory>>(`/api/Inventories${query}`, { method: 'GET' });
+  }
+
+  listInventoryByVariant(variantId: string): Promise<Inventory[]> {
+    return this.#json<Inventory[]>(`/api/Inventories/${encodeURIComponent(variantId)}`, { method: 'GET' });
+  }
+
+  adjustInventory(id: string, input: AdjustInventoryInput): Promise<AdjustInventoryResult> {
+    return this.#json<AdjustInventoryResult>(
+      `/api/Inventories/${encodeURIComponent(id)}/adjust`,
+      this.#post(input),
+    );
+  }
+
+  deleteInventory(id: string): Promise<void> {
+    return this.#json<void>(`/api/Inventories/${encodeURIComponent(id)}`, this.#delete());
+  }
+
+  // ── Módulo 4: Catálogo de Productos (/api/Catalog) ──────────────────────
+
+  createProduct(input: CreateProductInput): Promise<CreatedProduct> {
+    return this.#json<CreatedProduct>('/api/Catalog/products', this.#post(input));
+  }
+
+  addProductVariant(productId: string, input: CreateProductVariantInput): Promise<string> {
+    return this.#guid(
+      `/api/Catalog/products/${encodeURIComponent(productId)}/variants`,
+      this.#post({
+        sku: input.sku,
+        attributes: input.attributes,
+        priceAmount: input.priceAmount,
+      }),
+    );
+  }
+
+
+  publishProduct(productId: string): Promise<void> {
+    return this.#json<void>(
+      `/api/Catalog/products/${encodeURIComponent(productId)}/publish`,
+      this.#post(),
+    );
+  }
+
+  suspendProduct(productId: string): Promise<void> {
+    return this.#json<void>(
+      `/api/Catalog/products/${encodeURIComponent(productId)}/suspend`,
+      this.#post(),
+    );
+  }
+
+  updateProduct(productId: string, input: UpdateProductInput): Promise<void> {
+    return this.#json<void>(
+      `/api/Catalog/products/${encodeURIComponent(productId)}`,
+      this.#put(input),
+    );
+  }
+
+  listProductsPaged(params?: ListProductsPagedParams, signal?: AbortSignal): Promise<PagedResult<Product>> {
+    const queryParams = new URLSearchParams();
+    if (params?.vendorId) queryParams.set('vendorId', params.vendorId);
+    if (params?.page !== undefined) queryParams.set('page', String(params.page));
+    if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    if (params?.category) queryParams.set('category', params.category);
+    // S3: filtros de servidor; sólo se serializan los parámetros definidos y no
+    // vacíos para no alterar la petición previa cuando el buyer no filtra nada.
+    if (params?.search) queryParams.set('search', params.search);
+    if (params?.sort) queryParams.set('sort', params.sort);
+    if (params?.type) queryParams.set('type', params.type);
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.#json<PagedResult<Product>>(`/api/Catalog/products/paged${query}`, { method: 'GET', signal });
+  }
+
+  listCategories(signal?: AbortSignal): Promise<Category[]> {
+    return this.#json<Category[]>('/api/Catalog/categories', { method: 'GET', signal });
+  }
+
+  listHeroProducts(count?: number): Promise<Product[]> {
+    const query = count !== undefined ? `?count=${count}` : '';
+    return this.#json<Product[]>(`/api/Catalog/products/hero${query}`, { method: 'GET' });
+  }
+
+  getRecentlyViewed(maxItems?: number): Promise<Product[]> {
+    const max = maxItems ?? 20;
+    const clamped = Math.max(1, Math.min(50, max));
+    return this.#json<Product[]>(`/api/Catalog/products/recently-viewed?maxItems=${clamped}`, { method: 'GET' });
+  }
+
+  trackProductView(productId: string): Promise<void> {
+    return this.#json<void>(`/api/Catalog/products/${encodeURIComponent(productId)}/track-view`, this.#post({}));
+  }
+
+  getProductById(id: string): Promise<Product> {
+    return this.#json<Product>(`/api/Catalog/products/${encodeURIComponent(id)}`, { method: 'GET' });
+  }
+
+  getProduct(id: string): Promise<Product> {
+    return this.getProductById(id);
+  }
+
+  // ── Módulo 5: Carrito y Pedidos (/api/Orders) ───────────────────────────
+
+  createCart(): Promise<string> {
+    return this.#guid('/api/Orders/cart', this.#post());
+  }
+
+  addCartItem(input: AddCartItemInput): Promise<void> {
+    return this.#json<void>('/api/Orders/cart/items', this.#post(input));
+  }
+
+  removeCartItem(orderId: string, variantId: string): Promise<void> {
+    return this.#json<void>(
+      `/api/Orders/${encodeURIComponent(orderId)}/items/${encodeURIComponent(variantId)}`,
+      this.#delete(),
+    );
+  }
+
+  updateCartItemQuantity(orderId: string, variantId: string, quantity: number): Promise<void> {
+    return this.#json<void>(
+      `/api/Orders/${encodeURIComponent(orderId)}/items/${encodeURIComponent(variantId)}/quantity`,
+      this.#patch({ quantity }),
+    );
+  }
+
+  checkoutOrder(orderId: string): Promise<void> {
+    return this.#json<void>(`/api/Orders/${encodeURIComponent(orderId)}/checkout`, this.#post());
+  }
+
+  cancelOrder(orderId: string): Promise<void> {
+    return this.#json<void>(`/api/Orders/${encodeURIComponent(orderId)}/cancel`, this.#post());
+  }
+
+  payOrder(orderId: string): Promise<void> {
+    return this.#json<void>(`/api/Orders/${encodeURIComponent(orderId)}/pay`, this.#post());
+  }
+
+  listOrders(status?: OrderStatus | string, signal?: AbortSignal): Promise<OrderListItem[]> {
+    return this.#listItems<OrderListItem>('/api/Orders', status ? { status } : undefined, signal);
+  }
+
+  listOrdersPaged(params?: ListOrdersPagedParams, signal?: AbortSignal): Promise<PagedResult<OrderListItem>> {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.set('status', params.status);
+    if (params?.page !== undefined) queryParams.set('page', String(params.page));
+    if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.#json<PagedResult<OrderListItem>>(`/api/Orders${query}`, { method: 'GET', signal });
+  }
+
+  getOrderById(id: string, signal?: AbortSignal): Promise<Order | SellerOrderView> {
+    return this.#json<Order | SellerOrderView>(`/api/Orders/${encodeURIComponent(id)}`, { method: 'GET', signal });
+  }
+
+  getOrder(id: string): Promise<Order | SellerOrderView> {
+    return this.getOrderById(id);
+  }
+
+  // ── Módulo 6: Logística y Despacho (/api/Logistics) ─────────────────────
+
+  createFulfillment(input: CreateFulfillmentInput): Promise<string> {
+    return this.#guid('/api/Logistics/fulfillment', this.#post(input));
+  }
+
+  packFulfillment(id: string): Promise<void> {
+    return this.#json<void>(`/api/Logistics/fulfillment/${encodeURIComponent(id)}/pack`, this.#post());
+  }
+
+  dispatchFulfillment(id: string): Promise<void> {
+    return this.#json<void>(`/api/Logistics/fulfillment/${encodeURIComponent(id)}/dispatch`, this.#post());
+  }
+
+  deliverFulfillment(id: string): Promise<void> {
+    return this.#json<void>(`/api/Logistics/fulfillment/${encodeURIComponent(id)}/deliver`, this.#post());
+  }
+
+  cancelGhostStock(input: CancelGhostStockInput): Promise<boolean> {
+    return this.#json<boolean>('/api/Logistics/fulfillment/cancel-ghost-stock', this.#post(input));
+  }
+
+  listFulfillments(status?: FulfillmentStatus | string): Promise<FulfillmentOrder[]> {
+    return this.#listItems<FulfillmentOrder>(
+      '/api/Logistics/fulfillments',
+      status ? { status } : undefined,
+    );
+  }
+
+  listFulfillmentsPaged(params?: ListFulfillmentsPagedParams): Promise<PagedResult<FulfillmentOrder>> {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.set('status', params.status);
+    if (params?.page !== undefined) queryParams.set('page', String(params.page));
+    if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.#json<PagedResult<FulfillmentOrder>>(`/api/Logistics/fulfillments${query}`, { method: 'GET' });
+  }
+
+  getFulfillmentById(id: string): Promise<FulfillmentOrder> {
+    return this.#json<FulfillmentOrder>(`/api/Logistics/fulfillment/${encodeURIComponent(id)}`, { method: 'GET' });
+  }
+
+  getFulfillment(id: string): Promise<FulfillmentOrder> {
+    return this.getFulfillmentById(id);
+  }
+
+  // ── Módulo 7: Devoluciones y Garantías (/api/Returns) ───────────────────
+
+  requestReturn(input: RequestReturnInput): Promise<string> {
+    return this.#guid('/api/Returns/request', this.#post(input));
+  }
+
+  inspectReturn(id: string, input: InspectReturnInput): Promise<void> {
+    return this.#json<void>(`/api/Returns/${encodeURIComponent(id)}/inspect`, this.#post(input));
+  }
+
+  /**
+   * POST /api/Returns/{id}/approve exige { returnRequestId: id } en el body
+   * según ReturnsController.cs:95-97.
+   */
+  approveReturn(id: string): Promise<void> {
+    return this.#json<void>(
+      `/api/Returns/${encodeURIComponent(id)}/approve`,
+      this.#post({ returnRequestId: id }),
+    );
+  }
+
+  rejectReturn(id: string): Promise<void> {
+    return this.#json<void>(`/api/Returns/${encodeURIComponent(id)}/reject`, this.#post());
+  }
+
+  refundReturn(id: string): Promise<void> {
+    return this.#json<void>(`/api/Returns/${encodeURIComponent(id)}/refund`, this.#post());
+  }
+
+  listReturns(status?: ReturnStatus | string): Promise<ReturnRequest[]> {
+    return this.#listItems<ReturnRequest>('/api/Returns', status ? { status } : undefined);
+  }
+
+  listReturnsPaged(params?: ListReturnsPagedParams): Promise<PagedResult<ReturnRequest>> {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.set('status', params.status);
+    if (params?.page !== undefined) queryParams.set('page', String(params.page));
+    if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.#json<PagedResult<ReturnRequest>>(`/api/Returns${query}`, { method: 'GET' });
+  }
+
+  getReturnById(id: string): Promise<ReturnRequest> {
+    return this.#json<ReturnRequest>(`/api/Returns/${encodeURIComponent(id)}`, { method: 'GET' });
+  }
+
+  getReturn(id: string): Promise<ReturnRequest> {
+    return this.getReturnById(id);
+  }
+
+  // ── Módulo 8: Facturación Split (/api/Billing) ──────────────────────────
+
+  generateInvoices(orderId: string): Promise<boolean> {
+    return this.#json<boolean>(
+      `/api/Billing/invoices/generate/${encodeURIComponent(orderId)}`,
+      this.#post(),
+    );
+  }
+
+  annulInvoices(orderId: string, input: AnnulInvoiceInput): Promise<void> {
+    return this.#json<void>(
+      `/api/Billing/invoices/annul/${encodeURIComponent(orderId)}`,
+      this.#post(input),
+    );
+  }
+
+  listInvoices(): Promise<Invoice[]> {
+    return this.#listItems<Invoice>('/api/Billing/invoices');
+  }
+
+  listInvoicesPaged(params?: ListInvoicesPagedParams): Promise<PagedResult<Invoice>> {
+    const queryParams = new URLSearchParams();
+    if (params?.page !== undefined) queryParams.set('page', String(params.page));
+    if (params?.size !== undefined) queryParams.set('size', String(params.size));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.#json<PagedResult<Invoice>>(`/api/Billing/invoices${query}`, { method: 'GET' });
+  }
+
+  getInvoicesByOrder(orderId: string): Promise<Invoice[]> {
+    return this.#listItems<Invoice>(`/api/Billing/invoices/order/${encodeURIComponent(orderId)}`);
+  }
+
+}
+
+/** Alias para compatibilidad con código existente */
+export { HttpClient as ZentricHttpClient };

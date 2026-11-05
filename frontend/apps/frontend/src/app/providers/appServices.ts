@@ -1,5 +1,5 @@
-import { createApiClient } from '../../adapters';
-import { setDefaultApi, setDefaultSession } from '../../application';
+import { createApiClient, setDefaultApi, setDefaultSession } from '../../core';
+
 
 /**
  * Instancia única de servicios de la aplicación.

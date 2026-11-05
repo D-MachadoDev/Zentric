@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
-import type { SessionPort, ZentricApiPort } from '../../domain';
+import type { SessionPort, ZentricApiPort } from '../../core';
 
 /**
  * Contrato de contexto inyectado al router en beforeLoad y loaders.

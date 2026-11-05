@@ -2,7 +2,7 @@ import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { createMemoryHistory, createRouter, RouterProvider } from '@tanstack/react-router';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { ApiError, UserRole } from '../../domain';
+import { ApiError, UserRole } from '../../core';
 import { AppQueryClientProvider } from '../providers/AppQueryClientProvider';
 import { AuthProvider } from '../providers/AuthProvider';
 import { useAuth } from '../providers/authContext';

@@ -1,26 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { CerrarSesionService, IniciarSesionService, RestaurarSesionService } from '../../application';
-import { isApiError } from '../../domain';
-import type { CurrentUser, LoginInput } from '../../domain';
+import { CerrarSesionService, IniciarSesionService, RestaurarSesionService } from '../../core';
+import { isApiError } from '../../core';
+import type { CurrentUser, LoginInput } from '../../core';
 import { appServices } from './appServices';
 import { AuthContext } from './authContext';
 import type { AuthValue } from './authContext';
 
 /**
- * Publica la sesión a páginas, layouts y guardas.
+ * Comparte la sesión activa del usuario con toda la aplicación.
  *
- * **Context no es almacenamiento persistente:** el access token vive sólo en
- * `SessionPort`, que a su vez sólo usa memoria. Al recargar la página se pierde
- * y no hay refresh que lo evite (`AD` / Q15-B), así que la única vía para
- * identificarse de nuevo es volver a entrar por `/entrar`.
+ * Decisión de seguridad: guardamos el token de acceso únicamente en memoria RAM.
+ * Si el usuario recarga la pestaña o cierra el navegador, la sesión se reinicia
+ * para proteger sus datos personales y prevenir accesos no autorizados.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { session, api } = appServices;
   const [user, setUser] = useState<CurrentUser | null>(() => session.getUser());
   const [expiredNotice, setExpiredNotice] = useState<string | null>(null);
 
-  // Sincroniza reactivamente el estado de AuthProvider con SessionPort (useLoginMutation, localStorage)
+  // Avisa al estado de React si la sesión cambia en cualquier parte de la aplicación.
   useEffect(() => {
     const unsubscribe = session.subscribe?.(() => {
       setUser(session.getUser?.() ?? null);
@@ -30,9 +29,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [session]);
 
-  // Al montar, valida `GET /api/auth/me` sólo si queda token en
-  // memoria. Al abrir la app normalmente no lo hay (se perdió al recargar), así
-  // que la llamada no se hace y no hay tráfico espurio.
+  // Al abrir la app, sólo consultamos al servidor si ya hay un token en memoria.
+  // Evitamos peticiones innecesarias si la persona todavía no ha iniciado sesión.
   useEffect(() => {
     if (session.getAccessToken() === null) return;
 
@@ -44,9 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch((error: unknown) => {
         if (!activo) return;
-        // Un `401` es predecible: la sesión ya no sirve, se limpia y se avisa.
-        // Cualquier otro fallo (red caída) NO borra la sesión — decidir que la
-        // identidad no existe porque el servidor no contestó sería mentir.
+        // Si el servidor confirma 401, el token caducó y se pide iniciar sesión nuevamente.
+        // Si falla por problemas de red o internet, conservamos la sesión local para reintentar luego.
         if (isApiError(error) && error.status === 401) {
           session.clear();
           setUser(null);
@@ -77,8 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const clearExpiredNotice = useCallback(() => setExpiredNotice(null), []);
 
-  // Se relee en vivo en cada render: `session` es el mismo objeto que usan las
-  // guardas, así que no puede haber una identidad mostrada que el router no ve.
+  // Una sola fuente de la verdad para que las pantallas y las guardas de ruta vean al mismo usuario.
   const value = useMemo<AuthValue>(
     () => ({
       session,

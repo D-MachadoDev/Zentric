@@ -1,5 +1,5 @@
 import { redirect } from '@tanstack/react-router';
-import { UserRole } from '../../domain';
+import { UserRole } from '../../core';
 import type { RouterContext } from '../routes/routerContext';
 
 /**

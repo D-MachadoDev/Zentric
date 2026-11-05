@@ -1,6 +1,6 @@
 import type { ErrorComponentProps } from '@tanstack/react-router';
 import { Button } from '@zentric/ui';
-import { isApiError } from '../../domain';
+import { isApiError } from '../../core';
 import { appServices } from '../providers/appServices';
 import { getRoleHomePath, RolNoAutorizadoError } from './guards';
 import { navegarA } from './navegacion';

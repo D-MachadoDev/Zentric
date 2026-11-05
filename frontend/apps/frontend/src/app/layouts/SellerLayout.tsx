@@ -14,7 +14,7 @@ import { LayoutSidebar, type NavGroup, type NavItem } from './LayoutSidebar';
 import { OperationalFooter } from '../components/OperationalFooter';
 import { useAuth } from '../providers/authContext';
 import { useNavigate } from '@tanstack/react-router';
-import { UserRole } from '../../domain';
+import { UserRole } from '../../core';
 
 const sellerAnchor: NavItem[] = [
   { href: '/seller', label: 'Panel del Vendedor', icon: LayoutDashboard },

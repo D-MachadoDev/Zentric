@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { UserRole } from '../../domain';
-import { ApiError } from '../../domain/models/ApiError';
+import { UserRole } from '../../core';
+import { ApiError } from '../../core';
 import { RolNoAutorizadoError } from '../guards/routeGuards';
 import { RouteErrorComponent } from '../routes/RouteErrorComponent';
 

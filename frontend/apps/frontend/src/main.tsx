@@ -4,23 +4,23 @@ import { GlobalErrorBoundary } from './app/components/GlobalErrorBoundary';
 import { AppQueryClientProvider } from './app/providers/AppQueryClientProvider';
 import { AuthProvider } from './app/providers/AuthProvider';
 import { AppRouterProvider } from './app/routes/AppRouter';
-import { AlertHost } from './components/alert/AlertHost';
+import { AlertHost } from './app/components/AlertHost';
 import { ThemeProvider } from './app/providers/ThemeProvider';
 import './styles/global.css';
 
-// Punto de entrada determinista (C4-4-Codigo-React.md sección 1).
-// Orden estricto de proveedores:
-// 1. React.StrictMode (detección de efectos secundarios en React 19)
-// 2. GlobalErrorBoundary (captura fallos de renderizado y reinicio limpio)
-// 3. AppQueryClientProvider (TanStack Query v5 caché e interceptores)
-// 4. AuthProvider (sesión en RAM sin refresh tokens según AD)
-// 5. ThemeProvider (soporte dual Light / Dark persistente)
-// 6. AppRouterProvider (TanStack Router con contexto inyectado)
-// 7. AlertHost (cola accesible de toasts y modales de confirmación)
+// Punto de entrada de la aplicación.
+// El orden de los proveedores es deliberado:
+// 1. StrictMode: detecta posibles efectos secundarios durante el desarrollo.
+// 2. GlobalErrorBoundary: si ocurre un fallo inesperado, muestra una pantalla de ayuda en vez de quedar en blanco.
+// 3. AppQueryClientProvider: administra la memoria caché y peticiones hacia el servidor.
+// 4. AuthProvider: protege la sesión manteniéndola en memoria RAM por seguridad.
+// 5. ThemeProvider: recuerda la preferencia visual (modo claro u oscuro).
+// 6. AppRouterProvider: muestra las pantallas permitidas según el rol del usuario.
+// 7. AlertHost: ventana global para notificaciones y avisos importantes.
 const container = document.getElementById('root');
 
 if (!container) {
-  // Sin #root no hay app que montar: falla explícito en vez de un blanco eterno.
+  // Sin el contenedor principal no podemos montar la app: avisamos con un error claro para resolverlo rápido.
   throw new Error('No se encontro el elemento #root en index.html');
 }
 
@@ -38,4 +38,3 @@ createRoot(container).render(
     </GlobalErrorBoundary>
   </StrictMode>,
 );
-

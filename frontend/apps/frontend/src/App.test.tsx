@@ -10,9 +10,9 @@ import { appServices } from './app/providers/appServices';
 import { AppRouterProvider } from './app/routes/AppRouter';
 import * as routeDefs from './app/routes/routeTree';
 import { routerOptions } from './app/routes/routerOptions';
-import { AlertHost } from './components/alert/AlertHost';
-import { TableSkeleton } from './components/TableSkeleton';
-import { UserRole } from './domain';
+import { AlertHost } from './app/components/AlertHost';
+import { TableSkeleton } from './app/components/TableSkeleton';
+import { UserRole } from './core';
 
 // Q11 (TanStack Router) se verifica contra una historia en memoria: en jsdom
 // no hay historial de navegador real, pero la resolución de rutas y las

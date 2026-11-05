@@ -1,4 +1,4 @@
-import { AlertAdapter } from '../../adapters/alert/AlertAdapter';
+import { AlertAdapter } from '../../core/utils/AlertAdapter';
 
 /**
  * Instancia única de alertas (misma razón que `appServices`): el adaptador guarda

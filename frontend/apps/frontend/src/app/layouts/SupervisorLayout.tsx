@@ -1,4 +1,4 @@
-﻿import { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useState, type ReactNode } from 'react';
 import { Eye, ShoppingBag, Truck, RotateCcw, Receipt, Sliders } from 'lucide-react';
 import { LayoutHeader } from './LayoutHeader';
@@ -6,7 +6,7 @@ import { LayoutSidebar, type NavGroup } from './LayoutSidebar';
 import { OperationalFooter } from '../components/OperationalFooter';
 import { useAuth } from '../providers/authContext';
 import { useNavigate } from '@tanstack/react-router';
-import { UserRole } from '../../domain';
+import { UserRole } from '../../core';
 
 const supervisorGroups: NavGroup[] = [
   {

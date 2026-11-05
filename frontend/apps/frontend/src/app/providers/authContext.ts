@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { CurrentUser, LoginInput, SessionPort, UserRole, ZentricApiPort } from '../../domain';
+import type { CurrentUser, LoginInput, SessionPort, UserRole, ZentricApiPort } from '../../core';
 
 /**
  * Estado compartido por Context (`AuthProvider` / `useAuth()`).

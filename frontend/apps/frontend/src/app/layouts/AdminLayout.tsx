@@ -6,7 +6,7 @@ import { LayoutSidebar, type NavGroup, type NavItem } from './LayoutSidebar';
 import { OperationalFooter } from '../components/OperationalFooter';
 import { useAuth } from '../providers/authContext';
 import { useNavigate } from '@tanstack/react-router';
-import { UserRole } from '../../domain';
+import { UserRole } from '../../core';
 
 const adminAnchor: NavItem[] = [
   { href: '/admin', label: 'Panel General', icon: LayoutDashboard },

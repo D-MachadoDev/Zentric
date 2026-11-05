@@ -1,6 +1,6 @@
 import { createRootRouteWithContext, createRoute, Link, Outlet, redirect } from '@tanstack/react-router';
 import { RootLayout } from '../layouts/RootLayout';
-import { UserRole } from '../../domain';
+import { UserRole } from '../../core';
 import { type RouterContext, parseLoginSearch } from './routerContext';
 import { appServices } from '../providers/appServices';
 import { exigirRol, exigirUnoDeRoles, RolNoAutorizadoError } from '../guards/routeGuards';
@@ -52,130 +52,130 @@ function RouteLoading() {
 }
 
 const LoginPage = lazyPage(() =>
-  import('../../modules/auth/LoginPage').then((m) => ({ default: m.LoginPage })),
+  import('../../features/auth/LoginPage').then((m) => ({ default: m.LoginPage })),
 );
 const CorporateLoginPage = lazyPage(() =>
-  import('../../modules/auth/CorporateLoginPage').then((m) => ({ default: m.CorporateLoginPage })),
+  import('../../features/auth/CorporateLoginPage').then((m) => ({ default: m.CorporateLoginPage })),
 );
 const RegisterBuyerPage = lazyPage(() =>
-  import('../../modules/auth/RegisterBuyerPage').then((m) => ({ default: m.RegisterBuyerPage })),
+  import('../../features/auth/RegisterBuyerPage').then((m) => ({ default: m.RegisterBuyerPage })),
 );
 const HealthStatusPage = lazyPage(() =>
-  import('../../modules/auth/HealthStatusPage').then((m) => ({ default: m.HealthStatusPage })),
+  import('../../features/auth/HealthStatusPage').then((m) => ({ default: m.HealthStatusPage })),
 );
 const TermsPage = lazyPage(() =>
-  import('../../modules/buyer/TermsPage').then((m) => ({ default: m.TermsPage })),
+  import('../../features/buyer/TermsPage').then((m) => ({ default: m.TermsPage })),
 );
 const PrivacyPage = lazyPage(() =>
-  import('../../modules/buyer/PrivacyPage').then((m) => ({ default: m.PrivacyPage })),
+  import('../../features/buyer/PrivacyPage').then((m) => ({ default: m.PrivacyPage })),
 );
 const CookiesPage = lazyPage(() =>
-  import('../../modules/buyer/CookiesPage').then((m) => ({ default: m.CookiesPage })),
+  import('../../features/buyer/CookiesPage').then((m) => ({ default: m.CookiesPage })),
 );
 const LegalPage = lazyPage(() =>
-  import('../../modules/buyer/LegalPage').then((m) => ({ default: m.LegalPage })),
+  import('../../features/buyer/LegalPage').then((m) => ({ default: m.LegalPage })),
 );
 const BuyerCatalogPage = lazyPage(() =>
-  import('../../modules/buyer/BuyerCatalogPage').then((m) => ({ default: m.BuyerCatalogPage })),
+  import('../../features/buyer/BuyerCatalogPage').then((m) => ({ default: m.BuyerCatalogPage })),
 );
 const BuyerProductDetailPage = lazyPage(() =>
-  import('../../modules/buyer/BuyerProductDetailPage').then((m) => ({ default: m.BuyerProductDetailPage })),
+  import('../../features/buyer/BuyerProductDetailPage').then((m) => ({ default: m.BuyerProductDetailPage })),
 );
 const BuyerCartPage = lazyPage(() =>
-  import('../../modules/buyer/BuyerCartPage').then((m) => ({ default: m.BuyerCartPage })),
+  import('../../features/buyer/BuyerCartPage').then((m) => ({ default: m.BuyerCartPage })),
 );
 const BuyerOrdersPage = lazyPage(() =>
-  import('../../modules/buyer/BuyerOrdersPage').then((m) => ({ default: m.BuyerOrdersPage })),
+  import('../../features/buyer/BuyerOrdersPage').then((m) => ({ default: m.BuyerOrdersPage })),
 );
 const BuyerOrderDetailPage = lazyPage(() =>
-  import('../../modules/buyer/BuyerOrderDetailPage').then((m) => ({ default: m.BuyerOrderDetailPage })),
+  import('../../features/buyer/BuyerOrderDetailPage').then((m) => ({ default: m.BuyerOrderDetailPage })),
 );
 const BuyerOrderPaymentPage = lazyPage(() =>
-  import('../../modules/buyer/BuyerOrderPaymentPage').then((m) => ({ default: m.BuyerOrderPaymentPage })),
+  import('../../features/buyer/BuyerOrderPaymentPage').then((m) => ({ default: m.BuyerOrderPaymentPage })),
 );
 const RequestReturnPage = lazyPage(() =>
-  import('../../modules/buyer/RequestReturnPage').then((m) => ({ default: m.RequestReturnPage })),
+  import('../../features/buyer/RequestReturnPage').then((m) => ({ default: m.RequestReturnPage })),
 );
 const BuyerProfilePage = lazyPage(() =>
-  import('../../modules/buyer/BuyerProfilePage').then((m) => ({ default: m.BuyerProfilePage })),
+  import('../../features/buyer/BuyerProfilePage').then((m) => ({ default: m.BuyerProfilePage })),
 );
 const SellerDashboardPage = lazyPage(() =>
-  import('../../modules/seller/SellerDashboardPage').then((m) => ({ default: m.SellerDashboardPage })),
+  import('../../features/seller/SellerDashboardPage').then((m) => ({ default: m.SellerDashboardPage })),
 );
 const SellerProductsPage = lazyPage(() =>
-  import('../../modules/seller/SellerProductsPage').then((m) => ({ default: m.SellerProductsPage })),
+  import('../../features/seller/SellerProductsPage').then((m) => ({ default: m.SellerProductsPage })),
 );
 const CreateProductPage = lazyPage(() =>
-  import('../../modules/seller/CreateProductPage').then((m) => ({ default: m.CreateProductPage })),
+  import('../../features/seller/CreateProductPage').then((m) => ({ default: m.CreateProductPage })),
 );
 const SellerProductDetailPage = lazyPage(() =>
-  import('../../modules/seller/SellerProductDetailPage').then((m) => ({ default: m.SellerProductDetailPage })),
+  import('../../features/seller/SellerProductDetailPage').then((m) => ({ default: m.SellerProductDetailPage })),
 );
 const SellerInventoryPage = lazyPage(() =>
-  import('../../modules/seller/SellerInventoryPage').then((m) => ({ default: m.SellerInventoryPage })),
+  import('../../features/seller/SellerInventoryPage').then((m) => ({ default: m.SellerInventoryPage })),
 );
 const SellerOrdersPage = lazyPage(() =>
-  import('../../modules/seller/SellerOrdersPage').then((m) => ({ default: m.SellerOrdersPage })),
+  import('../../features/seller/SellerOrdersPage').then((m) => ({ default: m.SellerOrdersPage })),
 );
 const SellerFulfillmentsPage = lazyPage(() =>
-  import('../../modules/seller/SellerFulfillmentsPage').then((m) => ({ default: m.SellerFulfillmentsPage })),
+  import('../../features/seller/SellerFulfillmentsPage').then((m) => ({ default: m.SellerFulfillmentsPage })),
 );
 const SellerReturnsPage = lazyPage(() =>
-  import('../../modules/seller/SellerReturnsPage').then((m) => ({ default: m.SellerReturnsPage })),
+  import('../../features/seller/SellerReturnsPage').then((m) => ({ default: m.SellerReturnsPage })),
 );
 const AdminDashboardPage = lazyPage(() =>
-  import('../../modules/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })),
+  import('../../features/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })),
 );
 const UserListPage = lazyPage(() =>
-  import('../../modules/admin/UserListPage').then((m) => ({ default: m.UserListPage })),
+  import('../../features/admin/UserListPage').then((m) => ({ default: m.UserListPage })),
 );
 const CreateUserPage = lazyPage(() =>
-  import('../../modules/admin/CreateUserPage').then((m) => ({ default: m.CreateUserPage })),
+  import('../../features/admin/CreateUserPage').then((m) => ({ default: m.CreateUserPage })),
 );
 const WarehouseListPage = lazyPage(() =>
-  import('../../modules/admin/WarehouseListPage').then((m) => ({ default: m.WarehouseListPage })),
+  import('../../features/admin/WarehouseListPage').then((m) => ({ default: m.WarehouseListPage })),
 );
 const InventoryAdjustPage = lazyPage(() =>
-  import('../../modules/admin/InventoryAdjustPage').then((m) => ({ default: m.InventoryAdjustPage })),
+  import('../../features/admin/InventoryAdjustPage').then((m) => ({ default: m.InventoryAdjustPage })),
 );
 const RefundListPage = lazyPage(() =>
-  import('../../modules/admin/RefundListPage').then((m) => ({ default: m.RefundListPage })),
+  import('../../features/admin/RefundListPage').then((m) => ({ default: m.RefundListPage })),
 );
 const InvoiceManagementPage = lazyPage(() =>
-  import('../../modules/admin/InvoiceManagementPage').then((m) => ({ default: m.InvoiceManagementPage })),
+  import('../../features/admin/InvoiceManagementPage').then((m) => ({ default: m.InvoiceManagementPage })),
 );
 const LogisticsFulfillmentsPage = lazyPage(() =>
-  import('../../modules/logistics/LogisticsFulfillmentsPage').then((m) => ({ default: m.LogisticsFulfillmentsPage })),
+  import('../../features/logistics/LogisticsFulfillmentsPage').then((m) => ({ default: m.LogisticsFulfillmentsPage })),
 );
 const FulfillmentOperationsPage = lazyPage(() =>
-  import('../../modules/logistics/FulfillmentOperationsPage').then((m) => ({ default: m.FulfillmentOperationsPage })),
+  import('../../features/logistics/FulfillmentOperationsPage').then((m) => ({ default: m.FulfillmentOperationsPage })),
 );
 const GhostStockReportPage = lazyPage(() =>
-  import('../../modules/logistics/GhostStockReportPage').then((m) => ({ default: m.GhostStockReportPage })),
+  import('../../features/logistics/GhostStockReportPage').then((m) => ({ default: m.GhostStockReportPage })),
 );
 const LogisticsReturnsInspectPage = lazyPage(() =>
-  import('../../modules/logistics/LogisticsReturnsInspectPage').then((m) => ({ default: m.LogisticsReturnsInspectPage })),
+  import('../../features/logistics/LogisticsReturnsInspectPage').then((m) => ({ default: m.LogisticsReturnsInspectPage })),
 );
 const SupervisorDashboardPage = lazyPage(() =>
-  import('../../modules/supervisor/SupervisorDashboardPage').then((m) => ({ default: m.SupervisorDashboardPage })),
+  import('../../features/supervisor/SupervisorDashboardPage').then((m) => ({ default: m.SupervisorDashboardPage })),
 );
 const SupervisorOrdersPage = lazyPage(() =>
-  import('../../modules/supervisor/SupervisorOrdersPage').then((m) => ({ default: m.SupervisorOrdersPage })),
+  import('../../features/supervisor/SupervisorOrdersPage').then((m) => ({ default: m.SupervisorOrdersPage })),
 );
 const SupervisorOrderAuditPage = lazyPage(() =>
-  import('../../modules/supervisor/SupervisorOrderAuditPage').then((m) => ({ default: m.SupervisorOrderAuditPage })),
+  import('../../features/supervisor/SupervisorOrderAuditPage').then((m) => ({ default: m.SupervisorOrderAuditPage })),
 );
 const SupervisorFulfillmentsPage = lazyPage(() =>
-  import('../../modules/supervisor/SupervisorFulfillmentsPage').then((m) => ({ default: m.SupervisorFulfillmentsPage })),
+  import('../../features/supervisor/SupervisorFulfillmentsPage').then((m) => ({ default: m.SupervisorFulfillmentsPage })),
 );
 const SupervisorReturnsPage = lazyPage(() =>
-  import('../../modules/supervisor/SupervisorReturnsPage').then((m) => ({ default: m.SupervisorReturnsPage })),
+  import('../../features/supervisor/SupervisorReturnsPage').then((m) => ({ default: m.SupervisorReturnsPage })),
 );
 const SupervisorInvoicesPage = lazyPage(() =>
-  import('../../modules/supervisor/SupervisorInvoicesPage').then((m) => ({ default: m.SupervisorInvoicesPage })),
+  import('../../features/supervisor/SupervisorInvoicesPage').then((m) => ({ default: m.SupervisorInvoicesPage })),
 );
 const SupervisorInventoryAuditPage = lazyPage(() =>
-  import('../../modules/supervisor/SupervisorInventoryAuditPage').then((m) => ({ default: m.SupervisorInventoryAuditPage })),
+  import('../../features/supervisor/SupervisorInventoryAuditPage').then((m) => ({ default: m.SupervisorInventoryAuditPage })),
 );
 
 

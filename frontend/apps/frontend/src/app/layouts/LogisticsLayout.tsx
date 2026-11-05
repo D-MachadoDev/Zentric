@@ -6,7 +6,7 @@ import { LayoutHeader } from './LayoutHeader';
 import { LayoutSidebar, type NavItem } from './LayoutSidebar';
 import { OperationalFooter } from '../components/OperationalFooter';
 import { useAuth } from '../providers/authContext';
-import { UserRole } from '../../domain';
+import { UserRole } from '../../core';
 
 const logisticsNavItems: NavItem[] = [
   { href: '/logistics/fulfillments', label: 'Cola de Despachos', icon: Truck },

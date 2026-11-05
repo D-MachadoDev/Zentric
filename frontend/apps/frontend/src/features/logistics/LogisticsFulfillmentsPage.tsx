@@ -1,0 +1,556 @@
+import { useState } from 'react';
+import { Link } from '@tanstack/react-router';
+import {
+  Truck,
+  Plus,
+  Search,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle,
+  PackageCheck,
+  ArrowUpRight,
+} from 'lucide-react';
+import {
+  Button,
+  Badge,
+  Input,
+  Skeleton,
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  Pagination,
+} from '@zentric/ui';
+import {
+  useFulfillmentsPagedQuery,
+  useCreateFulfillmentMutation,
+  usePackFulfillmentMutation,
+  useDispatchFulfillmentMutation,
+  useDeliverFulfillmentMutation,
+} from '../../core';
+import { CreateFulfillmentSchema } from '../../core';
+import { NOMBRES_DE_ESTADO_DE_DESPACHO } from '../../core';
+import type { CreateFulfillmentInput, FulfillmentOrder, ListFulfillmentsPagedParams } from '../../core';
+import { FulfillmentStatus } from '../../core';
+
+/**
+ * Monitoreo de Despachos y Cancelaciones por Quiebre (/logistics/fulfillments).
+ *
+ * Frontend-Role-Modules.md sección 2.6:
+ * Supervisión en modo sólo lectura de todas las órdenes de fulfillment en la red
+ * logística (`GET /api/logistics/fulfillments`), incluyendo guías y motivos de
+ * cancelación por stock fantasma (AD/ AD). Cero botones de mutación.
+ * Paginación server-side: el backend filtra, pagina y ordena; el frontend solo renderiza.
+ */
+export function LogisticsFulfillmentsPage() {
+  const [statusFilter, setStatusFilter] = useState<string>('All');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+
+  // Formulario nuevo despacho
+  const [formData, setFormData] = useState<CreateFulfillmentInput>({
+    customerOrderId: '',
+    vendorId: '',
+  });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [createSuccess, setCreateSuccess] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  const parsedStatus = statusFilter === 'All' ? undefined : (statusFilter as FulfillmentStatus);
+
+  // Pagination params for server-side pagination
+  const params: ListFulfillmentsPagedParams = {
+    status: parsedStatus,
+    page: page - 1, // backend uses 0-based
+    size: 20,
+  };
+
+  const { data: pagedResult, isLoading, isError, error, refetch, isFetching } = useFulfillmentsPagedQuery(params);
+  const fulfillments = pagedResult?.items ?? [];
+  const totalItems = pagedResult?.totalItems ?? 0;
+  const totalPages = pagedResult?.totalPages ?? 0;
+
+  const createMutation = useCreateFulfillmentMutation();
+  const packMutation = usePackFulfillmentMutation();
+  const dispatchMutation = useDispatchFulfillmentMutation();
+  const deliverMutation = useDeliverFulfillmentMutation();
+
+  const pendingPackTotal = fulfillments.filter(
+    (f: FulfillmentOrder) => f.status === FulfillmentStatus.PendingPack
+  ).length;
+  const packedTotal = fulfillments.filter(
+    (f: FulfillmentOrder) => f.status === FulfillmentStatus.Packed
+  ).length;
+  const dispatchedTotal = fulfillments.filter(
+    (f: FulfillmentOrder) => f.status === FulfillmentStatus.Dispatched
+  ).length;
+  const deliveredTotal = fulfillments.filter(
+    (f: FulfillmentOrder) => f.status === FulfillmentStatus.Delivered
+  ).length;
+
+  const handleQuickPack = async (id: string) => {
+    try {
+      await packMutation.mutateAsync(id);
+      void refetch();
+    } catch {
+      // Manejado en estado
+    }
+  };
+
+  const handleQuickDispatch = async (id: string) => {
+    try {
+      await dispatchMutation.mutateAsync(id);
+      void refetch();
+    } catch {
+      // Manejado en estado
+    }
+  };
+
+  const handleQuickDeliver = async (id: string) => {
+    try {
+      await deliverMutation.mutateAsync(id);
+      void refetch();
+    } catch {
+      // Manejado en estado
+    }
+  };
+
+  const filteredFulfillments = fulfillments.filter((ful: FulfillmentOrder) => {
+    const matchesSearch =
+      !searchTerm.trim() ||
+      ful.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ful.customerOrderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ful.vendorId.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === 'All' || ful.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateError(null);
+    setCreateSuccess(null);
+    setFormErrors({});
+
+    const validation = CreateFulfillmentSchema.safeParse(formData);
+    if (!validation.success) {
+      const errMap: Record<string, string> = {};
+      for (const err of validation.error.issues) {
+        if (err.path[0]) {
+          errMap[err.path[0] as string] = err.message;
+        }
+      }
+      setFormErrors(errMap);
+      return;
+    }
+
+    try {
+      const newId = await createMutation.mutateAsync(validation.data);
+      setCreateSuccess(`Orden de despacho creada con ID #${newId.substring(0, 8)}...`);
+      setFormData({ customerOrderId: '', vendorId: '' });
+      refetch();
+    } catch (err) {
+      setCreateError(
+        err instanceof Error ? err.message : 'Error al registrar orden de despacho.'
+      );
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8 w-full max-w-full">
+        <Skeleton className="h-10 w-64 bg-surface" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <Skeleton className="lg:col-span-8 h-96 rounded-2xl bg-surface" />
+          <Skeleton className="lg:col-span-4 h-96 rounded-2xl bg-surface" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="space-y-6 p-6 sm:p-10 max-w-4xl mx-auto w-full">
+        <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5 text-destructive" />
+          <AlertTitle>Error al cargar despachos</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : 'Ocurrió un error inesperado.'}
+          </AlertDescription>
+        </Alert>
+        <Button
+          onClick={() => refetch()}
+          variant="outline"
+          className="border-border text-foreground hover:bg-border"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" /> Reintentar
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8 w-full max-w-full">
+      {/* ── Encabezado ─────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
+              Cola de Despachos y Operaciones Logísticas
+            </h1>
+            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
+              {fulfillments.length} Envíos
+            </Badge>
+          </div>
+          <p className="text-sm text-foreground-muted">
+            Monitoreo y ejecución de empaque, despacho y entrega de paquetes en la red logística.
+          </p>
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="border-border text-foreground-muted hover:text-foreground"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+          Refrescar
+        </Button>
+      </div>
+
+      {/* ── Cinta KPI de Muelle y Transporte (Filtro 1-clic) ────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <button
+          type="button"
+          onClick={() =>
+            setStatusFilter(
+              statusFilter === FulfillmentStatus.PendingPack ? 'All' : FulfillmentStatus.PendingPack
+            )
+          }
+          className={`rounded-2xl border p-4 text-left transition-colors ${
+            statusFilter === FulfillmentStatus.PendingPack
+              ? 'border-warning bg-warning/10'
+              : 'border-border bg-surface hover:border-warning/50'
+          }`}
+        >
+          <span className="text-[11px] font-mono uppercase tracking-wider text-foreground-muted block">
+            1. Por Empacar
+          </span>
+          <span className="mt-1 text-2xl font-bold font-mono text-warning tabular-nums block">
+            {pendingPackTotal}
+          </span>
+          <span className="text-[10px] font-mono text-foreground-muted">En cola de preparación</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() =>
+            setStatusFilter(
+              statusFilter === FulfillmentStatus.Packed ? 'All' : FulfillmentStatus.Packed
+            )
+          }
+          className={`rounded-2xl border p-4 text-left transition-colors ${
+            statusFilter === FulfillmentStatus.Packed
+              ? 'border-brand bg-brand/10'
+              : 'border-border bg-surface hover:border-brand/50'
+          }`}
+        >
+          <span className="text-[11px] font-mono uppercase tracking-wider text-foreground-muted block">
+            2. En Muelle (Packed)
+          </span>
+          <span className="mt-1 text-2xl font-bold font-mono text-brand tabular-nums block">
+            {packedTotal}
+          </span>
+          <span className="text-[10px] font-mono text-foreground-muted">Listos para despacho</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() =>
+            setStatusFilter(
+              statusFilter === FulfillmentStatus.Dispatched ? 'All' : FulfillmentStatus.Dispatched
+            )
+          }
+          className={`rounded-2xl border p-4 text-left transition-colors ${
+            statusFilter === FulfillmentStatus.Dispatched
+              ? 'border-brand bg-brand/10'
+              : 'border-border bg-surface hover:border-brand/50'
+          }`}
+        >
+          <span className="text-[11px] font-mono uppercase tracking-wider text-foreground-muted block">
+            3. En Tránsito
+          </span>
+          <span className="mt-1 text-2xl font-bold font-mono text-foreground tabular-nums block">
+            {dispatchedTotal}
+          </span>
+          <span className="text-[10px] font-mono text-foreground-muted">Con guía de transporte</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() =>
+            setStatusFilter(
+              statusFilter === FulfillmentStatus.Delivered ? 'All' : FulfillmentStatus.Delivered
+            )
+          }
+          className={`rounded-2xl border p-4 text-left transition-colors ${
+            statusFilter === FulfillmentStatus.Delivered
+              ? 'border-emerald-500/60 bg-emerald-500/10'
+              : 'border-border bg-surface hover:border-emerald-500/40'
+          }`}
+        >
+          <span className="text-[11px] font-mono uppercase tracking-wider text-foreground-muted block">
+            4. Entregados
+          </span>
+          <span className="mt-1 text-2xl font-bold font-mono text-success tabular-nums block">
+            {deliveredTotal}
+          </span>
+          <span className="text-[10px] font-mono text-foreground-muted">Entrega certificada</span>
+        </button>
+      </div>
+
+      {/* ── Split-Frame (70% / 30%) ─────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Lado Izquierdo (70%): Tabla de Despachos ─────────────────────── */}
+        <section className="lg:col-span-8 space-y-6">
+          {/* Controles de Búsqueda y Pestañas de Estado */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
+              <Input
+                type="text"
+                placeholder="Buscar por ID despacho, pedido o vendedor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-surface border-border text-foreground placeholder:text-foreground-muted focus:border-brand"
+              />
+            </div>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              aria-label="Filtrar por estado de despacho"
+              className="bg-surface border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
+            >
+              <option value="All">Todos los Estados</option>
+              <option value={FulfillmentStatus.PendingPack}>Por Empacar (PendingPack)</option>
+              <option value={FulfillmentStatus.Packed}>Empacado (Packed)</option>
+              <option value={FulfillmentStatus.Dispatched}>En Tránsito (Dispatched)</option>
+              <option value={FulfillmentStatus.Delivered}>Entregado (Delivered)</option>
+              <option value={FulfillmentStatus.Cancelled}>Cancelado (Cancelled)</option>
+            </select>
+          </div>
+
+          {filteredFulfillments.length === 0 ? (
+            <div className="rounded-2xl border border-border bg-surface p-12 text-center">
+              <Truck className="h-10 w-10 text-foreground-muted mx-auto mb-3" />
+              <h3 className="text-sm font-semibold text-foreground">No se encontraron despachos</h3>
+              <p className="text-xs text-foreground-muted mt-1">
+                No hay órdenes de envío que coincidan con los filtros seleccionados.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-border text-foreground-muted uppercase tracking-wider font-sans bg-surface-muted/40">
+                      <th className="py-3 px-4">Despacho</th>
+                      <th className="py-3 px-4">Pedido Original</th>
+                      <th className="py-3 px-4">Vendedor</th>
+                      <th className="py-3 px-4">Estado</th>
+                      <th className="py-3 px-4 text-right">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {filteredFulfillments.map((ful: FulfillmentOrder) => {
+                      const statusName = NOMBRES_DE_ESTADO_DE_DESPACHO[ful.status] ?? ful.status;
+                      const isSellerSeed = ful.vendorId === '0b01129d-c0a9-4325-8394-4b9e636a4e88';
+                      const vendorLabel = isSellerSeed ? 'Valeria Mendoza (Vendedor)' : `Vendedor #${ful.vendorId.substring(0, 8)}`;
+                      const vendorSub = isSellerSeed ? 'seller@zentric.local' : ful.vendorId;
+
+                      const isPendingPack = ful.status === FulfillmentStatus.PendingPack;
+
+                      return (
+                        <tr
+                          key={ful.id}
+                          className={`transition-colors ${
+                            isPendingPack
+                              ? 'bg-warning/5 hover:bg-warning/10'
+                              : 'hover:bg-surface-muted/40'
+                          }`}
+                        >
+                          <td className="py-4 px-4 font-mono font-semibold text-foreground">
+                            <div>#{ful.id.substring(0, 8)}</div>
+                            <div className="text-[10px] text-foreground-muted font-mono">Despacho</div>
+                          </td>
+                          <td className="py-4 px-4 font-mono text-foreground-muted">
+                            <div>#{ful.customerOrderId.substring(0, 8)}</div>
+                            <div className="text-[10px] text-foreground-muted font-sans">Pedido Comercial</div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="font-semibold text-foreground text-xs">{vendorLabel}</div>
+                            <div className="text-[11px] font-mono text-foreground-muted">{vendorSub}</div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <Badge
+                              variant="outline"
+                              className={`text-[11px] font-mono ${
+                                ful.status === FulfillmentStatus.PendingPack
+                                  ? 'border-warning/50 text-warning bg-warning/15 font-semibold'
+                                  : ful.status === FulfillmentStatus.Packed || ful.status === FulfillmentStatus.Dispatched
+                                  ? 'border-brand/40 text-brand bg-brand/10'
+                                  : ful.status === FulfillmentStatus.Delivered
+                                  ? 'border-emerald-400/40 text-emerald-300 bg-emerald-500/10'
+                                  : 'border-destructive/30 text-destructive bg-destructive/10'
+                              }`}
+                            >
+                              {isPendingPack && (
+                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-warning animate-pulse mr-1" />
+                              )}
+                              {statusName}
+                            </Badge>
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            <div className="inline-flex items-center justify-end gap-2">
+                              {ful.status === FulfillmentStatus.PendingPack && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleQuickPack(ful.id)}
+                                  disabled={packMutation.isPending}
+                                  className="rounded-md border border-warning/40 bg-warning/10 px-2 py-1 font-mono text-[10px] font-semibold text-warning hover:bg-warning hover:text-primary-foreground transition-colors"
+                                >
+                                  Empacar
+                                </button>
+                              )}
+                              {ful.status === FulfillmentStatus.Packed && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleQuickDispatch(ful.id)}
+                                  disabled={dispatchMutation.isPending}
+                                  className="rounded-md border border-brand/40 bg-brand/10 px-2 py-1 font-mono text-[10px] font-semibold text-brand hover:bg-brand hover:text-primary-foreground transition-colors"
+                                >
+                                  Despachar
+                                </button>
+                              )}
+                              {ful.status === FulfillmentStatus.Dispatched && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleQuickDeliver(ful.id)}
+                                  disabled={deliverMutation.isPending}
+                                  className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 font-mono text-[10px] font-semibold text-success hover:bg-emerald-500 hover:text-primary-foreground transition-colors"
+                                >
+                                  Certificar Entrega
+                                </button>
+                              )}
+                              <Link
+                                to="/logistics/fulfillments/$id"
+                                params={{ id: ful.id }}
+                                className="inline-flex items-center gap-1 text-brand hover:text-brand/80 font-semibold"
+                              >
+                                Operar <ArrowUpRight className="h-3.5 w-3.5" />
+                              </Link>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={setPage}
+              className="mt-6"
+            />
+          )}
+
+        </section>
+
+        {/* Lado Derecho (30%): Alta Manual de Despacho ──────────────────── */}
+        <section className="lg:col-span-4 space-y-6">
+          <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground font-sans flex items-center gap-2">
+              <Plus className="h-4 w-4 text-brand" />
+              Crear Orden de Despacho
+            </h3>
+
+            {createSuccess && (
+              <Alert className="border-brand/40 bg-brand/10 text-brand">
+                <CheckCircle className="h-4 w-4 text-brand" />
+                <AlertDescription className="text-xs">{createSuccess}</AlertDescription>
+              </Alert>
+            )}
+
+            {createError && (
+              <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
+                <AlertCircle className="h-4 w-4 text-destructive" />
+                <AlertDescription className="text-xs">{createError}</AlertDescription>
+              </Alert>
+            )}
+
+            <form onSubmit={handleCreateSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="text-foreground-muted block mb-1">ID del Pedido Pagado (UUID)</label>
+                <Input
+                  type="text"
+                  placeholder="UUID del pedido a despachar"
+                  value={formData.customerOrderId}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, customerOrderId: e.target.value }))
+                  }
+                  className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-brand"
+                />
+                {formErrors.customerOrderId && (
+                  <p className="text-[11px] text-destructive mt-1">{formErrors.customerOrderId}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-foreground-muted block mb-1">ID del Vendedor Titular (UUID)</label>
+                <Input
+                  type="text"
+                  placeholder="UUID del vendedor dueño del stock"
+                  value={formData.vendorId}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, vendorId: e.target.value }))
+                  }
+                  className="bg-surface-muted border-border text-foreground font-mono text-xs focus:border-brand"
+                />
+                {formErrors.vendorId && (
+                  <p className="text-[11px] text-destructive mt-1">{formErrors.vendorId}</p>
+                )}
+              </div>
+
+              <Button
+                type="submit"
+                disabled={createMutation.isPending}
+                className="w-full bg-brand text-primary-foreground hover:bg-brand/90 font-semibold text-xs mt-2"
+              >
+                {createMutation.isPending ? 'Creando...' : 'Crear Despacho'}
+              </Button>
+            </form>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-surface p-5 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-semibold text-brand">
+              <PackageCheck className="h-4 w-4" />
+              <span>Flujo Logístico Canónico</span>
+            </div>
+            <p className="text-[11px] text-foreground-muted leading-relaxed">
+              Las órdenes de despacho avanzan secuencialmente: `PendingPack` $\rightarrow$ `Packed` $\rightarrow$ `Dispatched` $\rightarrow$ `Delivered`. La certificación de entrega es potestad exclusiva del Operador Logístico.
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}

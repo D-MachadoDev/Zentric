@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { Logo, Skeleton } from '@zentric/ui';
-import { useCategoriesQuery } from '../../application/services/catalog';
+import { useCategoriesQuery } from '../../core';
 import {
   ShieldCheck,
   CreditCard,

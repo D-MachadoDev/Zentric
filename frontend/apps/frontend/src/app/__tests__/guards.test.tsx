@@ -1,7 +1,7 @@
 import { createMemoryHistory, createRouter, isRedirect } from '@tanstack/react-router';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { InMemorySession } from '../../adapters';
-import { UserRole } from '../../domain';
+import { InMemorySession } from '../../core';
+import { UserRole } from '../../core';
 import { appServices } from '../providers/appServices';
 import {
   exigirRol,

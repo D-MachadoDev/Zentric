@@ -12,13 +12,13 @@ import {
   Clock,
 } from 'lucide-react';
 import { useAuth } from '../providers/authContext';
-import { useOrdersQuery } from '../../application/services/orders';
-import { useCategoriesQuery } from '../../application/services/catalog';
+import { useOrdersQuery } from '../../core';
+import { useCategoriesQuery } from '../../core';
 import { Button, Logo, SearchInput, Skeleton } from '@zentric/ui';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { BuyerFooter } from '../components/BuyerFooter';
-import { UserRole } from '../../domain';
-import { getGuestCartCount, subscribeGuestCart } from '../../modules/buyer/guestCart';
+import { UserRole } from '../../core';
+import { getGuestCartCount, subscribeGuestCart } from '../../features/buyer/guestCart';
 
 interface BuyerLayoutProps {
   children?: ReactNode;
