@@ -109,7 +109,7 @@ export function SellerDashboardPage() {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Consola del Vendedor
             </h1>
-            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
+            <Badge variant="outline" className="border-border text-brand font-medium text-xs">
               Portal Comercial
             </Badge>
           </div>
@@ -137,7 +137,7 @@ export function SellerDashboardPage() {
         <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive">
           <AlertCircle className="h-5 w-5 text-destructive" />
           <AlertTitle>Aviso del Catálogo</AlertTitle>
-          <AlertDescription className="text-xs font-mono">
+          <AlertDescription className="text-xs">
             No fue posible conectar con el inventario del vendedor. Reintente más tarde.
           </AlertDescription>
         </Alert>
@@ -219,7 +219,7 @@ export function SellerDashboardPage() {
                   <div key={order.id} className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-surface-muted/30 transition-colors">
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2.5 flex-wrap">
-                        <span className="text-sm sm:text-base font-bold font-mono text-foreground tracking-tight">
+                        <span className="text-sm sm:text-base font-bold text-foreground tracking-tight">
                           Pedido #{order.id.slice(0, 8)}
                         </span>
                         <StatusBadge tone="neutral">{order.status}</StatusBadge>
@@ -254,7 +254,7 @@ export function SellerDashboardPage() {
               <h2 className="text-sm font-bold font-sans tracking-wide text-foreground">
                 Liquidación Split (5% / 95%)
               </h2>
-              <Badge variant="outline" className="border-brand/40 text-brand font-mono text-xs">
+              <Badge variant="outline" className="border-brand/40 text-brand font-medium text-xs">
                 ADR-0023
               </Badge>
             </div>

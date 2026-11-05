@@ -389,7 +389,7 @@ export function SellerProductsPage() {
                       </StatusBadge>
                       <Badge
                         variant="outline"
-                        className="border-border text-foreground-muted text-xs font-mono"
+                        className="border-border text-foreground-muted text-xs font-medium"
                       >
                         {product.type === ProductType.Physical ? (
                           <span className="flex items-center gap-1">
@@ -402,7 +402,7 @@ export function SellerProductsPage() {
                         )}
                       </Badge>
                       {product.category && (
-                        <Badge variant="outline" className="border-border text-foreground-subtle text-[11px] font-mono">
+                        <Badge variant="outline" className="border-border text-foreground-subtle text-xs font-medium">
                           {product.category}
                         </Badge>
                       )}
@@ -412,7 +412,7 @@ export function SellerProductsPage() {
                       {product.description || 'Sin descripción provista.'}
                     </p>
 
-                    <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-foreground-muted">
+                    <div className="flex flex-wrap items-center gap-4 text-xs text-foreground-muted">
                       <span>{product.variants.length} variante(s)</span>
                       {hasVariableSkuPricing && (
                         <>
@@ -440,10 +440,10 @@ export function SellerProductsPage() {
 
                   <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 pt-4 md:pt-0 border-border">
                     <div className="text-left md:text-right">
-                      <span className="text-[10px] uppercase font-mono text-foreground-muted block">
+                      <span className="text-xs uppercase font-medium text-foreground-muted block">
                         {hasVariableSkuPricing ? 'Desde (Precio Base)' : 'Precio Base'}
                       </span>
-                      <div className="text-lg font-bold font-mono text-foreground tabular-nums">
+                      <div className="text-lg font-bold text-foreground tabular-nums">
                         <MoneyAmount amount={product.price} currency={product.currency} />
                       </div>
                     </div>
@@ -454,7 +454,7 @@ export function SellerProductsPage() {
                         variant={isPublished ? 'outline' : 'secondary'}
                         onClick={() => handleToggleStatus(product)}
                         disabled={publishMutation.isPending || suspendMutation.isPending}
-                        className={`text-xs font-mono ${
+                        className={`text-xs font-semibold ${
                           isPublished
                             ? 'border-warning/40 text-warning hover:bg-warning/10'
                             : 'bg-brand text-primary-foreground font-bold'
