@@ -19,6 +19,7 @@ export interface SearchInputProps {
   recentSearches?: string[];
   showRecentSearches?: boolean;
   maxRecentSearches?: number;
+  showSubmitButton?: boolean;
   className?: string;
   disabled?: boolean;
   autoFocus?: boolean;
@@ -70,6 +71,7 @@ export function SearchInput({
   recentSearches = [],
   showRecentSearches = true,
   maxRecentSearches = 5,
+  showSubmitButton = true,
   className,
   disabled = false,
   autoFocus = false,
@@ -309,7 +311,8 @@ export function SearchInput({
               : undefined
           }
           className={cn(
-            'w-full rounded-lg border border-border bg-background/80 py-2.5 pl-11 pr-32 text-sm text-foreground placeholder:text-foreground-muted',
+            'w-full rounded-lg border border-border bg-background/80 py-2.5 pl-11 text-sm text-foreground placeholder:text-foreground-muted',
+            showSubmitButton ? 'pr-32' : 'pr-10',
             'transition-all duration-150 ease-out-expo',
             'focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand',
             'disabled:cursor-not-allowed disabled:opacity-50',
@@ -321,39 +324,44 @@ export function SearchInput({
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-9 top-1/2 -translate-y-1/2 rounded-full p-1 text-foreground-muted hover:text-foreground hover:bg-surface-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className={cn(
+              'absolute top-1/2 -translate-y-1/2 rounded-full p-1 text-foreground-muted hover:text-foreground hover:bg-surface-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              showSubmitButton ? 'right-9' : 'right-2.5',
+            )}
             aria-label="Limpiar búsqueda"
           >
             <X className="h-4 w-4" />
           </button>
         )}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            if (value.trim() && onSearch) {
-              onSearch(value.trim());
-              saveToHistory(value.trim());
-              setShowDropdown(false);
-            } else if (!value.trim()) {
-              setShowDropdown(!showDropdown);
-              inputRef.current?.focus();
-            }
-          }}
-          disabled={disabled || !value.trim()}
-          className={cn(
-            'absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full px-3 py-1.5 text-xs font-semibold text-background transition-all duration-150',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-            value.trim() ? 'bg-brand hover:bg-brand-strong' : 'bg-surface-muted text-foreground-muted hover:bg-surface'
-          )}
-          // WCAG 2.5.3 (Label in Name): el nombre accesible debe contener el
-          // texto visible. Con el campo vacio el boton muestra "Ver" y el
-          // aria-label decia "Abrir sugerencias", que no lo contiene: la
-          // auditoria lo marcaba como `label-content-name-mismatch`.
-          aria-label={value.trim() ? 'Buscar' : 'Ver sugerencias'}
-        >
-          {value.trim() ? 'Buscar' : 'Ver'}
-        </button>
+        {showSubmitButton && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              if (value.trim() && onSearch) {
+                onSearch(value.trim());
+                saveToHistory(value.trim());
+                setShowDropdown(false);
+              } else if (!value.trim()) {
+                setShowDropdown(!showDropdown);
+                inputRef.current?.focus();
+              }
+            }}
+            disabled={disabled || !value.trim()}
+            className={cn(
+              'absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full px-3 py-1.5 text-xs font-semibold text-background transition-all duration-150',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              value.trim() ? 'bg-brand hover:bg-brand-strong' : 'bg-surface-muted text-foreground-muted hover:bg-surface'
+            )}
+            // WCAG 2.5.3 (Label in Name): el nombre accesible debe contener el
+            // texto visible. Con el campo vacio el boton muestra "Ver" y el
+            // aria-label decia "Abrir sugerencias", que no lo contiene: la
+            // auditoria lo marcaba como `label-content-name-mismatch`.
+            aria-label={value.trim() ? 'Buscar' : 'Ver sugerencias'}
+          >
+            {value.trim() ? 'Buscar' : 'Ver'}
+          </button>
+        )}
       </div>
 
       {/* Dropdown con sugerencias e historial */}

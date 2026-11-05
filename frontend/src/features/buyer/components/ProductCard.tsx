@@ -1,46 +1,21 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, CheckCircle2, FileCode, Flame, ImageOff, Package, XCircle, Zap } from 'lucide-react';
-import { Badge, MoneyAmount } from '@zentric/ui';
+import { ArrowRight, FileCode, ImageOff, Package } from 'lucide-react';
+import { MoneyAmount } from '@zentric/ui';
 import { ProductType, type Product } from '../../../core';
 import { getProductImageUrl } from '../productImages';
 import {
   formatProductType,
   formatVariantCount,
-  resolvePrimarySku,
   resolveProductAvailability,
   type ProductAvailability,
 } from './productPresentation';
 
-interface AvailabilityPresentation {
-  label: string;
-  className: string;
-  variant: 'default' | 'success' | 'warning' | 'danger';
-  Icon: typeof CheckCircle2;
-}
-
-const AVAILABILITY: Record<
-  Exclude<ProductAvailability, 'digital'>,
-  AvailabilityPresentation
-> = {
-  'in-stock': {
-    label: 'En Stock',
-    className: '!bg-emerald-600 !text-white !border-transparent font-medium shadow-xs',
-    variant: 'default',
-    Icon: CheckCircle2,
-  },
-  'low-stock': {
-    label: '¡Últimas unidades!',
-    className: '!bg-amber-600 !text-white !border-transparent font-medium shadow-xs',
-    variant: 'default',
-    Icon: Flame,
-  },
-  'out-of-stock': {
-    label: 'Agotado',
-    className: '!bg-rose-600 !text-white !border-transparent font-medium shadow-xs',
-    variant: 'default',
-    Icon: XCircle,
-  },
+const AVAILABILITY: Record<ProductAvailability, { label: string; dot: string }> = {
+  'in-stock': { label: 'Disponible', dot: 'bg-emerald-500' },
+  'low-stock': { label: 'Stock limitado', dot: 'bg-amber-500' },
+  'out-of-stock': { label: 'Agotado', dot: 'bg-rose-500' },
+  digital: { label: 'Entrega digital', dot: 'bg-brand' },
 };
 
 interface ProductCardProps {
@@ -48,14 +23,12 @@ interface ProductCardProps {
 }
 
 /**
- * Tarjeta comercial de la grilla de productos:
- * Proporciones limpias, tipografía Sans legible y precio destacado con cifras tabulares.
+ * Tarjeta de la grilla comercial: imagen consistente, nombre legible,
+ * precio dominante y disponibilidad como dato, no como alarma.
  */
 export function ProductCard({ product }: ProductCardProps) {
-  const availability = resolveProductAvailability(product);
+  const availability = AVAILABILITY[resolveProductAvailability(product)];
   const variantCount = product.variants?.length ?? 1;
-  const sku = resolvePrimarySku(product);
-  const availabilityBadge = availability === 'digital' ? null : AVAILABILITY[availability];
   const TypeIcon = product.type === ProductType.Digital ? FileCode : Package;
   const imageUrl = getProductImageUrl(product);
   const [imageFailed, setImageFailed] = useState(false);
@@ -64,12 +37,12 @@ export function ProductCard({ product }: ProductCardProps) {
     <Link
       to="/buyer/catalog/$productId"
       params={{ productId: product.id }}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-xs transition-all duration-200 ease-out hover:border-brand/50 hover:shadow-md motion-safe:hover:-translate-y-0.5"
+      className="group relative flex flex-col overflow-hidden rounded-xl border border-border/80 bg-surface transition-colors duration-200 hover:border-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
     >
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-surface-muted/50">
+      <div className="aspect-[4/3] w-full overflow-hidden bg-surface-muted/50">
         {imageFailed ? (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-foreground-muted">
-            <ImageOff className="h-8 w-8 text-foreground-subtle" aria-hidden="true" />
+            <ImageOff className="h-7 w-7 text-foreground-subtle" aria-hidden="true" />
             <span className="text-xs">Imagen no disponible</span>
           </div>
         ) : (
@@ -78,67 +51,40 @@ export function ProductCard({ product }: ProductCardProps) {
             alt={product.name}
             loading="lazy"
             onError={() => setImageFailed(true)}
-            className="h-full w-full object-cover object-center motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out motion-safe:group-hover:scale-105"
+            className="h-full w-full object-cover object-center motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out motion-safe:group-hover:scale-[1.03]"
           />
         )}
-
-        <div className="absolute top-3 right-3">
-          {availabilityBadge ? (
-            <Badge variant={availabilityBadge.variant} className={`text-xs px-2.5 py-0.5 shadow-xs ${availabilityBadge.className}`}>
-              <availabilityBadge.Icon className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
-              {availabilityBadge.label}
-            </Badge>
-          ) : (
-            <span className="inline-flex items-center gap-1 rounded-md bg-brand px-2.5 py-0.5 text-xs font-semibold text-primary-foreground shadow-xs">
-              <Zap className="h-3.5 w-3.5" aria-hidden="true" />
-              Entrega Inmediata
-            </span>
-          )}
-        </div>
       </div>
 
-      <div className="flex flex-1 flex-col justify-between gap-3 p-5">
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-foreground-muted">
-            <span className="inline-flex items-center gap-1 font-semibold text-brand">
-              <TypeIcon className="h-3.5 w-3.5" aria-hidden="true" />
-              {formatProductType(product.type)}
-            </span>
-            <span aria-hidden="true">·</span>
-            <span>{formatVariantCount(variantCount)}</span>
-            {sku && (
-              <>
-                <span aria-hidden="true">·</span>
-                <span className="text-xs text-foreground-subtle">
-                  SKU: {sku}
-                </span>
-              </>
-            )}
-          </div>
-
-          <h3 className="line-clamp-2 text-base leading-snug font-bold text-foreground transition-colors group-hover:text-brand">
-            {product.name}
-          </h3>
-
-          <p className="line-clamp-2 text-xs leading-relaxed text-foreground-muted">
-            {product.description || 'Sin descripción detallada del vendedor.'}
-          </p>
+      <div className="flex flex-1 flex-col gap-2.5 p-3 sm:gap-3 sm:p-4">
+        <div className="flex flex-wrap items-center gap-x-1.5 text-[10px] text-foreground-muted sm:text-[11px]">
+          <span className="inline-flex items-center gap-1 font-medium text-brand">
+            <TypeIcon className="h-3.5 w-3.5" aria-hidden="true" />
+            {formatProductType(product.type)}
+          </span>
+          <span aria-hidden="true">·</span>
+          <span>{formatVariantCount(variantCount)}</span>
         </div>
 
-        <div className="flex items-center justify-between border-t border-border/70 pt-3">
-          <div className="space-y-0.5">
-            <span className="text-xs font-medium text-foreground-muted uppercase tracking-wider">
-              Precio
-            </span>
-            <div className="text-lg font-bold text-foreground">
-              <MoneyAmount amount={product.price} currency={product.currency ?? 'COP'} />
-            </div>
+        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-brand sm:text-[15px]">
+          {product.name}
+        </h3>
+
+        <div className="mt-auto space-y-1.5">
+          <div className="text-base font-semibold tabular-nums text-foreground sm:text-lg">
+            <MoneyAmount amount={product.price} currency={product.currency ?? 'COP'} />
           </div>
 
-          <span className="inline-flex items-center gap-1.5 rounded-xl bg-surface-muted px-3.5 py-1.5 text-xs font-semibold text-brand transition-colors group-hover:bg-brand group-hover:text-primary-foreground">
-            Ver detalle
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </span>
+          <div className="flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-1.5 text-[10px] text-foreground-muted sm:text-[11px]">
+              <span className={`size-1.5 rounded-full ${availability.dot}`} aria-hidden="true" />
+              {availability.label}
+            </span>
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground-muted transition-colors group-hover:text-brand sm:text-[11px]">
+              <span className="hidden sm:inline">Ver detalle</span>
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </span>
+          </div>
         </div>
       </div>
     </Link>

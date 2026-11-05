@@ -23,7 +23,7 @@ import {
 } from '@zentric/ui';
 import {
   ArrowRight,
-  ArrowTopRight,
+  ArrowUpRight,
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
@@ -329,7 +329,7 @@ export function LoginPage() {
                     Tu compra, garantizada
                   </span>
                   <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground leading-tight">
-                    Tu tecnología, con stock real y compra protegida.
+                    Tus compras tecnológicas con stock reservado y envío directo.
                   </h1>
                   <p className="text-sm sm:text-base text-foreground-muted leading-relaxed">
                     Compra con tranquilidad. Reserva tu inventario, realiza tu pedido y sigue cada
@@ -341,19 +341,19 @@ export function LoginPage() {
                 <div className="space-y-3">
                   <BenefitItem
                     icon={<Clock className="h-4 w-4" />}
-                    title="Reserva de stock"
+                    title="Reserva de Stock por 15 Minutos al Pagar"
                     description="15 minutos de inventario reservado durante el checkout."
                   />
                   <div className="h-px w-full bg-border-subtle" />
                   <BenefitItem
                     icon={<TruckIconSmall className="h-4 w-4" />}
-                    title="Despacho trazable"
+                    title="Despacho Rastreable"
                     description="Seguimiento de tu pedido desde bodega hasta tu puerta."
                   />
                   <div className="h-px w-full bg-border-subtle" />
                   <BenefitItem
                     icon={<ShieldCheck className="h-4 w-4" />}
-                    title="Devolución protegida"
+                    title="Devolución Protegida"
                     description="Procesos claros y respaldo de ZENTRIC."
                   />
                 </div>
@@ -375,7 +375,7 @@ export function LoginPage() {
                   Cuenta de comprador
                 </span>
                 <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground leading-snug">
-                  Bienvenido de nuevo.
+                  Ingresa a tu cuenta
                 </h2>
                 <p className="text-sm text-foreground-muted leading-relaxed">
                   Ingresa para continuar con tus compras y administrar tus pedidos.
@@ -614,7 +614,7 @@ export function LoginPage() {
                   className="w-full flex items-center justify-center gap-2 rounded-lg border border-brand/30 bg-brand/5 px-3 py-2 text-xs font-semibold text-brand transition-colors hover:bg-brand/10 disabled:opacity-50"
                 >
                   <LogoMark role="buyer" className="size-3.5 shrink-0" />
-                  <span>Probar cuenta demo</span>
+                  <span>Usar Cuenta Demo</span>
                 </button>
 
                 <div className="flex items-center justify-between text-[10px] text-foreground-muted">

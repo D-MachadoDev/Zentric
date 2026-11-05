@@ -1,73 +1,57 @@
 import { Clock, RotateCcw, ShieldCheck, Truck, type LucideIcon } from 'lucide-react';
 
-/**
- * Franja de garantias del marketplace (S6, sección 8-A3).
- *
- * No son cuatro tarjetas: son cuatro COMPROMISOS en una sola fila editorial
- * separada por hairlines. sección 2.2 prohibe las "tarjetas clonadas de igual
- * jerarquia" y sección 9.6 pide una banda de indicadores con jerarquia, no una
- * cuadricula de 4 cajas identicas. Ademas, cuatro iconsos con cuatro colores
- * de estado simultaneos seria el "arcoiris visual" que sección 2.2 veta: aqui el
- * color lo aporta el texto de estado, y el icono es tinta neutra.
- */
-
 interface Guarantee {
   Icon: LucideIcon;
-  /** Rotulo corto en mono-caps (sección 4.1 Voz 3: el rotulo tecnico va en Geist Mono). */
   label: string;
-  /** Una linea de apoyo en prosa operativa (Geist Sans 400). */
   detail: string;
 }
 
-/**
- * Las tres garantias que el backend sostiene de verdad (sección 8-A3):
- * reserva atomica de 15 minutos, despacho particionado y split de
- * facturacion. El cuarto hueco es la devolucion con inspeccion tecnica.
- */
 const GUARANTEES: Guarantee[] = [
   {
     Icon: Clock,
     label: 'Reserva 15 min',
-    detail: 'Stock bloqueado en tu checkout',
+    detail: 'Stock bloqueado durante el checkout',
   },
   {
     Icon: Truck,
     label: 'Despacho multi-bodega',
-    detail: 'Rastreable de punta a punta',
+    detail: 'Trazabilidad de punta a punta',
   },
   {
     Icon: ShieldCheck,
     label: 'Split 5/95',
-    detail: 'Facturacion transparente',
+    detail: 'Facturación transparente',
   },
   {
     Icon: RotateCcw,
-    label: 'Inspeccion tecnica',
-    detail: 'Devolucion sin friccion',
+    label: 'Inspección técnica',
+    detail: 'Devoluciones sin fricción',
   },
 ];
 
+/**
+ * Franja de garantías operativas: iconos lineales, textos breves
+ * y divisores finos. Sin tarjetas ni acentos de color innecesarios.
+ */
 export function CatalogTrustStrip() {
   return (
-    <section
-      aria-label="Garantias del marketplace"
-      className="surface-hairline overflow-hidden rounded-2xl"
-    >
-      <ul className="divide-y divide-border-subtle sm:grid sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4">
+    <section aria-label="Garantías del marketplace" className="border-y border-border/60">
+      <ul className="grid grid-cols-2 divide-y divide-border/60 sm:grid-cols-4 sm:divide-y-0 sm:divide-x">
         {GUARANTEES.map(({ Icon, label, detail }) => (
-          <li
-            key={label}
-            className="flex items-center gap-3 px-4 py-3.5 sm:border-l sm:border-border-subtle sm:first:border-l-0 lg:px-5"
-          >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
-              <Icon className="size-4" aria-hidden="true" />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-xs font-semibold tracking-wider text-foreground uppercase">
+          <li key={label} className="flex items-start gap-3 px-1 py-4 first:pl-0 last:pr-0 sm:px-5">
+            <Icon
+              className="mt-0.5 h-5 w-5 shrink-0 text-brand"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+            <div className="min-w-0">
+              <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground">
                 {label}
               </span>
-              <span className="block truncate text-xs text-foreground-muted">{detail}</span>
-            </span>
+              <span className="mt-0.5 block text-xs leading-relaxed text-foreground-muted">
+                {detail}
+              </span>
+            </div>
           </li>
         ))}
       </ul>

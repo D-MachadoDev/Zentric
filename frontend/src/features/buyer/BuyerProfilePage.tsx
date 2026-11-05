@@ -137,22 +137,22 @@ if (isLoadingProfile) {
         {/* Resumen Rápido de Compras */}
         <div className="flex items-center gap-3">
           <div className="rounded-xl border border-border bg-surface px-4 py-2 text-center shadow-xs">
-            <span className="block font-mono text-lg font-bold text-foreground tabular-nums">
+            <span className="block text-xl font-bold text-foreground tabular-nums">
               {orders.length}
             </span>
-            <span className="text-[11px] text-foreground-muted">Total Pedidos</span>
+            <span className="text-xs text-foreground-muted">Total Pedidos</span>
           </div>
           <div className="rounded-xl border border-border bg-surface px-4 py-2 text-center shadow-xs">
-            <span className="block font-mono text-lg font-bold text-brand tabular-nums">
+            <span className="block text-xl font-bold text-brand tabular-nums">
               {inProgressOrders}
             </span>
-            <span className="text-[11px] text-foreground-muted">En Curso</span>
+            <span className="text-xs text-foreground-muted">En Curso</span>
           </div>
           <div className="rounded-xl border border-border bg-surface px-4 py-2 text-center shadow-xs">
-            <span className="block font-mono text-lg font-bold text-success tabular-nums">
+            <span className="block text-xl font-bold text-success tabular-nums">
               {completedOrders}
             </span>
-            <span className="text-[11px] text-foreground-muted">Entregados</span>
+            <span className="text-xs text-foreground-muted">Entregados</span>
           </div>
         </div>
       </div>
@@ -215,7 +215,7 @@ if (isLoadingProfile) {
                       <Input id="email" value={email} disabled className="pl-9 opacity-80" />
                       <Mail className="absolute left-3 top-2.5 h-4 w-4 text-foreground-muted" />
                     </div>
-                    <span className="text-[10px] text-foreground-muted">
+                    <span className="text-xs text-foreground-muted">
                       Vinculado a tu cuenta de acceso Zentric.
                     </span>
                   </div>
@@ -249,11 +249,11 @@ if (isLoadingProfile) {
                         value={documentId}
                         onChange={(e) => setDocumentId(e.target.value)}
                         placeholder="Ej: 1098765432"
-                        className="pl-9 font-mono"
+                        className="pl-9 text-sm"
                       />
                       <FileText className="absolute left-3 top-2.5 h-4 w-4 text-foreground-muted" />
                     </div>
-                    <span className="text-[10px] text-foreground-muted">
+                    <span className="text-xs text-foreground-muted">
                       Utilizado para la emisión de facturación electrónica.
                     </span>
                   </div>
@@ -320,7 +320,7 @@ if (isLoadingProfile) {
                       value={postalCode}
                       onChange={(e) => setPostalCode(e.target.value)}
                       placeholder="Ej: 110131"
-                      className="font-mono"
+                      className="text-sm"
                     />
                   </div>
                 </div>
@@ -348,7 +348,7 @@ if (isLoadingProfile) {
                   />
                   <div>
                     <span className="font-semibold text-foreground">Actualizaciones por Correo</span>
-                    <p className="text-foreground-muted text-[11px] leading-tight">
+                    <p className="text-foreground-muted text-xs leading-relaxed">
                       Recibe guías de rastreo y facturas maestras cuando tu pedido sea despachado.
                     </p>
                   </div>
@@ -363,7 +363,7 @@ if (isLoadingProfile) {
                   />
                   <div>
                     <span className="font-semibold text-foreground">Alertas de Reserva de 15 Min</span>
-                    <p className="text-foreground-muted text-[11px] leading-tight">
+                    <p className="text-foreground-muted text-xs leading-relaxed">
                       Avisos de urgencia antes de que expire la reserva atómica en el carrito.
                     </p>
                   </div>

@@ -427,16 +427,16 @@ export function BuyerProductDetailPage() {
                           </span>
                           <span className="flex items-center gap-2">
                             {inStock ? (
-                              <Badge className="bg-success/15 text-success border-success/30 text-[10px]">
+                              <Badge className="bg-success/15 text-success border-success/30 text-xs">
                                 Disponible
                               </Badge>
                             ) : (
-                              <Badge className="bg-danger/15 text-danger border-danger/30 text-[10px]">
+                              <Badge className="bg-danger/15 text-danger border-danger/30 text-xs">
                                 Agotado
                               </Badge>
                             )}
                             {inStock && stock !== undefined && stock <= 3 && (
-                              <span className="text-[11px] text-foreground-muted">
+                              <span className="text-xs text-foreground-muted">
                                 Últimas {stock}
                               </span>
                             )}
@@ -477,7 +477,7 @@ export function BuyerProductDetailPage() {
                   Cantidad
                 </label>
                 {availableStock !== undefined && !isSoldOut && (
-                  <span className="text-[11px] text-foreground-muted">
+                  <span className="text-xs text-foreground-muted">
                     Máximo {availableStock}
                   </span>
                 )}
@@ -525,7 +525,7 @@ export function BuyerProductDetailPage() {
                 </Button>
               </div>
               {isExceedingStock && (
-                <p className="text-[11px] text-danger">
+                <p className="text-xs text-danger">
                   La cantidad máxima disponible en bodega es {maxStock}.
                 </p>
               )}
@@ -610,7 +610,7 @@ export function BuyerProductDetailPage() {
               ))}
             </dl>
 
-            <p className="text-[11px] leading-relaxed text-foreground-muted">
+            <p className="text-xs leading-relaxed text-foreground-muted">
               Al pasar a pagar, el inventario queda reservado en bodega durante 15 minutos para
               completar el pago sin riesgo de sobreventa.
             </p>

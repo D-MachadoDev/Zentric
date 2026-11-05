@@ -157,7 +157,7 @@ export function BuyerOrdersPage() {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
               Mis Pedidos
             </h1>
-            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
+            <Badge variant="outline" className="border-border/80 text-foreground text-xs font-semibold">
               {nonCartOrders.length} totales
             </Badge>
           </div>
@@ -224,7 +224,7 @@ export function BuyerOrdersPage() {
                 Mis Solicitudes de Devolución y Garantía
               </h2>
             </div>
-            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
+            <Badge variant="outline" className="border-border/80 text-foreground text-xs font-semibold">
               {buyerReturns.length} {buyerReturns.length === 1 ? 'expediente' : 'expedientes'}
             </Badge>
           </div>
@@ -236,11 +236,11 @@ export function BuyerOrdersPage() {
                 params={{ orderId: ret.customerOrderId }}
                 className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-muted/40 p-3 text-xs transition-colors hover:border-brand/50 hover:bg-surface-muted"
               >
-                <div className="space-y-0.5 font-mono">
+                <div className="space-y-0.5">
                   <div className="font-bold text-foreground hover:text-brand">
                     Devolución #{ret.id.slice(0, 8).toUpperCase()}
                   </div>
-                  <div className="text-[11px] text-foreground-muted">
+                  <div className="text-xs text-foreground-muted">
                     Pedido #{ret.customerOrderId.slice(0, 8).toUpperCase()} · Cant: {ret.quantity} ud(s)
                   </div>
                 </div>
@@ -248,7 +248,7 @@ export function BuyerOrdersPage() {
                   <StatusBadge tone={TONOS_DE_ESTADO_DE_DEVOLUCION[ret.status]}>
                     {NOMBRES_DE_ESTADO_DE_DEVOLUCION[ret.status]}
                   </StatusBadge>
-                  <span className="font-mono text-[10px] text-foreground-muted">
+                  <span className="text-xs text-foreground-muted">
                     {ret.isGoodCondition ? 'Inspección: Intacto' : 'Inspección física en proceso'}
                   </span>
                 </div>
@@ -272,7 +272,7 @@ export function BuyerOrdersPage() {
             key={f.id}
             type="button"
             onClick={() => setSelectedStatus(f.id)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors whitespace-nowrap ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
               selectedStatus === f.id
                 ? 'bg-brand text-primary-foreground font-bold'
                 : 'bg-surface text-foreground-muted hover:text-primary-foreground border border-border'
@@ -327,26 +327,26 @@ export function BuyerOrdersPage() {
                       <Link
                         to="/buyer/orders/$orderId"
                         params={{ orderId: order.id }}
-                        className="text-sm font-mono font-bold text-foreground hover:text-brand transition-colors"
+                        className="text-sm font-bold text-foreground hover:text-brand transition-colors"
                       >
                         Pedido #{order.id.slice(0, 8).toUpperCase()}
                       </Link>
                       <button
                         type="button"
                         onClick={() => handleCopyOrderId(order.id)}
-                        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-mono text-foreground-muted hover:bg-surface-muted hover:text-foreground transition-colors border border-border/70"
+                        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-foreground-muted hover:bg-surface-muted hover:text-foreground transition-colors border border-border/70"
                         title="Copiar ID completo del pedido"
                         aria-label="Copiar ID del pedido"
                       >
                         {copiedOrderId === order.id ? (
                           <>
                             <Check className="h-3 w-3 text-brand" />
-                            <span className="text-[10px] text-brand font-semibold">¡Copiado!</span>
+                            <span className="text-xs text-brand font-semibold">¡Copiado!</span>
                           </>
                         ) : (
                           <>
                             <Copy className="h-3 w-3" />
-                            <span className="text-[10px]">Copiar ID</span>
+                            <span className="text-xs">Copiar ID</span>
                           </>
                         )}
                       </button>
@@ -355,14 +355,14 @@ export function BuyerOrdersPage() {
                       {NOMBRES_DE_ESTADO_DE_PEDIDO[order.status]}
                     </StatusBadge>
                     {isPendingPayment && (
-                      <Badge className="bg-warning/20 text-warning border-warning/30 text-xs font-mono animate-pulse">
+                      <Badge className="bg-warning/20 text-warning border-warning/30 text-xs font-medium">
                         <Clock className="h-3 w-3 mr-1 inline" />
                         Reserva activa (15 min)
                       </Badge>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-3 text-xs font-mono text-foreground-muted">
+                  <div className="flex items-center gap-3 text-xs text-foreground-muted">
                     <span>
                       {new Date(order.createdAt).toLocaleDateString('es-CO', {
                         year: 'numeric',
@@ -448,14 +448,14 @@ export function BuyerOrdersPage() {
                                   </Link>
                                 )}
                                 {vendorName && (
-                                  <Badge variant="outline" className="text-[10px] font-mono border-border text-foreground-muted px-1.5 py-0 shrink-0">
+                                  <Badge variant="outline" className="text-xs font-medium border-border text-foreground-muted px-1.5 py-0 shrink-0">
                                     {vendorName}
                                   </Badge>
                                 )}
                               </div>
-                              <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-foreground-muted">
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">
                                 {sku && (
-                                  <span className="text-[11px] text-brand">
+                                  <span className="text-xs text-brand font-medium">
                                     SKU: {sku}
                                   </span>
                                 )}
@@ -470,10 +470,10 @@ export function BuyerOrdersPage() {
                           </div>
 
                           <div className="text-right shrink-0">
-                            <span className="block font-mono text-sm font-bold text-foreground tabular-nums">
+                            <span className="block text-sm font-bold text-foreground tabular-nums">
                               ${item.totalPrice.toLocaleString('es-CO', { minimumFractionDigits: 0 })}
                             </span>
-                            <span className="text-[10px] font-mono text-foreground-muted">
+                            <span className="text-xs text-foreground-muted">
                               {order.currency || 'COP'}
                             </span>
                           </div>
@@ -484,7 +484,7 @@ export function BuyerOrdersPage() {
                     <Link
                       to="/buyer/orders/$orderId"
                       params={{ orderId: order.id }}
-                      className="py-2 text-xs text-foreground-muted hover:text-brand font-mono flex items-center gap-2 transition-colors"
+                      className="py-2 text-xs text-foreground-muted hover:text-brand flex items-center gap-2 transition-colors"
                     >
                       <Package className="h-4 w-4 text-brand" />
                       <span>{order.itemCount} artículo(s) procesados en esta orden. Ver desglose →</span>
@@ -495,10 +495,10 @@ export function BuyerOrdersPage() {
                 {/* ── Pie del Pedido con Total y Acciones ── */}
                 <div className="border-t border-border/70 bg-surface-muted/20 p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-foreground-muted block">
+                    <span className="text-xs uppercase tracking-wider font-semibold text-foreground-muted block">
                       Importe Total
                     </span>
-                    <div className="text-xl font-bold font-mono text-foreground tabular-nums">
+                    <div className="text-xl font-bold text-foreground tabular-nums">
                       <MoneyAmount amount={order.totalAmount} currency={order.currency} />
                     </div>
                   </div>
@@ -512,7 +512,7 @@ export function BuyerOrdersPage() {
                           size="sm"
                           onClick={() => void handleCancelPendingOrder(order.id)}
                           disabled={cancellingOrderId === order.id || cancelOrderMutation.isPending}
-                          className="border-danger/40 text-danger hover:bg-danger/10 text-xs font-mono"
+                          className="border-danger/40 text-danger hover:bg-danger/10 text-xs font-medium"
                         >
                           <XCircle className="h-3.5 w-3.5 mr-1.5" />
                           {cancellingOrderId === order.id ? 'Cancelando...' : 'Cancelar pedido'}

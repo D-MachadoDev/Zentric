@@ -152,7 +152,7 @@ export function BuyerOrderDetailPage() {
               <button
                 type="button"
                 onClick={handleCopy}
-                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-mono text-foreground-muted hover:bg-surface-muted hover:text-foreground transition-colors border border-border"
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-foreground-muted hover:bg-surface-muted hover:text-foreground transition-colors border border-border"
                 title="Copiar ID completo del pedido"
                 aria-label="Copiar ID del pedido"
               >
@@ -173,7 +173,7 @@ export function BuyerOrderDetailPage() {
               {NOMBRES_DE_ESTADO_DE_PEDIDO[order.status]}
             </StatusBadge>
           </div>
-          <p className="text-xs font-mono text-foreground-muted">
+          <p className="text-xs text-foreground-muted">
             Creado el {new Date(order.createdAt).toLocaleDateString('es-CO')} • ID: {order.id}
           </p>
         </div>
@@ -186,7 +186,7 @@ export function BuyerOrderDetailPage() {
               size="sm"
               onClick={() => void handleCancelOrder()}
               disabled={cancelOrderMutation.isPending}
-              className="border-danger/40 text-danger hover:bg-danger/10 text-xs font-mono"
+              className="border-danger/40 text-danger hover:bg-danger/10 text-xs"
             >
               <XCircle className="h-4 w-4 mr-1.5" />
               {cancelOrderMutation.isPending ? 'Cancelando...' : 'Cancelar pedido'}
@@ -209,10 +209,10 @@ export function BuyerOrderDetailPage() {
           {/* Desglose de Líneas de Pedido */}
           <div className="rounded-2xl border border-border bg-surface overflow-hidden">
             <div className="p-4 sm:p-5 border-b border-border bg-surface-muted/40 flex items-center justify-between">
-              <span className="text-xs uppercase font-mono tracking-wider text-foreground-muted">
+              <span className="text-xs uppercase  tracking-wider text-foreground-muted">
                 Líneas Compradas ({order.items.length})
               </span>
-              <span className="text-xs font-mono text-foreground font-bold">
+              <span className="text-xs text-foreground font-bold">
                 Total: <MoneyAmount amount={order.totalAmount} currency={order.currency} />
               </span>
             </div>
@@ -275,37 +275,37 @@ export function BuyerOrderDetailPage() {
                             </h4>
                           )}
                           {vendorName && (
-                            <Badge variant="outline" className="text-[10px] font-mono border-border text-foreground-muted px-1.5 py-0">
+                            <Badge variant="outline" className="text-xs border-border text-foreground-muted px-1.5 py-0">
                               Vendedor: {vendorName}
                             </Badge>
                           )}
                         </div>
-                        <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-foreground-muted">
-                          <Badge variant="outline" className="text-[10px] font-mono border-brand/30 text-brand px-1.5 py-0">
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">
+                          <Badge variant="outline" className="text-xs border-brand/30 text-brand px-1.5 py-0">
                             SKU: {sku}
                           </Badge>
                           <span>•</span>
-                          <span className="text-[11px] text-foreground-muted">ID: {item.variantId}</span>
+                          <span className="text-xs text-foreground-muted">ID: {item.variantId}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-6 text-right shrink-0">
                       <div>
-                        <span className="text-[10px] uppercase font-mono text-foreground-muted block">Cantidad</span>
-                        <span className="text-xs font-mono font-bold text-foreground tabular-nums">
+                        <span className="text-xs uppercase  text-foreground-muted block">Cantidad</span>
+                        <span className="text-xs font-bold text-foreground tabular-nums">
                           {item.quantity} ud(s)
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] uppercase font-mono text-foreground-muted block">Precio Unitario</span>
-                        <div className="text-xs font-mono text-foreground-muted tabular-nums">
+                        <span className="text-xs uppercase  text-foreground-muted block">Precio Unitario</span>
+                        <div className="text-xs text-foreground-muted tabular-nums">
                           <MoneyAmount amount={item.unitPrice} currency={order.currency} />
                         </div>
                       </div>
                       <div>
-                        <span className="text-[10px] uppercase font-mono text-foreground-muted block">Importe</span>
-                        <div className="text-sm font-mono font-bold text-foreground tabular-nums">
+                        <span className="text-xs uppercase  text-foreground-muted block">Importe</span>
+                        <div className="text-sm font-bold text-foreground tabular-nums">
                           <MoneyAmount amount={item.totalPrice} currency={order.currency} />
                         </div>
                       </div>
@@ -321,17 +321,17 @@ export function BuyerOrderDetailPage() {
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
                 <Truck className="h-4 w-4 text-brand" />
-                <h2 className="text-sm uppercase font-mono tracking-wider text-foreground">
+                <h2 className="text-sm uppercase  tracking-wider text-foreground">
                   Despachos Logísticos
                 </h2>
               </div>
-              <Badge variant="outline" className="text-xs font-mono border-border text-foreground-muted">
+              <Badge variant="outline" className="text-xs border-border text-foreground-muted">
                 {orderFulfillments.length} paquetes
               </Badge>
             </div>
 
             {orderFulfillments.length === 0 ? (
-              <p className="text-xs font-mono text-foreground-muted py-2">
+              <p className="text-xs text-foreground-muted py-2">
                 {isPendingPayment
                   ? 'Las guías y paquetes de despacho se generan automáticamente tras acreditar el pago.'
                   : 'Sin información de despacho disponible actualmente.'}
@@ -341,7 +341,7 @@ export function BuyerOrderDetailPage() {
                 {orderFulfillments.map((ful: FulfillmentOrder) => (
                   <div key={ful.id} className="p-4 rounded-xl border border-border bg-surface-muted/40 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono font-bold text-foreground">
+                      <span className="text-xs font-bold text-foreground">
                         Despacho #{ful.id.slice(0, 8)}
                       </span>
                       <StatusBadge tone={TONOS_DE_ESTADO_DE_DESPACHO[ful.status]}>
@@ -351,7 +351,7 @@ export function BuyerOrderDetailPage() {
                     {ful.shipments && ful.shipments.length > 0 && (
                       <div className="space-y-1 pt-1">
                         {ful.shipments.map((s) => (
-                          <div key={s.id} className="text-xs font-mono text-foreground-muted flex items-center justify-between">
+                          <div key={s.id} className="text-xs text-foreground-muted flex items-center justify-between">
                             <span>Bodega Origen: {s.warehouseId ? s.warehouseId.slice(0, 8) : 'N/A'}</span>
                             <span className="text-brand font-bold">Guía: {s.trackingNumber}</span>
                           </div>
@@ -369,11 +369,11 @@ export function BuyerOrderDetailPage() {
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
                 <FileText className="h-4 w-4 text-brand" />
-                <h2 className="text-sm uppercase font-mono tracking-wider text-foreground">
+                <h2 className="text-sm uppercase  tracking-wider text-foreground">
                   Facturación Tributaria
                 </h2>
               </div>
-              <Badge variant="outline" className="text-xs font-mono border-border text-brand">
+              <Badge variant="outline" className="text-xs border-border text-brand">
                 Factura Maestra
               </Badge>
             </div>
@@ -383,22 +383,22 @@ export function BuyerOrderDetailPage() {
             ) : masterInvoice ? (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border bg-surface-muted/40">
                 <div className="space-y-1">
-                  <span className="text-xs font-mono font-bold text-foreground">
+                  <span className="text-xs font-bold text-foreground">
                     Factura #{masterInvoice.id.slice(0, 8)}
                   </span>
-                  <p className="text-xs font-mono text-foreground-muted">
+                  <p className="text-xs text-foreground-muted">
                     Emitida el: {new Date(masterInvoice.issuedAt).toLocaleDateString('es-CO')}
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] uppercase font-mono text-foreground-muted block">Importe Total</span>
-                  <div className="text-base font-mono font-bold text-brand tabular-nums">
+                  <span className="text-xs uppercase  text-foreground-muted block">Importe Total</span>
+                  <div className="text-base font-bold text-brand tabular-nums">
                     <MoneyAmount amount={masterInvoice.totalAmount} currency={masterInvoice.currency} />
                   </div>
                 </div>
               </div>
             ) : (
-              <p className="text-xs font-mono text-foreground-muted py-2">
+              <p className="text-xs text-foreground-muted py-2">
                 {isPendingPayment
                   ? 'La Factura Maestra se emitirá automáticamente una vez se complete el pago.'
                   : 'Factura en proceso de generación.'}
@@ -410,7 +410,7 @@ export function BuyerOrderDetailPage() {
         {/* Lado Derecho: Línea de Tiempo y Acciones (35% -> col-span-4) */}
         <div className="lg:col-span-4 space-y-6">
           <div className="rounded-2xl border border-border bg-surface p-6 space-y-6 shadow-xl sticky top-6">
-            <h2 className="text-sm uppercase font-mono tracking-wider text-foreground-muted">
+            <h2 className="text-sm uppercase  tracking-wider text-foreground-muted">
               Ciclo de Vida del Pedido
             </h2>
 
@@ -418,7 +418,7 @@ export function BuyerOrderDetailPage() {
 
             {orderReturns.length > 0 && (
               <div className="border-t border-border pt-5 space-y-3">
-                <span className="text-xs font-mono font-semibold text-foreground flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                   <RotateCcw className="h-3.5 w-3.5 text-brand" />
                   Expedientes de Devolución ({orderReturns.length})
                 </span>
@@ -429,14 +429,14 @@ export function BuyerOrderDetailPage() {
                       className="rounded-xl border border-border bg-surface-muted/40 p-3 space-y-1.5 text-xs"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono font-bold text-foreground">
+                        <span className="font-bold text-foreground">
                           #{ret.id.slice(0, 8).toUpperCase()}
                         </span>
                         <StatusBadge tone={TONOS_DE_ESTADO_DE_DEVOLUCION[ret.status]}>
                           {NOMBRES_DE_ESTADO_DE_DEVOLUCION[ret.status]}
                         </StatusBadge>
                       </div>
-                      <div className="flex items-center justify-between font-mono text-[11px] text-foreground-muted">
+                      <div className="flex items-center justify-between  text-xs text-foreground-muted">
                         <span>Cantidad: {ret.quantity} ud(s)</span>
                         <span>
                           {ret.isGoodCondition ? 'Físico: Intacto' : 'Físico: En revisión'}
@@ -451,7 +451,7 @@ export function BuyerOrderDetailPage() {
             {isDelivered && (
               <div className="border-t border-border pt-5 space-y-3">
                 <div className="space-y-1">
-                  <span className="text-xs font-mono font-semibold text-foreground flex items-center gap-1.5">
+                  <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <RotateCcw className="h-3.5 w-3.5 text-brand" />
                     Devolución de Producto
                   </span>
@@ -473,7 +473,7 @@ export function BuyerOrderDetailPage() {
             )}
 
             <div className="rounded-xl border border-border bg-surface-muted/50 p-4 space-y-2 text-xs">
-              <div className="flex items-center gap-2 text-brand font-mono font-semibold">
+              <div className="flex items-center gap-2 text-brand font-semibold">
                 <ShieldCheck className="h-4 w-4" />
                 Garantía Zentric
               </div>

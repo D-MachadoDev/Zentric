@@ -34,7 +34,6 @@ import {
   Package,
   AlertCircle,
   RefreshCw,
-  Truck,
   Trash2,
   Plus,
   Minus,
@@ -43,9 +42,9 @@ import {
 } from 'lucide-react';
 
 /**
- * Carrito de Compras del Comprador (Frontend-Role-Modules sección 2.4 y Frontend-User-Flows sección 2).
- * Soporta sesión autenticada o modo `Comprar como Invitado` (`guestCart`), vista previa de
- * domicilio de entrega estilo Mercado Libre y flujo hacia pago con reserva de 15 min.
+ * Carrito de Compras del Comprador:
+ * Respaldo directo en el backend para usuarios autenticados y soporte para compra como invitado.
+ * Tipografía limpia sin fuentes fijas ni textos diminutos ilegibles.
  */
 export function BuyerCartPage() {
   const navigate = useNavigate();
@@ -144,7 +143,6 @@ export function BuyerCartPage() {
     if (!activeCart || !hasItems) return;
     setCheckoutError(null);
 
-    // En modo invitado, redirigir a login de comprador conservando el carrito para pagar
     if (isGuestMode) {
       setPendingGuestCheckout(true);
       navigate({
@@ -197,7 +195,7 @@ export function BuyerCartPage() {
           variant="outline"
           size="sm"
           onClick={() => refetch()}
-          className="border-border text-foreground-muted transition-all active:scale-[0.98]"
+          className="border-border text-foreground-muted"
         >
           <RefreshCw className="h-4 w-4 mr-1.5" /> Reintentar
         </Button>
@@ -209,15 +207,15 @@ export function BuyerCartPage() {
   const hasSavedAddress = Boolean(shippingAddress?.street?.trim() && shippingAddress?.city?.trim());
 
   return (
-    <div className="space-y-8 w-full max-w-full">
+    <div className="space-y-6 sm:space-y-8 w-full max-w-full">
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border/80">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
-              Carrito de Compras
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              Carrito de compras
             </h1>
-            <Badge variant="outline" className="border-border text-brand font-mono text-xs">
+            <Badge variant="outline" className="border-border/80 text-foreground text-xs font-semibold">
               {items.length} {items.length === 1 ? 'línea' : 'líneas'}
             </Badge>
             {isGuestMode && (
@@ -227,8 +225,7 @@ export function BuyerCartPage() {
             )}
           </div>
           <p className="text-sm text-foreground-muted">
-            Revisa tus productos antes de continuar la compra y pasar al pago seguro con reserva de
-            stock por 15 minutos.
+            Revisa tus artículos antes de continuar al pago seguro con reserva de stock en bodega.
           </p>
         </div>
 
@@ -236,7 +233,7 @@ export function BuyerCartPage() {
           <Button
             variant="outline"
             size="sm"
-            className="border-border text-foreground-muted hover:text-foreground"
+            className="border-border text-foreground-muted hover:text-foreground text-xs"
           >
             <ShoppingBag className="h-4 w-4 mr-1.5" /> Continuar comprando
           </Button>
@@ -247,11 +244,11 @@ export function BuyerCartPage() {
         <Alert variant="destructive" className="border-danger/30 bg-danger/10 text-danger">
           <AlertCircle className="h-5 w-5 text-danger" />
           <AlertTitle>No se pudo iniciar el pago</AlertTitle>
-          <AlertDescription className="text-xs font-mono">{checkoutError}</AlertDescription>
+          <AlertDescription className="text-xs">{checkoutError}</AlertDescription>
         </Alert>
       )}
 
-      {/* ── Composición Split-Frame (65% Tabla de Líneas / 35% Resumen de Compra) ── */}
+      {/* ── Composición Split-Frame ── */}
       {!hasItems ? (
         <StateView
           state="empty"
@@ -264,35 +261,35 @@ export function BuyerCartPage() {
         />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Lado Izquierdo: Tabla de Artículos (65% -> col-span-8) */}
+          {/* Lado Izquierdo: Tabla de Artículos */}
           <div className="lg:col-span-8 space-y-4">
-            <div className="rounded-2xl border border-border bg-surface overflow-hidden">
-              <div className="p-4 sm:p-5 border-b border-border bg-surface-muted/40 flex items-center justify-between">
-                <span className="text-xs uppercase font-mono tracking-wider text-foreground-muted">
-                  Artículos en tu Compra
+            <div className="rounded-2xl border border-border/80 bg-surface overflow-hidden shadow-xs">
+              <div className="p-4 sm:p-5 border-b border-border/70 bg-surface-muted/30 flex items-center justify-between">
+                <span className="text-xs uppercase tracking-wider text-foreground-muted font-semibold">
+                  Artículos en tu compra
                 </span>
-                <span className="text-xs font-mono text-foreground-muted">
+                <span className="text-xs text-foreground-muted">
                   {isGuestMode
-                    ? 'Carrito temporal de visitante'
-                    : `ID Pedido: ${activeCart?.id.slice(0, 8)}...`}
+                    ? 'Carrito temporal'
+                    : `Pedido #${activeCart?.id.slice(0, 8)}`}
                 </span>
               </div>
 
-              <div className="divide-y divide-border">
+              <div className="divide-y divide-border/60">
                 {items.map((item: OrderItem) => (
                   <div
                     key={item.id}
-                    className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-surface-muted/30 transition-colors"
+                    className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-surface-muted/20 transition-colors"
                   >
                     <div className="flex items-center gap-4 flex-1 min-w-0">
                       {item.imageUrl ? (
                         <img
                           src={item.imageUrl}
                           alt={item.productName || 'Producto Zentric'}
-                          className="h-16 w-16 rounded-xl object-cover bg-surface-muted border border-border shrink-0"
+                          className="h-16 w-16 rounded-xl object-cover bg-surface-muted border border-border/70 shrink-0"
                         />
                       ) : (
-                        <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-surface-muted border border-border text-brand shrink-0">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-surface-muted border border-border/70 text-brand shrink-0">
                           <Package className="h-7 w-7" />
                         </div>
                       )}
@@ -304,21 +301,21 @@ export function BuyerCartPage() {
                             params={{ productId: item.productId }}
                             className="text-sm font-semibold text-foreground hover:text-brand transition-colors truncate block"
                           >
-                            {item.productName || 'Producto Oficial Zentric'}
+                            {item.productName || 'Producto Zentric'}
                           </Link>
                         ) : (
                           <h3 className="text-sm font-semibold text-foreground truncate">
-                            {item.productName || 'Producto Oficial Zentric'}
+                            {item.productName || 'Producto Zentric'}
                           </h3>
                         )}
-                        <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-foreground-muted">
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">
                           <span className="text-brand font-medium">
                             Variante SKU: {item.sku || item.variantId.slice(0, 8)}
                           </span>
                           {item.vendorName && (
                             <>
                               <span>·</span>
-                              <span>Vendido por: {item.vendorName}</span>
+                              <span>Vendedor: {item.vendorName}</span>
                             </>
                           )}
                         </div>
@@ -327,21 +324,21 @@ export function BuyerCartPage() {
 
                     <div className="flex items-center justify-between sm:justify-end gap-6 text-right">
                       <div>
-                        <span className="text-[10px] uppercase font-mono text-foreground-muted block">
+                        <span className="text-xs uppercase text-foreground-muted block font-medium">
                           Cantidad
                         </span>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-1.5 mt-1">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() =>
                               handleUpdateQuantity(activeCart!.id, item.variantId, item.quantity - 1)
                             }
                             disabled={updateQuantityMutation.isPending || item.quantity <= 1}
                             aria-label={`Disminuir cantidad de ${item.productName || 'producto'}`}
-                            className="h-8 w-8 p-0 text-foreground-muted hover:bg-brand/10 hover:text-brand disabled:opacity-50"
+                            className="h-7 w-7 p-0 text-foreground-muted hover:text-foreground"
                           >
-                            <Minus className="h-4 w-4" />
+                            <Minus className="h-3.5 w-3.5" />
                           </Button>
                           <input
                             type="number"
@@ -352,36 +349,30 @@ export function BuyerCartPage() {
                                 handleUpdateQuantity(activeCart!.id, item.variantId, newQty);
                               }
                             }}
-                            onBlur={(e) => {
-                              const newQty = parseInt(e.target.value, 10);
-                              if (!isNaN(newQty) && newQty >= 1) {
-                                handleUpdateQuantity(activeCart!.id, item.variantId, newQty);
-                              }
-                            }}
                             min={1}
-                            className="w-16 text-center text-sm font-mono font-bold text-foreground border border-border rounded bg-surface px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand"
+                            className="w-12 text-center text-sm font-semibold text-foreground border border-border/80 rounded-lg bg-surface px-1 py-1 focus:outline-none focus:ring-2 focus:ring-brand"
                             aria-label={`Cantidad de ${item.productName || 'producto'}`}
                           />
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() =>
                               handleUpdateQuantity(activeCart!.id, item.variantId, item.quantity + 1)
                             }
                             disabled={updateQuantityMutation.isPending}
                             aria-label={`Aumentar cantidad de ${item.productName || 'producto'}`}
-                            className="h-8 w-8 p-0 text-foreground-muted hover:bg-brand/10 hover:text-brand"
+                            className="h-7 w-7 p-0 text-foreground-muted hover:text-foreground"
                           >
-                            <Plus className="h-4 w-4" />
+                            <Plus className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       </div>
 
                       <div>
-                        <span className="text-[10px] uppercase font-mono text-foreground-muted block">
-                          Precio Unitario
+                        <span className="text-xs uppercase text-foreground-muted block font-medium">
+                          Unitario
                         </span>
-                        <div className="text-sm font-mono text-foreground-muted tabular-nums">
+                        <div className="text-sm font-medium text-foreground-muted tabular-nums">
                           <MoneyAmount
                             amount={item.unitPrice}
                             currency={activeCart?.currency ?? 'COP'}
@@ -390,10 +381,10 @@ export function BuyerCartPage() {
                       </div>
 
                       <div>
-                        <span className="text-[10px] uppercase font-mono text-foreground-muted block">
+                        <span className="text-xs uppercase text-foreground-muted block font-medium">
                           Subtotal
                         </span>
-                        <div className="text-base font-mono font-bold text-foreground tabular-nums">
+                        <div className="text-sm sm:text-base font-bold text-foreground tabular-nums">
                           <MoneyAmount
                             amount={item.totalPrice}
                             currency={activeCart?.currency ?? 'COP'}
@@ -408,10 +399,10 @@ export function BuyerCartPage() {
                           setItemToDelete({
                             orderId: activeCart!.id,
                             variantId: item.variantId,
-                            productName: item.productName || 'Producto Oficial Zentric',
+                            productName: item.productName || 'Producto Zentric',
                           })
                         }
-                        aria-label={`Eliminar ${item.productName || 'Producto Oficial Zentric'}`}
+                        aria-label={`Eliminar ${item.productName || 'Producto Zentric'}`}
                         className="text-foreground-muted hover:bg-destructive/10 hover:text-destructive p-1.5"
                         title="Eliminar del carrito"
                         disabled={removeCartItemMutation.isPending}
@@ -425,15 +416,15 @@ export function BuyerCartPage() {
             </div>
           </div>
 
-          {/* Lado Derecho: Resumen de Compra y Dirección de Envío (35% -> col-span-4) */}
+          {/* Lado Derecho: Resumen de Compra y Envío */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="rounded-2xl border border-border bg-surface p-6 space-y-5 shadow-xl sticky top-6">
-              <h2 className="text-sm uppercase font-mono tracking-wider text-foreground-muted font-bold">
-                Resumen de Compra
+            <div className="rounded-2xl border border-border/80 bg-surface p-5 sm:p-6 space-y-5 shadow-xs sticky top-6">
+              <h2 className="text-sm uppercase tracking-wider text-foreground-muted font-bold">
+                Resumen de compra
               </h2>
 
-              {/* Tarjeta de Domicilio de Entrega estilo Mercado Libre */}
-              <div className="rounded-xl border border-border bg-surface-muted/40 p-3.5 space-y-1.5 text-xs">
+              {/* Domicilio de Entrega */}
+              <div className="rounded-xl border border-border/70 bg-surface-muted/30 p-3.5 space-y-1.5 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 font-semibold text-foreground">
                     <MapPin className="h-3.5 w-3.5 text-brand" />
@@ -442,33 +433,31 @@ export function BuyerCartPage() {
                   {!isGuestMode && (
                     <Link
                       to="/buyer/profile"
-                      className="font-mono text-[11px] font-medium text-brand hover:underline"
+                      className="text-xs font-medium text-brand hover:underline"
                     >
-                      {hasSavedAddress ? 'Cambiar' : 'Configurar'}
+                      {hasSavedAddress ? 'Modificar' : 'Configurar'}
                     </Link>
                   )}
                 </div>
                 {isGuestMode ? (
-                  <p className="text-[11px] text-foreground-muted">
-                    Podrás confirmar o editar tu dirección exacta de entrega en el siguiente paso al
-                    iniciar sesión.
+                  <p className="text-xs text-foreground-muted">
+                    Podrás confirmar tu dirección exacta en el siguiente paso.
                   </p>
                 ) : hasSavedAddress ? (
-                  <div className="text-[11px] text-foreground-muted">
+                  <div className="text-xs text-foreground-muted">
                     <p className="font-medium text-foreground">{shippingAddress?.street}</p>
                     <p>
                       {shippingAddress?.city}, {shippingAddress?.state} ({shippingAddress?.country})
                     </p>
                   </div>
                 ) : (
-                  <p className="text-[11px] text-foreground-muted">
-                    Podrás ingresar o modificar tu dirección de entrega directamente en la pantalla
-                    de pago.
+                  <p className="text-xs text-foreground-muted">
+                    Podrás ingresar tu dirección de entrega en la pantalla de pago.
                   </p>
                 )}
               </div>
 
-              <div className="space-y-3 text-sm font-mono border-t border-border pt-4">
+              <div className="space-y-3 text-sm border-t border-border/70 pt-4">
                 <div className="flex justify-between text-foreground-muted">
                   <span>Productos ({items.length})</span>
                   <MoneyAmount
@@ -480,11 +469,7 @@ export function BuyerCartPage() {
                   <span>Envío asegurado</span>
                   <span className="text-success font-semibold">Gratis</span>
                 </div>
-                <div className="flex justify-between text-foreground-muted">
-                  <span>Impuestos incluidos</span>
-                  <span>$0.00</span>
-                </div>
-                <div className="flex justify-between text-base font-bold text-foreground border-t border-border pt-3">
+                <div className="flex justify-between text-base font-bold text-foreground border-t border-border/70 pt-3">
                   <span>Total a pagar</span>
                   <div className="text-brand text-lg">
                     <MoneyAmount
@@ -495,21 +480,21 @@ export function BuyerCartPage() {
                 </div>
               </div>
 
-              {/* Botón Primario Estilo Mercado Libre: Continuar compra / Pagar ahora */}
+              {/* Botón Principal */}
               <Button
                 onClick={handleCheckout}
                 disabled={checkoutMutation.isPending}
-                className="w-full h-12 bg-brand hover:bg-brand-strong text-primary-foreground font-bold text-sm shadow-lg shadow-brand/20 disabled:opacity-50 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                className="w-full h-12 bg-brand hover:bg-brand-strong text-primary-foreground font-bold text-sm rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2"
               >
                 {checkoutMutation.isPending ? (
                   <span className="flex items-center gap-2">
                     <Clock className="h-4 w-4 animate-spin" />
-                    Reservando stock y abriendo pago...
+                    Reservando stock en bodega...
                   </span>
                 ) : isGuestMode ? (
                   <span className="flex items-center gap-2">
                     <LogIn className="h-4 w-4" />
-                    Continuar compra · Iniciar sesión para pagar
+                    Continuar e iniciar sesión
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
@@ -520,19 +505,14 @@ export function BuyerCartPage() {
               </Button>
 
               {/* Aviso de Reserva */}
-              <div className="rounded-xl border border-border bg-surface-muted/50 p-4 space-y-2 text-xs">
+              <div className="rounded-xl border border-border/70 bg-surface-muted/30 p-3.5 space-y-1.5 text-xs">
                 <div className="flex items-center gap-2 text-brand font-semibold">
                   <ShieldCheck className="h-4 w-4 text-success" />
-                  <span>Compra Protegida · Reserva de 15 min</span>
+                  <span>Compra protegida · Reserva de 15 min</span>
                 </div>
                 <p className="text-foreground-muted leading-relaxed">
-                  Al continuar al pago, apartamos tus unidades en bodega física por 15 minutos.
-                  Mientras haya stock disponible, siempre podrás completar tu pago.
+                  Al avanzar al pago, apartamos tus unidades en bodega por 15 minutos para que nadie más las compre.
                 </p>
-                <div className="flex items-center gap-2 text-foreground-muted pt-1 text-[11px]">
-                  <Truck className="h-3.5 w-3.5 text-brand" />
-                  <span>Despacho directo desde red de bodegas oficiales.</span>
-                </div>
               </div>
             </div>
           </div>
@@ -545,22 +525,24 @@ export function BuyerCartPage() {
           variant="destructive"
           className="border-destructive/40 bg-destructive/10 text-destructive fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
         >
-          <div className="w-full max-w-md bg-surface rounded-2xl border border-destructive/40 p-6 shadow-xl animate-in fade-in zoom-in-95">
-            <AlertTitle className="text-lg">¿Eliminar del carrito?</AlertTitle>
-            <AlertDescription className="mt-2">
-              Se eliminará &quot;{itemToDelete.productName}&quot; permanentemente.
+          <div className="w-full max-w-md bg-surface rounded-2xl border border-border p-6 shadow-xl">
+            <AlertTitle className="text-lg font-bold text-foreground">¿Eliminar del carrito?</AlertTitle>
+            <AlertDescription className="mt-2 text-sm text-foreground-muted">
+              Se quitará &quot;{itemToDelete.productName}&quot; de tu lista de compra.
             </AlertDescription>
             <div className="flex gap-2 mt-6 justify-end">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setItemToDelete(null)}
                 disabled={removeCartItemMutation.isPending}
-                className="border-border text-foreground-muted transition-all active:scale-[0.98]"
+                className="border-border text-foreground-muted text-xs"
               >
                 Cancelar
               </Button>
               <Button
                 variant="destructive"
+                size="sm"
                 onClick={async () => {
                   if (!itemToDelete) return;
                   if (isGuestMode) {
@@ -586,6 +568,7 @@ export function BuyerCartPage() {
                   }
                 }}
                 disabled={removeCartItemMutation.isPending}
+                className="text-xs"
               >
                 {removeCartItemMutation.isPending ? 'Eliminando...' : 'Eliminar'}
               </Button>
@@ -598,7 +581,7 @@ export function BuyerCartPage() {
       {deleteFeedback && (
         <Alert
           variant={deleteFeedback.type === 'success' ? 'success' : 'destructive'}
-          className="fixed bottom-4 right-4 z-50 w-full max-w-sm shadow-xl animate-in slide-in-from-right"
+          className="fixed bottom-4 right-4 z-50 w-full max-w-sm shadow-xl"
           role="alert"
         >
           <AlertTitle className="flex items-center gap-2">
@@ -609,14 +592,14 @@ export function BuyerCartPage() {
             )}
             {deleteFeedback.type === 'success' ? 'Éxito' : 'Error'}
           </AlertTitle>
-          <AlertDescription>{deleteFeedback.message}</AlertDescription>
+          <AlertDescription className="text-xs">{deleteFeedback.message}</AlertDescription>
         </Alert>
       )}
 
       {quantityFeedback && (
         <Alert
           variant={quantityFeedback.type === 'success' ? 'success' : 'destructive'}
-          className="fixed bottom-4 right-4 z-50 w-full max-w-sm shadow-xl animate-in slide-in-from-right"
+          className="fixed bottom-4 right-4 z-50 w-full max-w-sm shadow-xl"
           role="alert"
           style={{ bottom: deleteFeedback ? '5.5rem' : '1rem' }}
         >
@@ -628,7 +611,7 @@ export function BuyerCartPage() {
             )}
             {quantityFeedback.type === 'success' ? 'Éxito' : 'Error'}
           </AlertTitle>
-          <AlertDescription>{quantityFeedback.message}</AlertDescription>
+          <AlertDescription className="text-xs">{quantityFeedback.message}</AlertDescription>
         </Alert>
       )}
     </div>

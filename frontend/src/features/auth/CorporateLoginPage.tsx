@@ -175,12 +175,6 @@ const CORPORATE_ROLE_IDENTITIES: CorporateRoleIdentity[] = [
   },
 ];
 
-/**
- * Portal de Acceso Operativo y de Vendedores (/acceso-corporativo, /operaciones, /portal).
- * Refactorizado bajo principios de HyperFrames Creative: cada rol (Vendedor, Logística,
- * Admin, Supervisor) transforma el escenario izquierdo para mostrar únicamente lo que
- * le interesa a esa persona y ofrece una única acción de cuenta demo sin duplicaciones.
- */
 export function CorporateLoginPage() {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as {
@@ -287,33 +281,19 @@ export function CorporateLoginPage() {
     }
   };
 
-  const [primaryFocus, secondaryFocusA, secondaryFocusB] = selectedIdentity.focusItems;
-
   return (
     <div
       data-role={activeRole}
       className="surface-hairline my-4 flex w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-surface text-foreground shadow-2xl transition-colors lg:flex-row"
     >
-      {/* ── Escenario Izquierdo: Adaptado 100% al Rol Operativo Seleccionado (55%) ── */}
-      <div className="relative flex flex-col justify-between overflow-hidden border-b border-border bg-surface-muted/90 p-8 sm:p-10 lg:w-[55%] lg:border-r lg:border-b-0 lg:p-12">
-        {/* Capas atmosféricas dinámicas por rol (--brand) */}
-        <div
-          className="pointer-events-none absolute -top-28 -left-24 h-96 w-96 rounded-full bg-brand/15 blur-3xl transition-colors duration-300"
-          aria-hidden="true"
-        />
-        <div
-          className="pointer-events-none absolute right-6 bottom-10 select-none font-mono text-[5.5rem] leading-none font-bold tracking-tighter text-foreground/[0.03] uppercase"
-          aria-hidden="true"
-        >
-          {selectedIdentity.label}
-        </div>
-
-        <div className="relative z-10 space-y-7">
-          {/* Cabecera con Logo del Rol Activo y retorno a la tienda */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-5">
-            <div className="flex items-center gap-3">
+      {/* ── Escenario Izquierdo: Identidad del Rol (40%) ── */}
+      <div className="relative flex flex-col justify-between overflow-hidden border-b border-border/80 bg-surface-muted/50 p-8 sm:p-10 lg:w-[40%] lg:border-r lg:border-b-0 lg:p-12">
+        <div className="relative z-10 space-y-6">
+          {/* Cabecera: Logo del Rol + retorno a tienda */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
+            <div className="flex items-center gap-2">
               <Logo role={activeRole} />
-              <span className="rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold tracking-wide text-brand uppercase">
+              <span className="font-mono text-[10px] font-semibold tracking-tighter text-brand uppercase">
                 {selectedIdentity.stationTitle}
               </span>
             </div>
@@ -326,18 +306,12 @@ export function CorporateLoginPage() {
             </Link>
           </div>
 
-          {/* Selector de Rol Operativo (Cambia el diseño, color --brand y contenido al instante) */}
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-[11px] font-semibold tracking-wider text-foreground-muted uppercase">
-                1. Elige tu Rol Operativo o Comercial
-              </span>
-              <span className="font-mono text-[11px] font-semibold text-brand">
-                {selectedIdentity.route}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          {/* Selector compacto de rol: tabs horizontales */}
+          <div className="space-y-3">
+            <span className="font-mono text-[10px] font-semibold tracking-wider text-foreground-muted uppercase">
+              Estacion operativa
+            </span>
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
               {CORPORATE_ROLE_IDENTITIES.map((item) => {
                 const isSelected = activeRole === item.role;
                 return (
@@ -346,18 +320,18 @@ export function CorporateLoginPage() {
                     type="button"
                     data-role={item.role}
                     onClick={() => selectRoleStation(item)}
-                    className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all ${
+                    className={`flex items-center gap-2 rounded-xl border p-2.5 text-left transition-all ${
                       isSelected
                         ? 'border-brand bg-brand/12 shadow-sm'
-                        : 'border-border/80 bg-surface hover:border-brand/50'
+                        : 'border-border/60 bg-surface hover:border-brand/50 hover:bg-surface-muted/40'
                     }`}
                   >
-                    <LogoMark role={item.role} className="size-5 shrink-0 text-brand" />
+                    <LogoMark role={item.role} className="size-4 shrink-0 text-brand" />
                     <div className="min-w-0">
                       <div className="truncate font-sans text-xs font-bold text-foreground">
                         {item.label}
                       </div>
-                      <div className="truncate font-mono text-[10px] text-brand">
+                      <div className="truncate font-mono text-[9px] text-foreground-muted">
                         {isSelected ? 'Activo' : 'Seleccionar'}
                       </div>
                     </div>
@@ -367,89 +341,69 @@ export function CorporateLoginPage() {
             </div>
           </div>
 
-          {/* Mensaje y Propuesta de Valor Exclusiva del Rol Seleccionado */}
-          <div className="max-w-xl space-y-2.5">
+          {/* Propuesta de valor del rol (breve) */}
+          <div className="max-w-sm space-y-2.5">
             <div className="font-mono text-xs font-semibold tracking-[0.14em] text-brand uppercase">
-              ESTACIÓN DEDICADA · {selectedIdentity.label.toUpperCase()}
+              ESTACION DEDICADA · {selectedIdentity.label.toUpperCase()}
             </div>
-            <h1 className="font-sans text-2xl leading-[1.1] font-bold tracking-tight text-foreground sm:text-3xl lg:text-[2.2rem]">
+            <h1 className="font-sans text-xl leading-[1.15] font-bold tracking-tight text-foreground sm:text-2xl lg:text-[1.5rem]">
               {selectedIdentity.headline}
             </h1>
-            <p className="text-sm leading-relaxed text-foreground-muted">
+            <p className="text-xs leading-relaxed text-foreground-muted">
               {selectedIdentity.subtitle}
             </p>
           </div>
 
-          {/* Composición Asimétrica de Capacidades del Rol (1 Hero + 2 Soportes) */}
-          <div className="max-w-xl space-y-3">
-            {/* Capacidad Principal del Rol */}
-            <div className="rounded-2xl border border-brand/35 bg-surface/95 p-4 shadow-sm">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-brand shrink-0" />
-                  <h2 className="font-sans text-sm font-bold text-foreground">
-                    {primaryFocus.title}
-                  </h2>
-                </div>
-                <span className="rounded-md border border-brand/30 bg-brand/10 px-2 py-0.5 font-mono text-[10px] font-bold text-brand">
-                  {primaryFocus.badge}
+          {/* 3 capacidades del rol (resumidas) */}
+          <div className="max-w-sm space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5 text-brand shrink-0" />
+                <span className="font-sans text-xs font-bold text-foreground">
+                  {selectedIdentity.focusItems[0].title}
                 </span>
               </div>
-              <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
-                {primaryFocus.description}
-              </p>
+              <span className="rounded-md border border-brand/30 bg-brand/10 px-2 py-0.5 font-mono text-[9px] font-bold text-brand">
+                {selectedIdentity.focusItems[0].badge}
+              </span>
             </div>
-
-            {/* 2 Capacidades Complementarias del Rol */}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="surface-hairline rounded-xl bg-surface/80 p-3.5 space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-sans text-xs font-bold text-foreground">
-                    {secondaryFocusA.title}
-                  </span>
-                  <span className="font-mono text-[10px] font-semibold text-brand">
-                    {secondaryFocusA.badge}
-                  </span>
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              {selectedIdentity.focusItems.slice(1).map((item) => (
+                <div key={item.badge} className="surface-hairline rounded-xl bg-surface/80 p-2 space-y-0.5">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="font-sans text-[10px] font-bold text-foreground">
+                      {item.title}
+                    </span>
+                    <span className="font-mono text-[8px] font-semibold text-brand">
+                      {item.badge}
+                    </span>
+                  </div>
+                  <p className="text-[10px] leading-tight text-foreground-muted">
+                    {item.description}
+                  </p>
                 </div>
-                <p className="text-xs leading-relaxed text-foreground-muted">
-                  {secondaryFocusA.description}
-                </p>
-              </div>
-
-              <div className="surface-hairline rounded-xl bg-surface/80 p-3.5 space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-sans text-xs font-bold text-foreground">
-                    {secondaryFocusB.title}
-                  </span>
-                  <span className="font-mono text-[10px] font-semibold text-brand">
-                    {secondaryFocusB.badge}
-                  </span>
-                </div>
-                <p className="text-xs leading-relaxed text-foreground-muted">
-                  {secondaryFocusB.description}
-                </p>
-              </div>
+              ))}
             </div>
           </div>
-        </div>
 
-        {/* Pie técnico de estación */}
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-t border-border/80 pt-5">
-          <div className="inline-flex items-center gap-2 font-mono text-xs text-foreground-muted">
-            <Lock className="h-3.5 w-3.5 text-brand" />
-            <span>SESIÓN AISLADA POR ROL · JWT RBAC</span>
+          {/* Pie tecnico */}
+          <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-4">
+            <div className="inline-flex items-center gap-1.5 font-mono text-[10px] text-foreground-muted">
+              <Lock className="h-3 w-3 text-brand" />
+              <span>SESION AISLADA POR ROL · JWT RBAC</span>
+            </div>
+            <span className="font-mono text-[9px] text-brand font-semibold">
+              {selectedIdentity.stationTitle.toUpperCase()}
+            </span>
           </div>
-          <span className="font-mono text-[11px] text-brand font-semibold">
-            {selectedIdentity.stationTitle.toUpperCase()}
-          </span>
         </div>
       </div>
 
-      {/* ── Escenario Derecho: Credenciales de Estación + 1 Solo Acceso Demo (45%) ── */}
+      {/* ── Escenario Derecho: Formulario de credenciales (60%) ── */}
       <div className="flex flex-1 items-center justify-center bg-surface p-6 sm:p-10 lg:p-12">
         <div className="w-full max-w-md space-y-5">
           <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 font-mono text-[11px] font-semibold text-brand">
+            <div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 font-mono text-[10px] font-semibold text-brand">
               <LogoMark role={selectedIdentity.role} className="size-3.5" />
               <span>ACCESO {selectedIdentity.label.toUpperCase()}</span>
             </div>
@@ -465,7 +419,7 @@ export function CorporateLoginPage() {
           {submitError && (
             <Alert variant="destructive" className="mb-4" role="alert">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Acceso Corporativo Denegado</AlertTitle>
+              <AlertTitle>Acceso denegado</AlertTitle>
               <AlertDescription>{submitError}</AlertDescription>
             </Alert>
           )}
@@ -474,7 +428,7 @@ export function CorporateLoginPage() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="corp-email"
-                className="font-mono text-xs font-medium tracking-wider text-foreground-muted uppercase"
+                className="font-mono text-[10px] font-medium tracking-wider text-foreground-muted uppercase"
               >
                 Correo de {selectedIdentity.label}
               </Label>
@@ -508,51 +462,51 @@ export function CorporateLoginPage() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="corp-password"
-                className="font-mono text-xs font-medium tracking-wider text-foreground-muted uppercase"
+                className="font-mono text-[10px] font-medium tracking-wider text-foreground-muted uppercase"
               >
-                Contraseña de Estación
+                Contraseña de estacion
               </Label>
-            <div className="relative">
-              <Input
-                id="corp-password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••••••"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (fieldErrors.password) {
-                    setFieldErrors((prev) => ({ ...prev, password: undefined }));
-                  }
-                }}
-                disabled={loginMutation.isPending}
-                aria-invalid={Boolean(fieldErrors.password)}
-                className="border-border bg-surface font-mono text-sm text-foreground focus:border-brand pr-11"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                disabled={loginMutation.isPending}
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                aria-pressed={showPassword}
-                className="absolute right-1 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-all hover:text-brand hover:bg-brand/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4 transition-transform duration-200 scale-110" />
-                ) : (
-                  <Eye className="h-4 w-4 transition-transform duration-200" />
-                )}
-              </button>
-            </div>
+              <div className="relative">
+                <Input
+                  id="corp-password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••••••"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (fieldErrors.password) {
+                      setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                    }
+                  }}
+                  disabled={loginMutation.isPending}
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  className="border-border bg-surface font-mono text-sm text-foreground focus:border-brand pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  disabled={loginMutation.isPending}
+                  aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+                  aria-pressed={showPassword}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted transition-all hover:text-brand hover:bg-brand/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 transition-transform duration-200 scale-110" />
+                  ) : (
+                    <Eye className="h-4 w-4 transition-transform duration-200" />
+                  )}
+                </button>
+              </div>
               {fieldErrors.password && (
                 <p className="text-xs text-destructive">{fieldErrors.password}</p>
               )}
             </div>
 
-            {/* Casillas Legales Adaptadas al Rol Operativo */}
-            <div className="space-y-2.5 rounded-xl border border-border bg-surface-muted/50 p-3.5 text-xs">
-              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+            {/* Casillas legales en una sola linea compacta */}
+            <div className="space-y-2 rounded-xl border border-border bg-surface-muted/40 p-3 text-xs">
+              <label className="flex items-start gap-2 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={acceptCorporateTerms}
@@ -569,15 +523,15 @@ export function CorporateLoginPage() {
                   <Link to="/terms" className="font-medium text-brand hover:underline">
                     Términos de Operación ({selectedIdentity.legalNotice})
                   </Link>{' '}
-                  y el{' '}
-                  <Link to="/legal" className="font-medium text-brand hover:underline">
-                    Marco Legal y Tributario
+                  y{' '}
+                  <Link to="/privacy" className="font-medium text-brand hover:underline">
+                    Política de Privacidad (Ley 1581)
                   </Link>
                   .
                 </span>
               </label>
 
-              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+              <label className="flex items-start gap-2 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={acceptDataCompliance}
@@ -591,10 +545,6 @@ export function CorporateLoginPage() {
                 />
                 <span className="text-foreground-muted leading-relaxed">
                   Cumplo la{' '}
-                  <Link to="/privacy" className="font-medium text-brand hover:underline">
-                    Política de Privacidad y Confidencialidad (Ley 1581)
-                  </Link>{' '}
-                  y la{' '}
                   <Link to="/cookies" className="font-medium text-brand hover:underline">
                     Política de Cookies de Sesión
                   </Link>
@@ -603,7 +553,7 @@ export function CorporateLoginPage() {
               </label>
 
               {fieldErrors.legal && (
-                <p className="text-xs font-medium text-danger pt-1">{fieldErrors.legal}</p>
+                <p className="text-xs font-medium text-destructive pt-1">{fieldErrors.legal}</p>
               )}
             </div>
 
@@ -615,7 +565,7 @@ export function CorporateLoginPage() {
               {loginMutation.isPending ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                  Abriendo estación {selectedIdentity.label}...
+                  Abriendo estacion {selectedIdentity.label}...
                 </span>
               ) : (
                 <span className="flex items-center justify-center gap-2">
@@ -626,17 +576,17 @@ export function CorporateLoginPage() {
             </Button>
           </form>
 
-          {/* UNA sola tarjeta de demostración contextual para el rol seleccionado (entorno de desarrollo) */}
+          {/* Demo 1-clic (solo desarrollo) */}
           {import.meta.env.DEV && (
-            <div className="rounded-xl border border-brand/30 bg-brand/8 p-3.5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <ShieldCheck className="h-4 w-4 text-brand shrink-0" />
+            <div className="rounded-xl border border-brand/30 bg-brand/8 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <ShieldCheck className="h-3.5 w-3.5 text-brand shrink-0" />
                   <div className="min-w-0">
                     <div className="truncate font-sans text-xs font-bold text-foreground">
                       Cuenta Demo · {selectedIdentity.label}
                     </div>
-                    <div className="truncate font-mono text-[11px] text-foreground-muted">
+                    <div className="truncate font-mono text-[10px] text-foreground-muted">
                       {selectedIdentity.email}
                     </div>
                   </div>
@@ -653,7 +603,7 @@ export function CorporateLoginPage() {
             </div>
           )}
 
-          <div className="flex flex-col items-center justify-between gap-3 border-t border-border/80 pt-4 text-xs text-foreground-muted sm:flex-row">
+          <div className="flex flex-col items-center justify-between gap-2 border-t border-border/60 pt-3 text-[10px] text-foreground-muted sm:flex-row">
             <div>
               ¿Vienes a comprar?{' '}
               <Link
@@ -665,7 +615,7 @@ export function CorporateLoginPage() {
             </div>
             <Link
               to="/login"
-              className="font-mono text-[11px] text-foreground-muted transition-colors hover:text-brand"
+              className="font-mono text-foreground-muted transition-colors hover:text-brand"
             >
               Login de Comprador →
             </Link>

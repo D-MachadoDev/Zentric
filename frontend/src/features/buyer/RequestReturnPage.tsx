@@ -107,7 +107,7 @@ export function RequestReturnPage() {
       {feedback && (
         <Alert variant={feedback.type === 'success' ? 'default' : 'destructive'} className="border-border bg-surface">
           {feedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-          <AlertTitle className="font-mono text-sm">{feedback.type === 'success' ? 'Éxito' : 'Error'}</AlertTitle>
+          <AlertTitle className="text-sm font-bold">{feedback.type === 'success' ? 'Éxito' : 'Error'}</AlertTitle>
           <AlertDescription className="text-xs">{feedback.message}</AlertDescription>
         </Alert>
       )}
@@ -115,7 +115,7 @@ export function RequestReturnPage() {
       <form onSubmit={handleSubmit} noValidate className="space-y-6 bg-surface border border-border rounded-2xl p-6 shadow-sm">
         {/* Selección de Pedido */}
         <div className="space-y-2">
-          <label className="text-xs font-mono uppercase text-foreground-muted block">
+          <label className="text-xs uppercase tracking-wider font-semibold text-foreground-muted block">
             1. Pedido Entregado
           </label>
           {isLoadingOrders ? (
@@ -131,7 +131,7 @@ export function RequestReturnPage() {
                 setSelectedOrderId(e.target.value);
                 setSelectedVariantId('');
               }}
-              className="w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2 text-sm font-mono text-foreground focus:border-brand focus:outline-none"
+              className="w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2 text-sm text-foreground focus:border-brand focus:outline-none"
             >
               <option value="">-- Seleccionar Pedido --</option>
               {(deliveredOrders ?? []).map((order: any) => (
@@ -147,7 +147,7 @@ export function RequestReturnPage() {
         {selectedOrder && (
           <div className="space-y-4 animate-in fade-in">
             <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-foreground-muted block">
+              <label className="text-xs uppercase tracking-wider font-semibold text-foreground-muted block">
                 2. Artículo a Devolver
               </label>
               <div className="grid grid-cols-1 gap-3">
@@ -166,7 +166,7 @@ export function RequestReturnPage() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-foreground">Variante SKU: {item.variantId}</p>
-                      <p className="text-xs text-foreground-muted font-mono">Cantidad comprada: {item.quantity}</p>
+                      <p className="text-xs text-foreground-muted">Cantidad comprada: {item.quantity}</p>
                     </div>
                     {selectedVariantId === item.variantId && <CheckCircle2 className="h-5 w-5 text-brand" />}
                   </div>
@@ -176,7 +176,7 @@ export function RequestReturnPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs font-mono uppercase text-foreground-muted block">
+                <label className="text-xs uppercase tracking-wider font-semibold text-foreground-muted block">
                   3. Cantidad a Devolver
                 </label>
                 <Input
@@ -184,7 +184,7 @@ export function RequestReturnPage() {
                   min={1}
                   value={quantity}
                   onChange={(e) => setQuantity(Number(e.target.value))}
-                  className="bg-surface-muted border-border font-mono text-foreground"
+                  className="bg-surface-muted border-border text-foreground"
                 />
               </div>
             </div>
@@ -193,7 +193,7 @@ export function RequestReturnPage() {
 
         {/* Motivo de la Devolución */}
         <div className="space-y-2">
-          <label className="text-xs font-mono uppercase text-foreground-muted block">
+          <label className="text-xs uppercase tracking-wider font-semibold text-foreground-muted block">
             4. Motivo de la Solicitud
           </label>
           <textarea
@@ -207,7 +207,7 @@ export function RequestReturnPage() {
 
         {/* Advertencia Legal / Dominio */}
         <div className="rounded-xl border border-warning/30 bg-warning/10 p-4 space-y-1 text-xs">
-          <div className="flex items-center gap-2 text-warning font-mono font-bold">
+          <div className="flex items-center gap-2 text-warning font-semibold text-sm">
             <ShieldAlert className="h-4 w-4" />
             Condiciones de Devolución (Garantía Legal)
           </div>

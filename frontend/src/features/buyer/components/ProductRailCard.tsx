@@ -1,28 +1,34 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, CheckCircle2, Flame, ImageOff } from 'lucide-react';
+import { ArrowRight, ImageOff } from 'lucide-react';
 import { MoneyAmount } from '@zentric/ui';
 import type { Product } from '../../../core';
 import { getProductImageUrl } from '../productImages';
 import {
   formatProductType,
   formatVariantCount,
-  resolvePrimarySku,
   resolveProductAvailability,
+  type ProductAvailability,
 } from './productPresentation';
+
+const AVAILABILITY: Record<ProductAvailability, { label: string; dot: string }> = {
+  'in-stock': { label: 'Disponible', dot: 'bg-emerald-500' },
+  'low-stock': { label: 'Stock limitado', dot: 'bg-amber-500' },
+  'out-of-stock': { label: 'Agotado', dot: 'bg-rose-500' },
+  digital: { label: 'Entrega digital', dot: 'bg-brand' },
+};
 
 interface ProductRailCardProps {
   product: Product;
 }
 
 /**
- * Tarjeta compacta del carrusel de populares:
- * Espaciado respirable, tipografía Sans limpia y precio en cifras tabulares legibles.
+ * Tarjeta compacta del carrusel: misma jerarquía que la grilla
+ * —imagen, nombre, precio y disponibilidad— en un formato horizontal.
  */
 export function ProductRailCard({ product }: ProductRailCardProps) {
-  const availability = resolveProductAvailability(product);
+  const availability = AVAILABILITY[resolveProductAvailability(product)];
   const variantCount = product.variants?.length ?? 1;
-  const sku = resolvePrimarySku(product);
   const imageUrl = getProductImageUrl(product);
   const [imageFailed, setImageFailed] = useState(false);
 
@@ -30,12 +36,12 @@ export function ProductRailCard({ product }: ProductRailCardProps) {
     <Link
       to="/buyer/catalog/$productId"
       params={{ productId: product.id }}
-      className="group relative flex w-72 shrink-0 flex-col overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-xs transition-all duration-300 ease-out hover:border-brand/60 hover:shadow-md motion-safe:hover:-translate-y-1"
+      className="group flex w-64 shrink-0 flex-col overflow-hidden rounded-xl border border-border/80 bg-surface transition-colors duration-200 hover:border-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
     >
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-surface-muted/50">
+      <div className="aspect-[4/3] w-full overflow-hidden bg-surface-muted/50">
         {imageFailed ? (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-foreground-muted">
-            <ImageOff className="h-8 w-8 text-foreground-subtle" aria-hidden="true" />
+            <ImageOff className="h-7 w-7 text-foreground-subtle" aria-hidden="true" />
             <span className="text-xs">Imagen no disponible</span>
           </div>
         ) : (
@@ -44,56 +50,37 @@ export function ProductRailCard({ product }: ProductRailCardProps) {
             alt={product.name}
             loading="lazy"
             onError={() => setImageFailed(true)}
-            className="h-full w-full object-cover object-center motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out motion-safe:group-hover:scale-105"
+            className="h-full w-full object-cover object-center motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out motion-safe:group-hover:scale-[1.03]"
           />
-        )}
-        <div className="absolute top-2.5 left-2.5">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-surface/90 px-2.5 py-1 text-xs font-semibold text-brand shadow-xs backdrop-blur-md">
-            <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
-            Envío Asegurado
-          </span>
-        </div>
-        {availability === 'low-stock' && (
-          <div className="absolute bottom-2.5 left-2.5">
-            <span className="inline-flex items-center gap-1 rounded-md bg-amber-600 px-2.5 py-0.5 text-xs font-bold text-white shadow-xs">
-              <Flame className="h-3 w-3" aria-hidden="true" />
-              ¡Últimas unidades!
-            </span>
-          </div>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col justify-between gap-3 p-4">
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-x-1.5 text-xs text-foreground-muted">
-            <span className="font-semibold text-brand">{formatProductType(product.type)}</span>
-            <span aria-hidden="true">·</span>
-            <span>{formatVariantCount(variantCount)}</span>
-            {sku && (
-              <>
-                <span aria-hidden="true">·</span>
-                <span className="text-xs text-foreground-subtle">{sku}</span>
-              </>
-            )}
-          </div>
-          <h3 className="line-clamp-1 text-sm font-bold text-foreground transition-colors group-hover:text-brand">
-            {product.name}
-          </h3>
+      <div className="flex flex-1 flex-col gap-2.5 p-3.5">
+        <div className="flex flex-wrap items-center gap-x-1.5 text-[11px] text-foreground-muted">
+          <span className="font-medium text-brand">{formatProductType(product.type)}</span>
+          <span aria-hidden="true">·</span>
+          <span>{formatVariantCount(variantCount)}</span>
         </div>
 
-        <div className="flex items-center justify-between border-t border-border/70 pt-2.5">
-          <div>
-            <span className="text-xs font-medium text-foreground-muted uppercase tracking-wider">
-              Precio
-            </span>
-            <div className="text-base font-bold text-foreground">
-              <MoneyAmount amount={product.price} currency={product.currency ?? 'COP'} />
-            </div>
+        <h3 className="line-clamp-1 text-sm font-semibold text-foreground transition-colors group-hover:text-brand">
+          {product.name}
+        </h3>
+
+        <div className="mt-auto space-y-1">
+          <div className="text-base font-semibold tabular-nums text-foreground">
+            <MoneyAmount amount={product.price} currency={product.currency ?? 'COP'} />
           </div>
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand group-hover:underline">
-            Ver Ficha
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </span>
+
+          <div className="flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-foreground-muted">
+              <span className={`size-1.5 rounded-full ${availability.dot}`} aria-hidden="true" />
+              {availability.label}
+            </span>
+            <ArrowRight
+              className="h-3.5 w-3.5 text-foreground-muted transition-colors group-hover:text-brand"
+              aria-hidden="true"
+            />
+          </div>
         </div>
       </div>
     </Link>

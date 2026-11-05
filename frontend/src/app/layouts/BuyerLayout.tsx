@@ -7,8 +7,6 @@ import {
   User,
   LogOut,
   LogIn,
-  ShieldCheck,
-  Truck,
   Clock,
 } from 'lucide-react';
 import { useAuth } from '../providers/authContext';
@@ -150,38 +148,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
 
   return (
     <div data-role="buyer" className="flex min-h-screen flex-col bg-background text-foreground">
-      {/* ── 1. Franja utilitaria: beneficios reales del comprador y acceso discreto operativo ── */}
-      <div className="border-b border-border/60 bg-surface px-4 py-1.5 text-xs text-foreground-muted">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-          <p className="flex items-center gap-1.5 text-xs">
-            <Truck className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
-            <span>
-              Envíos rastreables a todo el país · Compra protegida y devolución garantizada
-            </span>
-          </p>
-
-          <div className="flex shrink-0 items-center gap-4">
-            <Link
-              to="/buyer/orders"
-              className="hidden items-center gap-1.5 text-xs font-medium text-foreground-muted transition-colors hover:text-brand md:flex"
-            >
-              <ShieldCheck className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
-              Rastreo de Pedidos y Garantías
-            </Link>
-            <span className="hidden text-border md:inline" aria-hidden="true">
-              |
-            </span>
-            <Link
-              to="/acceso-corporativo"
-              className="inline-flex items-center gap-1 text-xs font-mono font-medium text-foreground-muted transition-colors hover:text-brand"
-            >
-              <span>Vender / Acceso Operativo</span>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* ── 1b. Cinta de Reserva Atómica Activa (15 min) ── */}
+      {/* ── 1. Cinta de Reserva Atómica Activa (15 min) ── */}
       {activePendingOrder && !currentPath.endsWith('/pay') && (
         <div
           role="region"
@@ -208,101 +175,103 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
       )}
 
       {/* ── 2. Cabecera Comercial Principal (Navbar) ── */}
-      <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur-md overscroll-contain">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-          {/* Logo de Marca — limpio, sin badge redundante */}
-          <div className="flex items-center gap-3 shrink-0">
-            <Link to="/buyer" className="flex items-center gap-2 group" aria-label="Zentric Marketplace - Inicio">
-              <Logo className="h-8 sm:h-9" />
-            </Link>
-          </div>
+      <header className="sticky top-0 z-30 border-b border-border/80 bg-surface/95 backdrop-blur-md overscroll-contain">
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
+          {/* Logo de Marca */}
+          <Link
+            to="/buyer"
+            className="flex shrink-0 items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+            aria-label="Zentric Marketplace - Inicio"
+          >
+            <Logo className="h-7 sm:h-8" />
+          </Link>
 
-          {/* Barra de Búsqueda de Marketplace */}
-          <div className="hidden md:flex flex-1 max-w-xl items-center relative">
-            <SearchInput
-              value={headerSearch}
-              onChange={setHeaderSearch}
-              onSearch={handleHeaderSearch}
-              placeholder={activeCategoryId
-                ? `Buscar en ${(categories ?? []).find(c => c.id === activeCategoryId)?.name ?? activeCategoryId}...`
-                : "Buscar productos, hardware, periféricos, licencias cloud..."}
-              showRecentSearches
-              maxRecentSearches={5}
-              aria-label="Buscar en todo el marketplace"
-              aria-describedby="search-context-hint"
-              className="w-full"
-            />
-            <span id="search-context-hint" className="sr-only">
-              {activeCategoryId
-                ? `La búsqueda se filtrará a la categoría ${(categories ?? []).find(c => c.id === activeCategoryId)?.name ?? activeCategoryId}.`
-                : 'La búsqueda abarcará todo el catálogo de productos.'}
-            </span>
+          {/* Búsqueda central — el punto de entrada principal del comprador */}
+          <div className="hidden min-w-0 flex-1 justify-center px-2 md:flex">
+            <div className="w-full max-w-xl">
+              <SearchInput
+                value={headerSearch}
+                onChange={setHeaderSearch}
+                onSearch={handleHeaderSearch}
+                placeholder={activeCategoryId
+                  ? `Buscar en ${(categories ?? []).find(c => c.id === activeCategoryId)?.name ?? activeCategoryId}...`
+                  : 'Buscar productos, hardware, periféricos, licencias...'}
+                showRecentSearches
+                maxRecentSearches={5}
+                showSubmitButton={false}
+                aria-label="Buscar en todo el marketplace"
+                aria-describedby="search-context-hint"
+                className="w-full"
+              />
+              <span id="search-context-hint" className="sr-only">
+                {activeCategoryId
+                  ? `La búsqueda se filtrará a la categoría ${(categories ?? []).find(c => c.id === activeCategoryId)?.name ?? activeCategoryId}.`
+                  : 'La búsqueda abarcará todo el catálogo de productos.'}
+              </span>
+            </div>
           </div>
 
           {/* Acciones del Comprador */}
-          <div className="flex items-center gap-1 sm:gap-2">
-            {/* Mis Pedidos */}
+          <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
             <Link
               to="/buyer/orders"
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+              className={`inline-flex h-9 items-center gap-2 rounded-lg px-2.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${
                 currentPath.startsWith('/buyer/orders')
-                  ? 'bg-brand/10 text-brand font-semibold'
-                  : 'text-foreground-muted hover:bg-surface-muted hover:text-foreground'
+                  ? 'text-brand'
+                  : 'text-foreground-muted hover:text-foreground'
               }`}
             >
               <ShoppingBag className="h-4 w-4" aria-hidden="true" />
-              <span className="sr-only lg:not-sr-only">Mis Pedidos</span>
+              <span className="hidden lg:inline">Mis pedidos</span>
             </Link>
 
-            {/* Carrito con Insignia Viva (aria-live polite) */}
             <Link
               to="/buyer/cart"
-              className={`relative flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+              className={`relative inline-flex h-9 items-center gap-2 rounded-lg px-2.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${
                 currentPath === '/buyer/cart'
-                  ? 'bg-brand/10 text-brand font-semibold'
-                  : 'text-foreground-muted hover:bg-surface-muted hover:text-foreground'
+                  ? 'text-brand'
+                  : 'text-foreground-muted hover:text-foreground'
               }`}
             >
               <ShoppingCart className="h-4 w-4" aria-hidden="true" />
-              <span className="sr-only lg:not-sr-only">Carrito</span>
+              <span className="hidden lg:inline">Carrito</span>
               {cartItemCount > 0 && (
                 <span
                   aria-live="polite"
-                  className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-background"
+                  className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-semibold tabular-nums text-primary-foreground"
                 >
                   {cartItemCount}
                 </span>
               )}
             </Link>
 
-            {/* Perfil del Comprador */}
             <Link
               to="/buyer/profile"
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                currentPath === '/buyer/profile'
-                  ? 'bg-brand/10 text-brand font-semibold'
-                  : 'text-foreground-muted hover:bg-surface-muted hover:text-foreground'
+              className={`inline-flex h-9 items-center gap-2 rounded-lg px-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${
+                currentPath === '/buyer/profile' ? 'text-brand' : 'text-foreground-muted hover:text-foreground'
               }`}
             >
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand/10 text-brand font-semibold text-xs">
-                {user?.fullName?.charAt(0) || 'C'}
-              </div>
-              <span className="sr-only xl:not-sr-only max-w-[120px] truncate text-foreground font-medium">
-                {user?.fullName ?? 'Mi Perfil'}
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand/10 text-xs font-semibold text-brand">
+                {user?.fullName ? (
+                  user.fullName.charAt(0)
+                ) : (
+                  <User className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+              </span>
+              <span className="hidden max-w-[120px] truncate xl:inline">
+                {user?.fullName ?? 'Mi perfil'}
               </span>
             </Link>
 
-            {/* Alternador de Tema Dual */}
             <ThemeToggle />
 
-            {/* Acción de sesión: Salir si está autenticado, o Ingresar si es Invitado */}
             {isAuthenticatedBuyer ? (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
                 disabled={isLoggingOut}
-                className="text-foreground-muted hover:bg-danger/10 hover:text-danger px-2"
+                className="px-2 text-foreground-muted hover:bg-danger/10 hover:text-danger"
                 title="Cerrar sesión"
               >
                 <LogOut className="h-4 w-4" />
@@ -310,13 +279,30 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
             ) : (
               <Link
                 to="/login"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-brand-strong"
+                className="ml-1 inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
               >
                 <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>Ingresar</span>
               </Link>
             )}
           </div>
+        </div>
+
+        {/* Búsqueda compacta en móvil: el comprador la necesita antes que el catálogo */}
+        <div className="border-t border-border/60 px-4 py-2 md:hidden">
+          <SearchInput
+            value={headerSearch}
+            onChange={setHeaderSearch}
+            onSearch={handleHeaderSearch}
+            placeholder={activeCategoryId
+              ? `Buscar en ${(categories ?? []).find(c => c.id === activeCategoryId)?.name ?? activeCategoryId}...`
+              : 'Buscar en el marketplace...'}
+            showRecentSearches
+            maxRecentSearches={4}
+            showSubmitButton={false}
+            aria-label="Buscar en todo el marketplace"
+            className="w-full"
+          />
         </div>
 
         {/* ── 3. Sub-barra de Navegación por Categorías Rápidas ── */}
@@ -376,7 +362,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
       {/* ── 4. Navegación Móvil Inferior ── */}
       <nav
         aria-label="Navegación móvil del comprador"
-        className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-border bg-surface/95 backdrop-blur-md py-2 sm:hidden shadow-lg"
+        className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-border bg-surface/95 py-2 backdrop-blur-md sm:hidden"
       >
         {buyerNavItems.map((item) => {
           const Icon = item.icon;
@@ -405,7 +391,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
       </nav>
 
       {/* ── 5. Lienzo Comercial Principal (Limpio, sin fondos cuadriculados) ── */}
-      <main className="flex-1 bg-background px-4 py-8 pb-20 sm:px-6 sm:py-10 sm:pb-20 lg:px-8 mb-14 sm:mb-0">
+      <main className="flex-1 overflow-x-clip bg-background px-4 py-6 pb-20 sm:px-6 sm:py-8 sm:pb-20 lg:px-8 mb-14 sm:mb-0">
         <div className="mx-auto max-w-7xl">{children}</div>
       </main>
 

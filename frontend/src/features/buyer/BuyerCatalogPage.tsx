@@ -17,7 +17,6 @@ import {
 import {
   ChevronLeft,
   ChevronRight,
-  Flame,
   RefreshCw,
 } from 'lucide-react';
 import { RecentlyViewedCarousel } from './components/RecentlyViewedCarousel';
@@ -27,6 +26,7 @@ import { CatalogPagination } from './components/CatalogPagination';
 import { CatalogTrustStrip } from './components/CatalogTrustStrip';
 import { ProductCard } from './components/ProductCard';
 import { ProductRailCard } from './components/ProductRailCard';
+import { resolveProductAvailability } from './components/productPresentation';
 
 /** Cantidad de productos por pagina que pide la grilla al backend. */
 const CATALOG_PAGE_SIZE = 12;
@@ -35,7 +35,7 @@ const ALL_CATEGORIES = 'all';
 /** Milisegundos que se espera antes de mandar la busqueda al servidor. */
 const SEARCH_DEBOUNCE_MS = 300;
 /** Ancho aproximado de una ficha del carrusel, en pixeles. */
-const CAROUSEL_STEP_PX = 320;
+const CAROUSEL_STEP_PX = 272;
 /** Cadencia del avance automatico del carrusel, en milisegundos. */
 const CAROUSEL_AUTOPLAY_MS = 5000;
 
@@ -126,10 +126,13 @@ export function BuyerCatalogPage() {
 
 
   const popularProducts = useMemo(
-    () => (products.length > 2 ? products.slice(0, 6) : []),
+    () =>
+      products
+        .filter((product) => resolveProductAvailability(product) !== 'out-of-stock')
+        .slice(0, 8),
     [products],
   );
-  const hasPopularProducts = popularProducts.length > 0;
+  const hasPopularProducts = popularProducts.length > 2;
 
   const selectedCategoryName = useMemo(() => {
     if (selectedCategory === ALL_CATEGORIES) return null;
@@ -290,17 +293,19 @@ export function BuyerCatalogPage() {
       {/* ── 2. Franja de garantías ── */}
       <CatalogTrustStrip />
 
-      {/* ── 3. Carrusel: Productos Populares & Tendencias (Visible con >2 productos) ── */}
+      {/* ── 3. Carrusel: productos con disponibilidad real (Visible con >2 productos) ── */}
       {hasPopularProducts && (
-        <section aria-label="Productos populares" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Flame className="h-5 w-5 text-warning" aria-hidden="true" />
-              <h2 className="text-lg font-bold text-foreground sm:text-xl">
-                Productos Populares & Más Vendidos
+        <section aria-label="Productos disponibles" className="space-y-4">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground sm:text-xl">
+                Disponibles ahora
               </h2>
+              <p className="mt-1 text-xs text-foreground-muted">
+                Selección del catálogo con disponibilidad real.
+              </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <Button
                 variant="outline"
                 size="icon-sm"
@@ -325,39 +330,17 @@ export function BuyerCatalogPage() {
           <div
             ref={carouselRef}
             role="group"
-            aria-label="Productos populares del catálogo"
+            aria-label="Productos disponibles del catálogo"
             tabIndex={0}
             onKeyDown={handleCarouselKeyDown}
             onMouseEnter={() => setIsAutoPlaying(false)}
             onMouseLeave={() => setIsAutoPlaying(true)}
             onFocus={() => setIsAutoPlaying(false)}
             onBlur={() => setIsAutoPlaying(true)}
-            className="flex gap-4 overflow-x-auto pb-4 scrollbar-none scroll-smooth focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
+            className="flex gap-4 overflow-x-auto pb-2 scrollbar-none scroll-smooth focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
           >
             {popularProducts.map((product) => (
               <ProductRailCard key={`popular-${product.id}`} product={product} />
-            ))}
-          </div>
-
-          <div
-            className="mt-4 flex items-center justify-center gap-1.5"
-            role="tablist"
-            aria-label="Navegación del carrusel"
-          >
-            {popularProducts.map((product, index) => (
-              <button
-                key={`popular-dot-${product.id}`}
-                type="button"
-                role="tab"
-                aria-selected={index === carouselIndex}
-                aria-label={`Ir a producto ${index + 1}`}
-                onClick={() => goToCarouselIndex(index)}
-                className={`relative flex h-6 w-6 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:outline-none after:content-[''] after:h-2 after:w-2 after:rounded-full after:transition-[width,background-color] after:duration-200 ${
-                  index === carouselIndex
-                    ? 'after:w-6 after:bg-brand'
-                    : 'after:bg-foreground-muted/40 hover:after:bg-foreground-muted/60'
-                }`}
-              />
             ))}
           </div>
         </section>
@@ -439,12 +422,12 @@ export function BuyerCatalogPage() {
           </Alert>
         ) : isLoading ? (
           <div
-            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4"
             aria-busy="true"
           >
             {Array.from({ length: 8 }).map((_, index) => (
-              <div key={index} className="space-y-3 rounded-2xl border border-border bg-surface p-4">
-                <Skeleton className="aspect-[16/10] w-full rounded-xl" />
+              <div key={index} className="space-y-3 rounded-xl border border-border bg-surface p-3 sm:p-4">
+                <Skeleton className="aspect-[4/3] w-full rounded-lg" />
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-3 w-1/2" />
                 <Skeleton className="h-6 w-1/3 pt-2" />
@@ -469,7 +452,7 @@ export function BuyerCatalogPage() {
         ) : (
           <div
             id="product-grid"
-            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4"
           >
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
