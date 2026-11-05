@@ -48,11 +48,11 @@ public sealed class PdfInvoiceGenerator
         var gfx = XGraphics.FromPdfPage(page);
 
         // Set up font objects
-        var titleFont = new XFont("Georgia", 24, XFontStyleEx.Bold);
-        var headingFont = new XFont("Georgia", 14, XFontStyleEx.Bold);
-        var normalFont = new XFont("Georgia", 11);
-        var smallFont = new XFont("Georgia", 9);
-        var boldNormalFont = new XFont("Georgia", 11, XFontStyleEx.Bold);
+        var titleFont = new XFont("Arial", 24, XFontStyleEx.Bold);
+        var headingFont = new XFont("Arial", 14, XFontStyleEx.Bold);
+        var normalFont = new XFont("Arial", 11);
+        var smallFont = new XFont("Arial", 9);
+        var boldNormalFont = new XFont("Arial", 11, XFontStyleEx.Bold);
 
 
         // Current Y position
