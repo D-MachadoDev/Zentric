@@ -1,5 +1,5 @@
-﻿import type { ErrorComponentProps } from '@tanstack/react-router';
-import { Button } from '@zentric/ui/components/ui/button';
+import type { ErrorComponentProps } from '@tanstack/react-router';
+import { Button } from '@zentric/ui';
 import { isApiError } from '../../domain';
 import { appServices } from '../providers/appServices';
 import { getRoleHomePath, RolNoAutorizadoError } from './guards';

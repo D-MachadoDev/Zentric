@@ -6,3 +6,4 @@ export * from './SellerLayout';
 export * from './BuyerLayout';
 export * from './LogisticsLayout';
 export * from './SupervisorLayout';
+export * from './RootLayout';

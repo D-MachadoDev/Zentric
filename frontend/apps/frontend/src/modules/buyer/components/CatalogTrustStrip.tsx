@@ -1,4 +1,4 @@
-﻿import { Clock, RotateCcw, ShieldCheck, Truck, type LucideIcon } from 'lucide-react';
+import { Clock, RotateCcw, ShieldCheck, Truck, type LucideIcon } from 'lucide-react';
 
 /**
  * Franja de garantias del marketplace (S6, sección 8-A3).
@@ -63,10 +63,10 @@ export function CatalogTrustStrip() {
               <Icon className="size-4" aria-hidden="true" />
             </span>
             <span className="min-w-0">
-              <span className="block font-mono text-[11px] font-semibold tracking-[0.12em] text-foreground uppercase">
+              <span className="block text-xs font-semibold tracking-wider text-foreground uppercase">
                 {label}
               </span>
-              <span className="block truncate text-[11px] text-foreground-muted">{detail}</span>
+              <span className="block truncate text-xs text-foreground-muted">{detail}</span>
             </span>
           </li>
         ))}

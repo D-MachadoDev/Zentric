@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { Activity, X } from 'lucide-react';
 import { LogoMark } from '@zentric/ui/logo';
-import { Button } from '@zentric/ui/components/ui/button';
+import { Button } from '@zentric/ui';
 
 export interface NavItem {
   href: string;

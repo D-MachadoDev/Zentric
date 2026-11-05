@@ -731,7 +731,7 @@ vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [mockOrd
       renderWithClient(<SellerInventoryPage />);
 
       expect(await screen.findByText('Existencias y Abastecimiento')).toBeInTheDocument();
-      expect(screen.getByText('Bodega Central Fontibón')).toBeInTheDocument();
+      expect(screen.getAllByText('Bodega Central Fontibón')[0]).toBeInTheDocument();
       expect(screen.getByText('45')).toBeInTheDocument(); // disponible
       expect(screen.getByText('5')).toBeInTheDocument(); // reservado
 
@@ -785,7 +785,7 @@ vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [mockOrd
       expect(await screen.findByText('Existencias y Abastecimiento')).toBeInTheDocument();
 
       // Buscar por texto
-      const searchInput = screen.getByPlaceholderText(/Buscar por producto, SKU/i);
+      const searchInput = screen.getByPlaceholderText(/Buscar.*producto.*SKU/i);
       fireEvent.change(searchInput, { target: { value: 'SKU-TEST-1' } });
       expect(await screen.findByText(/SKU-TEST-1/i)).toBeInTheDocument();
 
@@ -885,7 +885,7 @@ vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [mockOrd
       expect(await screen.findByText('Capacidad excedida en bodega')).toBeInTheDocument();
 
       // Filtrar por texto y por bodega para estado vacío con filtros
-      fireEvent.change(screen.getByPlaceholderText(/Buscar por producto, SKU/i), {
+      fireEvent.change(screen.getByPlaceholderText(/Buscar.*producto.*SKU/i), {
         target: { value: 'Inexistente' },
       });
       expect(await screen.findByText('No hay inventarios que coincidan con los filtros aplicados.')).toBeInTheDocument();

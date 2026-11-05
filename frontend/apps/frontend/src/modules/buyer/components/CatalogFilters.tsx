@@ -38,11 +38,8 @@ const SORT_OPTIONS: { value: CatalogSort; label: string }[] = [
 ];
 
 /**
- * Barra de filtros del catalogo.
- *
- * Los tres controles viajan al servidor (`search`, `type`, `sort`): ninguno
- * filtra la pagina activa en el cliente. Las categorias tienen su propia fila
- * porque son el eje principal con el que el comprador organiza el catalogo.
+ * Barra de filtros del catálogo:
+ * Diseño limpio, espaciado generoso y controles accesibles.
  */
 export function CatalogFilters({
   searchTerm,
@@ -63,11 +60,11 @@ export function CatalogFilters({
   onClearFilters,
 }: CatalogFiltersProps) {
   return (
-    <div className="space-y-4 rounded-2xl border border-border bg-surface p-4 shadow-xs">
+    <div className="space-y-4 rounded-2xl border border-border/80 bg-surface p-4 sm:p-5 shadow-xs">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative min-w-0 flex-1 lg:max-w-sm">
+        <div className="relative min-w-0 flex-1 lg:max-w-md">
           <Search
-            className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-foreground-muted"
+            className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-foreground-muted"
             aria-hidden="true"
           />
           <input
@@ -76,7 +73,7 @@ export function CatalogFilters({
             onChange={(event) => onSearchTermChange(event.target.value)}
             aria-label="Buscar por nombre o especificación"
             placeholder="Buscar por nombre o especificación..."
-            className="w-full rounded-lg border border-border bg-background/80 py-2 pr-3 pl-9 text-xs text-foreground transition-colors placeholder:text-foreground-muted focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none"
+            className="w-full rounded-xl border border-border/80 bg-background py-2.5 pr-4 pl-10 text-xs sm:text-sm text-foreground transition-all placeholder:text-foreground-muted focus:border-brand focus:ring-2 focus:ring-brand/20 focus:outline-none"
           />
         </div>
 
@@ -92,7 +89,7 @@ export function CatalogFilters({
               size="sm"
               aria-pressed={typeFilter === option.value}
               onClick={() => onTypeFilterChange(option.value)}
-              className="text-xs font-semibold"
+              className="text-xs font-semibold rounded-lg"
             >
               {option.label}
             </Button>
@@ -116,7 +113,7 @@ export function CatalogFilters({
         <div className="flex flex-wrap items-center gap-2">
           <label
             htmlFor="catalog-sort"
-            className="font-mono text-[11px] font-medium tracking-wider text-foreground-muted uppercase"
+            className="text-xs font-semibold tracking-wider text-foreground-muted uppercase"
           >
             Ordenar por
           </label>
@@ -124,7 +121,7 @@ export function CatalogFilters({
             id="catalog-sort"
             value={sort}
             onChange={(event) => onSortChange(event.target.value as CatalogSort)}
-            className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-foreground focus:ring-1 focus:ring-brand focus:outline-none"
+            className="rounded-lg border border-border/80 bg-surface px-3 py-1.5 text-xs font-medium text-foreground focus:ring-2 focus:ring-brand/20 focus:outline-none"
           >
             {SORT_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -136,19 +133,19 @@ export function CatalogFilters({
 
         {hasActiveFilters && (
           <div className="flex flex-wrap items-center gap-2">
-            <ul className="flex flex-wrap items-center gap-1.5 text-[11px]">
+            <ul className="flex flex-wrap items-center gap-1.5 text-xs">
               {selectedCategoryName && (
-                <li className="rounded-md border border-border bg-surface-muted px-2 py-0.5 text-foreground-muted">
+                <li className="rounded-md border border-border/70 bg-surface-muted px-2.5 py-0.5 text-foreground-muted">
                   Categoría: {selectedCategoryName}
                 </li>
               )}
               {typeFilter !== 'Todos' && (
-                <li className="rounded-md border border-border bg-surface-muted px-2 py-0.5 text-foreground-muted">
+                <li className="rounded-md border border-border/70 bg-surface-muted px-2.5 py-0.5 text-foreground-muted">
                   Tipo: {typeFilter === ProductType.Physical ? 'Físicos' : 'Digitales'}
                 </li>
               )}
               {searchTerm.trim() !== '' && (
-                <li className="rounded-md border border-border bg-surface-muted px-2 py-0.5 text-foreground-muted">
+                <li className="rounded-md border border-border/70 bg-surface-muted px-2.5 py-0.5 text-foreground-muted">
                   Búsqueda: «{searchTerm.trim()}»
                 </li>
               )}

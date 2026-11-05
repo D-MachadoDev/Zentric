@@ -1,8 +1,8 @@
-﻿import { useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../providers/authContext';
 import { NOMBRES_DE_ROL } from '../../components/domainLabels';
-import { Button } from '@zentric/ui/components/ui/button';
+import { Button } from '@zentric/ui';
 import { LogoMark } from '@zentric/ui/logo';
 import { ThemeToggle } from '../components/ThemeToggle';
 

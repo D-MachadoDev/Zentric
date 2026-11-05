@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { Button } from '@zentric/ui/components/ui/button';
+import { Button } from '@zentric/ui';
 
 interface Props {
   children: ReactNode;

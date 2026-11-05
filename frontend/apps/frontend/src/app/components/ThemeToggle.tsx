@@ -1,6 +1,6 @@
-﻿import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../providers/ThemeProvider';
-import { Button } from '@zentric/ui/components/ui/button';
+import { Button } from '@zentric/ui';
 
 /**
  * Selector de tema dual accesible (sección 9 "Porcelana y Grafito").

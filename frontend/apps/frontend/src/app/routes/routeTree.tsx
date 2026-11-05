@@ -1,5 +1,5 @@
 import { createRootRouteWithContext, createRoute, Link, Outlet, redirect } from '@tanstack/react-router';
-import { RootLayout } from '../../layouts/RootLayout';
+import { RootLayout } from '../layouts/RootLayout';
 import { UserRole } from '../../domain';
 import { type RouterContext, parseLoginSearch } from './routerContext';
 import { appServices } from '../providers/appServices';

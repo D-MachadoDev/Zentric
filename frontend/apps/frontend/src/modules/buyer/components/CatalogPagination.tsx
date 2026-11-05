@@ -25,7 +25,7 @@ export function CatalogPagination({
       aria-label="Paginación del catálogo"
       className="flex flex-col gap-4 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between"
     >
-      <p className="font-mono text-xs text-foreground-muted tabular-nums" aria-live="polite">
+      <p className="text-xs text-foreground-muted tabular-nums" aria-live="polite">
         Página <span className="font-semibold text-foreground">{page}</span> de{' '}
         <span className="font-semibold text-foreground">{totalPages}</span>
         <span aria-hidden="true"> · </span>

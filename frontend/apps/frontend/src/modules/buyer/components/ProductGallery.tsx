@@ -42,7 +42,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
         )}
 
         {hasMany && (
-          <span className="absolute bottom-3 right-3 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-medium tabular-nums text-foreground-muted">
+          <span className="absolute bottom-3 right-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium tabular-nums text-foreground-muted">
             {safeIndex + 1} / {images.length}
           </span>
         )}
