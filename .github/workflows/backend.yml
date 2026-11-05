@@ -24,6 +24,9 @@ jobs:
             - name: Restore dependencies
               run: dotnet restore backend/Zentric.slnx
 
+            - name: Install Linux font packages
+              run: sudo apt-get update && sudo apt-get install -y libfontconfig1 fonts-liberation
+
             - name: Build
               run: dotnet build backend/Zentric.slnx --warnaserror --no-restore --nodeReuse:false
 

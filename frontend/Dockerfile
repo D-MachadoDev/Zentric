@@ -4,7 +4,7 @@ WORKDIR /app
 ENV NODE_OPTIONS=--dns-result-order=ipv4first
 RUN corepack enable && corepack prepare pnpm@12.6.0 --activate
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
