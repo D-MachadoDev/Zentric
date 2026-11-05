@@ -226,7 +226,7 @@
      El nombre lo dicta el paquete: 'Geist Variable' (verificado contra
      node_modules/@fontsource-variable/geist/index.css), no 'Geist Sans Variable'. */
   --font-sans: 'Geist Variable', system-ui, sans-serif;
-  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+  --font-mono: 'Geist Variable', system-ui, sans-serif;
   --font-heading: var(--font-sans);
 
   /* --- Escala tipográfica formal (incluye micro-tipografía 2xs y caption) --- */

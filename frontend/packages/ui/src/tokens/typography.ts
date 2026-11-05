@@ -4,7 +4,7 @@
  */
 export const typography = {
   sans: '"Geist Variable", system-ui, sans-serif',
-  mono: '"Geist Mono Variable", ui-monospace, monospace',
+  mono: '"Geist Variable", system-ui, sans-serif',
 } as const;
 
 /**
