@@ -66,7 +66,6 @@ docs/
   adr/                     # Architecture Decision Records (ADR-0001 … ADR-0030)
   spec/backend/            # Backend specification (domain, architecture, use cases, API)
   spec/frontend/           # Frontend specification (business, architecture, design)
-  deployment/              # Deployment topology and DNS
 scripts/
   ops/                     # PostgreSQL backup / restore
 ```

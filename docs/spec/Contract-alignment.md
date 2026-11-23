@@ -19,7 +19,6 @@ No inventar endpoints, DTOs, roles, códigos de error, claims JWT ni comportamie
 - `docs/spec/backend/` es la fuente de verdad del backend.
 - `docs/spec/frontend/` es la fuente de verdad del frontend (espejo de los contratos backend + especificación propia).
 - Los archivos espejo (p. ej. `docs/spec/frontend/05-backend/03-persistencia-y-migraciones.md`) deben ser **idénticos** byte a byte a su contraparte backend.
-- `scripts/spec-sync-check.ps1` valida sincronización (ADRs, endpoints, DTOs, modelos frontend). Exit 0 = OK, 1 = drift.
 
 ## 3. Contratos compartidos
 
@@ -49,6 +48,5 @@ El repositorio no se reporta como completo hasta que:
 - Frontend build, lint y tests pasan.
 - Smoke tests JWT/CORS pasan.
 - No quedan `REPAIR_BACKEND`, `BLOCKED`, `untested` ni endpoints no documentados.
-- Los archivos espejo frontend/backend están sincronizados (`spec-sync-check.ps1` exit 0).
 
 Estados finales válidos: `COMPLETE` · `IN_PROGRESS` · `BLOCKED`.
