@@ -1210,8 +1210,8 @@ vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [mockOrd
       renderWithClient(<SellerReturnsPage />);
 
       expect(await screen.findByText('Resolución de Devoluciones')).toBeInTheDocument();
-      expect(screen.getByText('Dictamen Favorable')).toBeInTheDocument();
-      expect(screen.getAllByText(/ADR-0006/i).length).toBeGreaterThanOrEqual(1);
+      expect(await screen.findByText('Dictamen Favorable')).toBeInTheDocument();
+      expect((await screen.findAllByText(/ADR-0006/i)).length).toBeGreaterThanOrEqual(1);
 
       // Botón aprobar
       const approveBtn = screen.getByRole('button', { name: /Aprobar Devolución/i });
