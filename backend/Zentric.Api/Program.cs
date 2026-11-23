@@ -3,6 +3,7 @@
 // Mantiene el nombre de ensamblado Zentric.Api requerido por la solucion y los scripts de CI.
 
 
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Zentric.Infrastructure.Persistence;
@@ -217,6 +218,17 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+
+// Detras de un proxy inverso (Render, nginx, contenedores gestionados) el TLS lo
+// termina el borde: honramos X-Forwarded-Proto para que Hsts/HttpsRedirection
+// detecten HTTPS y no entren en un loop de redirecciones. Sin los headers no cambia nada.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 var app = builder.Build();
 
 // Migraciones automaticas en desarrollo para asegurar esquema inicial en contenedores efimeros.
@@ -250,6 +262,9 @@ app.Use(async (context, next) =>
     context.Response.Headers["Referrer-Policy"] = "no-referrer";
     await next();
 });
+
+// Debe ejecutarse antes de Hsts/HttpsRedirection para leer X-Forwarded-Proto.
+app.UseForwardedHeaders();
 
 if (!app.Environment.IsDevelopment())
 {
