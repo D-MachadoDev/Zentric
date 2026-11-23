@@ -294,6 +294,14 @@ export function CorporateLoginPage() {
               {fieldErrors.password && (
                 <p className="text-xs text-destructive">{fieldErrors.password}</p>
               )}
+              <div className="flex justify-end">
+                <Link
+                  to="/recuperar-contrasena"
+                  className="text-xs font-medium text-teal-600 underline-offset-2 hover:underline dark:text-teal-400"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
             </div>
 
             {/* Checkboxes de Términos Operativos y Confidencialidad */}
