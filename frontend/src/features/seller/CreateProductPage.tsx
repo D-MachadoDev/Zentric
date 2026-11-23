@@ -5,6 +5,8 @@ import { ProductType, type CreatedProduct } from '../../core';
 import {
   Button,
   Input,
+  Label,
+  Textarea,
   Alert,
   AlertTitle,
   AlertDescription,
@@ -48,10 +50,59 @@ interface VariantDraft {
   isSkuManual?: boolean;
 }
 
+interface FieldErrors {
+  name?: string;
+  price?: string;
+  variants?: string;
+}
+
+/**
+ * Encabezado de sección numerado para guiar a un vendedor primerizo.
+ * Número + título + descripción breve, con el acento violeta del rol vendedor.
+ */
+function SectionHeader({
+  step,
+  title,
+  description,
+}: {
+  step: number;
+  title: string;
+  description?: string;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <span
+        aria-hidden="true"
+        className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-brand/25 bg-brand/10 font-mono text-xs font-bold text-brand"
+      >
+        {step}
+      </span>
+      <div className="space-y-0.5">
+        <h2 className="text-sm font-bold tracking-tight text-foreground font-sans">{title}</h2>
+        {description && (
+          <p className="text-xs leading-relaxed text-foreground-muted">{description}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Error de validación en línea, asociado al campo mediante aria-describedby.
+ */
+function FieldError({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <p id={id} role="alert" className="mt-1.5 flex items-start gap-1.5 text-xs font-medium text-destructive">
+      <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+      <span>{children}</span>
+    </p>
+  );
+}
+
 /**
  * Alta de Producto con Constructor de Variantes y Precio por SKU (CreateProductPage - Frontend-Role-Modules sección 2.3).
  * Split-Frame Asimétrico (60% Formulario / 40% Ficha Técnica en Vivo).
- * Cumple con ADexige al menos una variante para productos físicos y permite fijar precio específico por SKU.
+ * Cumple con ADR-0003: exige al menos una variante para productos físicos y permite fijar precio específico por SKU.
  */
 export function CreateProductPage({ productId }: { productId?: string }) {
   const createProductMutation = useCreateProductMutation();
@@ -81,6 +132,7 @@ export function CreateProductPage({ productId }: { productId?: string }) {
   });
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [createdResult, setCreatedResult] = useState<CreatedProduct | null>(null);
   const [isLoading] = useState(false);
 
@@ -101,6 +153,7 @@ export function CreateProductPage({ productId }: { productId?: string }) {
 
   const handleAddVariant = () => {
     setIsSimpleProductMode(false);
+    setFieldErrors((prev) => ({ ...prev, variants: undefined }));
     setVariants((prev) => {
       const nextNum = prev.length + 1;
       const otherSkus = prev.map((v) => v.sku);
@@ -173,22 +226,25 @@ export function CreateProductPage({ productId }: { productId?: string }) {
     e.preventDefault();
     setErrorMsg(null);
 
+    const nextFieldErrors: FieldErrors = {};
+
     if (!name.trim()) {
-      setErrorMsg('El nombre del producto es obligatorio.');
-      return;
+      nextFieldErrors.name = 'El nombre del producto es obligatorio.';
+    } else if (priceAmount <= 0) {
+      nextFieldErrors.price = 'El precio base debe ser un valor positivo.';
+    } else if (
+      type === ProductType.Physical &&
+      (variants.length === 0 || !variants.some((v) => v.sku.trim().length > 0))
+    ) {
+      // Regla ADR-0003: al menos 1 variante con SKU no vacío si es producto físico
+      nextFieldErrors.variants =
+        'Los productos físicos deben contener al menos una variante con SKU definido (ADR-0003).';
     }
 
-    if (priceAmount <= 0) {
-      setErrorMsg('El precio base debe ser un valor positivo.');
-      return;
-    }
+    setFieldErrors(nextFieldErrors);
 
-    // Regla ADAl menos 1 variante con SKU no vacío si es producto físico
-    if (type === ProductType.Physical) {
-      if (variants.length === 0 || !variants.some((v) => v.sku.trim().length > 0)) {
-        setErrorMsg('Los productos físicos deben contener al menos una variante con SKU definido (ADR-0003).');
-        return;
-      }
+    if (Object.keys(nextFieldErrors).length > 0) {
+      return;
     }
 
     try {
@@ -254,8 +310,8 @@ if (isLoading || isProductLoading) {
               Dar de Alta Nuevo Producto
             </h1>
           </div>
-          <p className="text-sm font-mono text-foreground-muted">
-            Publica cualquier producto (Hogar, Moda, Supermercado, Deportes, Tecnología o Digital) con precios específicos por SKU.
+          <p className="text-sm text-foreground-muted">
+            Completa las secciones en orden; solo pedimos lo necesario y el SKU se calcula solo.
           </p>
         </div>
       </div>
@@ -263,7 +319,7 @@ if (isLoading || isProductLoading) {
       {errorMsg && (
         <Alert variant="destructive" className="rounded-none border-destructive bg-destructive/10 text-destructive">
           <AlertCircle className="h-5 w-5 text-destructive" />
-          <AlertTitle>Validación Requerida</AlertTitle>
+          <AlertTitle>No se pudo publicar el producto</AlertTitle>
           <AlertDescription className="text-xs font-mono mt-1">{errorMsg}</AlertDescription>
         </Alert>
       )}
@@ -272,13 +328,18 @@ if (isLoading || isProductLoading) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Lado Izquierdo: Formulario de Creación (60% -> col-span-7) */}
         <div className="lg:col-span-7">
-          <form onSubmit={handleSubmit} className="rounded-none border border-border bg-surface p-6 sm:p-8 space-y-6 shadow-sm">
-            {/* Tipo de Producto */}
-            <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-foreground-muted block">
-                Tipo de Catálogo
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} noValidate className="space-y-5">
+            {/* ── Sección 1: Tipo de Producto ───────────────────────────── */}
+            <section
+              aria-labelledby="section-type-title"
+              className="rounded-none border border-border bg-surface p-5 sm:p-6 space-y-4 shadow-sm"
+            >
+              <SectionHeader
+                step={1}
+                title="Tipo de Producto"
+                description="Elige si vendes un producto físico que se despacha, o una licencia/membresía digital."
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div
                   role="button"
                   tabIndex={0}
@@ -298,7 +359,7 @@ if (isLoading || isProductLoading) {
                 >
                   <Package className="h-5 w-5 text-brand" />
                   <div>
-                    <span className="text-sm font-mono font-bold block">Físico</span>
+                    <span className="text-sm font-bold block">Físico</span>
                     <span className="text-[11px] text-foreground-muted">Hogar, Moda, Despensa, Deporte, Tech</span>
                   </div>
                 </div>
@@ -322,122 +383,171 @@ if (isLoading || isProductLoading) {
                 >
                   <FileCode className="h-5 w-5 text-info" />
                   <div>
-                    <span className="text-sm font-mono font-bold block">Digital</span>
+                    <span className="text-sm font-bold block">Digital</span>
                     <span className="text-[11px] text-foreground-muted">Membresías y licencias</span>
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Datos Maestros */}
-            <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-foreground-muted block">
-                Nombre del Producto
-              </label>
-              <Input
-                placeholder="Ej. Monitor Curvo 34'' / Cafetera Espresso / Tenis Running"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="rounded-full bg-surface-muted border-border text-foreground px-4"
+            {/* ── Sección 2: Información Básica ─────────────────────────── */}
+            <section
+              aria-labelledby="section-basic-title"
+              className="rounded-none border border-border bg-surface p-5 sm:p-6 space-y-4 shadow-sm"
+            >
+              <SectionHeader
+                step={2}
+                title="Información Básica"
+                description="Nombre, categoría y una breve descripción para que el comprador entienda qué vendes."
               />
-            </div>
 
-            {/* Selector de Categoría de Catálogo */}
-            <div className="space-y-2">
-              <label htmlFor="product-category" className="text-xs font-mono uppercase text-foreground-muted block">
-                Categoría del Producto
-              </label>
-              <select
-                id="product-category"
-                aria-label="Categoría del Producto"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full rounded-full border border-border bg-surface-muted px-4 py-2 text-sm text-foreground focus:border-brand focus:outline-none"
-              >
-                <option value="tecnologia">Tecnología</option>
-                <option value="hogar">Hogar & Confort</option>
-                <option value="moda">Moda & Calzado</option>
-                <option value="deportes">Deportes</option>
-                <option value="supermercado">Supermercado & Despensa</option>
-                <option value="audio">Audio Pro</option>
-                <option value="digital">Digital & Servicios</option>
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-foreground-muted block">
-                Descripción
-              </label>
-              <textarea
-                rows={3}
-                placeholder="Características principales, materiales, dimensiones o contenido..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-none border border-border bg-surface-muted p-3 text-sm text-foreground placeholder-foreground-muted focus:border-brand focus:outline-none"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-foreground-muted block">
-                URL de Imagen Fotográfica del Producto (Opcional)
-              </label>
-              <Input
-                type="url"
-                placeholder="https://images.unsplash.com/photo-..."
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                className="rounded-full bg-surface-muted border-border font-mono text-foreground text-xs px-4"
-              />
-              {imageUrl.trim() && (
-                <div className="mt-2 flex items-center gap-3 rounded-none border border-border bg-surface p-2">
-                  <img
-                    src={imageUrl.trim()}
-                    alt="Vista previa"
-                    className="h-12 w-12 rounded-none object-cover border border-border"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                  <span className="text-xs font-mono text-brand">Vista previa de fotografía cargada</span>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-mono uppercase text-foreground-muted block">
-                  Precio Base (COP)
-                </label>
-                {priceAmount > 0 && (
-                  <span className="text-[11px] font-mono text-brand font-semibold">
-                    $ {formatPriceWithDots(priceAmount)} COP
-                  </span>
+              <div className="space-y-2">
+                <Label htmlFor="product-name" required>
+                  Nombre del Producto
+                </Label>
+                <Input
+                  id="product-name"
+                  placeholder="Ej. Monitor Curvo 34'' / Cafetera Espresso / Tenis Running"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: undefined }));
+                  }}
+                  aria-invalid={fieldErrors.name ? 'true' : undefined}
+                  aria-describedby={fieldErrors.name ? 'product-name-error' : undefined}
+                  className="bg-surface-muted border-border text-foreground px-4"
+                />
+                {fieldErrors.name && (
+                  <FieldError id="product-name-error">{fieldErrors.name}</FieldError>
                 )}
               </div>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted font-mono text-sm select-none">
-                  $
-                </span>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="0.00"
-                  value={priceAmount > 0 ? formatPriceWithDots(priceAmount) : ''}
-                  onChange={(e) => setPriceAmount(Number(stripPriceDots(e.target.value)) || 0)}
-                  className="rounded-full bg-surface-muted border-border font-mono text-foreground pl-7 text-base font-semibold"
+
+              <div className="space-y-2">
+                <Label htmlFor="product-category">Categoría del Producto</Label>
+                <select
+                  id="product-category"
+                  aria-label="Categoría del Producto"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full rounded-none border border-border bg-surface-muted px-4 py-2 text-sm text-foreground focus:border-brand focus:outline-none"
+                >
+                  <option value="tecnologia">Tecnología</option>
+                  <option value="hogar">Hogar & Confort</option>
+                  <option value="moda">Moda & Calzado</option>
+                  <option value="deportes">Deportes</option>
+                  <option value="supermercado">Supermercado & Despensa</option>
+                  <option value="audio">Audio Pro</option>
+                  <option value="digital">Digital & Servicios</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="product-description" optional optionalText="(Opcional)">
+                  Descripción
+                </Label>
+                <Textarea
+                  id="product-description"
+                  rows={3}
+                  placeholder="Características principales, materiales, dimensiones o contenido..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="bg-surface-muted border-border text-foreground"
                 />
               </div>
-              <p className="text-[11px] text-foreground-muted">
-                Precio de referencia del producto con separador de miles. Abajo puedes asignar un precio específico a cada SKU si varía.
-              </p>
-            </div>
 
-            {/* Selector de Modo de Producto y Constructor de Variantes */}
-            <div className="space-y-4 pt-4 border-t border-border">
+              <div className="space-y-2">
+                <Label htmlFor="product-image-url" optional optionalText="(Opcional)">
+                  Imagen del Producto
+                </Label>
+                <Input
+                  id="product-image-url"
+                  type="url"
+                  placeholder="https://images.unsplash.com/photo-..."
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  className="bg-surface-muted border-border font-mono text-foreground text-xs px-4"
+                />
+                {imageUrl.trim() && (
+                  <div className="mt-2 flex items-center gap-3 rounded-none border border-border bg-surface p-2">
+                    <img
+                      src={imageUrl.trim()}
+                      alt="Vista previa"
+                      className="h-12 w-12 rounded-none object-cover border border-border"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                    <span className="text-xs font-mono text-brand">Vista previa de fotografía cargada</span>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* ── Sección 3: Precio ─────────────────────────────────────── */}
+            <section
+              aria-labelledby="section-price-title"
+              className="rounded-none border border-border bg-surface p-5 sm:p-6 space-y-4 shadow-sm"
+            >
+              <SectionHeader
+                step={3}
+                title="Precio"
+                description="El precio de referencia en pesos colombianos (COP). Puedes fijar un precio distinto por variante más abajo."
+              />
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="product-price" required>
+                    Precio Base (COP)
+                  </Label>
+                  {priceAmount > 0 && (
+                    <span className="text-xs font-mono text-brand font-semibold">
+                      $ {formatPriceWithDots(priceAmount)} COP
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted font-mono text-sm select-none">
+                    $
+                  </span>
+                  <Input
+                    id="product-price"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0.00"
+                    value={priceAmount > 0 ? formatPriceWithDots(priceAmount) : ''}
+                    onChange={(e) => {
+                      setPriceAmount(Number(stripPriceDots(e.target.value)) || 0);
+                      if (fieldErrors.price) setFieldErrors((prev) => ({ ...prev, price: undefined }));
+                    }}
+                    aria-invalid={fieldErrors.price ? 'true' : undefined}
+                    aria-describedby={fieldErrors.price ? 'product-price-error' : undefined}
+                    className="bg-surface-muted border-border font-mono text-foreground pl-7 text-base font-semibold"
+                  />
+                </div>
+                {fieldErrors.price && (
+                  <FieldError id="product-price-error">{fieldErrors.price}</FieldError>
+                )}
+                <p className="text-[11px] text-foreground-muted">
+                  Precio de referencia del producto con separador de miles. Abajo puedes asignar un precio específico a cada SKU si varía.
+                </p>
+              </div>
+            </section>
+
+            {/* ── Sección 4: Variantes e Inventario ─────────────────────── */}
+            <section
+              aria-labelledby="section-variants-title"
+              className="rounded-none border border-border bg-surface p-5 sm:p-6 space-y-4 shadow-sm"
+            >
+              <SectionHeader
+                step={4}
+                title="Variantes e Inventario"
+                description="Una opción única o varias (tallas, colores, sabores). Cada opción tiene su código SKU, que se genera automáticamente."
+              />
+
               {/* Selector de Modo: Simple vs Múltiples Variantes */}
               <div className="rounded-none border border-border bg-surface-muted/40 p-4 space-y-3">
                 <div>
-                  <span className="text-xs font-mono font-bold uppercase text-foreground block">
+                  <span className="text-xs font-bold uppercase tracking-wide text-foreground block">
                     Modalidad de Producto
                   </span>
                   <p className="text-[11px] text-foreground-muted mt-0.5">
@@ -473,7 +583,7 @@ if (isLoading || isProductLoading) {
                   >
                     <Package className="h-4 w-4 text-brand mt-0.5 shrink-0" />
                     <div>
-                      <span className="text-xs font-mono font-bold block">Producto Simple (Opción única)</span>
+                      <span className="text-xs font-bold block">Producto Simple (Opción única)</span>
                       <p className="text-[10px] text-foreground-muted mt-0.5 leading-relaxed">
                         No necesitas variantes. El producto se registra con su SKU estándar directamente para inventario.
                       </p>
@@ -503,7 +613,7 @@ if (isLoading || isProductLoading) {
                   >
                     <Boxes className="h-4 w-4 text-brand mt-0.5 shrink-0" />
                     <div>
-                      <span className="text-xs font-mono font-bold block">Producto con Variantes</span>
+                      <span className="text-xs font-bold block">Producto con Variantes</span>
                       <p className="text-[10px] text-foreground-muted mt-0.5 leading-relaxed">
                         Tallas, colores, sabores o modelos diferenciados con su propio SKU y precio.
                       </p>
@@ -518,7 +628,7 @@ if (isLoading || isProductLoading) {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-brand">
                       <Lightbulb className="h-4 w-4 shrink-0 text-brand" />
-                      <h4 className="text-xs font-bold font-mono uppercase tracking-wide">
+                      <h4 className="text-xs font-bold uppercase tracking-wide">
                         ¿Cómo funcionan las variantes y el código SKU?
                       </h4>
                     </div>
@@ -552,9 +662,9 @@ if (isLoading || isProductLoading) {
                 </div>
               )}
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-xs uppercase font-mono tracking-wider font-bold text-foreground">
+                  <h3 className="text-xs uppercase tracking-wider font-bold text-foreground">
                     {isSimpleProductMode && variants.length <= 1
                       ? 'Código de Inventario (SKU)'
                       : 'Variantes del Producto (SKU) y Precios Individuales'}
@@ -575,7 +685,7 @@ if (isLoading || isProductLoading) {
                     size="sm"
                     variant="outline"
                     onClick={handleAddVariant}
-                    className="rounded-full border-border text-brand hover:bg-surface-muted text-xs font-mono"
+                    className="rounded-full border-border text-brand hover:bg-surface-muted text-xs font-mono shrink-0"
                   >
                     <Plus className="h-3.5 w-3.5 mr-1" /> Añadir Variante
                   </Button>
@@ -586,7 +696,7 @@ if (isLoading || isProductLoading) {
                 {variants.map((variant, index) => (
                   <div key={index} className="p-4 rounded-none border border-border bg-surface-muted/40 hover:border-brand/40 focus-within:border-brand/60 focus-within:bg-surface-muted/60 transition-all shadow-xs space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono font-bold text-foreground">
+                      <span className="text-xs font-bold text-foreground">
                         {isSimpleProductMode && variants.length <= 1
                           ? 'Identificador de Existencias'
                           : `Variante #${index + 1}`}
@@ -598,6 +708,7 @@ if (isLoading || isProductLoading) {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveVariant(index)}
+                          aria-label={`Eliminar Variante #${index + 1}`}
                           className="rounded-full text-destructive hover:text-destructive h-7 px-2"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -633,7 +744,7 @@ if (isLoading || isProductLoading) {
                     } gap-3`}>
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <label className="text-[10px] font-mono uppercase text-foreground-muted block">
+                          <label htmlFor={`variant-sku-${index}`} className="text-[10px] font-mono uppercase text-foreground-muted block">
                             Código SKU
                           </label>
                           <button
@@ -646,13 +757,15 @@ if (isLoading || isProductLoading) {
                           </button>
                         </div>
                         <Input
+                          id={`variant-sku-${index}`}
                           placeholder="SKU-REF-01"
                           value={variant.sku}
                           onChange={(e) => {
                             handleVariantChange(index, 'sku', e.target.value.toUpperCase());
                             handleVariantChange(index, 'isSkuManual', true);
+                            if (fieldErrors.variants) setFieldErrors((prev) => ({ ...prev, variants: undefined }));
                           }}
-                          className="rounded-full bg-surface border-border font-mono text-xs text-foreground px-3"
+                          className="bg-surface border-border font-mono text-xs text-foreground px-3"
                         />
                         <p className="text-[9px] font-mono text-foreground-muted mt-1">
                           {variant.isSkuManual ? 'Manual' : 'Automático'}
@@ -661,7 +774,7 @@ if (isLoading || isProductLoading) {
 
                       {(!isSimpleProductMode || variants.length > 1) && (
                         <div>
-                          <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
+                          <label htmlFor={`variant-price-${index}`} className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
                             Precio SKU (COP)
                           </label>
                           <div className="relative">
@@ -669,6 +782,7 @@ if (isLoading || isProductLoading) {
                               $
                             </span>
                             <Input
+                              id={`variant-price-${index}`}
                               type="text"
                               inputMode="numeric"
                               placeholder={priceAmount > 0 ? formatPriceWithDots(priceAmount) : 'Igual a base'}
@@ -680,7 +794,7 @@ if (isLoading || isProductLoading) {
                                   e.target.value ? Number(stripPriceDots(e.target.value)) || undefined : undefined,
                                 )
                               }
-                              className="rounded-full bg-surface border-border font-mono text-xs text-foreground pl-6"
+                              className="bg-surface border-border font-mono text-xs text-foreground pl-6"
                             />
                           </div>
                           <p className="text-[9px] font-mono text-foreground-muted mt-1">
@@ -690,14 +804,15 @@ if (isLoading || isProductLoading) {
                       )}
 
                       <div className={isSimpleProductMode && variants.length <= 1 ? 'hidden' : 'block'}>
-                        <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
+                        <label htmlFor={`variant-attr-name-${index}`} className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
                           Atributo (¿Qué cambia?)
                         </label>
                         <Input
+                          id={`variant-attr-name-${index}`}
                           placeholder="Nombre"
                           value={variant.attrName}
                           onChange={(e) => handleVariantChange(index, 'attrName', e.target.value)}
-                          className="rounded-full bg-surface border-border text-xs text-foreground px-3"
+                          className="bg-surface border-border text-xs text-foreground px-3"
                         />
                         <p className="text-[9px] font-mono text-foreground-muted mt-1">
                           Ej. Variedad, Talla, Peso
@@ -705,14 +820,15 @@ if (isLoading || isProductLoading) {
                       </div>
 
                       <div className={isSimpleProductMode && variants.length <= 1 ? 'hidden' : 'block'}>
-                        <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
+                        <label htmlFor={`variant-attr-value-${index}`} className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
                           Valor (¿Qué opción es?)
                         </label>
                         <Input
+                          id={`variant-attr-value-${index}`}
                           placeholder="Valor"
                           value={variant.attrValue}
                           onChange={(e) => handleAttrValueChange(index, e.target.value)}
-                          className="rounded-full bg-surface border-border text-xs text-foreground px-3"
+                          className="bg-surface border-border text-xs text-foreground px-3"
                         />
                         <p className="text-[9px] font-mono text-foreground-muted mt-1">
                           Ej. Eureka, Taití, 1 kg
@@ -723,25 +839,27 @@ if (isLoading || isProductLoading) {
                     {(!isSimpleProductMode || variants.length > 1) && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-border/50">
                         <div>
-                          <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
+                          <label htmlFor={`variant-attr2-name-${index}`} className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
                             2° Atributo Opcional (ej. Talla / Presentación / Garantía)
                           </label>
                           <Input
+                            id={`variant-attr2-name-${index}`}
                             placeholder="Ej. Presentación"
                             value={variant.attr2Name ?? ''}
                             onChange={(e) => handleVariantChange(index, 'attr2Name', e.target.value)}
-                            className="rounded-full bg-surface border-border text-xs text-foreground px-3"
+                            className="bg-surface border-border text-xs text-foreground px-3"
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
+                          <label htmlFor={`variant-attr2-value-${index}`} className="text-[10px] font-mono uppercase text-foreground-muted block mb-1">
                             Valor 2° Atributo
                           </label>
                           <Input
+                            id={`variant-attr2-value-${index}`}
                             placeholder="Ej. Edición Especial"
                             value={variant.attr2Value ?? ''}
                             onChange={(e) => handleVariantChange(index, 'attr2Value', e.target.value)}
-                            className="rounded-full bg-surface border-border text-xs text-foreground px-3"
+                            className="bg-surface border-border text-xs text-foreground px-3"
                           />
                         </div>
                       </div>
@@ -749,26 +867,36 @@ if (isLoading || isProductLoading) {
                   </div>
                 ))}
               </div>
-            </div>
 
-            <Button
-              pill
-              type="submit"
-              disabled={createProductMutation.isPending}
-              className="w-full h-12 rounded-full bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-sm shadow-md shadow-brand/20 disabled:opacity-50 transition-all active:scale-[0.98]"
-            >
-              {createProductMutation.isPending ? (
-                <span className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 animate-spin" />
-                  Registrando en el catálogo...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  Publicar en Catálogo del Vendedor
-                </span>
+              {fieldErrors.variants && (
+                <FieldError id="product-variants-error">{fieldErrors.variants}</FieldError>
               )}
-            </Button>
+            </section>
+
+            {/* ── Acción Principal ──────────────────────────────────────── */}
+            <div className="rounded-none border border-border bg-surface p-5 sm:p-6 space-y-2 shadow-sm">
+              <Button
+                pill
+                type="submit"
+                disabled={createProductMutation.isPending}
+                className="w-full h-12 rounded-full bg-brand hover:bg-brand/90 text-primary-foreground font-bold text-sm shadow-md shadow-brand/20 disabled:opacity-50 transition-all active:scale-[0.98]"
+              >
+                {createProductMutation.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 animate-spin" />
+                    Registrando en el catálogo...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    Publicar en Catálogo del Vendedor
+                  </span>
+                )}
+              </Button>
+              <p className="text-center text-[11px] text-foreground-muted">
+                Al publicar, el producto quedará guardado en tu catálogo. Luego podrás cargar el stock inicial.
+              </p>
+            </div>
           </form>
         </div>
 

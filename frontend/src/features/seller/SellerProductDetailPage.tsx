@@ -16,6 +16,8 @@ import {
   Button,
   Badge,
   Input,
+  Label,
+  Textarea,
   Skeleton,
   Alert,
   AlertTitle,
@@ -35,6 +37,18 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { generateSmartSku, VARIANT_PRESETS, type VariantPreset } from './skuHelper';
+
+/**
+ * Error de validación en línea, asociado al campo mediante aria-describedby.
+ */
+function FieldError({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <p id={id} role="alert" className="mt-1.5 flex items-start gap-1.5 text-xs font-medium text-destructive">
+      <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+      <span>{children}</span>
+    </p>
+  );
+}
 
 /**
  * Ficha Técnica y Estado Comercial de Producto para Vendedor (SellerProductDetailPage).
@@ -101,6 +115,7 @@ export function SellerProductDetailPage() {
   const [editImageUrl, setEditImageUrl] = useState('');
   const [editCategory, setEditCategory] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
+  const [editFieldErrors, setEditFieldErrors] = useState<{ name?: string; price?: string }>({});
   const [isEditing, setIsEditing] = useState(false);
   // Formatea un valor numerico como texto con separador de miles (puntos) para COP.
   const formatPriceWithDots = (value: string): string => {
@@ -121,6 +136,7 @@ export function SellerProductDetailPage() {
     setEditImageUrl(product.imageUrl ?? '');
     setEditCategory(product.category ?? '');
     setEditError(null);
+    setEditFieldErrors({});
     setIsEditing(true);
   };
 
@@ -128,11 +144,17 @@ export function SellerProductDetailPage() {
     e.preventDefault();
     if (!productId || !product) return;
     setEditError(null);
+
     const priceAmount = Number(stripPriceDots(editPrice));
-    if (isNaN(priceAmount) || priceAmount <= 0) {
-      setEditError('El precio debe ser un valor positivo.');
-      return;
+    const nextFieldErrors: { name?: string; price?: string } = {};
+    if (!editName.trim()) {
+      nextFieldErrors.name = 'El nombre del producto es obligatorio.';
+    } else if (isNaN(priceAmount) || priceAmount <= 0) {
+      nextFieldErrors.price = 'El precio debe ser un valor positivo.';
     }
+    setEditFieldErrors(nextFieldErrors);
+    if (Object.keys(nextFieldErrors).length > 0) return;
+
     try {
       await updateMutation.mutateAsync({
         productId,
@@ -311,38 +333,61 @@ export function SellerProductDetailPage() {
 
       {/* ── Ficha Técnica ──────────────────────────────────────────────── */}
       {isEditing && (
-        <div className="rounded-none border border-border bg-surface p-6 space-y-4 shadow-2xs">
-          <h3 className="text-xs font-mono uppercase text-foreground-muted">Editar Producto</h3>
-          <form onSubmit={handleSaveEdit} className="space-y-3">
+        <div className="rounded-none border border-brand/30 bg-surface p-6 space-y-4 shadow-2xs">
+          <div className="space-y-0.5">
+            <h3 className="text-sm font-bold text-foreground">Editar Producto</h3>
+            <p className="text-xs text-foreground-muted">
+              Actualiza la información básica. El precio se guarda en pesos colombianos (COP).
+            </p>
+          </div>
+          <form onSubmit={handleSaveEdit} noValidate className="space-y-4">
             {editError && (
               <Alert variant="destructive" className="border-destructive bg-destructive/10 text-destructive rounded-none">
+                <AlertCircle className="h-4 w-4 text-destructive" />
                 <AlertDescription className="text-xs font-mono">{editError}</AlertDescription>
               </Alert>
             )}
-            <div className="space-y-1">
-              <label className="text-[10px] font-mono uppercase text-foreground-muted">Nombre</label>
-              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-mono uppercase text-foreground-muted">Descripción</label>
-              <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-mono uppercase text-foreground-muted">Precio base</label>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-name" required>Nombre</Label>
               <Input
+                id="edit-name"
+                value={editName}
+                onChange={(e) => {
+                  setEditName(e.target.value);
+                  if (editFieldErrors.name) setEditFieldErrors((prev) => ({ ...prev, name: undefined }));
+                }}
+                aria-invalid={editFieldErrors.name ? 'true' : undefined}
+                aria-describedby={editFieldErrors.name ? 'edit-name-error' : undefined}
+              />
+              {editFieldErrors.name && <FieldError id="edit-name-error">{editFieldErrors.name}</FieldError>}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-description" optional optionalText="(Opcional)">Descripción</Label>
+              <Textarea id="edit-description" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-price" required>Precio base (COP)</Label>
+              <Input
+                id="edit-price"
                 type="text"
                 inputMode="numeric"
                 value={formatPriceWithDots(editPrice)}
-                onChange={(e) => setEditPrice(stripPriceDots(e.target.value))}
+                onChange={(e) => {
+                  setEditPrice(stripPriceDots(e.target.value));
+                  if (editFieldErrors.price) setEditFieldErrors((prev) => ({ ...prev, price: undefined }));
+                }}
+                aria-invalid={editFieldErrors.price ? 'true' : undefined}
+                aria-describedby={editFieldErrors.price ? 'edit-price-error' : undefined}
               />
+              {editFieldErrors.price && <FieldError id="edit-price-error">{editFieldErrors.price}</FieldError>}
             </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-mono uppercase text-foreground-muted">Imagen URL</label>
-              <Input value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} />
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-image" optional optionalText="(Opcional)">Imagen URL</Label>
+              <Input id="edit-image" value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} />
             </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-mono uppercase text-foreground-muted">Categoría</label>
-              <Input value={editCategory} onChange={(e) => setEditCategory(e.target.value)} />
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-category" optional optionalText="(Opcional)">Categoría</Label>
+              <Input id="edit-category" value={editCategory} onChange={(e) => setEditCategory(e.target.value)} />
             </div>
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
               <Button type="button" variant="outline" pill onClick={() => setIsEditing(false)} className="border-border text-foreground hover:bg-surface-muted text-xs rounded-full">
@@ -525,10 +570,11 @@ export function SellerProductDetailPage() {
               {/* Atributo y Valor */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-mono uppercase text-foreground-muted block">
+                  <label htmlFor="new-variant-attr-name" className="text-[10px] font-mono uppercase text-foreground-muted block">
                     Atributo (¿Qué cambia?)
                   </label>
                   <Input
+                    id="new-variant-attr-name"
                     value={newAttrName}
                     onChange={(e) => handleAttrNameChange(e.target.value)}
                     placeholder="Ej. Variedad"
@@ -539,10 +585,11 @@ export function SellerProductDetailPage() {
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-mono uppercase text-foreground-muted block">
+                  <label htmlFor="new-variant-attr-value" className="text-[10px] font-mono uppercase text-foreground-muted block">
                     Valor (¿Qué opción es?)
                   </label>
                   <Input
+                    id="new-variant-attr-value"
                     value={newAttrValue}
                     onChange={(e) => handleAttrValueChange(e.target.value)}
                     placeholder="Ej. Eureka"
@@ -557,7 +604,7 @@ export function SellerProductDetailPage() {
               {/* Código SKU con automatización */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-mono uppercase text-foreground-muted flex items-center gap-1.5">
+                  <label htmlFor="new-variant-sku" className="text-[10px] font-mono uppercase text-foreground-muted flex items-center gap-1.5">
                     Código SKU
                     {!isSkuManual && newSku && (
                       <span className="text-[9px] text-brand bg-brand/10 border border-brand/20 px-1.5 py-0.5 rounded-full font-mono font-semibold">
@@ -575,6 +622,7 @@ export function SellerProductDetailPage() {
                   </button>
                 </div>
                 <Input
+                  id="new-variant-sku"
                   value={newSku}
                   onChange={(e) => {
                     setNewSku(e.target.value.toUpperCase());
@@ -592,10 +640,11 @@ export function SellerProductDetailPage() {
 
               {/* Precio individual de la variante */}
               <div className="space-y-1">
-                <label className="text-[10px] font-mono uppercase text-foreground-muted block">
+                <label htmlFor="new-variant-price" className="text-[10px] font-mono uppercase text-foreground-muted block">
                   Precio SKU (COP) — Opcional
                 </label>
                 <Input
+                  id="new-variant-price"
                   type="text"
                   inputMode="numeric"
                   value={formatPriceWithDots(newPrice)}
