@@ -233,13 +233,32 @@ public sealed class PdfInvoiceGenerator
     {
         if (PdfSharp.Fonts.GlobalFontSettings.FontResolver is null)
         {
-            var resolverType = typeof(PdfDocument).Assembly.GetType("PdfSharp.Fonts.EvenNewerFontResolver");
-            if (resolverType is not null)
+            var assembly = typeof(PdfDocument).Assembly;
+            // PlatformFontResolver usa el sistema de fuentes del SO (GDI en Windows,
+            // fontconfig/libgdiplus en Linux). EvenNewerFontResolver queda de fallback.
+            var candidates = new[]
             {
-                var instance = Activator.CreateInstance(resolverType, true);
-                if (instance is PdfSharp.Fonts.IFontResolver resolver)
+                "PdfSharp.Fonts.PlatformFontResolver",
+                "PdfSharp.Fonts.EvenNewerFontResolver",
+            };
+
+            foreach (var typeName in candidates)
+            {
+                var resolverType = assembly.GetType(typeName);
+                if (resolverType is null) continue;
+
+                try
                 {
-                    PdfSharp.Fonts.GlobalFontSettings.FontResolver = resolver;
+                    var instance = Activator.CreateInstance(resolverType, nonPublic: true);
+                    if (instance is PdfSharp.Fonts.IFontResolver resolver)
+                    {
+                        PdfSharp.Fonts.GlobalFontSettings.FontResolver = resolver;
+                        return;
+                    }
+                }
+                catch
+                {
+                    // Provee el siguiente resolver.
                 }
             }
         }
