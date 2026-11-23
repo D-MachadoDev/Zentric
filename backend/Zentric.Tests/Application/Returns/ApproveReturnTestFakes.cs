@@ -96,5 +96,11 @@ namespace Zentric.Tests.Application.Returns
             ReturnApprovedEmails.Add(toEmail);
             return Task.CompletedTask;
         }
+
+        public Task SendOrderShippedEmailAsync(string toEmail, string buyerName, string orderShortId, string? carrier, string? trackingCode, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public Task SendRefundProcessedEmailAsync(string toEmail, string buyerName, string productName, string orderShortId, decimal amount, string currency, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 }

@@ -271,6 +271,105 @@ namespace Zentric.Infrastructure.Security
             }
         }
 
+        public async Task SendOrderShippedEmailAsync(
+            string toEmail,
+            string buyerName,
+            string orderShortId,
+            string? carrier,
+            string? trackingCode,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(_apiKey) || _apiKey.StartsWith("mock_", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning(
+                    "[ResendEmailSender] Fallback local activo. Envío de pedido despachado simulado para: {Email}. Pedido: {OrderShortId}. Seguimiento: {TrackingCode}",
+                    toEmail, orderShortId, trackingCode);
+                return;
+            }
+
+            try
+            {
+                var ordersUrl = $"{_frontendBaseUrl.TrimEnd('/')}/buyer/orders";
+                var htmlBody = BuildOrderShippedEmailHtml(buyerName, orderShortId, carrier, trackingCode, ordersUrl);
+
+                var payload = new
+                {
+                    from = _fromEmail,
+                    to = new[] { toEmail },
+                    subject = "Tu pedido está en camino — Zentric",
+                    html = htmlBody
+                };
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, ResendApiEndpoint);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+                request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+                using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogError(
+                        "[ResendEmailSender] Error al enviar el correo de pedido despachado mediante Resend: {StatusCode} - {Content}. Pedido: {OrderShortId}",
+                        response.StatusCode, errorContent, orderShortId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[ResendEmailSender] Excepción de transporte al enviar el correo de pedido despachado. Pedido: {OrderShortId}", orderShortId);
+            }
+        }
+
+        public async Task SendRefundProcessedEmailAsync(
+            string toEmail,
+            string buyerName,
+            string productName,
+            string orderShortId,
+            decimal amount,
+            string currency,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(_apiKey) || _apiKey.StartsWith("mock_", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning(
+                    "[ResendEmailSender] Fallback local activo. Reembolso procesado simulado para: {Email}. Pedido: {OrderShortId}. Importe: {Amount} {Currency}",
+                    toEmail, orderShortId, amount, currency);
+                return;
+            }
+
+            try
+            {
+                var ordersUrl = $"{_frontendBaseUrl.TrimEnd('/')}/buyer/orders";
+                var htmlBody = BuildRefundProcessedEmailHtml(buyerName, productName, orderShortId, amount, currency, ordersUrl);
+
+                var payload = new
+                {
+                    from = _fromEmail,
+                    to = new[] { toEmail },
+                    subject = "Tu reembolso fue procesado — Zentric",
+                    html = htmlBody
+                };
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, ResendApiEndpoint);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+                request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+                using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogError(
+                        "[ResendEmailSender] Error al enviar el correo de reembolso mediante Resend: {StatusCode} - {Content}. Pedido: {OrderShortId}",
+                        response.StatusCode, errorContent, orderShortId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[ResendEmailSender] Excepción de transporte al enviar el correo de reembolso. Pedido: {OrderShortId}", orderShortId);
+            }
+        }
+
         private static string BuildReturnApprovedEmailHtml(
             string buyerName,
             string productName,
@@ -305,6 +404,98 @@ namespace Zentric.Infrastructure.Security
     </table>
   </td></tr></table>
 </body></html>";
+        }
+
+        private static string BuildOrderShippedEmailHtml(
+            string buyerName,
+            string orderShortId,
+            string? carrier,
+            string? trackingCode,
+            string ordersUrl)
+        {
+            var safeName = System.Net.WebUtility.HtmlEncode(buyerName);
+            var safeOrder = System.Net.WebUtility.HtmlEncode(orderShortId);
+
+            var detail = "<p style=\"margin:0 0 4px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;\">Pedido</p>" +
+                $"<p style=\"margin:0 0 12px;font-size:15px;font-weight:700;\">#{safeOrder}</p>";
+
+            if (!string.IsNullOrWhiteSpace(carrier))
+            {
+                var safeCarrier = System.Net.WebUtility.HtmlEncode(carrier);
+                detail += "<p style=\"margin:0 0 4px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;\">Transportadora</p>" +
+                    $"<p style=\"margin:0 0 12px;font-size:15px;font-weight:700;\">{safeCarrier}</p>";
+            }
+
+            if (!string.IsNullOrWhiteSpace(trackingCode))
+            {
+                var safeTracking = System.Net.WebUtility.HtmlEncode(trackingCode);
+                detail += "<p style=\"margin:0 0 4px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;\">Código de seguimiento</p>" +
+                    $"<p style=\"margin:0;font-size:15px;font-weight:700;\">{safeTracking}</p>";
+            }
+
+            return $@"<!DOCTYPE html>
+<html lang=""es""><head><meta charset=""utf-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1""><title>Pedido en camino</title></head>
+<body style=""margin:0;padding:0;background:#f5f6f8;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;"">
+  <table role=""presentation"" width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background:#f5f6f8;padding:32px 0;""><tr><td align=""center"">
+    <table role=""presentation"" width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);"">
+      <tr><td style=""background:#0f172a;padding:24px 32px;""><span style=""font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-.5px;"">Zentric</span></td></tr>
+      <tr><td style=""padding:32px;"">
+        <h1 style=""margin:0 0 8px;font-size:22px;"">Tu pedido está en camino</h1>
+        <p style=""margin:0 0 20px;color:#4b5563;font-size:14px;line-height:1.5;"">Hola {safeName}, tu pedido fue despachado y está en camino.</p>
+        <table role=""presentation"" width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:20px;""><tr><td style=""padding:16px 20px;"">
+          {detail}
+        </td></tr></table>
+        <p style=""margin:0 0 20px;color:#4b5563;font-size:13px;line-height:1.5;"">Podés seguir el estado de tu entrega desde tu cuenta.</p>
+        <a href=""{ordersUrl}"" style=""display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 24px;border-radius:10px;"">Ver mis pedidos</a>
+      </td></tr>
+      <tr><td style=""padding:16px 32px;background:#f8fafc;color:#9ca3af;font-size:11px;"">Zentric — este correo se generó automáticamente.</td></tr>
+    </table>
+  </td></tr></table>
+</body></html>";
+        }
+
+        private static string BuildRefundProcessedEmailHtml(
+            string buyerName,
+            string productName,
+            string orderShortId,
+            decimal amount,
+            string currency,
+            string ordersUrl)
+        {
+            var safeName = System.Net.WebUtility.HtmlEncode(buyerName);
+            var safeProduct = System.Net.WebUtility.HtmlEncode(productName);
+            var safeOrder = System.Net.WebUtility.HtmlEncode(orderShortId);
+            var safeAmount = System.Net.WebUtility.HtmlEncode(FormatMoney(amount, currency));
+            return $@"<!DOCTYPE html>
+<html lang=""es""><head><meta charset=""utf-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1""><title>Reembolso procesado</title></head>
+<body style=""margin:0;padding:0;background:#f5f6f8;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;"">
+  <table role=""presentation"" width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background:#f5f6f8;padding:32px 0;""><tr><td align=""center"">
+    <table role=""presentation"" width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);"">
+      <tr><td style=""background:#0f172a;padding:24px 32px;""><span style=""font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-.5px;"">Zentric</span></td></tr>
+      <tr><td style=""padding:32px;"">
+        <h1 style=""margin:0 0 8px;font-size:22px;"">Tu reembolso fue procesado</h1>
+        <p style=""margin:0 0 20px;color:#4b5563;font-size:14px;line-height:1.5;"">Hola {safeName}, tu reembolso fue procesado según el medio de pago original.</p>
+        <table role=""presentation"" width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:20px;""><tr><td style=""padding:16px 20px;"">
+          <p style=""margin:0 0 4px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;"">Importe reembolsado</p>
+          <p style=""margin:0 0 12px;font-size:15px;font-weight:700;"">{safeAmount}</p>
+          <p style=""margin:0 0 4px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;"">Producto</p>
+          <p style=""margin:0 0 12px;font-size:15px;font-weight:700;"">{safeProduct}</p>
+          <p style=""margin:0 0 4px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;"">Pedido</p>
+          <p style=""margin:0;font-size:15px;font-weight:700;"">#{safeOrder}</p>
+        </td></tr></table>
+        <p style=""margin:0 0 20px;color:#4b5563;font-size:13px;line-height:1.5;"">Podés seguir el estado desde tu cuenta.</p>
+        <a href=""{ordersUrl}"" style=""display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 24px;border-radius:10px;"">Ver mis pedidos</a>
+      </td></tr>
+      <tr><td style=""padding:16px 32px;background:#f8fafc;color:#9ca3af;font-size:11px;"">Zentric — este correo se generó automáticamente.</td></tr>
+    </table>
+  </td></tr></table>
+</body></html>";
+        }
+
+        private static string FormatMoney(decimal amount, string currency)
+        {
+            var formatted = amount.ToString("N2", new CultureInfo("es-CO"));
+            return $"{formatted} {currency}";
         }
 
         private static string BuildEmailHtml(string toEmail, string resetLink)

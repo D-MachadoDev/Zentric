@@ -5,11 +5,13 @@ using System.Threading.Tasks;
 using Zentric.Application.Common.Messaging;
 using Zentric.Application.Common.Models;
 using Zentric.Application.Common.Ports;
+using Zentric.Domain.Buyers.Ports;
 using Zentric.Domain.Logistics;
 using Zentric.Domain.Logistics.Ports;
 using Zentric.Domain.Orders.Ports;
 using Zentric.Domain.Orders.Services;
 using Zentric.Domain.Users.Enums;
+using Zentric.Domain.Users.Ports;
 
 namespace Zentric.Application.Logistics.Commands
 {
@@ -19,17 +21,26 @@ namespace Zentric.Application.Logistics.Commands
         private readonly ICustomerOrderRepository _customerOrderRepository;
         private readonly OrderFulfillmentProgressSynchronizer _progressSynchronizer;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IBuyerRepository _buyerRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly IEmailSender _emailSender;
 
         public DispatchFulfillmentCommandHandler(
             IFulfillmentOrderRepository fulfillmentOrderRepository,
             ICustomerOrderRepository customerOrderRepository,
             OrderFulfillmentProgressSynchronizer progressSynchronizer,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IBuyerRepository buyerRepository,
+            IUserRepository userRepository,
+            IEmailSender emailSender)
         {
             _fulfillmentOrderRepository = fulfillmentOrderRepository;
             _customerOrderRepository = customerOrderRepository;
             _progressSynchronizer = progressSynchronizer;
             _unitOfWork = unitOfWork;
+            _buyerRepository = buyerRepository;
+            _userRepository = userRepository;
+            _emailSender = emailSender;
         }
 
         public async Task<Result<bool>> Handle(DispatchFulfillmentCommand request, CancellationToken cancellationToken)
@@ -54,11 +65,52 @@ namespace Zentric.Application.Logistics.Commands
                 await SynchronizeMasterOrderAsync(fulfillmentOrder, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+                await NotifyBuyerAsync(fulfillmentOrder, cancellationToken);
+
                 return Result<bool>.Success(true);
             }
             catch (InvalidOperationException ex)
             {
                 return Result<bool>.Failure(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Avisa al comprador por correo. Best-effort: el despacho ya quedo
+        /// persistido, asi que un fallo de correo no debe revertirlo ni romper la API.
+        /// La transportadora no existe en el modelo actual, asi que se omite; el codigo
+        /// de seguimiento sale del ultimo envio del despacho, si lo hay.
+        /// </summary>
+        private async Task NotifyBuyerAsync(FulfillmentOrder fulfillmentOrder, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var order = await _customerOrderRepository.GetByIdAsync(fulfillmentOrder.CustomerOrderId, cancellationToken);
+                if (order is null)
+                {
+                    return;
+                }
+
+                var buyer = await _buyerRepository.GetByIdAsync(order.BuyerId, cancellationToken);
+                var user = buyer is not null ? await _userRepository.GetByIdAsync(buyer.UserId) : null;
+                if (user is null)
+                {
+                    return;
+                }
+
+                var trackingCode = fulfillmentOrder.Shipments.LastOrDefault()?.TrackingNumber;
+
+                await _emailSender.SendOrderShippedEmailAsync(
+                    user.Email.Value,
+                    user.FullName.Value,
+                    fulfillmentOrder.CustomerOrderId.ToString("N")[..8],
+                    null,
+                    trackingCode,
+                    cancellationToken);
+            }
+            catch
+            {
+                // Best-effort: el despacho no depende del correo.
             }
         }
 

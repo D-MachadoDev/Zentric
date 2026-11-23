@@ -1,6 +1,7 @@
 using Zentric.Application.Common.Messaging;
 using Zentric.Application.Common.Models;
 using Zentric.Application.Common.Ports;
+using Zentric.Domain.Buyers.Ports;
 using Zentric.Domain.Orders.Ports;
 using Zentric.Domain.Payments;
 using Zentric.Domain.Payments.Ports;
@@ -8,6 +9,7 @@ using Zentric.Domain.Products.Ports;
 using Zentric.Domain.Products.ValueObjects;
 using Zentric.Domain.Returns.Ports;
 using Zentric.Domain.Users.Enums;
+using Zentric.Domain.Users.Ports;
 
 namespace Zentric.Application.Returns.Commands
 {
@@ -50,17 +52,29 @@ namespace Zentric.Application.Returns.Commands
         private readonly IPaymentReceiptRepository _receiptRepository;
         private readonly ICustomerOrderRepository _orderRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IProductRepository _productRepository;
+        private readonly IBuyerRepository _buyerRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly IEmailSender _emailSender;
 
         public RefundReturnCommandHandler(
             IReturnRequestRepository returnRepository,
             IPaymentReceiptRepository receiptRepository,
             ICustomerOrderRepository orderRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IProductRepository productRepository,
+            IBuyerRepository buyerRepository,
+            IUserRepository userRepository,
+            IEmailSender emailSender)
         {
             _returnRepository = returnRepository;
             _receiptRepository = receiptRepository;
             _orderRepository = orderRepository;
             _unitOfWork = unitOfWork;
+            _productRepository = productRepository;
+            _buyerRepository = buyerRepository;
+            _userRepository = userRepository;
+            _emailSender = emailSender;
         }
 
         public async Task<Result<bool>> Handle(RefundReturnCommand request, CancellationToken cancellationToken)
@@ -118,11 +132,58 @@ namespace Zentric.Application.Returns.Commands
                 // Una sola transaccion: o se acreditan las dos cosas, o ninguna.
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+                await NotifyBuyerAsync(returnReq, credit.Amount, cancellationToken);
+
                 return Result<bool>.Success(true);
             }
             catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
             {
                 return Result<bool>.Failure(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Avisa al comprador por correo. Best-effort: el reembolso ya quedo
+        /// persistido, asi que un fallo de correo no debe revertirlo ni romper la API.
+        /// </summary>
+        private async Task NotifyBuyerAsync(
+            Zentric.Domain.Returns.ReturnRequest returnReq,
+            Money amount,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var product = await _productRepository.GetByVariantIdAsync(returnReq.VariantId, cancellationToken);
+                if (product is null)
+                {
+                    return;
+                }
+
+                var order = await _orderRepository.GetByIdAsync(returnReq.CustomerOrderId, cancellationToken);
+                if (order is null)
+                {
+                    return;
+                }
+
+                var buyer = await _buyerRepository.GetByIdAsync(order.BuyerId, cancellationToken);
+                var user = buyer is not null ? await _userRepository.GetByIdAsync(buyer.UserId) : null;
+                if (user is null)
+                {
+                    return;
+                }
+
+                await _emailSender.SendRefundProcessedEmailAsync(
+                    user.Email.Value,
+                    user.FullName.Value,
+                    product.Name,
+                    returnReq.CustomerOrderId.ToString("N")[..8],
+                    amount.Amount,
+                    amount.Currency,
+                    cancellationToken);
+            }
+            catch
+            {
+                // Best-effort: el reembolso no depende del correo.
             }
         }
 

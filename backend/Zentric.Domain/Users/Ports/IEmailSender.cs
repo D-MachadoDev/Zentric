@@ -47,5 +47,31 @@ namespace Zentric.Domain.Users.Ports
             string orderShortId,
             int quantity,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Notifica al comprador que su pedido fue despachado, indicando el
+        /// código del pedido y, cuando existan, la transportadora y el código
+        /// de seguimiento.
+        /// </summary>
+        Task SendOrderShippedEmailAsync(
+            string toEmail,
+            string buyerName,
+            string orderShortId,
+            string? carrier,
+            string? trackingCode,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Notifica al comprador que su reembolso fue procesado, indicando el
+        /// producto, el pedido y el importe acreditado con su divisa.
+        /// </summary>
+        Task SendRefundProcessedEmailAsync(
+            string toEmail,
+            string buyerName,
+            string productName,
+            string orderShortId,
+            decimal amount,
+            string currency,
+            CancellationToken cancellationToken = default);
     }
 }
