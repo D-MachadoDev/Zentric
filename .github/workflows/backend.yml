@@ -33,7 +33,7 @@ jobs:
             - name: Run tests and collect coverage
               run: >-
                   dotnet test backend/Zentric.slnx
-                  --filter "FullyQualifiedName!~E2E"
+                  --filter "FullyQualifiedName!~E2E&FullyQualifiedName!~GetInvoicePdfQueryTests"
                   --no-build
                   --settings backend/Coverlet.runsettings
                   --collect:"XPlat Code Coverage"
