@@ -1079,7 +1079,7 @@ vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [mockOrd
 
       expect(await screen.findByText('Cola de Despachos Propios')).toBeInTheDocument();
 
-      const openGhostBtn = screen.getByRole('button', { name: /Reportar Quiebre de Stock Fantasma/i });
+      const openGhostBtn = await screen.findByRole('button', { name: /Reportar Quiebre de Stock Fantasma/i });
       fireEvent.click(openGhostBtn);
 
       expect(screen.getByText('Reporte de Stock Fantasma')).toBeInTheDocument();
@@ -1112,7 +1112,7 @@ vi.spyOn(appServices.api, 'listOrdersPaged').mockResolvedValue({ items: [mockOrd
       expect(await screen.findByText('Cola de Despachos Propios')).toBeInTheDocument();
 
       // Abrir modal
-      const openGhostBtn = screen.getByRole('button', { name: /Reportar Quiebre de Stock Fantasma/i });
+      const openGhostBtn = await screen.findByRole('button', { name: /Reportar Quiebre de Stock Fantasma/i });
       fireEvent.click(openGhostBtn);
       expect(screen.getByText('Reporte de Stock Fantasma')).toBeInTheDocument();
 

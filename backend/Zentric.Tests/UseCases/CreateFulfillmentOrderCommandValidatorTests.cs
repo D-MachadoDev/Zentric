@@ -29,7 +29,7 @@ namespace Zentric.Tests.UseCases
                 Guid.Empty, Guid.NewGuid(), Guid.NewGuid(), UserRole.Administrator));
 
             Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, error => error.ErrorMessage == "CustomerOrder ID is required.");
+            Assert.Contains(result.Errors, error => error.ErrorMessage == "El identificador de pedido es obligatorio.");
         }
 
         [Fact]
@@ -39,7 +39,7 @@ namespace Zentric.Tests.UseCases
                 Guid.NewGuid(), Guid.Empty, Guid.NewGuid(), UserRole.Administrator));
 
             Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, error => error.ErrorMessage == "Vendor ID is required.");
+            Assert.Contains(result.Errors, error => error.ErrorMessage == "El identificador de vendedor es obligatorio.");
         }
 
         [Fact]
@@ -51,7 +51,7 @@ namespace Zentric.Tests.UseCases
                 Guid.NewGuid(), Guid.NewGuid(), Guid.Empty, UserRole.Seller));
 
             Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, error => error.ErrorMessage == "CallerId is required.");
+            Assert.Contains(result.Errors, error => error.ErrorMessage == "El identificador del solicitante es obligatorio.");
         }
     }
 }
