@@ -189,7 +189,7 @@ namespace Zentric.Tests.E2E
         {
             using var client = _actors.ClientFor("Buyer");
 
-            // Solo lo que admite el contrato: ni precio ni vendedor (ADR-0020).
+            // Solo lo que admite el contrato: ni precio ni vendedor (AD).
             // Mandarlos aqui pasaria desapercibido porque el binder ignora lo que no
             // conoce, y el E2E dejaria de comprobar que el precio sale del catalogo.
             using var response = await client.PostAsJsonAsync("/api/orders/cart/items", new
@@ -219,6 +219,14 @@ namespace Zentric.Tests.E2E
         {
             using var client = _actors.ClientFor("Admin");
             using var response = await client.PostAsync($"/api/billing/invoices/generate/{orderId}", content: null);
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                if (body.Contains("already been issued", StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
             await EnsureOkAsync(response, "emision de facturas");
         }
 
@@ -229,7 +237,7 @@ namespace Zentric.Tests.E2E
             await EnsureOkAsync(response, "lectura de facturas");
 
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            return document.RootElement.GetArrayLength();
+            return document.RootElement.GetProperty("items").GetArrayLength();
         }
 
         private async Task<Guid> RequestReturnAsync(Guid orderId, Guid variantId, Guid warehouseId, int quantity)

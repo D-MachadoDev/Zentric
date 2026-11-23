@@ -1,4 +1,4 @@
-# ADR-0013: La propiedad del recurso se comprueba por rol, con la identidad de vendedor derivada del token
+﻿# ADR-0013: La propiedad del recurso se comprueba por rol, con la identidad de vendedor derivada del token
 
 ```yaml
 id: 0013
@@ -62,7 +62,7 @@ propias líneas y su subtotal; no el total completo, ni el `BuyerId`, ni las lí
 
 | Alternativa | Por qué se descartó |
 |---|---|
-| **(Vista filtrada: `SellerOrderViewDto`)** ✅ | Mantiene el ✔ de "Gestión de Pedidos" de §12 sin filtrar precios y volúmenes de la competencia |
+| **(Vista filtrada: `SellerOrderViewDto`)** ✅ | Mantiene el ✔ de "Gestión de Pedidos" de sección 12 sin filtrar precios y volúmenes de la competencia |
 | El DTO completo del pedido | Filtraría datos de otros vendedores y del comprador en un solo pedido |
 | Sin acceso a pedidos (solo despacho) | Habría dejado un hueco igual de grande: hoy no existe ningún endpoint que vaya de "el pedido X" a "mi despacho" (`GET /api/Logistics/fulfillment` de listado está anotado R-03 y no existe), así que el vendedor se quedaría sin contexto de su propio pedido |
 

@@ -4,7 +4,7 @@ using Zentric.Domain.Products.ValueObjects;
 namespace Zentric.Tests.Payments;
 
 /// <summary>
-/// ADR-0020 decision 7: un credito a favor por fila, inmutable y con regla.
+/// ADdecision 7: un credito a favor por fila, inmutable y con regla.
 /// </summary>
 public sealed class RefundCreditTests
 {

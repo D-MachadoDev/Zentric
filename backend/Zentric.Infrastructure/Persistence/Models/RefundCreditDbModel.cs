@@ -6,7 +6,7 @@ namespace Zentric.Infrastructure.Persistence.Models
     /// <summary>
     /// Un registro de auditoria por cada credito a favor, no uno por comprobante.
     ///
-    /// ADR-0020 decision 7: el acumulado de <c>PaymentReceiptDbModel</c> solo dice
+    /// ADdecision 7: el acumulado de <c>PaymentReceiptDbModel</c> solo dice
     /// cuanto se devolvio en total. Con dos devoluciones parciales no dice a quien
     /// ni de que linea, que es lo que pregunta quien disputa un cargo.
     ///

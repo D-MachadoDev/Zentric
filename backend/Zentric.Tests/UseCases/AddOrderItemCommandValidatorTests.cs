@@ -8,7 +8,7 @@ namespace Zentric.Tests.UseCases
     /// Validación de entrada de <see cref="AddOrderItemCommand"/>. Las reglas espejan las
     /// guardas del dominio (<c>OrderItem</c> y <c>CustomerOrder.AddItem</c>),
     /// de modo que un error de formato nunca alcanza las entidades. No hay reglas de
-    /// precio ni de moneda: esos campos no viajan en el comando (ADR-0020).
+    /// precio ni de moneda: esos campos no viajan en el comando (AD).
     /// </summary>
     public class AddOrderItemCommandValidatorTests
     {

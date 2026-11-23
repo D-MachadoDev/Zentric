@@ -1,4 +1,5 @@
 using Zentric.Application.Common.Messaging;
+using Zentric.Application.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
@@ -33,7 +34,7 @@ namespace Zentric.Api.Controllers
         /// Valida que el pedido se encuentre debidamente entregado y que la solicitud esté dentro
         /// del período legal de garantía del producto según las reglas de negocio de ZENTRIC.md.
         /// </remarks>
-        /// <param name="command">Datos de la devolución (CustomerOrderId, VariantId, WarehouseId de recepción, Quantity). El tipo de producto NO viaja: el servidor lo deduce (ADR-0018), igual que la identidad.</param>
+        /// <param name="command">Datos de la devolución (CustomerOrderId, VariantId, Quantity). El tipo de producto y la bodega de recepción NO viajan: el servidor los deduce, igual que la identidad.</param>
         /// <response code="200">Solicitud de devolución radicada con éxito. Retorna el identificador (Guid).</response>
         /// <response code="400">Error si el plazo de garantía ha expirado, el producto no corresponde a la orden o el pedido no pertenece al llamante (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
@@ -81,11 +82,11 @@ namespace Zentric.Api.Controllers
         /// </summary>
         /// <remarks>
         /// Valida que el producto haya sido inspeccionado favorablemente. Al aprobarse,
-        /// dispara el evento de dominio ReturnApprovedEvent que incrementa de forma atómica
+        /// dispara ReturnApprovedEvent para incrementar atómicamente
         /// el inventario usado (UsedQuantity) en la bodega correspondiente.
         /// </remarks>
         /// <param name="id">Identificador de la solicitud en la ruta URL.</param>
-        /// <param name="command">Solo el ReturnRequestId: si la devolución vuelve a una bodega del propio vendedor (la exención de inspección) lo deduce el servidor (ADR-0018), no el cliente.</param>
+        /// <param name="command">Solo el ReturnRequestId: si la devolución vuelve a una bodega del propio vendedor (la exención de inspección) lo deduce el servidor , no el cliente.</param>
         /// <response code="200">Devolución aprobada y reingreso a stock ejecutado exitosamente.</response>
         /// <response code="400">Error si los identificadores no coinciden o la solicitud no es aprobable (RFC 7807 ProblemDetails).</response>
         [HttpPost("{id}/approve")]
@@ -110,7 +111,7 @@ namespace Zentric.Api.Controllers
         /// Rechaza una solicitud de devolución (estado Rechazada).
         /// </summary>
         /// <remarks>
-        /// ADDENDUM Dominio 10. Lo decide el mismo Vendedor que aprueba, porque es la misma decisión
+        /// Lo decide el mismo Vendedor que aprueba, porque es la misma decisión
         /// negada y la Ley le asigna esa decisión. Una devolución no solicitada, ya aprobada o ya
         /// reembolsada no se puede rechazar: el ciclo solo avanza hacia adelante.
         /// </remarks>
@@ -138,7 +139,7 @@ namespace Zentric.Api.Controllers
         /// Emite el reembolso de una devolución ya aprobada (estado Reembolsada).
         /// </summary>
         /// <remarks>
-        /// ADDENDUM Dominio 10. Solo el Administrador (dictamen del Owner 2026-10-01). No basta con
+        /// Solo el Administrador (dictamen del Owner 2026-10-01). No basta con
         /// cambiar el estado: el caso de uso acredita también el comprobante de pago del pedido, en
         /// la misma transacción, para que nunca exista una devolución "Reembolsada" sin dinero
         /// entregado al comprador.
@@ -175,16 +176,18 @@ namespace Zentric.Api.Controllers
         /// Vendedor por variante, y Operador, Administrador y Supervisor sin filtro. El filtro no es
         /// un parametro: no hay forma de pedir las de otro.
         /// </remarks>
-        /// <param name="status">Filtro opcional por estado de la devolucion, por nombre (ADR-0012).</param>
+        /// <param name="status">Filtro opcional por estado de la devolucion, por nombre .</param>
+        /// <param name="page">P�gina (1-based).</param>
+        /// <param name="size">Tama�o de p�gina.</param>
         /// <response code="200">Listado de devoluciones visibles para el llamante.</response>
         /// <response code="400">El estado indicado no es un <c>ReturnStatus</c> valido (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
         [HttpGet]
         [Authorize(Policy = AuthorizationPolicies.ReturnRead)]
-        [ProducesResponseType(typeof(IReadOnlyList<Zentric.Application.Returns.Queries.ReturnRequestDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(Zentric.Application.Common.Models.PagedResult<Zentric.Application.Returns.Queries.ReturnRequestDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetReturns([FromQuery] string? status)
+        public async Task<IActionResult> GetReturns([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int size = 20)
         {
             var userId = _currentUser.UserId;
             var role = User.GetUserRole();
@@ -192,7 +195,7 @@ namespace Zentric.Api.Controllers
 
             Zentric.Domain.Returns.Enums.ReturnStatus? parsed = null;
 
-            // Estado por nombre (ADR-0012). Un valor desconocido es 400 explicito y NO un filtro
+            // Estado por nombre . Un valor desconocido es 400 explicito y NO un filtro
             // ignorado: devolver la bandeja completa mientras el usuario cree estar filtrando seria
             // el peor fallo posible de este endpoint.
             if (!string.IsNullOrWhiteSpace(status))
@@ -210,7 +213,7 @@ namespace Zentric.Api.Controllers
             }
 
             var result = await _mediator.Send(
-                new Zentric.Application.Returns.Queries.GetReturnsQuery(userId.Value, role.Value, parsed));
+                new Zentric.Application.Returns.Queries.GetReturnsQuery(userId.Value, role.Value, parsed, page - 1, size));
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
@@ -251,3 +254,6 @@ namespace Zentric.Api.Controllers
     /// <param name="IsGoodCondition">Indica si el producto se encuentra en condiciones óptimas para retorno a inventario.</param>
     public record InspectReturnRequestDto(bool IsGoodCondition);
 }
+
+
+

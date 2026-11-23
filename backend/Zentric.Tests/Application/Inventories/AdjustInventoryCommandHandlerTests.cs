@@ -13,7 +13,7 @@ using Zentric.Tests.Application.Inventories;
 namespace Zentric.Tests.Application.Inventories
 {
     /// <summary>
-    /// Criterios de aceptación de ADR-0021 / INV-04: ajuste físico de inventario por conteo.
+    /// Criterios de aceptación de AD/ ajuste físico de inventario por conteo.
     /// </summary>
     public class AdjustInventoryCommandHandlerTests
     {

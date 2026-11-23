@@ -1,4 +1,4 @@
-# Smoke de autorizacion por rol (Q-21 / RG-03, ADR-0011).
+# Smoke de autorizacion por rol contra matriz de politicas y permisos.
 #
 # Que hace: levanta un usuario por cada rol (Buyer, Seller, LogisticsOperator, Supervisor) con el
 # token del Administrador y comprueba, contra una API corriendo, que cada rol recibe
@@ -40,7 +40,7 @@ function Login([string]$email, [string]$password) {
 }
 
 function CreateUser([string]$token, [string]$email, [string]$fullName, [string]$document, [string]$role) {
-    # Q-22 (ADR-0012): el rol viaja por nombre ("Seller"), no por entero. Un entero responde 400.
+    # El rol viaja por nombre ("Seller"), no por entero. Un entero responde 400.
     $body = @{ email = $email; fullName = $fullName; identityDocument = $document; password = $pass; role = $role } | ConvertTo-Json
     $headers = @{}
     if ($token) { $headers['Authorization'] = "Bearer $token" }
@@ -135,7 +135,7 @@ $cases = @(
     @{ m='POST'; p='/api/logistics/fulfillment';          b='{}';             who='Seller';     exp='abierto' }
     @{ m='POST'; p='/api/logistics/fulfillment';          b='{}';             who='Buyer';      exp='403' }
     @{ m='POST'; p='/api/logistics/fulfillment/cancel-ghost-stock'; b='{}';   who='Seller';     exp='abierto' }
-    @{ m='POST'; p='/api/logistics/fulfillment/cancel-ghost-stock'; b='{}';   who='Operator';   exp='abierto' }  # Q-21c: el Operador detecta el faltante en bodega y puede reportarlo
+    @{ m='POST'; p='/api/logistics/fulfillment/cancel-ghost-stock'; b='{}';   who='Operator';   exp='abierto' }  # El Operador detecta el faltante en bodega y puede reportarlo
     @{ m='POST'; p="/api/billing/invoices/generate/$guid";                    who='Admin';      exp='abierto' }
     @{ m='POST'; p="/api/billing/invoices/generate/$guid";                    who='Seller';     exp='403' }
     @{ m='GET';  p='/api/auth/me';                                            who='Operator';   exp='200' }
@@ -155,8 +155,8 @@ foreach ($case in $cases) {
     '{0,-5} {1,-11} {2,-45} esperado {3,-8} -> {4}  {5}' -f $case.m, $case.who, $case.p, $case.exp, $actual, $(if ($ok) { 'OK' } else { 'FALLO' })
 }
 
-# Unica excepcion a RG-01 (auto-registro de Comprador) y su contra-prueba. Los dos body llevan
-# el rol por nombre, que desde Q-22 es la unica forma valida de escribirlo.
+# Auto-registro exclusivo de Comprador y su contra-prueba. Ambos cuerpos llevan
+# el rol por nombre, que es la unica forma valida de escribirlo.
 $anonBuyer = "${suite}.anon@q21.test"
 $anonSeller = "${suite}.anonseller@q21.test"
 $c1 = CreateUser $null $anonBuyer 'Compra Anonima' "Q21-$suite-a1" 'Buyer'
@@ -166,7 +166,7 @@ $c2 = CreateUser $null $anonSeller 'Vendedor Anonimo' "Q21-$suite-a2" 'Seller'
 if ($c1 -ne 200) { $fallos++ }
 if ($c2 -ne 403) { $fallos++ }
 
-# Q-22 (ADR-0012, forma estricta dictada por el Owner): el cuerpo JSON de un enum solo admite el
+# Contrato estricto: el cuerpo JSON de un enum solo admite el
 # nombre. El entero deja de ser un valor valido (400), y el nombre debe seguir funcionando de
 # punta a punta: si el registro no estuviera cableado al contrato, estas tres lineas lo delatan.
 $q22Integer = "{""identityDocument"":""Q21-$suite-n1"",""fullName"":""Contrato Entero"",""email"":""$suite.num@q21.test"",""password"":""$pass"",""role"":2}"
@@ -181,11 +181,9 @@ if ($c3 -ne 400) { $fallos++ }
 if ($c4 -ne 200) { $fallos++ }
 if ($c5 -ne 200) { $fallos++ }
 
-# ------------------------------------------------------------------ Q-21b: propiedad del recurso (ADR-0013)
-# Se construye un pedido real de punta a punta y se comprueba, contra HTTP real, que
-#   1) solo el dueno ve y opera su pedido, y que los ajenos responden 404;
-#   2) el vendedor queda encerrado en su VendorId (= su User.Id) aunque el cuerpo diga otro;
-#   3) cada rol ve solo el stock, las bodegas y las facturas que le tocan.
+# Validacion de propiedad del recurso por rol:
+# el dueno opera su pedido con 404 para ajenos, el vendedor queda
+# restringido a su VendorId y cada rol accede solo a sus recursos.
 $q21bFallos = 0
 $q21bTotal  = 0
 function Q21b([string]$label, [bool]$ok, [string]$observed) {
@@ -198,7 +196,7 @@ $buyerMe  = MeId $tok['Buyer']
 $buyer2Me = MeId $tok['Buyer2']
 $sellerMe = MeId $tok['Seller']
 
-# --- El vendedor queda encerrado en su VendorId: el cuerpo dice uno FALSO a proposito.
+# El vendedor se limita a su VendorId; cuerpo con VendorId ajeno
 $wrongVendor = [guid]::NewGuid().ToString()
 $productJson = @{
     name = 'Producto Q21b'; description = 'Alta de prueba de propiedad'
@@ -218,7 +216,7 @@ if ($product.code -eq 200) {
 Q21b 'alta de producto: el VendorId sale del token' ($owner -eq $sellerMe) "vendorId=$owner"
 Q21b 'alta de producto: se descarta el VendorId del cuerpo' ($owner -ne '' -and $owner -ne $wrongVendor) "el cuerpo pedia $wrongVendor"
 
-# --- Bodegas: el vendedor solo lista y usa la suya.
+# Bodegas: el vendedor solo lista y usa la suya
 $ownWh   = Http 'POST' '/api/warehouses' $tok['Admin'] (@{ name = "Bodega Q21b $suite propia"; location = 'Bogota'; capacity = 100; type = 'Vendor'; vendorId = $sellerMe } | ConvertTo-Json)
 $otherWh = Http 'POST' '/api/warehouses' $tok['Admin'] (@{ name = "Bodega Q21b $suite ajena"; location = 'Medellin'; capacity = 100; type = 'Vendor'; vendorId = $buyer2Me } | ConvertTo-Json)
 $ownWhId   = $ownWh.body   | ConvertFrom-Json
@@ -247,7 +245,7 @@ Q21b 'pedir bodegas de otro vendedor -> 400' ($whForeign.code -eq 400) "HTTP $($
 $whByIdForeign = Http 'GET' "/api/warehouses/$otherWhId" $tok['Seller']
 Q21b 'bodega ajena por id -> 404' ($whByIdForeign.code -eq 404) "HTTP $($whByIdForeign.code)"
 
-# --- Pedido: solo su dueno lo ve y lo opera.
+# Pedido: solo su dueno lo ve y lo opera
 $cart    = Http 'POST' '/api/orders/cart' $tok['Buyer']
 $orderId = $cart.body | ConvertFrom-Json
 Q21b 'alta de carrito sin cuerpo (identidad del token)' ($cart.code -eq 200) "HTTP $($cart.code)"
@@ -270,7 +268,7 @@ Q21b 'otro comprador no paga un pedido ajeno -> 404' ($stealPay.code -eq 404 -an
 
 Q21b 'el dueno lee su pedido' ((Http 'GET' "/api/orders/$orderId" $tok['Buyer']).code -eq 200) ''
 Q21b 'otro comprador -> 404' ((Http 'GET' "/api/orders/$orderId" $tok['Buyer2']).code -eq 404) ''
-Q21b 'administrador lee sin filtro (repara el 404 de Q-21)' ((Http 'GET' "/api/orders/$orderId" $tok['Admin']).code -eq 200) ''
+Q21b 'administrador lee sin filtro' ((Http 'GET' "/api/orders/$orderId" $tok['Admin']).code -eq 200) ''
 Q21b 'operador lee sin filtro' ((Http 'GET' "/api/orders/$orderId" $tok['Operator']).code -eq 200) ''
 Q21b 'supervisor lee sin filtro' ((Http 'GET' "/api/orders/$orderId" $tok['Supervisor']).code -eq 200) ''
 
@@ -288,7 +286,7 @@ $cart2    = Http 'POST' '/api/orders/cart' $tok['Buyer2']
 $order2Id = $cart2.body | ConvertFrom-Json
 Q21b 'el vendedor no lee un pedido en el que no participa' ((Http 'GET' "/api/orders/$order2Id" $tok['Seller']).code -eq 404) ''
 
-# --- Facturas: cada rol ve solo las suyas (P3).
+# Facturas: cada rol ve solo las suyas
 $gen = Http 'POST' "/api/billing/invoices/generate/$orderId" $tok['Admin']
 Q21b 'emision de facturas por el Administrador' ($gen.code -eq 200) "HTTP $($gen.code) $($gen.body)"
 
@@ -303,7 +301,7 @@ Q21b 'el administrador ve todas (incluida la de plataforma)' ($invCount['Admin']
 $invForeign = Http 'GET' "/api/billing/invoices/order/$orderId" $tok['Buyer2']
 Q21b 'facturas de un pedido ajeno -> 404' ($invForeign.code -eq 404) "HTTP $($invForeign.code)"
 
-# --- Devoluciones: se radican sobre pedidos propios y las aprueba su vendedor.
+# Devoluciones: se radican sobre pedidos propios y las aprueba su vendedor
 $retJson = @{ customerOrderId = $orderId; variantId = $variantId; warehouseId = $ownWhId; quantity = 1 } | ConvertTo-Json
 $ret    = Http 'POST' '/api/returns/request' $tok['Buyer'] $retJson
 $retId  = if ($ret.code -eq 200) { $ret.body | ConvertFrom-Json } else { '' }

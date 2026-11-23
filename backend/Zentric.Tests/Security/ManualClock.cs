@@ -9,7 +9,7 @@ namespace Zentric.Tests.Security
 {
     /// <summary>
     /// Reloj falso para las pruebas: <c>UtcNow</c> es lo que el test diga, no lo
-    /// que el sistema diga. Es la pieza que cierra H-06: el comportamiento
+    /// que el sistema diga. Es la pieza que cierra el comportamiento
     /// dependiente del tiempo se verifica moviendo el reloj, nunca durmiendo.
     /// </summary>
     public sealed class ManualClock : IClock

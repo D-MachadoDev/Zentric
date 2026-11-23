@@ -68,7 +68,7 @@ namespace Zentric.Tests.Inventories
             public HashSet<Guid> RejectReserves { get; } = new();
 
             /// <summary>
-            /// UPDATE condicional atomico (ADR-0025): solo COMPRueba, sin mutar. La
+            /// UPDATE condicional atomico (AD): solo COMPRueba, sin mutar. La
             /// mutacion observable la aplica el servicio con ReserveStock sobre la
             /// misma copia (en produccion la muta el SQL y la copia en memoria es un
             /// objeto aparte desprendido). Si la "base" rechaza, devuelve false.
@@ -85,7 +85,7 @@ namespace Zentric.Tests.Inventories
             }
 
             /// <summary>
-            /// Compensacion de ADR-0001: aqui SI hay que mutar la fila, porque el
+            /// Compensacion de ADaqui SI hay que mutar la fila, porque el
             /// servicio no toca la copia al fallar — solo lanza. Es el equivalente
             /// observable del UPDATE inverso de la persistencia real.
             /// </summary>
@@ -109,7 +109,7 @@ namespace Zentric.Tests.Inventories
 
             public void Register(Guid variantId, Zentric.Domain.Products.Enums.ProductType type)
             {
-                // Un producto Physical necesita al menos una variante (CAT-03 / ADR-0003).
+                // Un producto Physical necesita al menos una variante (CA/ AD).
                 var variants = type == Zentric.Domain.Products.Enums.ProductType.Physical
                     ? new List<(string, IEnumerable<VariantAttribute>)> { ("SKU", new List<VariantAttribute> { new VariantAttribute("Color", "Rojo") }) }
                     : null;
@@ -226,7 +226,7 @@ namespace Zentric.Tests.Inventories
         }
 
         /// <summary>
-        /// CAT-02 / H-16: un item Digital no reserva stock ni falla aunque no haya
+        /// CA/ un item Digital no reserva stock ni falla aunque no haya
         /// existencias (los digitales no pasan por almacen).
         /// </summary>
         [Fact]
@@ -247,7 +247,7 @@ namespace Zentric.Tests.Inventories
         }
 
         /// <summary>
-        /// ADR-0001 + ADR-0025: si la SEGUNDA linea del pedido no encuentra stock,
+        /// AD+ ADsi la SEGUNDA linea del pedido no encuentra stock,
         /// la reserva ya confirmada de la primera se libera antes de lanzar. La
         /// reserva escribe de inmediato en la base, asi que sin esta compensacion
         /// el fallo dejaria un parcial confirmado para un pedido que nunca existio.
@@ -285,7 +285,7 @@ namespace Zentric.Tests.Inventories
         }
 
         /// <summary>
-        /// ADR-0025: si la "base" rechaza el UPDATE condicional de la bodega mayor
+        /// ADsi la "base" rechaza el UPDATE condicional de la bodega mayor
         /// (otra peticion se llevo el stock entre la lectura y la escritura), el
         /// servicio pasa a la siguiente bodega en vez de confiar en la copia en
         /// memoria.
@@ -322,7 +322,7 @@ namespace Zentric.Tests.Inventories
         }
 
         /// <summary>
-        /// ADR-0025: si TODAS las bodegas son rechazadas por la base, el servicio
+        /// ADsi TODAS las bodegas son rechazadas por la base, el servicio
         /// lanza y no deja ni un parcial — ni siquiera de bodegas cuya copia en
         /// memoria decia tener stock.
         /// </summary>

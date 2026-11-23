@@ -44,9 +44,9 @@ namespace Zentric.Tests.Application.Warehouses
             var result = await handler.Handle(query, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            Assert.Equal(2, result.Value.Count);
-            Assert.Contains(result.Value, w => w.Name == "Bodega Vendedor" && w.Type == "Vendor");
-            Assert.Contains(result.Value, w => w.Name == "Centro Zentric Full" && w.Type == "Marketplace");
+            Assert.Equal(2, result.Value.TotalItems);
+            Assert.Contains(result.Value.Items, w => w.Name == "Bodega Vendedor" && w.Type == "Vendor");
+            Assert.Contains(result.Value.Items, w => w.Name == "Centro Zentric Full" && w.Type == "Marketplace");
         }
 
         [Fact]

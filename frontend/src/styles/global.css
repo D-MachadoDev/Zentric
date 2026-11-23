@@ -1,0 +1,172 @@
+@import '@zentric/ui/styles/theme.css';
+@source "../";
+
+/* ============================================================================
+   Zentric Marketplace — Utilidades de composición global
+   ----------------------------------------------------------------------------
+   Design System v2:
+   TODOS los tokens de color viven exclusivamente en @zentric/ui theme.css.
+   Este fichero declara utilidades de layout y tipografía limpias y respirables.
+   ============================================================================ */
+
+html,
+body,
+#root {
+  height: 100%;
+  scroll-behavior: smooth;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Superficie base con tipografía Geist Sans y tokens runtime */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Elevación de tarjeta comercial: hairline + sombra suave y respirable */
+.surface-hairline {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px 0 color-mix(in srgb, var(--foreground) 4%, transparent),
+    0 1px 2px -1px color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+
+.dark .surface-hairline {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* Wonder Theme Interior: Fill-on-Hover para botones pill */
+.btn-fill-hover {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.btn-fill-hover::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: var(--brand-strong);
+  transform: translateY(101%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: -1;
+  border-radius: inherit;
+}
+
+.btn-fill-hover:hover {
+  color: var(--primary-foreground);
+}
+
+.btn-fill-hover:hover::after {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-fill-hover::after {
+    display: none;
+  }
+}
+
+/* Kicker editorial en Sans legible con punto de acento */
+.kicker-spike {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem; /* 13px */
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.kicker-spike::before {
+  content: '●';
+  color: var(--brand);
+  font-size: 0.625rem;
+  line-height: 1;
+}
+
+/* Encabezado de sección lateral: rótulo limpio y legible que agrupa la navegación */
+.nav-group-label {
+  font-family: var(--font-sans);
+  font-size: 0.75rem; /* 12px */
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--foreground-subtle);
+  padding-inline: 0.75rem;
+  display: block;
+}
+
+.nav-group-label:first-child {
+  padding-top: 0.25rem;
+}
+
+/* Scrollbars accesibles según tema */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground-subtle);
+}
+
+/* Animaciones sutiles para fondos y elementos dinámicos */
+@keyframes ambient-glow {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.35;
+  }
+  33% {
+    transform: translate(25px, -15px) scale(1.15);
+    opacity: 0.55;
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+    opacity: 0.4;
+  }
+}
+
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-ambient-glow {
+  animation: ambient-glow 12s ease-in-out infinite;
+}
+
+.animate-float-gentle {
+  animation: float-gentle 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-ambient-glow,
+  .animate-float-gentle {
+    animation: none;
+  }
+}
+

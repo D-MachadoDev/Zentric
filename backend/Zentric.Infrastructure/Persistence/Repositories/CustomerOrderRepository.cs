@@ -130,9 +130,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             // un objeto independiente y su escritura no colisiona con el
             // IdentityMap de EF Core.
             //
-            // Se actualiza la cabecera de forma explicita y se sincroniza la
-            // coleccion de lineas: se agregan las nuevas, se actualizan las
-            // existentes y se eliminan las que ya no formen parte del pedido.
+            // Actualiza cabecera y sincroniza coleccion de lineas.
             var tracked = _dbContext.CustomerOrders
                 .Include(o => o.Items)
                 .Include(o => o.DigitalDeliveries)
@@ -149,6 +147,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             tracked.Status = order.Status;
             tracked.CreatedAt = order.CreatedAt;
             tracked.UpdatedAt = order.UpdatedAt;
+            tracked.CheckoutStartedAt = order.CheckoutStartedAt;
 
             var incoming = order.Items
                 .Select(i => new OrderItemDbModel
@@ -196,7 +195,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
                 }
             }
 
-            // Reconciliar la coleccion de entregas digitales (CAT-02).
+            // Reconciliar la coleccion de entregas digitales (CA).
             var incomingDd = order.DigitalDeliveries
                 .Select(dd => new DigitalDeliveryRecordDbModel
                 {

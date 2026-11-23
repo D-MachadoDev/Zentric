@@ -42,8 +42,8 @@ namespace Zentric.Tests.Application.Queries
             var result = await handler.Handle(new GetUsersQuery(UserRole.Seller), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            Assert.Single(result.Value);
-            Assert.Equal("123456", result.Value[0].IdentityDocument);
+            Assert.Single(result.Value.Items);
+            Assert.Equal("123456", result.Value.Items[0].IdentityDocument);
         }
 
         [Fact]
@@ -72,18 +72,31 @@ namespace Zentric.Tests.Application.Queries
                 new GetWarehousesQuery(null, Guid.NewGuid(), UserRole.Administrator), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            Assert.Single(result.Value);
-            Assert.Equal("Principal", result.Value[0].Name);
+            Assert.Single(result.Value.Items);
+            Assert.Equal("Principal", result.Value.Items[0].Name);
         }
 
         [Fact]
         public async Task GetInventoryByVariantQuery_ReturnsStock()
         {
-            var variantId = Guid.NewGuid();
+            var vendorId = Guid.NewGuid();
+            var product = new Product(
+                "Camiseta",
+                "Camiseta de prueba",
+                new Money(10, "COP"),
+                vendorId,
+                ProductType.Physical,
+                new List<(string, IEnumerable<VariantAttribute>)>
+                {
+                    ("SKU-1", new List<VariantAttribute> { new VariantAttribute("Color", "Rojo") }),
+                });
+            var variantId = product.Variants.First().Id;
             var warehouseId = Guid.NewGuid();
             var inv = new Inventory(variantId, warehouseId, availableQuantity: 50, reservedQuantity: 10, damagedQuantity: 2, usedQuantity: 5);
             var repo = new FakeInventoryQueryRepo(new List<Inventory> { inv });
-            var handler = new GetInventoryByVariantQueryHandler(repo, new FakeProductQueryRepo());
+            var products = new FakeProductQueryRepo();
+            products.Products.Add(product);
+            var handler = new GetInventoryByVariantQueryHandler(repo, products);
 
             // Operador: sin filtro de dueno; el Vendedor se prueba en
             // OwnershipQueryTests.
@@ -93,6 +106,10 @@ namespace Zentric.Tests.Application.Queries
             Assert.True(result.IsSuccess);
             Assert.Single(result.Value);
             Assert.Equal(50, result.Value[0].AvailableQuantity);
+            // El nombre y el SKU viajan en el DTO: la pantalla no tiene que adivinar
+            // la identidad del producto que hay detras de una variante.
+            Assert.Equal("Camiseta", result.Value[0].ProductName);
+            Assert.Equal("SKU-1", result.Value[0].Sku);
         }
     }
 

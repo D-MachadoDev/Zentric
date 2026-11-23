@@ -10,7 +10,7 @@ namespace Zentric.Application.Returns.Commands
 {
     /// <summary>
     /// Aprueba una devolucion. Solo la aprueba el vendedor cuyo producto se
-    /// devuelve; la politica sigue siendo solo-Seller (ADDENDUM Dominio 10).
+    /// devuelve; la politica sigue siendo solo-Seller .
     /// </summary>
     public record ApproveReturnCommand(
         Guid ReturnRequestId,
@@ -48,7 +48,7 @@ namespace Zentric.Application.Returns.Commands
             }
 
             // La aprobacion es del vendedor del producto devuelto
-            // (ADDENDUM Dominio 10). El mensaje es el de "no existe" para no
+            // . El mensaje es el de "no existe" para no
             // confirmar que esa devolucion existe y es de otro.
             var product = await _productRepository.GetByVariantIdAsync(returnReq.VariantId, cancellationToken);
             if (product == null || product.VendorId != request.CallerId)
@@ -56,7 +56,7 @@ namespace Zentric.Application.Returns.Commands
                 return Result<bool>.NotFound("Return request not found.");
             }
 
-            // ADR-0018: el cliente ya no declara si la devolucion vuelve a la misma
+            // ADel cliente ya no declara si la devolucion vuelve a la misma
             // bodega del mismo vendedor. Lo deduce el servidor: solo cuenta si se recibe
             // en una bodega del propio vendedor, porque quien recibe fisicamente la
             // mercancia responde por su estado. Un hub del Marketplace NO habilita la

@@ -6,7 +6,7 @@ namespace Zentric.Domain.Products
     /// Entidad hija del agregado <see cref="Product"/>. Representa la combinación
     /// vendible del producto (ej. Talla/Color) y su <see cref="Id"/> actúa como
     /// VariantId (SKU) que identifica el stock en el inventario.
-    /// Referencia: ADR-0002.
+    /// Referencia: AD.
     /// La vía prevista de creación es <see cref="Product.AddVariant"/>: el agregado
     /// controla el ciclo de vida de sus variantes.
     /// </summary>
@@ -15,6 +15,7 @@ namespace Zentric.Domain.Products
         public Guid Id { get; init; } // VariantId: clave del inventario (SKU)
         public Guid ProductId { get; private set; }
         public string Sku { get; private set; }
+        public decimal? PriceAmount { get; private set; }
         public bool IsActive { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
@@ -35,7 +36,7 @@ namespace Zentric.Domain.Products
             Sku = null!;
         }
 
-        public ProductVariant(Guid productId, string sku, IEnumerable<VariantAttribute> attributes)
+        public ProductVariant(Guid productId, string sku, IEnumerable<VariantAttribute> attributes, decimal? priceAmount = null)
         {
             if (productId == Guid.Empty)
             {
@@ -47,6 +48,11 @@ namespace Zentric.Domain.Products
                 throw new ArgumentException("Variant SKU is required.", nameof(sku));
             }
 
+            if (priceAmount.HasValue && priceAmount.Value <= 0)
+            {
+                throw new ArgumentException("Variant price must be positive when specified.", nameof(priceAmount));
+            }
+
             ArgumentNullException.ThrowIfNull(attributes);
 
             var attributeList = ValidateAttributes(attributes);
@@ -54,11 +60,28 @@ namespace Zentric.Domain.Products
             Id = Guid.NewGuid();
             ProductId = productId;
             Sku = sku.Trim().ToUpperInvariant();
+            PriceAmount = priceAmount;
             _attributes.AddRange(attributeList);
             IsActive = true;
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = CreatedAt;
             DeletedAt = null;
+        }
+
+        public void SetPrice(decimal? priceAmount)
+        {
+            if (IsDeleted)
+            {
+                throw new InvalidOperationException("Cannot update the price of a deleted variant.");
+            }
+
+            if (priceAmount.HasValue && priceAmount.Value <= 0)
+            {
+                throw new ArgumentException("Variant price must be positive when specified.", nameof(priceAmount));
+            }
+
+            PriceAmount = priceAmount;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         private static List<VariantAttribute> ValidateAttributes(IEnumerable<VariantAttribute> attributes)

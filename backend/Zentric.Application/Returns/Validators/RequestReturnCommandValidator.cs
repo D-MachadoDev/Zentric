@@ -15,15 +15,11 @@ namespace Zentric.Application.Returns.Validators
                 .NotEmpty()
                 .WithMessage("Variant ID is required.");
 
-            RuleFor(command => command.WarehouseId)
-                .NotEmpty()
-                .WithMessage("Warehouse ID is required.");
-
             RuleFor(command => command.Quantity)
                 .GreaterThan(0)
                 .WithMessage("Quantity must be greater than zero.");
                 
-            // ADR-0018: ProductType y el lugar de recepcion NO se validan aqui porque ya
+            // ADProductType y el lugar de recepcion NO se validan aqui porque ya
             // no vienen del cuerpo (el tipo lo deduce el producto en el servidor y la
             // recepcion se contrasta con bodegas reales).
 

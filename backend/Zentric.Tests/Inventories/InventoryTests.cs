@@ -4,7 +4,7 @@ namespace Zentric.Tests.Inventories;
 
 /// <summary>
 /// Pruebas de caracterización del agregado de inventario.
-/// Invariante protegida: INV-01 / invariante 1 ("AvailableQuantity nunca puede
+/// Invariante protegida: / invariante 1 ("AvailableQuantity nunca puede
 /// ser negativo bajo ninguna circunstancia").
 /// </summary>
 public sealed class InventoryTests
@@ -12,8 +12,8 @@ public sealed class InventoryTests
     private static readonly Guid VariantId = Guid.NewGuid();
     private static readonly Guid WarehouseId = Guid.NewGuid();
 
-    private static Inventory CreateInventory(int available = 10, int reserved = 0, int damaged = 0)
-        => new(VariantId, WarehouseId, available, reserved, damaged);
+    private static Inventory CreateInventory(int available = 10, int reserved = 0, int damaged = 0, int used = 0)
+        => new(VariantId, WarehouseId, available, reserved, damaged, used);
 
     [Fact]
     public void Constructor_ValidData_SetsQuantitiesAndIdentity()
@@ -159,10 +159,9 @@ public sealed class InventoryTests
     }
 
     /// <summary>
-    /// Regresión del hallazgo H-08:
-    /// ReturnToAvailable no validaba cantidades no positivas como el resto de las
+    /// Regresión del hallazgo     /// ReturnToAvailable no validaba cantidades no positivas como el resto de las
     /// operaciones, lo que permitía dejar AvailableQuantity por debajo de cero y
-    /// violar INV-01. Prueba asociada a la corrección T-003.
+    /// violar . Prueba asociada a la corrección .
     /// </summary>
     [Theory]
     [InlineData(0)]
@@ -202,6 +201,23 @@ public sealed class InventoryTests
 
         Assert.Throws<InvalidOperationException>(() => inventory.MarkAsDeleted());
         Assert.False(inventory.IsDeleted);
+    }
+
+    [Fact]
+    public void MarkAsDeleted_WithUsedStock_ThrowsInvalidOperationException()
+    {
+        var inventory = CreateInventory(available: 0, reserved: 0, damaged: 0, used: 5);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => inventory.MarkAsDeleted());
+        Assert.Contains("existencias físicas", ex.Message);
+        Assert.False(inventory.IsDeleted);
+    }
+
+    [Fact]
+    public void Constructor_NegativeUsedQuantity_ThrowsArgumentOutOfRangeException()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new Inventory(VariantId, WarehouseId, availableQuantity: 0, reservedQuantity: 0, damagedQuantity: 0, usedQuantity: -1));
     }
 
     [Fact]

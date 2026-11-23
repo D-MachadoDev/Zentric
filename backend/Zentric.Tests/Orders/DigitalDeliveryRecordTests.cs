@@ -3,7 +3,7 @@ using Zentric.Domain.Orders.Entities;
 namespace Zentric.Tests.Orders;
 
 /// <summary>
-/// CAT-02: el registro de entrega digital nace con el pago de un producto sin logistica.
+/// CAel registro de entrega digital nace con el pago de un producto sin logistica.
 /// </summary>
 public sealed class DigitalDeliveryRecordTests
 {

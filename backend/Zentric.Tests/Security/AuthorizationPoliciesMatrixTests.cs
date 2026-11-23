@@ -29,7 +29,8 @@ namespace Zentric.Tests.Security
                 [AuthorizationPolicies.InventoryManagement] = new[]
                 {
                     nameof(UserRole.Seller),
-                    nameof(UserRole.LogisticsOperator)
+                    nameof(UserRole.LogisticsOperator),
+                    nameof(UserRole.Administrator)
                 },
                 [AuthorizationPolicies.InventoryRead] = new[]
                 {

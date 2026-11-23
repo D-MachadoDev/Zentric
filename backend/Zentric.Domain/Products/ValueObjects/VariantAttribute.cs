@@ -9,7 +9,7 @@ namespace Zentric.Domain.Products.ValueObjects
     /// catalogo cerrado porque la Ley no lo define y cada vendedor comercializa
     /// atributos distintos.
     /// </summary>
-    public sealed class VariantAttribute : IEquatable<VariantAttribute>
+    public sealed class VariantAttribute : IEquatable<VariantAttribute> 
     {
         public string Name { get; private set; }
         public string Value { get; private set; }

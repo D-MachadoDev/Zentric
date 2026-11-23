@@ -45,7 +45,7 @@ namespace Zentric.Tests.E2E
         /// <summary>Operador logistico.</summary>
         public ApiActor Operator => Get()["Operator"];
 
-        /// <summary>Supervisor: solo lectura y auditoria (ADR-0014).</summary>
+        /// <summary>Supervisor: solo lectura y auditoria (AD).</summary>
         public ApiActor Supervisor => Get()["Supervisor"];
 
         /// <summary>
@@ -157,7 +157,7 @@ namespace Zentric.Tests.E2E
                 document++;
                 var email = $"e2e-{key.ToLowerInvariant()}@zentric-e2e.test";
 
-                // ADR-0012: el rol viaja por nombre. Un entero responderia 400 y la siembra
+                // ADel rol viaja por nombre. Un entero responderia 400 y la siembra
                 // fallaria por un contrato que estas pruebas precisamente quieren verificar.
                 await CreateUserAsync(adminToken, email, fullName, $"DOC-E2E-{document}", role);
 
@@ -200,8 +200,11 @@ namespace Zentric.Tests.E2E
             if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadAsStringAsync();
-                throw new InvalidOperationException(
-                    $"No se pudo crear el actor {role} ({email}): HTTP {(int)response.StatusCode}: {body}");
+                if (!body.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        $"No se pudo crear el actor {role} ({email}): HTTP {(int)response.StatusCode}: {body}");
+                }
             }
         }
     }

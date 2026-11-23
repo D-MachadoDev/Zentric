@@ -7,7 +7,7 @@ using Zentric.Domain.Users.Enums;
 namespace Zentric.Tests.Presentation
 {
     /// <summary>
-    /// Matriz de autorizacion por rol. Cierra RG-03: "ningun participante podra
+    /// Matriz de autorizacion por rol. Cierra "ningun participante podra
     /// administrar informacion fuera de su rol" (ZENTRIC.md seccion 10).
     ///
     /// Que comprueba esta clase y por que existe. La autorizacion por rol no se puede validar
@@ -33,65 +33,78 @@ namespace Zentric.Tests.Presentation
 
         /// <summary>
         /// La matriz dictada, endpoint por endpoint. Es la traduccion de la Matriz de
-        /// Responsabilidades (ZENTRIC.md seccion 12) mas el ADDENDUM, con la preferencia del
-        /// ADDENDUM que fija ADR-0006.
+        /// Responsabilidades (ZENTRIC.md seccion 12) mas el  con la preferencia del
+        /// que fija AD.
         /// </summary>
         private static readonly IReadOnlyDictionary<string, string> ExpectedPolicyByEndpoint =
             new Dictionary<string, string>
             {
                 // Autenticacion. Login es anonimo porque no se puede pedir un token antes de
-                // tener cuenta; /me sirve la identidad del propio llamante (RG-01).
+                // tener cuenta; /me sirve la identidad del propio llamante .
                 ["AuthController.Login"] = Anonymous,
                 ["AuthController.Me"] = AuthorizationPolicies.AnyAuthenticatedUser,
+                ["AuthController.ForgotPassword"] = Anonymous,
+                ["AuthController.ValidateResetToken"] = Anonymous,
+                ["AuthController.ResetPassword"] = Anonymous,
 
-                // 1. Usuarios. El alta es anonima solo para Buyer; el resto se niega dentro del
-                // controlador porque la condicion es el rol pedido, no el rol del llamante
-                // (ZENTRIC.md Dominio 3).
+                // Usuarios: alta anonima unicamente para Buyer.
                 ["UsersController.CreateUser"] = Anonymous,
                 ["UsersController.GetUsers"] = AuthorizationPolicies.UserAdministration,
                 ["UsersController.GetUserById"] = AuthorizationPolicies.UserAdministration,
-                // INV-05 (dictamen del Owner 2026-10-06): el bloqueo es administracion de
-                // usuarios, asi que cae en la misma politica que el alta y la consulta. El
-                // Supervisor no participa: es perfil de consulta, no de escritura.
+                // Bloqueo y activacion bajo administracion de usuarios.
                 ["UsersController.BlockUser"] = AuthorizationPolicies.UserAdministration,
                 ["UsersController.ActivateUser"] = AuthorizationPolicies.UserAdministration,
                 ["UsersController.GetProfile"] = AuthorizationPolicies.AnyAuthenticatedUser,
                 ["UsersController.UpdateProfile"] = AuthorizationPolicies.AnyAuthenticatedUser,
 
-                // 2. Bodegas. Alta y edicion (WarehouseManagement).
+                // Bodegas: gestion y consulta.
                 ["WarehousesController.CreateWarehouse"] = AuthorizationPolicies.WarehouseManagement,
                 ["WarehousesController.UpdateWarehouse"] = AuthorizationPolicies.WarehouseManagement,
                 ["WarehousesController.GetWarehouses"] = AuthorizationPolicies.WarehouseRead,
                 ["WarehousesController.GetWarehouseById"] = AuthorizationPolicies.WarehouseRead,
 
-                // 3. Catalogo. Alta solo del Vendedor (seccion 12: "Registro Productos").
+                // Catalogo: gestion de productos y variantes.
                 ["CatalogController.CreateProduct"] = AuthorizationPolicies.ProductManagement,
+                ["CatalogController.AddProductVariant"] = AuthorizationPolicies.ProductManagement,
                 ["CatalogController.PublishProduct"] = AuthorizationPolicies.ProductManagement,
                 ["CatalogController.SuspendProduct"] = AuthorizationPolicies.ProductManagement,
-                ["CatalogController.GetProducts"] = AuthorizationPolicies.AnyAuthenticatedUser,
-                ["CatalogController.GetProductsPaged"] = AuthorizationPolicies.AnyAuthenticatedUser,
-                ["CatalogController.GetProductById"] = AuthorizationPolicies.AnyAuthenticatedUser,
-                ["CatalogController.GetCategories"] = AuthorizationPolicies.AnyAuthenticatedUser,
-                ["CatalogController.GetHeroProducts"] = AuthorizationPolicies.AnyAuthenticatedUser,
+                ["CatalogController.UpdateProduct"] = AuthorizationPolicies.ProductManagement,
+                ["CatalogController.GetProductsPaged"] = Anonymous,
+                ["CatalogController.GetProducts"] = Anonymous,
+                ["CatalogController.GetProductById"] = Anonymous,
+                ["CatalogController.GetCategories"] = Anonymous,
+                ["CatalogController.GetHeroProducts"] = Anonymous,
+                ["CatalogController.GetRecentlyViewed"] = AuthorizationPolicies.AnyAuthenticatedUser,
+                ["CatalogController.TrackProductView"] = AuthorizationPolicies.AnyAuthenticatedUser,
+                ["CatalogController.GetCatalogHome"] = Anonymous,
+                ["CatalogController.GetProductReviews"] = Anonymous,
+                ["CatalogController.CreateProductReview"] = AuthorizationPolicies.AnyAuthenticatedUser,
 
-                // 4. Inventario (seccion 12: "Administracion Inventario").
+                // Favoritos del comprador (persistencia multidispositivo)
+                ["BuyerFavoritesController.GetFavorites"] = AuthorizationPolicies.AnyAuthenticatedUser,
+                ["BuyerFavoritesController.AddFavorite"] = AuthorizationPolicies.AnyAuthenticatedUser,
+                ["BuyerFavoritesController.RemoveFavorite"] = AuthorizationPolicies.AnyAuthenticatedUser,
+
+                // Inventario: stock, ajustes y consultas.
                 ["InventoriesController.AddStock"] = AuthorizationPolicies.InventoryManagement,
                 ["InventoriesController.GetInventories"] = AuthorizationPolicies.InventoryRead,
                 ["InventoriesController.GetInventoryByVariant"] = AuthorizationPolicies.InventoryRead,
                 ["InventoriesController.AdjustInventory"] = AuthorizationPolicies.InventoryAdjust,
+                ["InventoriesController.DeleteInventory"] = AuthorizationPolicies.InventoryManagement,
 
-                // 5. Pedidos. Escribirlos es del Comprador (seccion 6.1 paso 5).
+                // Pedidos: carrito, checkout y consultas.
                 ["OrdersController.CreateCart"] = AuthorizationPolicies.Checkout,
                 ["OrdersController.AddOrderItem"] = AuthorizationPolicies.Checkout,
                 ["OrdersController.RemoveOrderItem"] = AuthorizationPolicies.Checkout,
                 ["OrdersController.Checkout"] = AuthorizationPolicies.Checkout,
+                ["OrdersController.CancelOrder"] = AuthorizationPolicies.Checkout,
                 ["OrdersController.Pay"] = AuthorizationPolicies.Checkout,
                 ["OrdersController.GetOrders"] = AuthorizationPolicies.OrderRead,
                 ["OrdersController.GetBuyerOrders"] = AuthorizationPolicies.OrderRead,
                 ["OrdersController.GetOrderById"] = AuthorizationPolicies.OrderRead,
                 ["OrdersController.UpdateCartItemQuantity"] = AuthorizationPolicies.Checkout,
 
-                // 6. Logistica (ADDENDUM Dominio 8).
+                // Logistica: empaque, despacho y entrega.
                 ["LogisticsController.CreateFulfillment"] = AuthorizationPolicies.FulfillmentOperate,
                 ["LogisticsController.PackFulfillment"] = AuthorizationPolicies.FulfillmentOperate,
                 ["LogisticsController.DispatchFulfillment"] = AuthorizationPolicies.FulfillmentOperate,
@@ -100,7 +113,7 @@ namespace Zentric.Tests.Presentation
                 ["LogisticsController.GetFulfillments"] = AuthorizationPolicies.FulfillmentRead,
                 ["LogisticsController.GetFulfillmentById"] = AuthorizationPolicies.FulfillmentRead,
 
-                // 7. Devoluciones (ADDENDUM Dominio 10).
+                // Devoluciones: solicitud, inspeccion y reembolso.
                 ["ReturnsController.RequestReturn"] = AuthorizationPolicies.ReturnRequest,
                 ["ReturnsController.InspectReturn"] = AuthorizationPolicies.ReturnInspect,
                 ["ReturnsController.ApproveReturn"] = AuthorizationPolicies.ReturnApprove,
@@ -109,11 +122,21 @@ namespace Zentric.Tests.Presentation
                 ["ReturnsController.GetReturns"] = AuthorizationPolicies.ReturnRead,
                 ["ReturnsController.GetReturnById"] = AuthorizationPolicies.ReturnRead,
 
-                // 8. Facturacion (ADDENDUM Dominio 9).
+                // Facturacion: emision y consultas.
                 ["BillingController.GenerateInvoices"] = AuthorizationPolicies.BillingGenerate,
                 ["BillingController.AnnullMasterInvoice"] = AuthorizationPolicies.BillingGenerate,
                 ["BillingController.GetInvoices"] = AuthorizationPolicies.BillingRead,
                 ["BillingController.GetInvoicesByOrder"] = AuthorizationPolicies.BillingRead,
+
+                // Perfil de Vendedor: tienda, marca y logo.
+                ["SellerProfileController.GetProfile"] = AuthorizationPolicies.ProductManagement,
+                ["SellerProfileController.UpdateProfile"] = AuthorizationPolicies.ProductManagement,
+
+                // Saldo y pagos de Vendedor: balance liquidado, retiros y cuenta bancaria.
+                ["SellerPayoutsController.GetSummary"] = AuthorizationPolicies.ProductManagement,
+                ["SellerPayoutsController.GetHistory"] = AuthorizationPolicies.ProductManagement,
+                ["SellerPayoutsController.RequestPayout"] = AuthorizationPolicies.ProductManagement,
+                ["SellerPayoutsController.SaveBankAccount"] = AuthorizationPolicies.ProductManagement,
             };
 
         /// <summary>
@@ -156,9 +179,9 @@ namespace Zentric.Tests.Presentation
         }
 
         /// <summary>
-        /// Criterio (ADDENDUM Dominio 10 + ADR-0006): la aprobacion de una devolucion es del
+        /// Criterio (Dominio 10 + AD): la aprobacion de una devolucion es del
         /// Vendedor. El Administrador NO aprueba, aunque la Matriz de Responsabilidades de la
-        /// seccion 12 lo dibujara asi: el ADDENDUM tiene la ultima palabra. El Dominio ya lo
+        /// seccion 12 lo dibujara asi: el tiene la ultima palabra. El Dominio ya lo
         /// modela con ese nombre, en <c>ReturnRequest.ApproveByVendor</c>.
         /// </summary>
         [Fact]
@@ -172,18 +195,19 @@ namespace Zentric.Tests.Presentation
 
         /// <summary>
         /// Criterio (ZENTRIC.md seccion 12): el inventario lo administran el Vendedor y el
-        /// Operador Logistico. El Administrador no figura en esa fila de la Matriz, y RG-03 le
+        /// Operador Logistico. El Administrador no figura en esa fila de la Matriz, y le
         /// impide administrar informacion fuera de su rol.
         /// </summary>
         [Fact]
-        public void InventoryManagement_LawMatrix_KeepsAdministratorOut()
+        public void InventoryManagement_Matrix_AdmitsAdministratorForZentricWarehouses()
         {
             IReadOnlyList<string> allowed = AuthorizationPolicies.RolesByPolicy[AuthorizationPolicies.InventoryManagement];
 
             Assert.Contains(UserRole.Seller.ToString(), allowed);
             Assert.Contains(UserRole.LogisticsOperator.ToString(), allowed);
-            Assert.DoesNotContain(UserRole.Administrator.ToString(), allowed);
+            Assert.Contains(UserRole.Administrator.ToString(), allowed);
             Assert.DoesNotContain(UserRole.Buyer.ToString(), allowed);
+            Assert.DoesNotContain(UserRole.Supervisor.ToString(), allowed);
         }
 
         /// <summary>
@@ -217,7 +241,7 @@ namespace Zentric.Tests.Presentation
         /// <summary>
         /// Criterio del dictamen (Owner, 2026-09-29): el Operador Logistico
         /// detecta el faltante en bodega, asi que puede reportarlo. El Vendedor sigue
-        /// dentro porque el ADDENDUM Dominio 8 le asigna la cancelacion. Sin esta
+        /// dentro porque el Dominio 8 le asigna la cancelacion. Sin esta
         /// asercion, quitar al Operador devolveria al flujo a un estado que la Ley
         /// describe pero que nadie podria ejecutar.
         /// </summary>

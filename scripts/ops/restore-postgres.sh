@@ -1,12 +1,5 @@
 #!/usr/bin/env sh
-# ==============================================================================
-# Zentric Marketplace — Restauración Controlada de PostgreSQL 16.15-alpine (W6-S03)
-# ==============================================================================
-# Restaura un archivo .dump generado por backup-postgres.sh usando pg_restore
-# con --clean --if-exists dentro de una transacción única (--single-transaction).
-# Uso:
-#   ./scripts/ops/restore-postgres.sh ./backups/zentric_ZentricDb_20261016T000000Z.dump
-# ==============================================================================
+# Restaura volcado (-Fc) con pg_restore en transaccion unica (--single-transaction).
 set -eu
 
 if [ "$#" -lt 1 ]; then

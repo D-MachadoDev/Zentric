@@ -1,9 +1,9 @@
-# ADR-0020 — Precio congelado y crédito parcial por línea
+﻿# ADR-0020 — Precio congelado y crédito parcial por línea
 
 - **Estado:** Aceptado
 - **Fecha:** 2026-10-04
 - **Dictado por:** Owner (grill de la pieza «reembolso parcial», EXC-02)
-- **Precisa:** [ADR-0019](ADR-0019-cierre-de-decisiones-capa-domain.md) §2 (PED-04)
+- **Precisa:** [ADR-0019](ADR-0019-cierre-de-decisiones-capa-domain.md) sección 2 (PED-04)
 
 ## Contexto
 

@@ -7,7 +7,7 @@ namespace Zentric.Tests.Users;
 /// </summary>
 public sealed class FullNameTests
 {
-    [Fact]
+    [Fact(DisplayName = "1. Nombre Completo: Normaliza mayúsculas y minúsculas por componente")]
     public void Constructor_PartesValidas_NormalizaCapitalizacion()
     {
         var name = new FullName("jUaN", "pEREZ");
@@ -17,7 +17,7 @@ public sealed class FullNameTests
         Assert.Equal("Juan Perez", name.Value);
     }
 
-    [Fact]
+    [Fact(DisplayName = "2. Apellidos Múltiples: Preserva y une apellidos compuestos")]
     public void Constructor_TextoCompleto_UneApellidosMultiples()
     {
         // La normalizacion capitaliza solo la primera letra del apellido
@@ -28,7 +28,7 @@ public sealed class FullNameTests
         Assert.Equal("Maria torres", name.LastName);
     }
 
-    [Theory]
+    [Theory(DisplayName = "3. Validación de Vacío: Texto en blanco lanza ArgumentException")]
     [InlineData("")]
     [InlineData("   ")]
     public void Constructor_TextoVacio_Lanza(string value)
@@ -36,13 +36,13 @@ public sealed class FullNameTests
         Assert.Throws<ArgumentException>(() => new FullName(value));
     }
 
-    [Fact]
+    [Fact(DisplayName = "4. Formato Incompleto: Una sola palabra sin apellido lanza ArgumentException")]
     public void Constructor_UnaSolaPalabra_Lanza()
     {
         Assert.Throws<ArgumentException>(() => new FullName("Madonna"));
     }
 
-    [Theory]
+    [Theory(DisplayName = "5. Partes Incompletas: Nombre o apellido vacío lanza ArgumentException")]
     [InlineData("", "Perez")]
     [InlineData("Juan", "")]
     [InlineData("   ", "Perez")]
@@ -51,7 +51,7 @@ public sealed class FullNameTests
         Assert.Throws<ArgumentException>(() => new FullName(first, last));
     }
 
-    [Theory]
+    [Theory(DisplayName = "6. Longitud Mínima: Inicial o parte de una sola letra lanza ArgumentException")]
     [InlineData("J", "Perez")]
     [InlineData("Juan", "P")]
     public void Constructor_ParteDeUnaLetra_Lanza(string first, string last)
@@ -59,14 +59,14 @@ public sealed class FullNameTests
         Assert.Throws<ArgumentException>(() => new FullName(first, last));
     }
 
-    [Fact]
+    [Fact(DisplayName = "7. Longitud Máxima: Nombres o apellidos mayores a 80 caracteres lanzan ArgumentException")]
     public void Constructor_ParteMuyLarga_Lanza()
     {
         Assert.Throws<ArgumentException>(() => new FullName(new string('a', 81), "Perez"));
         Assert.Throws<ArgumentException>(() => new FullName("Juan", new string('a', 81)));
     }
 
-    [Theory]
+    [Theory(DisplayName = "8. Caracteres Válidos: Presencia de dígitos numéricos en nombre o apellido lanza ArgumentException")]
     [InlineData("Juan2", "Perez")]
     [InlineData("Juan", "P3rez")]
     public void Constructor_ConDigitos_Lanza(string first, string last)
@@ -74,7 +74,7 @@ public sealed class FullNameTests
         Assert.Throws<ArgumentException>(() => new FullName(first, last));
     }
 
-    [Fact]
+    [Fact(DisplayName = "9. Comparación con Nulo: Equals con nulo retorna false")]
     public void Equals_Null_RetornaFalse()
     {
         var name = new FullName("Juan Perez");
@@ -84,7 +84,7 @@ public sealed class FullNameTests
         Assert.False(name.Equals("Juan Perez"));
     }
 
-    [Fact]
+    [Fact(DisplayName = "10. Equivalencia: Equals es insensible a mayúsculas/minúsculas")]
     public void Equals_IgnoraMayusculas()
     {
         var left = new FullName("Juan Perez");
@@ -95,7 +95,7 @@ public sealed class FullNameTests
         Assert.Equal(left.GetHashCode(), right.GetHashCode());
     }
 
-    [Fact]
+    [Fact(DisplayName = "11. Representación String: ToString retorna el nombre completo normalizado")]
     public void ToString_RetornaValorCompleto()
     {
         Assert.Equal("Juan Perez", new FullName("Juan Perez").ToString());
@@ -104,7 +104,7 @@ public sealed class FullNameTests
 
 public sealed class EmailTests
 {
-    [Fact]
+    [Fact(DisplayName = "12. Normalización de Email: Trimea espacios y convierte a minúsculas")]
     public void Constructor_Valido_NormalizaAMinusculas()
     {
         var email = new Email("  Juan@Zentric.COM  ");
@@ -112,7 +112,7 @@ public sealed class EmailTests
         Assert.Equal("juan@zentric.com", email.Value);
     }
 
-    [Theory]
+    [Theory(DisplayName = "13. Email Vacío: Cadenas vacías o con espacios lanzan ArgumentException")]
     [InlineData("")]
     [InlineData("   ")]
     public void Constructor_Vacio_Lanza(string value)
@@ -120,13 +120,13 @@ public sealed class EmailTests
         Assert.Throws<ArgumentException>(() => new Email(value));
     }
 
-    [Fact]
+    [Fact(DisplayName = "14. Longitud Mínima de Email: Formatos extremadamente cortos lanzan ArgumentException")]
     public void Constructor_MuyCorto_Lanza()
     {
         Assert.Throws<ArgumentException>(() => new Email("a@b."));
     }
 
-    [Theory]
+    [Theory(DisplayName = "15. Sintaxis de Email: Correos sin arroba, sin dominio o malformados lanzan ArgumentException")]
     [InlineData("juanzentric.com")]
     [InlineData("juan@zentric")]
     [InlineData("@zentric.com")]
@@ -137,7 +137,7 @@ public sealed class EmailTests
         Assert.Throws<ArgumentException>(() => new Email(value));
     }
 
-    [Fact]
+    [Fact(DisplayName = "16. Comparación con Nulo: Equals con nulo o tipo incompatible retorna false")]
     public void Equals_Null_RetornaFalse()
     {
         var email = new Email("juan@zentric.com");
@@ -147,7 +147,7 @@ public sealed class EmailTests
         Assert.False(email.Equals("juan@zentric.com"));
     }
 
-    [Fact]
+    [Fact(DisplayName = "17. Equivalencia de Email: Equals es insensible a mayúsculas/minúsculas")]
     public void Equals_IgnoraMayusculas()
     {
         var left = new Email("juan@zentric.com");
@@ -158,7 +158,7 @@ public sealed class EmailTests
         Assert.Equal(left.GetHashCode(), right.GetHashCode());
     }
 
-    [Fact]
+    [Fact(DisplayName = "18. Representación String: ToString retorna el correo normalizado en minúsculas")]
     public void ToString_RetornaValorNormalizado()
     {
         Assert.Equal("juan@zentric.com", new Email("Juan@Zentric.com").ToString());

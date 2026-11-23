@@ -48,9 +48,7 @@ namespace Zentric.Tests.Security
 {
     public class BackendAdversarialChallengerTests
     {
-        // ====================================================================
-        // CHALLENGE 1: CATALOG SEEDING IDEMPOTENCY & INTEGRITY
-        // ====================================================================
+        // Idempotencia e integridad del sembrado de catalogo
 
         [Fact]
         public void Product_Category_Reflection_CanSetProperty_OrThrows()
@@ -131,7 +129,7 @@ namespace Zentric.Tests.Security
             await userRepo.AddAsync(andres);
             await uow.SaveChangesAsync();
 
-            // EXECUTION 1
+            // Primera ejecucion de sembrado
             CatalogSeeder.Seed(serviceProvider, NullLogger.Instance);
 
             var productsRun1 = await productRepo.GetAllAsync(vendorId: AdministratorBootstrapper.CanonicalSellerId);
@@ -144,7 +142,7 @@ namespace Zentric.Tests.Security
             Assert.Single(buyersRun1);
             Assert.True(inventoriesRun1.Count > 0);
 
-            // EXECUTION 2 (Stress idempotency)
+            // Segunda ejecucion para verificar idempotencia
             CatalogSeeder.Seed(serviceProvider, NullLogger.Instance);
 
             var productsRun2 = await productRepo.GetAllAsync(vendorId: AdministratorBootstrapper.CanonicalSellerId);
@@ -157,7 +155,7 @@ namespace Zentric.Tests.Security
             Assert.Equal(inventoriesRun1.Count, inventoriesRun2.Count);
             Assert.Equal(buyersRun1.Count, buyersRun2.Count);
 
-            // EXECUTION 3 (Triple execution stress)
+            // Tercera ejecucion consecutiva de prueba
             CatalogSeeder.Seed(serviceProvider, NullLogger.Instance);
 
             var productsRun3 = await productRepo.GetAllAsync(vendorId: AdministratorBootstrapper.CanonicalSellerId);
@@ -231,10 +229,7 @@ namespace Zentric.Tests.Security
                 }
             }
         }
-
-        // ====================================================================
-        // CHALLENGE 2: CATEGORY FILTERING ADVERSARIAL EDGE CASES
-        // ====================================================================
+        // Casos limite de filtrado por categoria
 
         [Theory]
         [InlineData("all", 5)]
@@ -290,10 +285,7 @@ namespace Zentric.Tests.Security
             Assert.Equal(expectedCount, pagedResult.TotalItems);
             Assert.Equal(expectedCount, pagedResult.Items.Count);
         }
-
-        // ====================================================================
-        // CHALLENGE 3: EXPIRATION TIMESTAMP CALCULATIONS & TIMEZONE DRIFT
-        // ====================================================================
+        // Calculo de expiracion y desfases temporales
 
         [Fact]
         public void OrderExpiration_AccuratelyAdds15Minutes_AndPreservesUtcKind()
@@ -325,10 +317,7 @@ namespace Zentric.Tests.Security
             var newYearExpires = newYearDate.AddMinutes(15);
             Assert.Equal(new DateTime(2027, 1, 1, 0, 10, 0, DateTimeKind.Utc), newYearExpires);
         }
-
-        // ====================================================================
-        // CHALLENGE 4: BUYER PROFILE SECURITY INVARIANTS
-        // ====================================================================
+        // Invariantes de seguridad del perfil de comprador
 
         [Fact]
         public async Task UsersController_UpdateProfile_Unauthenticated_ReturnsUnauthorized()

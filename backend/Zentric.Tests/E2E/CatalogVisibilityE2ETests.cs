@@ -31,7 +31,7 @@ namespace Zentric.Tests.E2E
             var suspendedId = await CreateAndSuspendAsync("E2E Visibilidad 1", "E2E-VIS-SKU-1");
 
             using var client = _factory.Actors.ClientFor("Buyer");
-            using var response = await client.GetAsync("/api/Catalog/products");
+            using var response = await client.GetAsync("/api/Catalog/products/paged");
             response.EnsureSuccessStatusCode();
 
             Assert.DoesNotContain(suspendedId, await ReadIdsAsync(response));
@@ -48,7 +48,7 @@ namespace Zentric.Tests.E2E
             var suspendedId = await CreateAndSuspendAsync("E2E Visibilidad 2", "E2E-VIS-SKU-2");
 
             using var client = _factory.Actors.ClientFor("Seller2");
-            using var response = await client.GetAsync($"/api/Catalog/products?vendorId={scenario.SellerId}");
+            using var response = await client.GetAsync($"/api/Catalog/products/paged?vendorId={scenario.SellerId}");
             response.EnsureSuccessStatusCode();
 
             Assert.DoesNotContain(suspendedId, await ReadIdsAsync(response));
@@ -66,7 +66,7 @@ namespace Zentric.Tests.E2E
             var suspendedId = await CreateAndSuspendAsync("E2E Visibilidad 3", "E2E-VIS-SKU-3");
 
             using var client = _factory.Actors.ClientFor("Seller");
-            using var response = await client.GetAsync($"/api/Catalog/products?vendorId={scenario.SellerId}");
+            using var response = await client.GetAsync($"/api/Catalog/products/paged?vendorId={scenario.SellerId}");
             response.EnsureSuccessStatusCode();
 
             Assert.Contains(suspendedId, await ReadIdsAsync(response));
@@ -105,12 +105,12 @@ namespace Zentric.Tests.E2E
         private async Task<List<Guid>> ReadIdsAsync(string actor, Guid vendorId)
         {
             using var client = _factory.Actors.ClientFor(actor);
-            using var response = await client.GetAsync($"/api/Catalog/products?vendorId={vendorId}");
+            using var response = await client.GetAsync($"/api/Catalog/products/paged?vendorId={vendorId}");
             response.EnsureSuccessStatusCode();
 
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
-            return document.RootElement.EnumerateArray()
+            return document.RootElement.GetProperty("items").EnumerateArray()
                 .Select(row => row.GetProperty("id").GetGuid())
                 .ToList();
         }
@@ -161,7 +161,7 @@ namespace Zentric.Tests.E2E
         {
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
-            return document.RootElement.EnumerateArray()
+            return document.RootElement.GetProperty("items").EnumerateArray()
                 .Select(row => row.GetProperty("id").GetGuid())
                 .ToList();
         }

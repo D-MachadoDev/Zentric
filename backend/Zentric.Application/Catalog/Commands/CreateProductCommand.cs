@@ -14,16 +14,14 @@ using Zentric.Domain.Products.ValueObjects;
 namespace Zentric.Application.Catalog.Commands
 {
     public record VariantAttributeDto(string Name, string Value);
-    public record CreateProductVariantDto(string Sku, List<VariantAttributeDto> Attributes);
+    public record CreateProductVariantDto(string Sku, List<VariantAttributeDto> Attributes, decimal? PriceAmount = null);
 
     /// <summary>
     /// Identificadores que devuelve el alta de un producto.
     ///
     /// <c>ProductId</c> identifica el producto y <c>VariantIds</c> las variantes creadas. Un
-    /// producto Fisico siempre nace con al menos una variante (ADR-0003); uno Digital
-    /// puede nacer sin ninguna, y entonces la lista llega vacia. Por eso es una LISTA y no un
-    /// <c>Guid</c> suelto: la forma del contrato no depende de lo que se pidio, y el frontend no
-    /// tiene que decidir de antemano si espera un valor o una coleccion.
+    /// producto fisico siempre nace con al menos una variante obligatoria; uno digital
+    /// puede nacer sin variantes.
     ///
     /// Se devuelven los dos porque el Vendedor necesita el <c>variantId</c> para dar de alta stock
     /// justo despues de crear el producto. Sin el tendria que hacer un GET extra al recurso recien
@@ -71,6 +69,19 @@ namespace Zentric.Application.Catalog.Commands
                 request.ImageUrl,
                 request.Category
             );
+
+            if (request.Variants != null)
+            {
+                foreach (var vDto in request.Variants)
+                {
+                    if (vDto.PriceAmount.HasValue && vDto.PriceAmount.Value > 0)
+                    {
+                        var createdVariant = product.Variants.FirstOrDefault(
+                            x => string.Equals(x.Sku, vDto.Sku.Trim(), StringComparison.OrdinalIgnoreCase));
+                        createdVariant?.SetPrice(vDto.PriceAmount.Value);
+                    }
+                }
+            }
 
             await _repository.AddAsync(product, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

@@ -63,19 +63,14 @@ namespace Zentric.Application.Billing.Commands
                 var totalAmount = order.TotalAmount;
                 var feePolicy = PlatformFeePolicy.Current;
 
-                // 1. Factura Maestra: la recibe el comprador y refleja el total
-                //    de la operacion (ZENTRIC.md, Dominio 9).
+                // Factura maestra para el comprador reflejando el total de la orden.
                 invoicesToSave.Add(Invoice.CreateMaster(order.Id, totalAmount));
 
-                // 2. Detalle Zentric: la comision de la plataforma sobre el total.
+                // Comision retenida por la plataforma.
                 invoicesToSave.Add(
                     Invoice.CreateZentricDetail(order.Id, feePolicy.ApplyTo(totalAmount)));
 
-                // 3. Factura por vendedor (split). El VendorId vive en la
-                //    linea del pedido como instantanea historica, de modo que la
-                //    factura refleje quien vendio en el momento de la compra.
-                //    Se agrupa por vendedor y se descuenta la comion
-                //    proporcional de la parte que le corresponde a cada uno.
+                // Facturacion individual por vendedor segun sus lineas de pedido.
                 var vendorShare = feePolicy.Split!.VendorShare;
 
                 foreach (var group in order.Items.GroupBy(i => i.VendorId))

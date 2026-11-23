@@ -14,7 +14,7 @@ using Zentric.Tests.Application.Users;
 namespace Zentric.Tests.Application.Users
 {
     /// <summary>
-    /// Criterios de aceptacion de <c>POST /api/auth/login</c> (ADR-0009).
+    /// Criterios de aceptacion de <c>POST /api/auth/login</c> (AD).
     /// </summary>
     public class LoginCommandHandlerTests
     {
@@ -45,7 +45,10 @@ namespace Zentric.Tests.Application.Users
                 => new($"token-for-{userId}", DateTimeOffset.UtcNow.AddHours(1));
         }
 
-        [Fact]
+        /// <summary>
+        /// 1. Credenciales válidas: Retorna token JWT y rol.
+        /// </summary>
+        [Fact(DisplayName = "1. Login Exitoso: Credenciales válidas retornan token JWT de acceso e identidad de usuario")]
         public async Task Handle_ValidCredentials_ReturnsTokenAndIdentity()
         {
             var repo = new FakeUserRepository();
@@ -60,7 +63,10 @@ namespace Zentric.Tests.Application.Users
             Assert.Equal("Buyer", result.Value.Role);
         }
 
-        [Fact]
+        /// <summary>
+        /// 2. Normalización de email (Case Insensitive).
+        /// </summary>
+        [Fact(DisplayName = "2. Normalización de Email: El acceso es insensible a mayúsculas/minúsculas en el correo")]
         public async Task Handle_ValidCredentials_IsCaseInsensitiveOnEmail()
         {
             // El value object Email normaliza a minusculas, asi que el acceso no
@@ -74,7 +80,10 @@ namespace Zentric.Tests.Application.Users
             Assert.True(result.IsSuccess);
         }
 
-        [Fact]
+        /// <summary>
+        /// 3. Contraseña errónea: Mensaje genérico seguro.
+        /// </summary>
+        [Fact(DisplayName = "3. Contraseña Incorrecta: Falla con mensaje genérico seguro sin filtrar detalles")]
         public async Task Handle_WrongPassword_FailsWithGenericMessage()
         {
             var repo = new FakeUserRepository();
@@ -87,7 +96,10 @@ namespace Zentric.Tests.Application.Users
             Assert.Equal("Invalid email or password.", result.Error);
         }
 
-        [Fact]
+        /// <summary>
+        /// 4. Protección contra enumeración de usuarios.
+        /// </summary>
+        [Fact(DisplayName = "4. Anti-Enumeración en Login: Correo inexistente arroja exactamente el mismo mensaje que clave errónea")]
         public async Task Handle_UnknownEmail_FailsWithTheSameMessageAsAWrongPassword()
         {
             // Si los dos casos tuvieran mensajes distintos, permitirian enumerar
@@ -101,7 +113,10 @@ namespace Zentric.Tests.Application.Users
             Assert.Equal("Invalid email or password.", unknown.Error);
         }
 
-        [Fact]
+        /// <summary>
+        /// 5. Blindaje de usuarios bloqueados.
+        /// </summary>
+        [Fact(DisplayName = "5. Blindaje de Cuenta Bloqueada: Usuario bloqueado es rechazado con mensaje genérico")]
         public async Task Handle_BlockedUser_IsRejected()
         {
             var repo = new FakeUserRepository();
@@ -116,7 +131,10 @@ namespace Zentric.Tests.Application.Users
             Assert.Equal("Invalid email or password.", result.Error);
         }
 
-        [Fact]
+        /// <summary>
+        /// 6. Correo malformado: Falla limpiamente sin romper el runtime.
+        /// </summary>
+        [Fact(DisplayName = "6. Resiliencia ante Formato Inválido: Correo con formato malformado falla limpiamente sin excepciones")]
         public async Task Handle_MalformedEmail_FailsWithoutThrowing()
         {
             var repo = new FakeUserRepository();

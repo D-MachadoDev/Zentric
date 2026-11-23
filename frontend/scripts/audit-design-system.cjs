@@ -1,21 +1,9 @@
 #!/usr/bin/env node
 /**
- * Design System Audit - Zentric
- * ---------------------------------------------------------------------------
- * Valida el frontend contra la LEY (frontendSDD/Frontend-Design-System.md §9,
- * ADDENDUM dictado por el Owner) en lugar de contra supuestos hardcodeados.
- *
- * Diseño de la auditoria:
- *   1. PARSEA la paleta normativa §9.1 y la matriz de identidad §9.2 del
- *      propio spec Markdown (fuente de verdad).
- *   2. VERIFICA que theme.css las implementa exactamente.
- *   3. CALCULA el contraste WCAG 2.1 AA de los pares que el spec declara,
- *      en modo claro y oscuro, y compara contra los ratios afirmados.
- *   4. INVENTARIA el repo real (primitives/, components/ui/, composite/,
- *      tokens/, logo/, modules/**) sin inventar nombres de archivo.
- *
- * Ejecutar: node scripts/audit-design-system.cjs
- * Exit code 0 = sin fallos (puede haber avisos). 1 = hay fallos.
+ * Auditoria del sistema de diseno de Zentric.
+ * Valida variables de color, identidad por rol, contraste WCAG 2.1 AA y convenciones
+ * arquitectonicas del frontend a partir de la especificacion de Frontend-Design-System.md.
+ * Retorna codigo 0 si todas las validaciones son exitosas, o 1 en caso de fallos.
  */
 
 const fs = require('fs');
@@ -95,11 +83,8 @@ function walkBySuffix(dir, suffixes) {
 }
 
 const TEST_SUFFIXES = ['.test.ts', '.test.tsx', '.spec.ts', '.spec.tsx'];
-const STORY_SUFFIXES = ['.stories.tsx', '.stories.ts'];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// WCAG 2.1 contrast
-// ─────────────────────────────────────────────────────────────────────────────
+// Validacion de contraste WCAG 2.1
 function hexToRgb(hex) {
   let h = hex.replace('#', '').trim();
   if (h.length === 3) h = h.split('').map((c) => c + c).join('');
@@ -130,9 +115,7 @@ function contrastRatio(a, b) {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 0. Spec presente
-// ─────────────────────────────────────────────────────────────────────────────
+// Verificacion de presencia del archivo de especificacion
 category('0. Ley: fuente de verdad disponible');
 
 if (!exists(SPEC)) {
@@ -146,7 +129,7 @@ const specText = read(SPEC);
 
 // Extraer la paleta dual normativa de §9.1 (tabla Markdown con 3 columnas
 // de token: runtime, claro, oscuro). Formato:
-// | `--background` | `#F5F6F8` ... | `#0C0F16` ... | Lienzo base |
+// Extraccion de tokens y valores asociados por fila
 const section9 = specText.split(/^## 9\./m)[1] ?? specText;
 const section91 = section9.split(/^### 9\.2/m)[0] ?? section9;
 const section92 = section9.split(/^### 9\.2/m)[1]?.split(/^### 9\.3/m)[0] ?? '';
@@ -209,9 +192,7 @@ if (roleNames.length === 5) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 1. theme.css implementa la paleta §9.1
-// ─────────────────────────────────────────────────────────────────────────────
+// Cobertura de paleta dual en theme.css
 category('1. theme.css implementa la paleta §9.1');
 
 const THEME = path.join(UI_SRC, 'styles', 'theme.css');
@@ -281,9 +262,7 @@ if (!exists(THEME)) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 2. theme.css implementa la identidad por rol §9.2
-// ─────────────────────────────────────────────────────────────────────────────
+// Implementacion de identidad por rol en theme.css
 category('2. Identidad por rol §9.2 (data-role)');
 
 if (exists(THEME)) {
@@ -349,9 +328,7 @@ if (exists(THEME)) {
       );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 3. Contraste WCAG 2.1 AA calculado (§9.4)
-// ─────────────────────────────────────────────────────────────────────────────
+// Evaluacion de contraste WCAG 2.1 AA
 category('3. Contraste WCAG 2.1 AA (calculado, §9.4)');
 
 if (paletteTokens.length >= 8) {
@@ -424,15 +401,14 @@ if (paletteTokens.length >= 8) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 4. Inventario real del design system
-// ─────────────────────────────────────────────────────────────────────────────
+// Inventario de componentes y exportaciones de la libreria UI
 category('4. Inventario del design system (rutas reales)');
 
 const LAYERS = [
   { dir: path.join(UI_SRC, 'tokens'), label: 'tokens' },
-  { dir: path.join(UI_SRC, 'primitives'), label: 'primitives' },
-  { dir: path.join(UI_SRC, 'components', 'ui'), label: 'components/ui' },
+  { dir: path.join(UI_SRC, 'atoms'), label: 'atoms' },
+  { dir: path.join(UI_SRC, 'molecules'), label: 'molecules' },
+  { dir: path.join(UI_SRC, 'organisms'), label: 'organisms' },
   { dir: path.join(UI_SRC, 'composite'), label: 'composite' },
   { dir: path.join(UI_SRC, 'logo'), label: 'logo' },
 ];
@@ -443,10 +419,9 @@ for (const layer of LAYERS) {
     continue;
   }
   const files = walk(layer.dir, ['.ts', '.tsx']).filter(
-    (f) => !TEST_SUFFIXES.some((s) => f.endsWith(s)) && !STORY_SUFFIXES.some((s) => f.endsWith(s)),
+    (f) => !TEST_SUFFIXES.some((s) => f.endsWith(s)),
   );
   const tests = walkBySuffix(layer.dir, TEST_SUFFIXES);
-  const stories = walkBySuffix(layer.dir, STORY_SUFFIXES);
 
   files.length > 0
     ? pass(`Capa ${layer.label}/ tiene ${files.length} modulos`, 'OK', layer.dir)
@@ -461,33 +436,21 @@ for (const layer of LAYERS) {
       ? pass(`Capa ${layer.label}/ tiene suite de tests (${tests.length})`, 'OK', layer.dir)
       : fail(`Capa ${layer.label}/ sin suite de tests`, 'Capa sin cobertura', layer.dir);
   }
-
-  if (stories.length > 0) {
-    pass(`Capa ${layer.label}/ tiene stories (${stories.length})`, 'OK', layer.dir);
-  } else {
-    warn(`Capa ${layer.label}/ sin stories`, 'Sin catalogo Storybook para esta capa', layer.dir);
-  }
 }
 
-// Cada componente exportado por una capa debe tener story o estar cubierto.
-category('5. Cobertura Storybook por componente');
+// Cobertura de componentes (sin Storybook)
+category('5. Cobertura de componentes por capa');
 for (const layer of LAYERS) {
   if (!exists(layer.dir)) continue;
   const comps = walk(layer.dir, ['.tsx']).filter(
-    (f) => !TEST_SUFFIXES.some((s) => f.endsWith(s)) && !STORY_SUFFIXES.some((s) => f.endsWith(s)) && !f.endsWith('index.tsx'),
+    (f) => !TEST_SUFFIXES.some((s) => f.endsWith(s)) && !f.endsWith('index.tsx'),
   );
-  for (const comp of comps) {
-    const base = path.basename(comp, '.tsx');
-    const hasStory = fs.existsSync(path.join(path.dirname(comp), `${base}.stories.tsx`));
-    hasStory
-      ? pass(`${layer.label}/${base} tiene story`, 'OK', comp)
-      : warn(`${layer.label}/${base} sin story`, 'Componente sin catalogo Storybook', comp);
-  }
+  comps.length > 0
+    ? pass(`Capa ${layer.label}/ tiene ${comps.length} componentes`, 'OK', layer.dir)
+    : warn(`Capa ${layer.label}/ sin componentes`, 'Capa vacia', layer.dir);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 6. Modulos por rol (inventario real, sin inventar nombres)
-// ─────────────────────────────────────────────────────────────────────────────
+// Modulos de aplicacion por rol
 category('6. Modulos por rol (inventario real)');
 
 const MODULES_DIR = path.join(APP_SRC, 'modules');
@@ -505,11 +468,10 @@ if (!exists(MODULES_DIR)) {
     const pages = walk(dir, ['.tsx']).filter(
       (f) =>
         !TEST_SUFFIXES.some((s) => f.endsWith(s)) &&
-        !STORY_SUFFIXES.some((s) => f.endsWith(s)) &&
         !f.includes(`${path.sep}components${path.sep}`),
     );
     const tests = walkBySuffix(dir, TEST_SUFFIXES);
-    const stories = walkBySuffix(dir, STORY_SUFFIXES);
+  
 
     pages.length > 0
       ? pass(`Modulo ${role}/ tiene ${pages.length} paginas`, 'OK', dir)
@@ -519,15 +481,11 @@ if (!exists(MODULES_DIR)) {
       ? pass(`Modulo ${role}/ tiene suite de tests (${tests.length})`, 'OK', dir)
       : fail(`Modulo ${role}/ sin suite de tests`, 'Modulo sin cobertura', dir);
 
-    stories.length > 0
-      ? pass(`Modulo ${role}/ tiene stories (${stories.length})`, 'OK', dir)
-      : warn(`Modulo ${role}/ sin stories`, 'Modulo sin catalogo Storybook', dir);
+
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 7. Reglas Anti-IA §2.2 / §9.3 (busqueda estatica en el codigo)
-// ─────────────────────────────────────────────────────────────────────────────
+// Verificacion de reglas de diseno en fuentes
 category('7. Reglas Anti-IA generica (busqueda estatica)');
 
 const APP_FILES = walk(APP_SRC, ['.tsx', '.ts', '.css']);
@@ -555,9 +513,7 @@ for (const rule of ANTI_IA) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 8. Accesibilidad: patrones ARIA en el codigo de aplicacion
-// ─────────────────────────────────────────────────────────────────────────────
+// Patrones de accesibilidad ARIA
 category('8. Accesibilidad WCAG 2.2 (patrones en codigo)');
 
 const A11Y = [
@@ -579,9 +535,7 @@ for (const rule of A11Y) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 9. Arquitectura Clean (frontend)
-// ─────────────────────────────────────────────────────────────────────────────
+// Invariantes de arquitectura limpia
 category('9. Arquitectura Clean del frontend');
 
 const LAYERS_APP = [
@@ -600,7 +554,7 @@ for (const layer of LAYERS_APP) {
     : fail(`Capa ${layer.label} existe`, 'FALTA capa', layer.dir);
 }
 
-// Regla de dependencia: packages/ui NO importa de apps/frontend.
+// Regla de dependencia: packages/ui no importa de apps/frontend.
 const uiFiles = walk(UI_SRC, ['.ts', '.tsx']);
 const uiLeaks = uiFiles.filter((f) => /from\s+['"].*apps\/frontend/.test(read(f)));
 uiLeaks.length === 0
@@ -611,7 +565,7 @@ uiLeaks.length === 0
       UI_SRC,
     );
 
-// Regla de dependencia: modules/ NO hace fetch directo.
+// Regla de dependencia: modules no realiza llamadas directas a fetch.
 const moduleFiles = walk(MODULES_DIR, ['.tsx', '.ts']);
 const directFetch = moduleFiles.filter((f) => {
   const c = read(f);
@@ -626,9 +580,7 @@ directFetch.length === 0
       `${directFetch.length} archivo(s): ${directFetch.slice(0, 5).map((f) => path.relative(REPO, f)).join(', ')}`,
     );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 10. Configuracion de compuertas
-// ─────────────────────────────────────────────────────────────────────────────
+// Configuracion de compuertas de calidad
 category('10. Configuracion de las compuertas de calidad');
 
 const VITEST = path.join(ROOT, 'apps', 'frontend', 'vitest.config.ts');
@@ -669,7 +621,7 @@ if (exists(LHCI)) {
 if (exists(PKG)) {
   const pkg = JSON.parse(read(PKG));
   const scripts = pkg.scripts ?? {};
-  const REQUIRED = ['e2e', 'lighthouse', 'storybook', 'typecheck', 'test:run'];
+  const REQUIRED = ['e2e', 'lighthouse', 'typecheck', 'test:run'];
   for (const s of REQUIRED) {
     scripts[s]
       ? pass(`package.json expone script "${s}"`, scripts[s], PKG)
@@ -679,9 +631,7 @@ if (exists(PKG)) {
   fail('apps/frontend/package.json existe', 'FALTA', PKG);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 11. Specs del frontend presentes
-// ─────────────────────────────────────────────────────────────────────────────
+// Trazabilidad de especificaciones del frontend
 category('11. Specs del frontend (frontendSDD/)');
 
 const SDD_DIR = path.join(REPO, 'frontendSDD');
@@ -707,9 +657,7 @@ if (!exists(SDD_DIR)) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Report
-// ─────────────────────────────────────────────────────────────────────────────
+// Generacion de reporte de auditoria
 function report() {
   console.log('\n' + '='.repeat(78));
   console.log('  AUDITORIA DE DESIGN SYSTEM - ZENTRIC');

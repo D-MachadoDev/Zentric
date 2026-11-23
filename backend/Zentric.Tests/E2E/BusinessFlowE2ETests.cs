@@ -132,7 +132,7 @@ namespace Zentric.Tests.E2E
 
         /// <summary>
         /// Un vendedor que no es el dueno del producto no aprueba. Y responde 404, no 403: el
-        /// filtro de dueno (ADR-0013) oculta la existencia del recurso, no la del rol.
+        /// filtro de dueno (AD) oculta la existencia del recurso, no la del rol.
         /// </summary>
         [Fact]
         public async Task Devolucion_OtroVendedorNoApruebaYResponde404()

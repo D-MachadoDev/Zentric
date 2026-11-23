@@ -10,7 +10,7 @@ using Zentric.Domain.Users.ValueObjects;
 namespace Zentric.Tests.Application.Users
 {
     /// <summary>
-    /// Criterios de aceptacion de INV-05 (bloqueo y reactivacion de usuario).
+    /// Criterios de aceptacion de (bloqueo y reactivacion de usuario).
     ///
     /// La Ley (ZENTRIC.md, Dominio 1) dice que el estado del usuario es "Activo,
     /// Bloqueado, etc." pero no dice quien lo bloquea ni si es reversible: el dictamen
@@ -31,7 +31,7 @@ namespace Zentric.Tests.Application.Users
                 role);
         }
 
-        [Fact]
+        [Fact(DisplayName = "1. Bloqueo de Usuario Inexistente: Retorna NotFound sin modificar base de datos")]
         public async Task BlockUser_UnknownUser_ReturnsNotFound()
         {
             var repository = new FakeUserRepository();
@@ -46,11 +46,11 @@ namespace Zentric.Tests.Application.Users
         }
 
         /// <summary>
-        /// INV-05: bloquear cierra el acceso. El cambio tiene que persistirse, porque
+        /// bloquear cierra el acceso. El cambio tiene que persistirse, porque
         /// es lo que hace que <c>User.CanAuthenticate</c> falle y por tanto que el
         /// login rechace al usuario (LoginCommandHandler).
         /// </summary>
-        [Fact]
+        [Fact(DisplayName = "2. Bloqueo de Usuario Activo: Cambia estado a Blocked, revoca autenticación y persiste en BD")]
         public async Task BlockUser_ActiveUser_BlocksPersistsAndClosesAccess()
         {
             var repository = new FakeUserRepository();
@@ -71,7 +71,7 @@ namespace Zentric.Tests.Application.Users
         /// El agregado rechaza bloquear dos veces; la guarda debe salir como 400 y no
         /// propagarse al middleware global como 500.
         /// </summary>
-        [Fact]
+        [Fact(DisplayName = "3. Doble Bloqueo Rechazado: Intentar bloquear a un usuario ya bloqueado retorna error de validación")]
         public async Task BlockUser_AlreadyBlocked_ReturnsValidationFailure()
         {
             var repository = new FakeUserRepository();
@@ -88,10 +88,10 @@ namespace Zentric.Tests.Application.Users
         }
 
         /// <summary>
-        /// INV-05, decision del Owner 2026-10-04: bloquear no cascadea. Los productos
+        /// , decision del Owner 2026-10-04: bloquear no cascadea. Los productos
         /// del Vendedor siguen Published y lo unico que cambia es su propio acceso.
         /// </summary>
-        [Fact]
+        [Fact(DisplayName = "4. No Cascada a Catálogo: Bloquear vendedor inhabilita su cuenta sin alterar visibilidad de productos")]
         public async Task BlockUser_DoesNotCascadeIntoProducts()
         {
             var repository = new FakeUserRepository();
@@ -107,7 +107,7 @@ namespace Zentric.Tests.Application.Users
             Assert.False(user.CanAuthenticate);
         }
 
-        [Fact]
+        [Fact(DisplayName = "5. Bloqueo de Usuario Eliminado: Rechaza bloquear a un usuario previamente eliminado")]
         public async Task BlockUser_DeletedUser_ReturnsValidationFailure()
         {
             var repository = new FakeUserRepository();
@@ -122,7 +122,7 @@ namespace Zentric.Tests.Application.Users
             Assert.Contains("deleted", result.Error);
         }
 
-        [Fact]
+        [Fact(DisplayName = "6. Activación de Usuario Inexistente: Retorna NotFound")]
         public async Task ActivateUser_UnknownUser_ReturnsNotFound()
         {
             var handler = new ActivateUserCommandHandler(new FakeUserRepository(), new FakeUnitOfWork());
@@ -133,7 +133,7 @@ namespace Zentric.Tests.Application.Users
             Assert.Equal(Zentric.Application.Common.Models.ErrorKind.NotFound, result.ErrorKind);
         }
 
-        [Fact]
+        [Fact(DisplayName = "7. Reactivación de Cuenta Bloqueada: Restaura estado Activo, permite autenticación y guarda cambios")]
         public async Task ActivateUser_BlockedUser_RestoresAccessAndSaves()
         {
             var repository = new FakeUserRepository();
@@ -151,7 +151,7 @@ namespace Zentric.Tests.Application.Users
             Assert.True(unitOfWork.SaveChangesCalled);
         }
 
-        [Fact]
+        [Fact(DisplayName = "8. Doble Activación Rechazada: Intentar activar a un usuario ya activo retorna error de validación")]
         public async Task ActivateUser_AlreadyActive_ReturnsValidationFailure()
         {
             var repository = new FakeUserRepository();

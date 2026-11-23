@@ -14,16 +14,15 @@ namespace Zentric.Application.Returns.Queries
     /// Devuelve el MISMO <see cref="ReturnRequestDto"/> que el detalle. No se crea un DTO de fila
     /// aparte a proposito: el mismo dato no debe tener dos formas segun de que pantalla venga.
     /// </summary>
-    public record GetReturnsQuery(Guid CallerId, UserRole CallerRole, ReturnStatus? Status)
-        : IRequest<Result<IReadOnlyList<ReturnRequestDto>>>;
+    public record GetReturnsQuery(Guid CallerId, UserRole CallerRole, ReturnStatus? Status, int Page = 0, int Size = PageRequest.DefaultPageSize) : IRequest<Result<PagedResult<ReturnRequestDto>>>;
 
-    public class GetReturnsQueryHandler : IRequestHandler<GetReturnsQuery, Result<IReadOnlyList<ReturnRequestDto>>>
+    public class GetReturnsQueryHandler : IRequestHandler<GetReturnsQuery, Result<PagedResult<ReturnRequestDto>>>
     {
         private readonly IReturnRequestRepository _returnRepository;
 
         public GetReturnsQueryHandler(IReturnRequestRepository returnRepository) => _returnRepository = returnRepository;
 
-        public async Task<Result<IReadOnlyList<ReturnRequestDto>>> Handle(
+        public async Task<Result<PagedResult<ReturnRequestDto>>> Handle(
             GetReturnsQuery request, CancellationToken cancellationToken)
         {
             // Mismo reparto de roles que el detalle, para que listar y abrir no discrepen:
@@ -61,7 +60,10 @@ namespace Zentric.Application.Returns.Queries
                     ret.CreatedAt))
                 .ToList();
 
-            return Result<IReadOnlyList<ReturnRequestDto>>.Success(items);
+            var page = new PageRequest(request.Page, request.Size);
+            var paged = items.Skip(page.Skip).Take(page.Take).ToList();
+            return Result<PagedResult<ReturnRequestDto>>.Success(new PagedResult<ReturnRequestDto>(paged, page.Page, page.Size, items.Count));
         }
     }
 }
+

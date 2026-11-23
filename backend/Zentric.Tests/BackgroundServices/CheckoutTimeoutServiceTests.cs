@@ -271,5 +271,22 @@ namespace Zentric.Tests.BackgroundServices
             await service.StopAsync(CancellationToken.None);
             await startTask;
         }
+
+        [Fact]
+        public async Task BackgroundService_StopAndDispose_AreIdempotent()
+        {
+            var service = new CheckoutTimeoutService(
+                CreateServiceProvider(),
+                _loggerMock.Object,
+                _clock,
+                _dispatcherMock.Object);
+
+            await service.StartAsync(CancellationToken.None);
+
+            await service.StopAsync(CancellationToken.None);
+            await service.StopAsync(CancellationToken.None);
+            service.Dispose();
+            service.Dispose();
+        }
     }
 }

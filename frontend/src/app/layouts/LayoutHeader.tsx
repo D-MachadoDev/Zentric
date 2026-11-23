@@ -1,0 +1,114 @@
+import { useState, useRef, type ReactNode } from 'react';
+import { LogOut, Menu } from 'lucide-react';
+import { useAuth } from '../providers/authContext';
+import { NOMBRES_DE_ROL } from '../../core';
+import { Button } from '@zentric/ui';
+import { LogoMark } from '@zentric/ui/logo';
+import { ThemeToggle } from '../components/ThemeToggle';
+
+interface LayoutHeaderProps {
+  title?: string;
+  onToggleSidebar?: () => void;
+  /** Densa (h-14) para el Tablero de Colas logístico; estándar h-16 (sección 9.6). */
+  dense?: boolean;
+  children?: ReactNode;
+}
+
+/**
+ * Cabecera superior unificada de contexto operativo.
+ *
+ * Muestra:
+ * - Botón de menú móvil / colapso lateral.
+ * - Título del módulo o sección.
+ * - Chip de rol con el isotipo Z coloreado por el acento del rol.
+ * - Identidad del usuario (nombre / correo) en Geist Sans y Geist Mono.
+ * - Selector de tema dual y cierre de sesión en RAM (AD).
+ */
+export function LayoutHeader({ title, onToggleSidebar, dense = false, children }: LayoutHeaderProps) {
+  const { user, role, logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const activeRole = role ?? user?.role ?? null;
+  const lastKnownRoleLabelRef = useRef<string>(activeRole ? NOMBRES_DE_ROL[activeRole] : 'Sin Rol');
+
+  if (activeRole) {
+    lastKnownRoleLabelRef.current = NOMBRES_DE_ROL[activeRole];
+  }
+
+  // Durante el proceso de logout congelamos el último rol conocido para evitar el parpadeo 'Sin Rol'
+  const roleLabel = isLoggingOut
+    ? lastKnownRoleLabelRef.current
+    : activeRole
+      ? NOMBRES_DE_ROL[activeRole]
+      : 'Sin Rol';
+
+  const handleLogout = (): void => {
+    setIsLoggingOut(true);
+    try {
+      logout();
+      window.location.href = '/login';
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  return (
+    <header
+      aria-label="Cabecera operativa principal"
+      className={`sticky top-0 z-20 flex w-full items-center justify-between border-b border-border bg-surface/95 px-4 backdrop-blur-md sm:px-6 overscroll-contain ${
+        dense ? 'h-14' : 'h-16'
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        {onToggleSidebar && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleSidebar}
+            aria-label="Alternar menú lateral"
+            className="text-foreground-muted hover:text-foreground md:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
+        {title && <h2 className="text-base font-semibold text-foreground sm:text-lg">{title}</h2>}
+        {children}
+      </div>
+
+      <div className="flex items-center gap-4">
+        {/* Identidad de usuario y rol con el isotipo Z coloreado por rol */}
+        <div className="flex items-center gap-3">
+          <div className="hidden text-right sm:block">
+            <p className="text-sm font-medium text-foreground">{user?.fullName ?? 'Usuario Zentric'}</p>
+            <p className="font-mono text-xs text-foreground-muted">{user?.email ?? ''}</p>
+          </div>
+
+          <div
+            className="flex items-center gap-1.5 rounded-full border border-brand/25 bg-brand/10 px-2.5 py-1"
+            title={`Rol: ${roleLabel}`}
+          >
+            <LogoMark className="size-3.5 shrink-0 text-brand" />
+            <span className="text-xs font-medium text-brand">{roleLabel}</span>
+          </div>
+        </div>
+
+        {/* Selector de Tema Dual (Porcelana / Grafito) */}
+        <ThemeToggle />
+
+        {/* Botón de cierre de sesión */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          aria-label="Cerrar sesión"
+          className="text-foreground-muted hover:bg-danger/10 hover:text-danger"
+          title="Cerrar sesión activa"
+        >
+          <LogOut className="h-4 w-4" />
+          <span className="hidden md:inline">Salir</span>
+        </Button>
+      </div>
+    </header>
+  );
+}

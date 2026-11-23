@@ -77,13 +77,9 @@ jobs:
       - name: Build production bundle
         run: pnpm build
 
-      - name: Vitest Coverage Gate (@zentric/ui >=90%)
-        working-directory: frontend/packages/ui
-        run: pnpm exec vitest run --coverage
-
-      - name: Vitest Coverage Gate (@zentric/frontend >=90%)
-        working-directory: frontend/apps/frontend
-        run: pnpm exec vitest run --coverage
+      - name: Vitest Coverage Gate (frontend >=90%)
+        working-directory: frontend
+        run: pnpm test:coverage
 
   build-production-images:
     name: Build & Validate Multi-Stage Production Images
@@ -117,6 +113,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy-production:
+    if: github.event_name == 'workflow_dispatch'
     name: Production Rollout & Migration Gate (zentric.me)
     runs-on: ubuntu-latest
     needs: [build-production-images]
@@ -151,7 +148,7 @@ jobs:
               git checkout main
               git reset --hard origin/main
             else
-              git clone -b main https://github.com/zentric/zentric.git .
+              git clone -b main https://github.com/D-MachadoDev/Zentric.git .
             fi
 
             # 2. Validar presencia y completitud de variables críticas en .env
@@ -178,7 +175,7 @@ jobs:
             echo "--- Paso 5: Ejecutando Sondeo de Disponibilidad y Salud ---"
             MAX_ATTEMPTS=15
             ATTEMPT=1
-            LOCAL_HEALTH_URL="http://127.0.0.1:5076/health"
+            LOCAL_HEALTH_URL="http://127.0.0.1:15433/health"
             SUCCESS=0
 
             while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do

@@ -10,8 +10,7 @@ using Zentric.Application.Users.Commands;
 namespace Zentric.Api.Controllers
 {
     /// <summary>
-    /// Autenticacion de usuarios. Introduce RG-01 ("toda operacion debe
-    /// ejecutarse por un usuario autenticado"), segun ADR-0009.
+    /// Autenticacion de usuarios y emision de tokens JWT.
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
@@ -81,7 +80,7 @@ namespace Zentric.Api.Controllers
 
             // Las claims se buscan primero por su nombre literal: el validador de
             // .NET 10 no reescribe los tipos de claim entrantes, y el rol se emite
-            // con el URI de ClaimTypes.Role (ADR-0009). Ambas busquedas quedan aqui
+            // con el URI de ClaimTypes.Role. Ambas busquedas quedan aqui
             // para que el contrato no dependa de que el mapeo este activo o no.
             return Ok(new CurrentUserResponse(
                 principal.FindFirst("sub")?.Value ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty,
@@ -95,8 +94,80 @@ namespace Zentric.Api.Controllers
                 principal.FindFirst("role")?.Value
                     ?? principal.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty));
         }
+
+        /// <summary>
+        /// Solicita el restablecimiento de contraseña para un correo electrónico.
+        /// Aplica respuesta uniforme (anti-enumeración de cuentas).
+        /// </summary>
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ForgotPasswordResponse), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            var command = new ForgotPasswordCommand(request.Email);
+            await _mediator.Send(command);
+
+            return Ok(new ForgotPasswordResponse(
+                "Si la dirección de correo electrónico está registrada, recibirás un enlace para restablecer tu contraseña."));
+        }
+
+        /// <summary>
+        /// Valida la vigencia y existencia de un token de restablecimiento de contraseña.
+        /// </summary>
+        [HttpGet("validate-reset-token")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ValidateResetTokenResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ValidateResetToken([FromQuery] string token)
+        {
+            var query = new Zentric.Application.Users.Queries.ValidateResetTokenQuery(token);
+            var result = await _mediator.Send(query);
+
+            if (result.IsFailure)
+            {
+                return BadRequest(new ProblemDetails
+                {
+                    Title = "Token inválido o expirado",
+                    Detail = result.Error,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+
+            return Ok(new ValidateResetTokenResponse(true));
+        }
+
+        /// <summary>
+        /// Restablece la contraseña de un usuario consumiendo un token válido de un solo uso.
+        /// </summary>
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ResetPasswordResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            var command = new ResetPasswordCommand(request.Token, request.NewPassword);
+            var result = await _mediator.Send(command);
+
+            if (result.IsFailure)
+            {
+                return BadRequest(new ProblemDetails
+                {
+                    Title = "Error al restablecer contraseña",
+                    Detail = result.Error,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+
+            return Ok(new ResetPasswordResponse("Tu contraseña ha sido actualizada exitosamente."));
+        }
     }
 
     /// <summary>Identidad declarada por el token vigente.</summary>
     public sealed record CurrentUserResponse(string UserId, string Email, string FullName, string Role);
+
+    public sealed record ForgotPasswordRequest(string Email);
+    public sealed record ForgotPasswordResponse(string Message);
+    public sealed record ValidateResetTokenResponse(bool Valid);
+    public sealed record ResetPasswordRequest(string Token, string NewPassword);
+    public sealed record ResetPasswordResponse(string Message);
 }

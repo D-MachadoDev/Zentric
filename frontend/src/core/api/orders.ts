@@ -1,0 +1,221 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type {
+  AddCartItemInput,
+  ListOrdersPagedParams,
+  Order,
+  OrderListItem,
+  OrderStatus,
+  SellerOrderView,
+  UpdateCartItemQuantityInput,
+  ZentricApiPort,
+} from '../types';
+import { queryKeys } from './queryKeys';
+import { resolveApi } from './apiContext';
+
+/**
+ * Hook de consulta para listar pedidos (sin paginar - legacy).
+ */
+export function useOrdersQuery(
+  status?: OrderStatus | string,
+  api?: ZentricApiPort,
+  options?: { enabled?: boolean },
+) {
+  return useQuery({
+    queryKey: queryKeys.orders.list({ status }),
+    queryFn: ({ signal }) => resolveApi(api).listOrders(status, signal),
+    enabled: options?.enabled,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Hook de consulta para listar pedidos paginados (server-side).
+ * El backend filtra, pagina y ordena; el frontend solo renderiza.
+ */
+export function useOrdersPagedQuery(
+  params?: ListOrdersPagedParams,
+  api?: ZentricApiPort,
+  options?: { enabled?: boolean },
+) {
+  return useQuery({
+    queryKey: queryKeys.orders.listPaged(params),
+    queryFn: ({ signal }) => resolveApi(api).listOrdersPaged(params, signal),
+    enabled: options?.enabled,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Hook de consulta para consultar un pedido por id.
+ */
+export function useOrderQuery(id: string, api?: ZentricApiPort) {
+  return useQuery({
+    queryKey: queryKeys.orders.detail(id),
+    queryFn: ({ signal }) => resolveApi(api).getOrderById(id, signal),
+    enabled: Boolean(id),
+  });
+}
+
+/**
+ * Hook de mutación para crear un nuevo carrito.
+ */
+export function useCreateCartMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => resolveApi(api).createCart(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para añadir una línea al carrito.
+ */
+export function useAddCartItemMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: AddCartItemInput) => resolveApi(api).addCartItem(input),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para eliminar una línea del carrito.
+ * Invalida ['orders', 'detail', orderId] y ['orders', 'all'].
+ */
+export function useRemoveCartItemMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ orderId, variantId }: { orderId: string; variantId: string }) =>
+      resolveApi(api).removeCartItem(orderId, variantId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para actualizar la cantidad de una línea del carrito.
+ * Invalida ['orders', 'detail', orderId] y ['orders', 'all'].
+ */
+export function useUpdateCartItemQuantityMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: UpdateCartItemQuantityInput) =>
+      resolveApi(api).updateCartItemQuantity(input.orderId, input.variantId, input.quantity),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para ejecutar el checkout atómico (ventana de 15 minutos).
+ * Invalida ['orders'], ['inventories'] y ['fulfillments'].
+ */
+export function useCheckoutOrderMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (orderId: string) => resolveApi(api).checkoutOrder(orderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventories.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.fulfillments.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para cancelar manualmente un pedido propio en estado Cart o PendingPayment
+ * y liberar inmediatamente su reserva de stock (sin esperar los 15 minutos).
+ */
+export function useCancelOrderMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      const port = resolveApi(api);
+      if (port.cancelOrder) {
+        await port.cancelOrder(orderId);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventories.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+    },
+  });
+}
+
+/**
+ * Hook de mutación para pagar un pedido confirmado.
+ * Invalida ['orders'], ['fulfillments'] y ['invoices'].
+ */
+export function usePayOrderMutation(api?: ZentricApiPort) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (orderId: string) => resolveApi(api).payOrder(orderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.fulfillments.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}
+
+// ── Clases de servicio heredadas ──────────────────────────────────────────
+
+export class CrearCarritoService {
+  constructor(private readonly api: ZentricApiPort) {}
+
+  ejecutar(): Promise<string> {
+    return this.api.createCart();
+  }
+}
+
+export { CrearCarritoService as AbrirCarritoService };
+
+
+export class AgregarLineaCarritoService {
+  constructor(private readonly api: ZentricApiPort) {}
+
+  ejecutar(input: AddCartItemInput): Promise<void> {
+    return this.api.addCartItem(input);
+  }
+}
+
+export class ConsultarPedidoService {
+  constructor(private readonly api: ZentricApiPort) {}
+
+  ejecutar(id: string): Promise<Order | SellerOrderView> {
+    return this.api.getOrderById(id);
+  }
+}
+
+export class ListarPedidosService {
+  constructor(private readonly api: ZentricApiPort) {}
+
+  ejecutar(status?: string): Promise<OrderListItem[]> {
+    return this.api.listOrders(status);
+  }
+}
+
+export class PagarPedidoService {
+  constructor(private readonly api: ZentricApiPort) {}
+
+  ejecutar(orderId: string): Promise<void> {
+    return this.api.payOrder(orderId);
+  }
+}

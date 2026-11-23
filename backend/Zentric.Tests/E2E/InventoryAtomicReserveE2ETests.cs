@@ -8,14 +8,14 @@ using Zentric.Infrastructure.Persistence.Models;
 namespace Zentric.Tests.E2E
 {
     /// <summary>
-    /// INV-01 / ADR-0025: la garantia de no-negatividad vive en un UPDATE condicional
+    /// / ADla garantia de no-negatividad vive en un UPDATE condicional
     /// sobre PostgreSQL real, no en un almacen en memoria.
     ///
     /// El proveedor in-memory no serializa dos escrituras simultaneas sobre la misma
     /// fila, asi que una prueba ahi no probaria nada: el defecto que cierra este ADR
     /// (dos peticiones que descuentan de la misma copia) solo existe con conexiones
     /// reales separadas. Por eso la prueba corre contra el contenedor efimero de la
-    /// coleccion E2E (ADR-0016), con un hilo por alcance de DI y por tanto una
+    /// coleccion E2E (AD), con un hilo por alcance de DI y por tanto una
     /// conexion a la base por hilo.
     /// </summary>
     [Collection(ApiCollection.Name)]
@@ -154,7 +154,7 @@ namespace Zentric.Tests.E2E
         }
 
         /// <summary>
-        /// La liberacion (compensacion de ADR-0001) es el espejo atomico de la
+        /// La liberacion (compensacion de AD) es el espejo atomico de la
         /// reserva: solo resta reservado si la fila aun lo tiene, y repone el
         /// disponible exactamente lo que retiro.
         /// </summary>

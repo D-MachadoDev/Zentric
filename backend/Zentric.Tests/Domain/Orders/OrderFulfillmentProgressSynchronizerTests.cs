@@ -10,8 +10,8 @@ namespace Zentric.Tests.Domain.Orders
 {
     /// <summary>
     /// El pedido maestro refleja el minimo comun de SUS despachos. Un despacho
-    /// cancelado por quiebre de stock (EXC-01) no se entrega nunca, asi que si se contara
-    /// bloquearia al pedido para siempre. El dinero de esa linea se salda por EXC-02.
+    /// cancelado por quiebre de stock  no se entrega nunca, asi que si se contara
+    /// bloquearia al pedido para siempre. El dinero de esa linea se salda por .
     /// </summary>
     public class OrderFulfillmentProgressSynchronizerTests
     {
@@ -80,7 +80,7 @@ namespace Zentric.Tests.Domain.Orders
         public void Synchronize_EveryDeliveryCancelled_LeavesTheOrderPaid()
         {
             // Sin ninguna entrega no hay nada que entregar: marcar el pedido como
-            // Delivered seria mentir. Se deja en Paid y la linea se resuelve por EXC-02.
+            // Delivered seria mentir. Se deja en Paid y la linea se resuelve por .
             var order = PaidOrder();
             order.AddItem(Guid.NewGuid(), Guid.NewGuid(), 1, new Zentric.Domain.Products.ValueObjects.Money(100m, "COP"));
             order.Checkout();

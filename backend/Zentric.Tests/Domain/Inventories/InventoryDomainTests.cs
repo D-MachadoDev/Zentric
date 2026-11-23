@@ -60,6 +60,13 @@ namespace Zentric.Tests.Domain.Inventories
         }
 
         [Fact]
+        public void Constructor_NegativeUsedQuantity_ThrowsArgumentOutOfRangeException()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                new Inventory(Guid.NewGuid(), Guid.NewGuid(), 10, 0, 0, -1));
+        }
+
+        [Fact]
         public void DispatchStock_ValidQuantity_ReducesReservedQuantity()
         {
             var inv = new Inventory(Guid.NewGuid(), Guid.NewGuid(), 10, 5, 0);
@@ -130,6 +137,44 @@ namespace Zentric.Tests.Domain.Inventories
         {
             var inv = new Inventory(Guid.NewGuid(), Guid.NewGuid(), 10, 0, 0);
             Assert.Throws<ArgumentOutOfRangeException>(() => inv.ReturnToUsedStock(qty));
+        }
+
+        [Fact]
+        public void MarkAsDeleted_WithUsedQuantity_ThrowsInvalidOperationException()
+        {
+            var inv = new Inventory(Guid.NewGuid(), Guid.NewGuid(), 0, 0, 0, usedQuantity: 5);
+
+            var ex = Assert.Throws<InvalidOperationException>(() => inv.MarkAsDeleted());
+            Assert.Contains("existencias físicas", ex.Message);
+            Assert.False(inv.IsDeleted);
+        }
+
+        [Theory]
+        [InlineData(1, 0, 0, 0)]
+        [InlineData(0, 1, 0, 0)]
+        [InlineData(0, 0, 1, 0)]
+        [InlineData(0, 0, 0, 1)]
+        [InlineData(3, 2, 1, 4)]
+        public void MarkAsDeleted_WithAnyPhysicalStock_ThrowsInvalidOperationException(
+            int available, int reserved, int damaged, int used)
+        {
+            var inv = new Inventory(Guid.NewGuid(), Guid.NewGuid(), available, reserved, damaged, used);
+
+            var ex = Assert.Throws<InvalidOperationException>(() => inv.MarkAsDeleted());
+            Assert.Contains("existencias físicas", ex.Message);
+            Assert.False(inv.IsDeleted);
+        }
+
+        [Fact]
+        public void MarkAsDeleted_WithZeroStock_MarksAsDeleted()
+        {
+            var inv = new Inventory(Guid.NewGuid(), Guid.NewGuid(), 0, 0, 0, 0);
+
+            inv.MarkAsDeleted();
+
+            Assert.True(inv.IsDeleted);
+            Assert.NotNull(inv.DeletedAt);
+            Assert.Equal(inv.DeletedAt.Value, inv.UpdatedAt);
         }
     }
 }

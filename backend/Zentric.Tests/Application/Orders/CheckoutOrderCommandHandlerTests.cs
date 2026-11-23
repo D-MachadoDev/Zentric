@@ -43,7 +43,7 @@ namespace Zentric.Tests.Application.Orders
             _userRepoMock = new Mock<IUserRepository>();
             _uowMock = new Mock<IUnitOfWork>();
 
-            // ADR-0025: la reserva es ahora un UPDATE condicional atomico en la base
+            // ADla reserva es ahora un UPDATE condicional atomico en la base
             // (TryReserveStockAsync). El mock acepta la reserva por defecto para que
             // los flujos de exito lleguen hasta SaveChanges; el rechazo (false) se
             // prueba en InventoryReservationServiceTests con el fake que simula la
@@ -167,7 +167,7 @@ namespace Zentric.Tests.Application.Orders
         }
 
         /// <summary>
-        /// CAT-02 / H-16: un producto Digital no lleva logistica ni stock, asi que un
+        /// CA/ un producto Digital no lleva logistica ni stock, asi que un
         /// carrito solo digital debe poder hacer checkout sin existencias y sin generar
         /// despachos. Antes la reserva exigia stock para todos los items y el checkout
         /// fallaba con "Not enough stock".
@@ -255,7 +255,7 @@ namespace Zentric.Tests.Application.Orders
         }
 
         /// <summary>
-        /// INV-05 (decision del Owner 2026-10-04): el checkout rechaza cualquier
+        /// (decision del Owner 2026-10-04): el checkout rechaza cualquier
         /// carrito que contenga un producto de un Vendedor bloqueado. Los productos
         /// siguen Published (no hay cascada), asi que esta comprobacion es la unica
         /// barrera que impide la venta. Debe ejecutarse ANTES de reservar stock,

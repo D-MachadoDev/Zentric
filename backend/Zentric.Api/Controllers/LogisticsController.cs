@@ -1,4 +1,5 @@
 using Zentric.Application.Common.Messaging;
+using Zentric.Application.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
@@ -84,7 +85,7 @@ namespace Zentric.Api.Controllers
         /// Marca la orden de fulfillment como empacada (PendingPack → Packed).
         /// </summary>
         /// <remarks>
-        /// ADDENDUM Dominio 8, estado 2: "Empacado: Listo para recolección". Sin este paso el ciclo
+        /// "Empacado: Listo para recolección". Sin este paso el ciclo
         /// no avanzaba: <c>Dispatch()</c> exige estar Packed, de modo que un paquete creado
         /// directamente en Pendiente de Empaque no podia despacharse por HTTP.
         /// </remarks>
@@ -113,7 +114,7 @@ namespace Zentric.Api.Controllers
         /// Confirma la entrega de la orden de fulfillment (Dispatched → Delivered).
         /// </summary>
         /// <remarks>
-        /// ADDENDUM Dominio 8, estado 4: "Entregado: Recibido por el comprador". Solo el Operador
+        /// "Entregado: Recibido por el comprador". Solo el Operador
         /// Logistico puede ejecutarla (dictamen del Owner 2026-10-01); el Comprador y el Vendedor
         /// la consultan pero no la cierran.
         /// </remarks>
@@ -158,7 +159,7 @@ namespace Zentric.Api.Controllers
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
             // El despacho ajeno se trata como inexistente. El Operador tambien puede
-            // reportar el faltante: la regla esta DICTADA (ADR-0014) y abre la politica
+            // reportar el faltante: la regla esta DICTADA  y abre la politica
             // al Operador, no solo al Vendedor.
             var result = await _mediator.Send(command with { CallerId = userId.Value, CallerRole = role.Value });
             if (result.IsFailure) return result.ToProblem();
@@ -176,16 +177,18 @@ namespace Zentric.Api.Controllers
         /// Operador, Administrador y Supervisor ven la cola completa, que es su pantalla de trabajo.
         /// El filtro no es un parametro: no hay forma de pedir los de otro.
         /// </remarks>
-        /// <param name="status">Filtro opcional por estado del despacho, por nombre (ADR-0012).</param>
+        /// <param name="status">Filtro opcional por estado del despacho, por nombre .</param>
+        /// <param name="page">P�gina (1-based).</param>
+        /// <param name="size">Tama�o de p�gina.</param>
         /// <response code="200">Listado de despachos visibles para el llamante.</response>
         /// <response code="400">El estado indicado no es un <c>FulfillmentStatus</c> valido (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
         [HttpGet("fulfillments")]
         [Authorize(Policy = AuthorizationPolicies.FulfillmentRead)]
-        [ProducesResponseType(typeof(IReadOnlyList<Zentric.Application.Logistics.Queries.FulfillmentOrderDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(Zentric.Application.Common.Models.PagedResult<Zentric.Application.Logistics.Queries.FulfillmentOrderDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetFulfillments([FromQuery] string? status)
+        public async Task<IActionResult> GetFulfillments([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int size = 20)
         {
             var userId = _currentUser.UserId;
             var role = User.GetUserRole();
@@ -193,7 +196,7 @@ namespace Zentric.Api.Controllers
 
             Zentric.Domain.Logistics.Enums.FulfillmentStatus? parsed = null;
 
-            // Estado por nombre (ADR-0012). Un valor desconocido es 400 explicito y NO un filtro
+            // Estado por nombre . Un valor desconocido es 400 explicito y NO un filtro
             // ignorado: devolver la cola completa mientras el usuario cree estar filtrando seria el
             // peor fallo posible de este endpoint.
             if (!string.IsNullOrWhiteSpace(status))
@@ -211,7 +214,7 @@ namespace Zentric.Api.Controllers
             }
 
             var result = await _mediator.Send(
-                new Zentric.Application.Logistics.Queries.GetFulfillmentsQuery(userId.Value, role.Value, parsed));
+                new Zentric.Application.Logistics.Queries.GetFulfillmentsQuery(userId.Value, role.Value, parsed, page - 1, size));
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
@@ -247,3 +250,6 @@ namespace Zentric.Api.Controllers
         }
     }
 }
+
+
+

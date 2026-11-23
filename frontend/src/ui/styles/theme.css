@@ -1,0 +1,367 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+/* Incluye las clases usadas por las capas del design system en el bundle. */
+@source "../";
+/* Utilidades y variantes que los componentes shadcn (Q5/Q14) usan. Es el
+   fichero vendored de shadcn/ui (MIT); ver su cabecera por el por que no se
+   depende del paquete npm `shadcn` (arrastraria 237 deps de la CLI por un
+   solo CSS de 16 KB). 0 colores, 0 fuentes, 0 radios: no pisa el tema. */
+@import './shadcn-tailwind.css';
+
+/* Geist (Q8-B): bundle local, sin CDN remota bloqueante (seccion 2.2).
+   Sin estos imports la familia se DECLARA abajo pero nunca se CARGA y el
+   navegador cae a system-ui en silencio. El nombre real que declara el paquete
+   es 'Geist Variable', no 'Geist Sans Variable'. */
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================================
+   ZENTRIC DESIGN SYSTEM v2 — "Porcelana y Grafito" (ADDENDUM sección 9)
+   ----------------------------------------------------------------------------
+   Arquitectura de tema (decision dictada por Owner en /grill-me):
+   1. UNA sola fuente de verdad de color: ESTE fichero. global.css ya no pisa
+      tokens (el dual theme v1 fallaba por dos fuentes en conflicto).
+   2. Tokens RUNTIME con nombres finales (:root = claro, .dark = oscuro): los
+      componentes y el CSS plano referencian var(--background), var(--brand)...
+      directamente, en cualquier modo.
+   3. `@theme inline` puentea cada token runtime a su utilidad Tailwind v4
+      (bg-brand -> var(--brand)); al ser inline, las utilidades resuelven el
+      valor EN USO, asi .dark y [data-role] funcionan sin recompilar.
+   4. Identidad por rol: cada layout de rol ancla su raiz con data-role="..."
+      y el scope remapea SOLO el eje de acento (--brand/--brand-strong).
+      --primary y --ring derivan de --brand por var(), asi que foco, botones
+      primarios, links y chips de rol cambian de identidad sin tocar componentes.
+   5. Contraste WCAG 2.1 AA verificado programaticamente para AMBOS modos y
+      los 5 acentos (Frontend-Design-System.md sección 9.4).
+   ========================================================================== */
+
+:root {
+  /* --- Modo Claro "OLED Minimalist + Technical Emerald" --- */
+  --background: #FFFFFF;                  /* Lienzo blanco galería limpio */
+  --surface: #FFFFFF;                     /* Tarjeta nítida arquitectónica */
+  --surface-muted: #F4F4F5;               /* Zinc 100 neutro, sin tonos beige ni ecru */
+  --surface-secondary: #FAFAFA;           /* Zinc 50 para footers y barras secundarias */
+  --border: #E4E4E7;                      /* Zinc 200, borde arquitectónico nítido */
+  --border-subtle: #F4F4F5;               /* Divisorio interno Zinc 100 */
+
+  /* Tipografía neutra (Zinc 950/500/400) */
+  --foreground: #09090B;                  /* Negro tinta Zinc 950 (19:1 contraste sobre blanco) */
+  --foreground-muted: #71717A;            /* Zinc 500 texto secundario accesible */
+  --foreground-subtle: #A1A1AA;           /* Zinc 400 subheadings y etiquetas */
+
+  /* Estados de dominio */
+  --success: #059669;                     /* Esmeralda técnico para stock verificado en bodega */
+  --warning: #D97706;
+  --danger: #DC2626;
+  --info: #2563EB;
+
+  /* Acento de marca y Botón Primario */
+  --brand: #09090B;                       /* Botón primario de compra negro sólido de alta gama */
+  --brand-strong: #18181B;                /* Hover botón primario */
+
+  /* Texto sobre relleno de acento (botón primario) */
+  --primary-foreground: #FFFFFF;
+
+  /* Acentos de Producto y Editorial */
+  --accent-burgundy: #DC2626;             /* Precios destacados y alertas */
+  --accent-gold: #F59E0B;                 /* Estrellas doradas limpias */
+  --action-badge: #09090B;                /* Badge negro para carrito */
+
+  /* Contrato semántico shadcn */
+  --primary: var(--brand);
+  --secondary: var(--surface-muted);
+  --secondary-foreground: var(--foreground);
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--foreground-muted);
+  --accent: var(--surface-muted);
+  --accent-foreground: var(--foreground);
+  --destructive: var(--danger);
+  --destructive-foreground: #FFFFFF;
+  --input: #E4E4E7;
+  --input-active: #09090B;
+  --ring: var(--brand);
+
+  color-scheme: light;
+}
+
+.dark {
+  /* --- Modo Oscuro "OLED Minimalist + Technical Emerald" --- */
+  --background: #000000;                  /* Negro OLED absoluto, contraste infinito */
+  --surface: #09090B;                     /* Zinc 950 tarjetas de producto */
+  --surface-muted: #18181B;               /* Zinc 900 bloques teaser oscuros */
+  --surface-secondary: #0C0C0E;           /* Deep zinc footers y barras */
+  --border: #27272A;                      /* Zinc 800 borde sutil */
+  --border-subtle: #18181B;               /* Zinc 900 divisorio interno oscuro */
+
+  /* Tipografía neutra (Zinc 50/400/500) */
+  --foreground: #FAFAFA;                  /* Zinc 50 blanco marfil */
+  --foreground-muted: #A1A1AA;            /* Zinc 400 */
+  --foreground-subtle: #71717A;           /* Zinc 500 */
+
+  --success: #10B981;                     /* Esmeralda luminoso para stock verificado en oscuro */
+  --warning: #FBBF24;
+  --danger: #F87171;
+  --info: #38BDF8;
+
+  /* Acento de marca y Botón Primario */
+  --brand: #FFFFFF;                       /* Botón primario blanco puro de alta visibilidad */
+  --brand-strong: #E4E4E7;                /* Hover botón primario */
+  --primary-foreground: #09090B;          /* Texto oscuro sobre botón blanco */
+
+  /* Acentos de Producto y Editorial */
+  --accent-burgundy: #F87171;             /* Badges oscuros */
+  --accent-gold: #FBBF24;                 /* Oro radiante */
+  --action-badge: #27272A;                /* Badge Zinc 800 */
+
+  /* Contrato semántico shadcn */
+  --primary: var(--brand);
+  --secondary: var(--surface-muted);
+  --secondary-foreground: var(--foreground);
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--foreground-muted);
+  --accent: var(--surface-muted);
+  --accent-foreground: var(--foreground);
+  --destructive: var(--danger);
+  --destructive-foreground: #09090B;
+  --input: #27272A;
+  --input-active: #FAFAFA;
+  --ring: var(--brand);
+
+  color-scheme: dark;
+}
+
+/* ============================================================================
+   Identidad de Rol (sección 9.2): solo el eje de acento. --primary, --ring y todos
+   los tokens derivados siguen a --brand por var(). El scope vive en la raiz
+   del layout de cada rol; sin data-role (paginas publicas) heredan el jade
+   Comprador, que es la identidad de marca por defecto.
+   ========================================================================== */
+[data-role='seller'] {
+  /* Vendedor — Estudio Violeta: gestion de catalogo (5.36-7.10:1 texto en claro) */
+  --brand: #6D28D9;
+  --brand-strong: #5B21B6;
+}
+.dark [data-role='seller'] {
+  --brand: #A78BFA;
+  --brand-strong: #C4B5FD;
+}
+
+[data-role='admin'] {
+  /* Administrador — Índigo de Mando: gobernanza central (7.31:1 texto en claro).
+     NO es el "índigo eléctrico" #4F46E5/#6366F1 rechazado en sección 8: es un paso
+     más profundo (700), contenido y sin brillo neón. */
+  --brand: #4338CA;
+  --brand-strong: #3730A3;
+}
+.dark [data-role='admin'] {
+  --brand: #818CF8;
+  --brand-strong: #A5B4FC;
+}
+
+[data-role='logistics'] {
+  /* Operador Logístico — Cian Operativo: colas y transito (4.95:1 texto en claro) */
+  --brand: #0E7490;
+  --brand-strong: #0A5C74;
+}
+.dark [data-role='logistics'] {
+  --brand: #22D3EE;
+  --brand-strong: #67E8F9;
+}
+
+[data-role='supervisor'] {
+  /* Supervisor de Auditoría — Fucsia Forense: libro mayor (5.85:1 texto en claro) */
+  --brand: #A21CAF;
+  --brand-strong: #86198F;
+}
+.dark [data-role='supervisor'] {
+  --brand: #E879F9;
+  --brand-strong: #F0ABFC;
+}
+
+/* ============================================================================
+   Puente @theme inline (Tailwind v4): cada utilidad de color resuelve el token
+   runtime EN USO. Asi bg-brand/text-brand/border-brand funcionan con .dark y
+   con [data-role] sin duplicar valores. Fontos/radios/movimiento son estaticos
+   y van en @theme normal (se emiten a :root tal cual).
+   ========================================================================== */
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
+
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --color-accent-burgundy: var(--accent-burgundy);
+  --color-accent-gold: var(--accent-gold);
+  --color-action-badge: var(--action-badge);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input: var(--input);
+  --color-input-active: var(--input-active);
+  --color-ring: var(--ring);
+}
+
+/* ============================================================================
+   Tokens estáticos (se emiten a :root tal cual): radios, fuentes y curvas de
+   movimiento NO conmutan con el tema, asi que viven en @theme normal para que
+   var(--font-sans), var(--radius-*) y var(--ease-out-expo) existan en runtime
+   para el CSS plano y los componentes.
+   ========================================================================== */
+@theme {
+  /* --- Radios de curvatura completos --- */
+  --radius-none: 0px;
+  --radius-button: 30px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-4xl: 28px;
+  /* 9999 y no 999: el Owner confirmó sección 2.3 como fuente de verdad de los radios.
+     9999 asegura círculo real independientemente del tamaño del elemento. */
+  --radius-full: 9999px;
+
+  /* --- Contenedores Wonder Theme Interior --- */
+  --max-width-site: 1800px;
+  --max-width-post: 850px;
+  --max-width-drawer: 500px;
+
+  /* --- Tipografía (Q8-B) ---
+     El nombre lo dicta el paquete: 'Geist Variable' (verificado contra
+     node_modules/@fontsource-variable/geist/index.css), no 'Geist Sans Variable'. */
+  --font-sans: 'Geist Variable', system-ui, sans-serif;
+  --font-mono: 'Geist Variable', system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+
+  /* --- Escala tipográfica formal (incluye micro-tipografía 2xs y caption) --- */
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: 0.875rem;
+  --text-caption: 0.6875rem;
+  --text-caption--line-height: 1rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.3125rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.575rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.6875rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.95rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.344rem;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.7rem;
+
+  /* --- Sombras y elevaciones estándar --- */
+  --shadow-xs: 0 1px 2px 0 rgba(14, 20, 32, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(14, 20, 32, 0.08), 0 1px 2px -1px rgba(14, 20, 32, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(14, 20, 32, 0.08), 0 2px 4px -2px rgba(14, 20, 32, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(14, 20, 32, 0.08), 0 4px 6px -4px rgba(14, 20, 32, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(14, 20, 32, 0.09), 0 8px 10px -6px rgba(14, 20, 32, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(14, 20, 32, 0.18);
+  --shadow-inner: inset 0 2px 4px 0 rgba(14, 20, 32, 0.05);
+  --shadow-surface-hairline: 0 1px 3px 0 rgba(14, 20, 32, 0.04), 0 1px 2px -1px rgba(14, 20, 32, 0.04);
+
+  /* --- Rupturas responsivas canónicas --- */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  /* --- Escala Neutra Zentric Slate (estática para utilidades específicas) --- */
+  --color-slate-50: #F8F9FA;
+  --color-slate-100: #EEF0F4;
+  --color-slate-200: #E1E5EB;
+  --color-slate-300: #CBD2DE;
+  --color-slate-400: #98A2B8;
+  --color-slate-500: #7D88A3;
+  --color-slate-600: #5F6B82;
+  --color-slate-700: #454F63;
+  --color-slate-800: #252D40;
+  --color-slate-900: #131824;
+  --color-slate-950: #0C0F16;
+
+  /* --- Movimiento (sección 7): nunca bloquea la lectura --- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    @apply bg-background text-foreground;
+  }
+
+  /* Los titulos grandes aprietan el tracking; el mono conserva su ancho. */
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
+  }
+
+  /* Movimiento reducido: se desactivan transiciones y animaciones (seccion 5). */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

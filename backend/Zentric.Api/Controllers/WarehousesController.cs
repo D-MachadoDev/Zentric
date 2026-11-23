@@ -1,4 +1,5 @@
 using Zentric.Application.Common.Messaging;
+using Zentric.Application.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
@@ -47,7 +48,7 @@ namespace Zentric.Api.Controllers
             var role = User.GetUserRole();
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
-            // [ADDENDUM 2026-10-17]: el Vendedor registra bodegas Vendor propias forzando su VendorId.
+            // el Vendedor registra bodegas Vendor propias forzando su VendorId.
             // El Administrador registra bodegas centrales Marketplace o asignadas a vendedores.
             var cmd = role.Value == Zentric.Domain.Users.Enums.UserRole.Seller
                 ? command with { Type = Zentric.Domain.Warehouses.Enum.WarehouseType.Vendor, VendorId = userId.Value }
@@ -66,21 +67,23 @@ namespace Zentric.Api.Controllers
         /// otro vendedor responde 400. El Operador y el Administrador listan todas.
         /// </remarks>
         /// <param name="vendorId">Filtro opcional por identificador único del vendedor.</param>
+        /// <param name="page">Página (1-based).</param>
+        /// <param name="size">Tamaño de página.</param>
         /// <response code="200">Lista de bodegas obtenida exitosamente.</response>
         /// <response code="400">El vendedor pide bodegas de otro vendedor (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
         [HttpGet]
         [Authorize(Policy = AuthorizationPolicies.WarehouseRead)]
-        [ProducesResponseType(typeof(IReadOnlyList<WarehouseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PagedResult<WarehouseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetWarehouses([FromQuery] Guid? vendorId = null)
+        public async Task<IActionResult> GetWarehouses([FromQuery] Guid? vendorId = null, [FromQuery] int page = 1, [FromQuery] int size = 20)
         {
             var userId = _currentUser.UserId;
             var role = User.GetUserRole();
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
-            var result = await _mediator.Send(new GetWarehousesQuery(vendorId, userId.Value, role.Value));
+            var result = await _mediator.Send(new GetWarehousesQuery(vendorId, userId.Value, role.Value, page - 1, size));
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }

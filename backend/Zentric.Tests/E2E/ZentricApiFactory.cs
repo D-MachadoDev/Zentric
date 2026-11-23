@@ -8,7 +8,7 @@ using Testcontainers.PostgreSql;
 namespace Zentric.Tests.E2E
 {
     /// <summary>
-    /// T-032: levanta la API REAL contra un PostgreSQL efimero (Testcontainers).
+    /// levanta la API REAL contra un PostgreSQL efimero (Testcontainers).
     ///
     /// No es un doble de prueba: se ejecuta el mismo <c>Program</c> de <c>Zentric.Api</c>, con los
     /// mismos middleware, la misma politica de reserva, los mismos filtros de dueno y los mismos

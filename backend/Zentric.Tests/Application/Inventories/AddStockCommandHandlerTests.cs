@@ -77,7 +77,7 @@ namespace Zentric.Tests.Application.Inventories
         }
 
         /// <summary>
-        /// Reserva condicional atomica (ADR-0025): solo comprueba, porque la
+        /// Reserva condicional atomica (AD): solo comprueba, porque la
         /// mutacion la aplica el servicio con ReserveStock sobre la misma copia.
         /// </summary>
         public Task<bool> TryReserveStockAsync(Guid inventoryId, int quantity, CancellationToken cancellationToken = default)
@@ -268,6 +268,45 @@ namespace Zentric.Tests.Application.Inventories
 
             Assert.True(result.IsFailure);
             Assert.Contains("not found", result.Error);
+            Assert.Empty(repo.Inventories);
+            Assert.False(uow.SaveChangesCalled);
+        }
+
+        [Fact]
+        public async Task Handle_AdministratorEntersStockInZentricWarehouse_IsAllowed()
+        {
+            // Decision del usuario: el admin abastece la bodega de Zentric.
+            var repo = new FakeInventoryRepository();
+            var uow = new FakeUnitOfWork();
+            var warehouses = new FakeWarehouseRepository();
+            var zentricWarehouse = new Warehouse("Central Zentric", "Bogota", 100, WarehouseType.Marketplace, null);
+            warehouses.Warehouses.Add(zentricWarehouse);
+
+            var handler = new AddStockCommandHandler(repo, uow, new FakeStockOwnershipProductRepository(), warehouses);
+            var command = new AddStockCommand(Guid.NewGuid(), zentricWarehouse.Id, 10, Guid.NewGuid(), UserRole.Administrator);
+
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            Assert.Single(repo.Inventories);
+        }
+
+        [Fact]
+        public async Task Handle_AdministratorEntersStockInVendorWarehouse_IsRejected()
+        {
+            var vendorId = Guid.NewGuid();
+            var repo = new FakeInventoryRepository();
+            var uow = new FakeUnitOfWork();
+            var warehouses = new FakeWarehouseRepository();
+            var vendorWarehouse = new Warehouse("Propia", "Medellin", 100, WarehouseType.Vendor, vendorId);
+            warehouses.Warehouses.Add(vendorWarehouse);
+
+            var handler = new AddStockCommandHandler(repo, uow, new FakeStockOwnershipProductRepository(), warehouses);
+            var command = new AddStockCommand(Guid.NewGuid(), vendorWarehouse.Id, 10, Guid.NewGuid(), UserRole.Administrator);
+
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            Assert.True(result.IsFailure);
             Assert.Empty(repo.Inventories);
             Assert.False(uow.SaveChangesCalled);
         }

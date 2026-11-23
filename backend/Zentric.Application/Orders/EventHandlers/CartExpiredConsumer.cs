@@ -33,15 +33,6 @@ namespace Zentric.Application.Orders.EventHandlers
                 domainEvent.OrderId,
                 domainEvent.ExpiredAt);
 
-            // TODO: Integrar con servicio de notificaciones (email, push, webhook)
-            // Ejemplo futuro:
-            // await _notificationService.SendAsync(new CartExpiredNotification
-            // {
-            //     OrderId = domainEvent.OrderId,
-            //     ExpiredAt = domainEvent.ExpiredAt,
-            //     BuyerId = await GetBuyerIdAsync(domainEvent.OrderId)
-            // });
-
             await Task.CompletedTask;
         }
     }

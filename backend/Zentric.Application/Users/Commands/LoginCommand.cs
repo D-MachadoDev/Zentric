@@ -9,7 +9,7 @@ using Zentric.Domain.Users.ValueObjects;
 namespace Zentric.Application.Users.Commands
 {
     /// <summary>
-    /// Autenticacion de un usuario (ADR-0009, cierra RG-01).
+    /// Autenticacion de un usuario (AD, cierra ).
     /// </summary>
     /// <param name="Email">Correo registrado. Es el identificador de acceso.</param>
     /// <param name="Password">Contrasena en claro. Viaja solo en esta peticion y nunca se persiste.</param>

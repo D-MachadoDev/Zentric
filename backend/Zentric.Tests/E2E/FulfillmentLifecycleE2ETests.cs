@@ -6,7 +6,7 @@ using Xunit;
 namespace Zentric.Tests.E2E
 {
     /// <summary>
-    /// Ciclo de despacho completo por HTTP: los cinco estados del ADDENDUM Dominio 8.
+    /// Ciclo de despacho completo por HTTP: los cinco estados del Dominio 8.
     ///
     /// Antes de esto, el ciclo era IMPOSIBLE de completar por API: <c>Pack()</c> y
     /// <c>Deliver()</c> existian en el dominio con sus invariantes, pero ningun endpoint las
@@ -28,7 +28,7 @@ namespace Zentric.Tests.E2E
         {
             var fulfillmentId = await CreateFulfillmentAsync();
 
-            // 1. Nace en Pendiente de Empaque (ADDENDUM Dominio 8, estado 1).
+            // 1. Nace en Pendiente de Empaque .
             Assert.Equal("PendingPack", await StatusAsync(fulfillmentId));
 
             // 2. Empacado: listo para recoleccion.

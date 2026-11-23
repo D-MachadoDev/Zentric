@@ -1,4 +1,5 @@
 using Zentric.Application.Common.Messaging;
+using Zentric.Application.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
@@ -65,20 +66,34 @@ namespace Zentric.Api.Controllers
         /// productos aunque esten en cualquier bodega, y el Operador ve la red completa. El filtro
         /// no es un parametro: no hay forma de pedir el stock de otro.
         /// </remarks>
+        /// <param name="page">P�gina (1-based).</param>
+        /// <param name="size">Tama�o de p�gina.</param>
+        /// <param name="warehouseId">Bodega opcional: acota el listado a una sola.</param>
+        /// <param name="search">Texto opcional: compara contra nombre de producto y SKU.</param>
         /// <response code="200">Listado de existencias visibles para el llamante.</response>
         /// <response code="401">Token ausente o inválido.</response>
         [HttpGet]
         [Authorize(Policy = AuthorizationPolicies.InventoryRead)]
-        [ProducesResponseType(typeof(IReadOnlyList<Zentric.Application.Inventories.Queries.InventoryDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(Zentric.Application.Common.Models.PagedResult<Zentric.Application.Inventories.Queries.InventoryDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetInventories()
+        public async Task<IActionResult> GetInventories(
+            [FromQuery] int page = 1,
+            [FromQuery] int size = 20,
+            [FromQuery] Guid? warehouseId = null,
+            [FromQuery] string? search = null)
         {
             var userId = _currentUser.UserId;
             var role = User.GetUserRole();
             if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
 
             var result = await _mediator.Send(
-                new Zentric.Application.Inventories.Queries.GetInventoriesQuery(userId.Value, role.Value));
+                new Zentric.Application.Inventories.Queries.GetInventoriesQuery(
+                    userId.Value,
+                    role.Value,
+                    page - 1,
+                    size,
+                    warehouseId,
+                    search));
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
@@ -113,7 +128,7 @@ namespace Zentric.Api.Controllers
         }
 
         /// <summary>
-        /// Ajusta el inventario fisico por conteo (ADR-0021).
+        /// Ajusta el inventario fisico por conteo .
         /// </summary>
         /// <remarks>
         /// Permite al Administrador o Supervisor corregir el stock disponible tras un conteo fisico.
@@ -147,8 +162,41 @@ namespace Zentric.Api.Controllers
         }
 
         /// <summary>
+        /// Elimina logicamente (soft delete) un registro de inventario.
+        /// </summary>
+        /// <remarks>
+        /// Solo se permite cuando el registro no tiene existencias fisicas (disponible, reservado,
+        /// usado y danado en cero). El Vendedor solo puede eliminar registros de SUS productos.
+        /// </remarks>
+        /// <param name="id">Identificador unico (Guid) del registro de inventario.</param>
+        /// <response code="204">Registro eliminado logicamente.</response>
+        /// <response code="400">El registro aun tiene existencias fisicas.</response>
+        /// <response code="401">Token ausente o invalido.</response>
+        /// <response code="403">El llamante no tiene permisos.</response>
+        /// <response code="404">Registro no encontrado.</response>
+        [HttpDelete("{id}")]
+        [Authorize(Policy = AuthorizationPolicies.InventoryManagement)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteInventory(Guid id)
+        {
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var result = await _mediator.Send(new DeleteInventoryCommand(id, userId.Value, role.Value));
+            if (result.IsFailure) return result.ToProblem();
+            return NoContent();
+        }
+
+        /// <summary>
         /// Request body para ajustar inventario por conteo fisico.
         /// </summary>
         public sealed record AdjustInventoryRequest(int CountedQuantity, string Reason);
     }
 }
+
+

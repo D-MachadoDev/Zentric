@@ -8,7 +8,7 @@ using Zentric.Domain.Returns.Services;
 namespace Zentric.Tests.Returns;
 
 /// <summary>
-/// ADR-0020: el quiebre de stock es automatico si hay comprobante con saldo;
+/// ADel quiebre de stock es automatico si hay comprobante con saldo;
 /// lo demas es excepcion con dictamen del Administrador.
 /// </summary>
 public sealed class RefundPolicyServiceTests

@@ -21,7 +21,9 @@ namespace Zentric.Infrastructure.Persistence.Repositories
         public async Task<IReadOnlyList<Inventory>> GetListAsync(
             Guid? vendorId, CancellationToken cancellationToken = default)
         {
-            IQueryable<InventoryDbModel> query = _dbContext.Inventories.AsNoTracking();
+            IQueryable<InventoryDbModel> query = _dbContext.Inventories
+                .AsNoTracking()
+                .Where(i => i.DeletedAt == null);
 
             if (vendorId.HasValue)
             {
@@ -32,9 +34,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
                     .Any(p => p.VendorId == vendor && p.Variants.Any(v => v.Id == i.VariantId)));
             }
 
-            // Por variante y bodega: la unidad en la que el stock se cuenta de verdad. Ordenar por
-            // variante primero hace que las filas de un mismo producto queden juntas, que es como se
-            // lee una pantalla de inventario.
+            // Ordena por variante y bodega para agrupar filas del mismo producto.
             var list = await query
                 .OrderBy(i => i.VariantId)
                 .ThenBy(i => i.WarehouseId)
@@ -43,11 +43,68 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             return list.Select(InventoryMapper.ToDomain).ToList();
         }
 
+        public async Task<(IReadOnlyList<InventoryListRow> Items, int TotalItems)> GetPagedAsync(
+            Guid? vendorId,
+            Guid? warehouseId,
+            string? search,
+            int skip,
+            int take,
+            CancellationToken cancellationToken = default)
+        {
+            // La identidad comercial se resuelve en el JOIN: producto y variante son
+            // los duenos del nombre y del SKU. Una fila huerfana (variante borrada)
+            // queda fuera del listado en lugar de mostrarse como un UUID.
+            var query =
+                from i in _dbContext.Inventories.AsNoTracking()
+                join v in _dbContext.Set<ProductVariantDbModel>() on i.VariantId equals v.Id
+                join p in _dbContext.Products.AsNoTracking() on v.ProductId equals p.Id
+                where i.DeletedAt == null
+                select new { Inventory = i, Variant = v, Product = p };
+
+            if (vendorId.HasValue)
+            {
+                var vendor = vendorId.Value;
+                query = query.Where(x => x.Product.VendorId == vendor);
+            }
+
+            if (warehouseId.HasValue)
+            {
+                var warehouse = warehouseId.Value;
+                query = query.Where(x => x.Inventory.WarehouseId == warehouse);
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLowerInvariant();
+                query = query.Where(x =>
+                    x.Product.Name.ToLower().Contains(term) ||
+                    x.Variant.Sku.ToLower().Contains(term));
+            }
+
+            // El total se cuenta con los mismos filtros y antes del Skip/Take: un
+            // contador calculado sobre la pagina mentiria sobre cuantas filas hay.
+            var totalItems = await query.CountAsync(cancellationToken);
+
+            var rows = await query
+                .OrderBy(x => x.Inventory.VariantId)
+                .ThenBy(x => x.Inventory.WarehouseId)
+                .Skip(skip)
+                .Take(take)
+                .Select(x => new { x.Inventory, x.Product.Name, x.Variant.Sku })
+                .ToListAsync(cancellationToken);
+
+            var items = rows
+                .Select(r => new InventoryListRow(InventoryMapper.ToDomain(r.Inventory), r.Name, r.Sku))
+                .ToList();
+
+            return (items, totalItems);
+        }
+
         public async Task<Inventory?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var dbModel = await _dbContext.Inventories
                 .AsNoTracking()
-                .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+                .FirstOrDefaultAsync(o => o.Id == id && o.DeletedAt == null, cancellationToken);
             return dbModel == null ? null : InventoryMapper.ToDomain(dbModel);
         }
 
@@ -79,6 +136,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             tracked.DamagedQuantity = inventory.DamagedQuantity;
             tracked.UsedQuantity = inventory.UsedQuantity;
             tracked.UpdatedAt = inventory.UpdatedAt;
+            tracked.DeletedAt = inventory.DeletedAt;
 
             return Task.CompletedTask;
         }
@@ -87,14 +145,14 @@ namespace Zentric.Infrastructure.Persistence.Repositories
         {
             var dbModel = await _dbContext.Inventories
                 .AsNoTracking()
-                .FirstOrDefaultAsync(i => i.VariantId == variantId && i.WarehouseId == warehouseId, cancellationToken);
+                .FirstOrDefaultAsync(i => i.VariantId == variantId && i.WarehouseId == warehouseId && i.DeletedAt == null, cancellationToken);
             return dbModel == null ? null : InventoryMapper.ToDomain(dbModel);
         }
 
         public async Task<int> GetTotalAvailableStockAsync(Guid variantId, CancellationToken cancellationToken = default)
         {
             return await _dbContext.Inventories
-                .Where(i => i.VariantId == variantId)
+                .Where(i => i.VariantId == variantId && i.DeletedAt == null)
                 .SumAsync(i => i.AvailableQuantity, cancellationToken);
         }
 
@@ -104,7 +162,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             // se guarda en su tabla y se reconstruye en orden cronologico.
             var dbModel = await _dbContext.Inventories
                 .AsNoTracking()
-                .FirstOrDefaultAsync(i => i.Id == id, cancellationToken)
+                .FirstOrDefaultAsync(i => i.Id == id && i.DeletedAt == null, cancellationToken)
                 ?? throw new InvalidOperationException($"Inventory {id} not found.");
 
             var inventory = InventoryMapper.ToDomain(dbModel);
@@ -139,25 +197,23 @@ namespace Zentric.Infrastructure.Persistence.Repositories
         {
             var dbModels = await _dbContext.Inventories
                 .AsNoTracking()
-                .Where(i => i.VariantId == variantId)
+                .Where(i => i.VariantId == variantId && i.DeletedAt == null)
                 .ToListAsync(cancellationToken);
             return dbModels.Select(InventoryMapper.ToDomain);
         }
 
         public async Task<bool> TryReserveStockAsync(Guid inventoryId, int quantity, CancellationToken cancellationToken = default)
         {
-            // ADR-0025: leer-comprobar-escribir es UNA sola sentencia. La condicion
-            // available >= quantity vive en el WHERE, asi que la base garantiza sola
-            // que dos reservas simultaneas sobre la misma fila no pueden dejar el
-            // contador negativo ni perder actualizaciones (INV-01). Cero filas
-            // afectadas = no habia stock = se rechaza; no hay nada que reintentar.
+            // Actualizacion atomica en una sola sentencia SQL. La condicion de stock disponible
+            // se valida en el WHERE para prevenir condiciones de carrera y saldos negativos.
+            // Si el numero de filas afectadas es cero, no habia stock suficiente.
             if (quantity <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity to reserve must be greater than zero.");
             }
 
             var affected = await _dbContext.Inventories
-                .Where(i => i.Id == inventoryId && i.AvailableQuantity >= quantity)
+                .Where(i => i.Id == inventoryId && i.AvailableQuantity >= quantity && i.DeletedAt == null)
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(i => i.AvailableQuantity, i => i.AvailableQuantity - quantity)
                     .SetProperty(i => i.ReservedQuantity, i => i.ReservedQuantity + quantity)
@@ -168,7 +224,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
 
         public async Task ReleaseReservedStockAsync(Guid inventoryId, int quantity, CancellationToken cancellationToken = default)
         {
-            // Compensacion de ADR-0001 en el mismo estilo atomico que la reserva:
+            // Compensacion de ADen el mismo estilo atomico que la reserva:
             // el WHERE reservado >= quantity impide que la liberacion deje la
             // columna reservado en negativo si otra peticion toco la fila.
             if (quantity <= 0)
@@ -177,7 +233,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             }
 
             await _dbContext.Inventories
-                .Where(i => i.Id == inventoryId && i.ReservedQuantity >= quantity)
+                .Where(i => i.Id == inventoryId && i.ReservedQuantity >= quantity && i.DeletedAt == null)
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(i => i.AvailableQuantity, i => i.AvailableQuantity + quantity)
                     .SetProperty(i => i.ReservedQuantity, i => i.ReservedQuantity - quantity)

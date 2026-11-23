@@ -21,9 +21,9 @@ namespace Zentric.Application.Billing.Queries
     /// (ver el handler). <paramref name="CallerId"/> es el <c>sub</c> del token y
     /// <paramref name="CallerRole"/> el rol ya autorizado por la matriz.
     /// </summary>
-    public record GetInvoicesByOrderQuery(Guid OrderId, Guid CallerId, UserRole CallerRole) : IRequest<Result<IReadOnlyList<InvoiceDto>>>;
+    public record GetInvoicesByOrderQuery(Guid OrderId, Guid CallerId, UserRole CallerRole, int Page = 0, int Size = PageRequest.DefaultPageSize) : IRequest<Result<PagedResult<InvoiceDto>>>;
 
-    public class GetInvoicesByOrderQueryHandler : IRequestHandler<GetInvoicesByOrderQuery, Result<IReadOnlyList<InvoiceDto>>>
+    public class GetInvoicesByOrderQueryHandler : IRequestHandler<GetInvoicesByOrderQuery, Result<PagedResult<InvoiceDto>>>
     {
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly ICustomerOrderRepository _customerOrderRepository;
@@ -36,7 +36,7 @@ namespace Zentric.Application.Billing.Queries
             _customerOrderRepository = customerOrderRepository;
         }
 
-        public async Task<Result<IReadOnlyList<InvoiceDto>>> Handle(GetInvoicesByOrderQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedResult<InvoiceDto>>> Handle(GetInvoicesByOrderQuery request, CancellationToken cancellationToken)
         {
             var invoices = await _invoiceRepository.GetByOrderIdAsync(request.OrderId, cancellationToken);
 
@@ -45,12 +45,12 @@ namespace Zentric.Application.Billing.Queries
                 case UserRole.Buyer:
                     // El Comprador solo ve la Factura Maestra de un pedido
                     // propio. El ZentricDetail es control interno de plataforma y
-                    // las facturas de vendedor no son suyas (ADDENDUM Dominio 9).
+                    // las facturas de vendedor no son suyas .
                     var order = await _customerOrderRepository.GetByIdForBuyerAsync(
                         request.OrderId, request.CallerId, cancellationToken);
                     if (order == null)
                     {
-                        return Result<IReadOnlyList<InvoiceDto>>.NotFound("Order not found.");
+                        return Result<PagedResult<InvoiceDto>>.NotFound("Order not found.");
                     }
 
                     invoices = invoices.Where(i => i.Type == InvoiceType.Master).ToList();
@@ -78,7 +78,9 @@ namespace Zentric.Application.Billing.Queries
                 i.IssuedAt
             )).ToList();
 
-            return Result<IReadOnlyList<InvoiceDto>>.Success(dtos);
+            var page = new PageRequest(request.Page, request.Size);
+            var paged = dtos.Skip(page.Skip).Take(page.Take).ToList();
+            return Result<PagedResult<InvoiceDto>>.Success(new PagedResult<InvoiceDto>(paged, page.Page, page.Size, dtos.Count));
         }
     }
 }

@@ -5,7 +5,7 @@ using Zentric.Domain.Users.Enums;
 namespace Zentric.Tests.Returns;
 
 /// <summary>
-/// ADR-0020: cada intento de reembolso deja traza de regla, decisor y resultado.
+/// ADcada intento de reembolso deja traza de regla, decisor y resultado.
 /// </summary>
 public sealed class RefundAuditTests
 {

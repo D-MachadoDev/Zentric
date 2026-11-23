@@ -15,10 +15,13 @@ namespace Zentric.Infrastructure.Persistence.Models
         public ProductStatus Status { get; set; }
         public string? ImageUrl { get; set; }
         public string? Category { get; set; }
+        public decimal AverageRating { get; set; }
+        public int ReviewsCount { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public DateTime? DeletedAt { get; set; }
         public ICollection<ProductVariantDbModel> Variants { get; set; } = new List<ProductVariantDbModel>();
+        public ICollection<ReviewDbModel> Reviews { get; set; } = new List<ReviewDbModel>();
     }
 
     public class ProductVariantDbModel

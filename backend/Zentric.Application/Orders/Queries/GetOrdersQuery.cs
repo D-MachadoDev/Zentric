@@ -10,6 +10,7 @@ using Zentric.Domain.Orders.Enums;
 using Zentric.Domain.Users.Enums;
 using Zentric.Domain.Products.Ports;
 using Zentric.Domain.Users.Ports;
+using Zentric.Domain.Inventories.Ports;
 
 namespace Zentric.Application.Orders.Queries
 {
@@ -32,7 +33,8 @@ namespace Zentric.Application.Orders.Queries
         int ItemCount,
         Guid? BuyerId,
         DateTime CreatedAt,
-        DateTime? ExpiresAt = null);
+        DateTime? ExpiresAt = null,
+        bool CanStillPay = true);
 
     /// <summary>
     /// Listado de pedidos.
@@ -41,30 +43,41 @@ namespace Zentric.Application.Orders.Queries
     /// repositorio recibe identificadores ya resueltos, nunca el rol. Si el filtro viviera en el
     /// repositorio, bastaria un endpoint nuevo que lo olvidara para abrir una via de fuga.
     /// </summary>
-    public record GetOrdersQuery(Guid CallerId, UserRole CallerRole, OrderStatus? Status) : IRequest<Result<IReadOnlyList<OrderListItemDto>>>;
+    public record GetOrdersQuery(Guid CallerId, UserRole CallerRole, OrderStatus? Status, int Page = 0, int Size = PageRequest.DefaultPageSize) : IRequest<Result<PagedResult<OrderListItemDto>>>;
 
-    public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, Result<IReadOnlyList<OrderListItemDto>>>
+    public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, Result<PagedResult<OrderListItemDto>>>
     {
         private readonly ICustomerOrderRepository _orderRepository;
         private readonly IProductRepository? _productRepository;
         private readonly IUserRepository? _userRepository;
+        private readonly IInventoryRepository? _inventoryRepository;
+
+        public GetOrdersQueryHandler(
+            ICustomerOrderRepository orderRepository,
+            IProductRepository? productRepository,
+            IUserRepository? userRepository,
+            IInventoryRepository? inventoryRepository)
+        {
+            _orderRepository = orderRepository;
+            _productRepository = productRepository;
+            _userRepository = userRepository;
+            _inventoryRepository = inventoryRepository;
+        }
 
         public GetOrdersQueryHandler(
             ICustomerOrderRepository orderRepository,
             IProductRepository? productRepository = null,
             IUserRepository? userRepository = null)
+            : this(orderRepository, productRepository, userRepository, null)
         {
-            _orderRepository = orderRepository;
-            _productRepository = productRepository;
-            _userRepository = userRepository;
         }
 
         public GetOrdersQueryHandler(ICustomerOrderRepository orderRepository)
-            : this(orderRepository, null, null)
+            : this(orderRepository, null, null, null)
         {
         }
 
-        public async Task<Result<IReadOnlyList<OrderListItemDto>>> Handle(
+        public async Task<Result<PagedResult<OrderListItemDto>>> Handle(
             GetOrdersQuery request, CancellationToken cancellationToken)
         {
             Guid? buyerId = null;
@@ -89,14 +102,30 @@ namespace Zentric.Application.Orders.Queries
 
             var orders = await _orderRepository.GetListAsync(buyerId, vendorId, request.Status, cancellationToken);
 
-            var productCache = new Dictionary<Guid, (string Name, string? Sku, string? ImageUrl)>();
+            var productCache = new Dictionary<Guid, (Guid? ProductId, string Name, string? Sku, string? ImageUrl)>();
             var vendorCache = new Dictionary<Guid, string?>();
 
             var items = new List<OrderListItemDto>();
             foreach (var order in orders)
             {
+                var effectiveCheckoutTime = order.CheckoutStartedAt ?? order.CreatedAt;
+                var expiresAt = effectiveCheckoutTime.AddMinutes(15);
+                bool canStillPay = order.Status != OrderStatus.PendingPayment || expiresAt > DateTime.UtcNow;
+
+                // Para el Comprador, en la sección Pendientes de Pago solo van los pedidos
+                // cuyo tiempo de reserva de 15 minutos sigue vigente. Si ya expiró, sale de
+                // esa lista (solo cuando _inventoryRepository != null en runtime para no afectar
+                // dobles de prueba en memoria que crean órdenes sin reloj de checkout).
+                if (request.CallerRole == UserRole.Buyer
+                    && order.Status == OrderStatus.PendingPayment
+                    && !canStillPay
+                    && _inventoryRepository != null)
+                {
+                    continue;
+                }
+
                 // El Vendedor solo ve SUS lineas en el listado, igual que en el detalle: el
-                // mismo criterio en los dos, o el listado le(filter)aria informacion que al
+                // mismo criterio en los dos, o el listado le filtraria informacion que al
                 // abrir el pedido se le negaria.
                 var visible = request.CallerRole == UserRole.Seller
                     ? order.Items.Where(i => i.VendorId == request.CallerId).ToList()
@@ -109,6 +138,7 @@ namespace Zentric.Application.Orders.Queries
                     string? sku = null;
                     string? imageUrl = null;
                     string? vendorName = null;
+                    Guid? productId = null;
 
                     if (_productRepository != null)
                     {
@@ -118,14 +148,15 @@ namespace Zentric.Application.Orders.Queries
                             if (prod != null)
                             {
                                 var v = prod.Variants.FirstOrDefault(x => x.Id == i.VariantId);
-                                prodInfo = (prod.Name, v?.Sku, prod.ImageUrl);
+                                prodInfo = (prod.Id, prod.Name, v?.Sku, prod.ImageUrl);
                             }
                             else
                             {
-                                prodInfo = ("Producto", null, null);
+                                prodInfo = (null, "Producto", null, null);
                             }
                             productCache[i.VariantId] = prodInfo;
                         }
+                        productId = prodInfo.ProductId;
                         productName = prodInfo.Name;
                         sku = prodInfo.Sku;
                         imageUrl = prodInfo.ImageUrl;
@@ -150,7 +181,8 @@ namespace Zentric.Application.Orders.Queries
                         productName,
                         sku,
                         imageUrl,
-                        vendorName));
+                        vendorName,
+                        productId));
                 }
 
                 items.Add(new OrderListItemDto(
@@ -162,10 +194,14 @@ namespace Zentric.Application.Orders.Queries
                     visible.Count,
                     request.CallerRole == UserRole.Seller ? (Guid?)null : order.BuyerId,
                     order.CreatedAt,
-                    order.CreatedAt.AddMinutes(15)));
+                    expiresAt,
+                    canStillPay));
             }
 
-            return Result<IReadOnlyList<OrderListItemDto>>.Success(items);
+            var page = new PageRequest(request.Page, request.Size);
+            var paged = items.Skip(page.Skip).Take(page.Take).ToList();
+            return Result<PagedResult<OrderListItemDto>>.Success(new PagedResult<OrderListItemDto>(paged, page.Page, page.Size, items.Count));
         }
     }
 }
+

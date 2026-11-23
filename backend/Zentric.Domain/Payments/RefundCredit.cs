@@ -5,7 +5,7 @@ namespace Zentric.Domain.Payments
     /// <summary>
     /// Trazabilidad de UN credito a favor, no del total acreditado.
     ///
-    /// ADR-0020 decision 7 pide registrar devolucion, pedido, linea, importe,
+    /// ADdecision 7 pide registrar devolucion, pedido, linea, importe,
     /// regla aplicada, fecha, actor y comprobante. El acumulado del comprobante
     /// no puede cumplir eso: con dos devoluciones parciales solo dice cuanto se
     /// devolvio en total, no a quien ni por que linea. Una fila por credito.
@@ -28,7 +28,7 @@ namespace Zentric.Domain.Payments
         public Money Amount { get; private set; }
 
         /// <summary>
-        /// Regla que decidio el credito (ADR-0020: "las reglas viven en codigo").
+        /// Regla que decidio el credito (AD"las reglas viven en codigo").
         /// Es el identificador estable de la regla, no su descripcion: describe
         /// como se que regla se aplico aunque el texto cambie.
         /// </summary>

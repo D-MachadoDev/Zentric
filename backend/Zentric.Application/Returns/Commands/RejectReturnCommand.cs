@@ -8,7 +8,7 @@ using Zentric.Domain.Users.Enums;
 namespace Zentric.Application.Returns.Commands
 {
     /// <summary>
-    /// Rechaza una devolucion ya solicitada (ADDENDUM Dominio 10, estado "Rechazada").
+    /// Rechaza una devolucion ya solicitada (Dominio 10, estado "Rechazada").
     ///
     /// Este estado existia en el enum y en <c>ReturnRequest.Reject()</c>, pero no habia comando ni
     /// endpoint: una devolucion podia solicitarse, inspeccionarse y aprobarse, pero nunca rechazarse.

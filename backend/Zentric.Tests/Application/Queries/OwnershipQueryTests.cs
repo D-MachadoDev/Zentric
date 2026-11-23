@@ -192,7 +192,7 @@ namespace Zentric.Tests.Application.Queries
             public Task<IReadOnlyList<Product>> GetHeroProductsAsync(int count, CancellationToken cancellationToken = default)
                 => Task.FromResult<IReadOnlyList<Product>>(Array.Empty<Product>());
         }
-        // ---- Vista del pedido para el vendedor (P2 de la ronda 2) ----
+        // Vista de pedido para el vendedor
 
         [Fact]
         public async Task SellerOrderView_ShowsOnlyOwnLinesAndSubtotal()
@@ -226,7 +226,7 @@ namespace Zentric.Tests.Application.Queries
             Assert.Equal("Order not found.", result.Error);
         }
 
-        // ---- Facturas por rol (P3) ----
+        // Facturas por rol
 
         [Fact]
         public async Task BuyerSeesOnlyTheMasterInvoiceOfOwnOrder()
@@ -245,7 +245,7 @@ namespace Zentric.Tests.Application.Queries
             var result = await handler.Handle(new GetInvoicesByOrderQuery(order.Id, buyer, UserRole.Buyer), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            var invoice = Assert.Single(result.Value);
+            var invoice = Assert.Single(result.Value.Items);
             Assert.Equal("Master", invoice.Type);
         }
 
@@ -282,7 +282,7 @@ namespace Zentric.Tests.Application.Queries
             var result = await handler.Handle(new GetInvoicesByOrderQuery(order.Id, vendorA, UserRole.Seller), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            var invoice = Assert.Single(result.Value);
+            var invoice = Assert.Single(result.Value.Items);
             Assert.Equal(vendorA, invoice.VendorId);
         }
 
@@ -302,9 +302,9 @@ namespace Zentric.Tests.Application.Queries
             var result = await handler.Handle(new GetInvoicesByOrderQuery(order.Id, Guid.NewGuid(), UserRole.Administrator), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            Assert.Equal(3, result.Value.Count);
+            Assert.Equal(3, result.Value.Items.Count);
         }
-        // ---- Devoluciones por rol ----
+        // Devoluciones por rol
 
         [Fact]
         public async Task BuyerCannotReadAnotherBuyersReturn()
@@ -361,7 +361,7 @@ namespace Zentric.Tests.Application.Queries
             Assert.True(asOperator.IsSuccess);
         }
 
-        // ---- Despachos por rol ----
+        // Despachos por rol
 
         [Fact]
         public async Task BuyerCannotReadAnotherBuyersFulfillment()
@@ -488,7 +488,7 @@ namespace Zentric.Tests.Application.Queries
             }
 
         }
-        // ---- Bodegas encerradas en el vendedor ----
+        // Bodegas filtradas por vendedor
 
         [Fact]
         public async Task SellerListsOnlyOwnWarehouses()
@@ -505,7 +505,7 @@ namespace Zentric.Tests.Application.Queries
                 new GetWarehousesQuery(null, vendorId, UserRole.Seller), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            var warehouse = Assert.Single(result.Value);
+            var warehouse = Assert.Single(result.Value.Items);
             Assert.Equal("Mia", warehouse.Name);
         }
 
@@ -538,7 +538,7 @@ namespace Zentric.Tests.Application.Queries
                 new GetWarehousesQuery(null, Guid.NewGuid(), UserRole.LogisticsOperator), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            Assert.Equal(2, result.Value.Count);
+            Assert.Equal(2, result.Value.TotalItems);
         }
 
         [Fact]
@@ -571,7 +571,7 @@ namespace Zentric.Tests.Application.Queries
             Assert.True(result.IsSuccess);
             Assert.Equal("Mia", result.Value.Name);
         }
-        // ---- Inventario por dueno de producto ----
+        // Inventario filtrado por propietario del producto
 
         [Fact]
         public async Task SellerSeesStockOfOwnProductInAnyWarehouse()

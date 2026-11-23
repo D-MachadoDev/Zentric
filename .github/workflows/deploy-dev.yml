@@ -136,7 +136,7 @@ jobs:
               git checkout develop
               git reset --hard origin/develop
             else
-              git clone -b develop https://github.com/zentric/zentric.git .
+              git clone -b develop https://github.com/D-MachadoDev/Zentric.git .
             fi
 
             # Verificar presencia de archivo .env
@@ -154,7 +154,7 @@ jobs:
             echo "=== Verificando disponibilidad del backend API ==="
             MAX_ATTEMPTS=12
             ATTEMPT=1
-            HEALTH_URL="http://127.0.0.1:5076/health"
+            HEALTH_URL="http://127.0.0.1:15433/health"
             SUCCESS=0
 
             while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do

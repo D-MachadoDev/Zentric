@@ -22,7 +22,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
         {
             // AsNoTracking, igual que el listado de este repositorio y por el mismo
             // motivo que en los demas: el Update posterior adjunta un DbModel nuevo
-            // y chocaria con la fila rastreada (H-15).
+            // y chocaria con la fila rastreada .
             var dbModel = await _dbContext.Warehouses
                 .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);

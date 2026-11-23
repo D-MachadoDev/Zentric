@@ -53,13 +53,21 @@ namespace Zentric.Application.Orders.Commands
 
             try
             {
-                // Checkout the order (moves to PendingPayment)
-                order.Checkout();
+                bool isRenewal = order.Status == Domain.Orders.Enums.OrderStatus.PendingPayment;
 
-                // Agrupar por vendedor ANTES de reservar: la reserva ya escribe en la
-                // base (ADR-0025), asi que cualquier validacion que pueda fallar
-                // (producto inexistente) debe llegar antes de tocar stock o dejaria
-                // reservas confirmadas de un pedido que ni siquiera se guarda.
+                // Checkout the order (moves to PendingPayment) or renew its 15-min window if already PendingPayment
+                if (isRenewal)
+                {
+                    order.RenewReservation();
+                }
+                else
+                {
+                    order.Checkout();
+                }
+
+                // Agrupar por vendedor antes de reservar: la reserva persiste cambios en la
+                // base de datos, asi que cualquier validacion que pueda fallar
+                // debe ejecutarse antes de tocar stock.
                 var itemsByVendor = new Dictionary<Guid, List<Domain.Orders.Entities.OrderItem>>();
                 foreach (var item in order.Items)
                 {
@@ -69,8 +77,7 @@ namespace Zentric.Application.Orders.Commands
                         return Result<bool>.NotFound($"Product for variant {item.VariantId} not found.");
                     }
 
-                    // CAT-02: un producto digital no genera despacho (entrega inmediata
-                    // tras el pago). Antes abria un FulfillmentOrder que nadie empacaba.
+                    // Un producto digital no genera despacho (entrega inmediata tras el pago).
                     if (product.Type == Zentric.Domain.Products.Enums.ProductType.Digital)
                     {
                         continue;
@@ -83,7 +90,7 @@ namespace Zentric.Application.Orders.Commands
                     itemsByVendor[product.VendorId].Add(item);
                 }
 
-                // INV-05 (decision del Owner 2026-10-04): el checkout rechaza cualquier
+                // El checkout rechaza cualquier
                 // carrito que contenga un producto de un Vendedor bloqueado o desactivado.
                 // Los productos del Vendedor siguen Published (no hay cascada), asi que la
                 // unica barrera es esta. Se comprueba ANTES de reservar stock, porque la
@@ -99,7 +106,7 @@ namespace Zentric.Application.Orders.Commands
                             $"Vendor {vendorId} is blocked and cannot sell.");
                     }
 
-                    // INV-05 + ADR-0021: rechazar si el vendedor supera el umbral de stock fantasma
+                    // + ADrechazar si el vendedor supera el umbral de stock fantasma
                     if (vendor is not null && vendor.ExceedsStockFantasmaThreshold())
                     {
                         return Result<bool>.Failure(
@@ -107,14 +114,17 @@ namespace Zentric.Application.Orders.Commands
                     }
                 }
 
-                // Reserve inventory
-                await _inventoryReservationService.ReserveForOrderAsync(order, cancellationToken);
-
-                // Create FulfillmentOrders for each vendor
-                foreach (var vendorId in itemsByVendor.Keys)
+                if (!isRenewal)
                 {
-                    var fulfillmentOrder = new FulfillmentOrder(order.Id, vendorId);
-                    await _fulfillmentOrderRepository.AddAsync(fulfillmentOrder, cancellationToken);
+                    // Reserve inventory
+                    await _inventoryReservationService.ReserveForOrderAsync(order, cancellationToken);
+
+                    // Create FulfillmentOrders for each vendor
+                    foreach (var vendorId in itemsByVendor.Keys)
+                    {
+                        var fulfillmentOrder = new FulfillmentOrder(order.Id, vendorId);
+                        await _fulfillmentOrderRepository.AddAsync(fulfillmentOrder, cancellationToken);
+                    }
                 }
 
                 await _orderRepository.UpdateAsync(order, cancellationToken);

@@ -13,7 +13,9 @@ namespace Zentric.Application.Inventories.Queries
         int AvailableQuantity,
         int ReservedQuantity,
         int UsedQuantity,
-        int DamagedQuantity);
+        int DamagedQuantity,
+        string ProductName,
+        string Sku);
 
     /// <summary>
     /// Stock de una variante. El Vendedor solo ve el stock de SUS
@@ -37,16 +39,22 @@ namespace Zentric.Application.Inventories.Queries
 
         public async Task<Result<IReadOnlyList<InventoryDto>>> Handle(GetInventoryByVariantQuery request, CancellationToken cancellationToken)
         {
-            if (request.CallerRole == UserRole.Seller)
+            // El producto se necesita siempre: de el salen el nombre y el SKU que
+            // la pantalla muestra. Para el Vendedor, ademas, es la prueba de dueno.
+            var product = await _productRepository.GetByVariantIdAsync(request.VariantId, cancellationToken);
+            if (product == null)
+            {
+                return Result<IReadOnlyList<InventoryDto>>.NotFound("Variant not found.");
+            }
+
+            if (request.CallerRole == UserRole.Seller && product.VendorId != request.CallerId)
             {
                 // El dueno del stock es el dueno del producto: sus bienes se leen
                 // aunque esten en la bodega de otro (hub del Marketplace incluida).
-                var product = await _productRepository.GetByVariantIdAsync(request.VariantId, cancellationToken);
-                if (product == null || product.VendorId != request.CallerId)
-                {
-                    return Result<IReadOnlyList<InventoryDto>>.NotFound("Variant not found.");
-                }
+                return Result<IReadOnlyList<InventoryDto>>.NotFound("Variant not found.");
             }
+
+            var sku = product.Variants.FirstOrDefault(v => v.Id == request.VariantId)?.Sku ?? string.Empty;
 
             var inventories = await _inventoryRepository.GetByVariantIdAsync(request.VariantId, cancellationToken);
             var dtos = inventories.Select(i => new InventoryDto(
@@ -56,7 +64,9 @@ namespace Zentric.Application.Inventories.Queries
                 i.AvailableQuantity,
                 i.ReservedQuantity,
                 i.UsedQuantity,
-                i.DamagedQuantity
+                i.DamagedQuantity,
+                product.Name,
+                sku
             )).ToList();
 
             return Result<IReadOnlyList<InventoryDto>>.Success(dtos);

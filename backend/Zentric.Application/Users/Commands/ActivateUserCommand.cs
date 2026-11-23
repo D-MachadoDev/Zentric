@@ -9,7 +9,7 @@ using Zentric.Domain.Users.Ports;
 namespace Zentric.Application.Users.Commands
 {
     /// <summary>
-    /// Devuelve el acceso a un usuario bloqueado (INV-05).
+    /// Devuelve el acceso a un usuario bloqueado .
     /// </summary>
     /// <param name="Id">Identificador del usuario que se reactiva.</param>
     public record ActivateUserCommand(Guid Id) : IRequest<Result>;
@@ -37,7 +37,7 @@ namespace Zentric.Application.Users.Commands
             {
                 user.Activate();
             }
-            // INV-05: la guarda del agregado (ya activo, usuario borrado) es regla de
+            // la guarda del agregado (ya activo, usuario borrado) es regla de
             // negocio predecible: se traduce a Result para responder 400, no 500.
             catch (InvalidOperationException ex)
             {

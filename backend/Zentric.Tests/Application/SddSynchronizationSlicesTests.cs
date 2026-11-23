@@ -39,9 +39,7 @@ namespace Zentric.Tests.Application
 {
     public class SddSynchronizationSlicesTests
     {
-        // ====================================================================
-        // SLICE 1 & SLICE 2: ORDER SNAPSHOT ENRICHMENT & EXPIRATION SYNC
-        // ====================================================================
+        // Order snapshot enrichment and expiration synchronization
 
         [Fact]
         public async Task GetOrderByIdQueryHandler_EnrichesOrderItem_WithProductAndVendorMetadata_AndExpiresAt()
@@ -191,8 +189,8 @@ namespace Zentric.Tests.Application
             var result = await handler.Handle(new GetOrdersQuery(buyerId, UserRole.Buyer, null), CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            Assert.Single(result.Value);
-            var listItem = result.Value[0];
+            Assert.Single(result.Value.Items);
+            var listItem = result.Value.Items[0];
             Assert.Equal(order.CreatedAt.AddMinutes(15), listItem.ExpiresAt);
             Assert.Single(listItem.Items);
             Assert.Equal("Mouse Logitech MX Master", listItem.Items[0].ProductName);
@@ -210,7 +208,7 @@ namespace Zentric.Tests.Application
             currentUserMock.Setup(c => c.UserId).Returns(buyerId);
 
             mediatorMock.Setup(m => m.Send(It.Is<GetOrdersQuery>(q => q.CallerId == buyerId && q.CallerRole == UserRole.Buyer), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(Result<IReadOnlyList<OrderListItemDto>>.Success(new List<OrderListItemDto>()));
+                .ReturnsAsync(Result<PagedResult<OrderListItemDto>>.Success(new PagedResult<OrderListItemDto>(new List<OrderListItemDto>(), 1, 20, 0)));
 
             var controller = new OrdersController(mediatorMock.Object, currentUserMock.Object);
 
@@ -220,10 +218,7 @@ namespace Zentric.Tests.Application
             Assert.NotNull(okResult.Value);
             mediatorMock.Verify(m => m.Send(It.Is<GetOrdersQuery>(q => q.CallerId == buyerId && q.CallerRole == UserRole.Buyer), It.IsAny<CancellationToken>()), Times.Once);
         }
-
-        // ====================================================================
-        // SLICE 3: PERSISTENT BUYER PROFILE
-        // ====================================================================
+        // Persistent buyer profile
 
         [Fact]
         public void Buyer_SupportsPhoneProperty_AndMutations()
@@ -345,10 +340,7 @@ namespace Zentric.Tests.Application
             var result4 = validator.Validate(validCommand);
             Assert.True(result4.IsValid);
         }
-
-        // ====================================================================
-        // SLICE 4: PRODUCT CATEGORIES & FILTERING
-        // ====================================================================
+        // Product categories and filtering
 
         [Fact]
         public void Product_SupportsCategory_InConstructorAndMutations()

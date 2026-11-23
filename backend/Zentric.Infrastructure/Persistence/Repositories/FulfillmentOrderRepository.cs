@@ -7,6 +7,7 @@ using Zentric.Domain.Logistics;
 using Zentric.Infrastructure.Persistence.Mappers;
 
 using Zentric.Domain.Logistics.Enums;
+using Zentric.Domain.Orders.Enums;
 using Zentric.Infrastructure.Persistence.Models;
 
 namespace Zentric.Infrastructure.Persistence.Repositories
@@ -49,6 +50,16 @@ namespace Zentric.Infrastructure.Persistence.Repositories
                 query = query.Where(o => o.Status == status.Value);
             }
 
+            // Un despacho solo es operable cuando su pedido ya fue pagado (o está
+            // mas adelante en el ciclo). Los pedidos en PendingPayment/Cart/Cancelled
+            // no deben aparecer en la cola logistica ni poderse empaquetar: evita que
+            // logistica prepare paquetes de pedidos que aun no se cobraron.
+            query = query.Where(o => _dbContext.CustomerOrders.Any(co =>
+                co.Id == o.CustomerOrderId &&
+                (co.Status == OrderStatus.Paid ||
+                 co.Status == OrderStatus.Dispatched ||
+                 co.Status == OrderStatus.Delivered)));
+
             // Del mas reciente al mas antiguo: en la cola de despacho lo relevante es lo que entro
             // despues. El desempate por Id mantiene el orden estable entre llamadas.
             var list = await query
@@ -79,7 +90,7 @@ namespace Zentric.Infrastructure.Persistence.Repositories
             // AsNoTracking: la lectura devuelve un objeto de dominio independiente.
             // Con la fila rastreada, el Update posterior adjuntaria un segundo
             // instancia con la misma clave y el despacho no se podria persistir
-            // (H-15, mismo fallo que en devoluciones).
+            // (, mismo fallo que en devoluciones).
             var dbModel = await _dbContext.FulfillmentOrders
                 .AsNoTracking()
                 .Include(o => o.Shipments)

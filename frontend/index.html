@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Consola operativa del marketplace Zentric: catálogo, inventario, pedidos, logística y devoluciones."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <title>Zentric — Consola operativa</title>
+
+    <!-- Tipografía Oficial Geist (Idéntica al prototipo v2) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Brandkit (activos oficiales en /brandkit) -->
+    <link rel="icon" type="image/png" href="/brandkit/logo/zentric-icon-dark.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/brandkit/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/brandkit/favicon/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/brandkit/favicon/apple-touch-icon-180x180.png" />
+    <link rel="manifest" href="/brandkit/manifest.json" />
+    <meta name="theme-color" content="#F5F6F8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0C0F16" media="(prefers-color-scheme: dark)" />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Zentric" />
+    <meta property="og:title" content="Zentric — Marketplace multi-vendedor" />
+    <meta
+      property="og:description"
+      content="Reserva atómica de 15 minutos, despacho rastreable y devolución segura."
+    />
+    <meta property="og:image" content="/brandkit/og/og-default.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Zentric — Marketplace multi-vendedor" />
+    <meta name="twitter:description" content="Reserva atómica de 15 minutos, despacho rastreable y devolución segura." />
+    <meta name="twitter:image" content="/brandkit/og/og-default.png" />
+
+    <script src="/env-config.js" defer></script>
+  </head>
+  <body>
+    <div id="root">
+      <style>
+        .initial-splash {
+          position: fixed;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background-color: #FAFAFA;
+          color: #09090B;
+          font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          z-index: 99999;
+        }
+        @media (prefers-color-scheme: dark) {
+          .initial-splash {
+            background-color: #09090B;
+            color: #FAFAFA;
+          }
+        }
+        .initial-splash-spinner {
+          width: 16px;
+          height: 16px;
+          margin-top: 16px;
+          border: 2px solid rgba(16, 185, 129, 0.2);
+          border-top-color: #10B981;
+          border-radius: 50%;
+          animation: initial-spin 0.8s linear infinite;
+        }
+        @keyframes initial-spin {
+          to { transform: rotate(360deg); }
+        }
+      </style>
+      <div class="initial-splash">
+        <div style="display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:24px;font-weight:700;letter-spacing:-0.03em;">zentric<span style="color:#10B981;">.</span></span>
+        </div>
+        <div class="initial-splash-spinner" aria-hidden="true"></div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

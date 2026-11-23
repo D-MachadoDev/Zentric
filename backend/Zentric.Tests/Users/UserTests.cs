@@ -7,7 +7,7 @@ namespace Zentric.Tests.Users;
 
 /// <summary>
 /// Pruebas de caracterización del agregado User.
-/// Reglas protegidas: RG-01/RG-02 (usuario autenticado y rol único), un usuario
+/// Reglas protegidas: /(usuario autenticado y rol único), un usuario
 /// bloqueado no puede modificarse, solo un usuario activo puede autoeliminarse.
 /// Referencias: ZENTRIC.md, secciones 5 y 10.
 /// </summary>

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Zentric.Domain.Inventories;
@@ -7,10 +8,22 @@ using Zentric.Domain.Inventories;
 namespace Zentric.Domain.Inventories.Ports
 {
     /// <summary>
+    /// Fila del listado de existencias con la identidad comercial de su variante.
+    ///
+    /// El nombre y el SKU viven en el producto y la variante, no en la existencia.
+    /// Se resuelven en la misma consulta paginada para no hacer N+1 ni obligar a
+    /// la pantalla a inventar un identificador cuando no encuentra el producto.
+    /// </summary>
+    public sealed record InventoryListRow(
+        Inventory Inventory,
+        string ProductName,
+        string Sku);
+
+    /// <summary>
     /// Puerto de salida (Output Port) para la persistencia y operaciones atómicas de inventario.
     /// </summary>
     /// <remarks>
-    /// Define contratos para consultas seguras aisladas por vendedor y mutaciones atómicas condicionales (ADR-0025)
+    /// Define contratos para consultas seguras aisladas por vendedor y mutaciones atómicas condicionales
     /// que garantizan que el stock jamás sea negativo ante concurrencia sin usar locks pesados de base de datos.
     /// </remarks>
     public interface IInventoryRepository
@@ -30,12 +43,43 @@ namespace Zentric.Domain.Inventories.Ports
         /// </summary>
         Task<IReadOnlyList<Inventory>> GetListAsync(Guid? vendorId, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Listado paginado con la identidad del producto resuelta en la consulta.
+        ///
+        /// <paramref name="vendorId"/> acota por dueno del producto; <paramref name="warehouseId"/>
+        /// por bodega; <paramref name="search"/> compara contra nombre de producto y SKU. El total
+        /// se cuenta antes del <c>Skip/Take</c>, con los mismos filtros, para que la pantalla no
+        /// muestre un contador que no corresponde a lo que esta viendo.
+        /// </summary>
+        async Task<(IReadOnlyList<InventoryListRow> Items, int TotalItems)> GetPagedAsync(
+            Guid? vendorId,
+            Guid? warehouseId,
+            string? search,
+            int skip,
+            int take,
+            CancellationToken cancellationToken = default)
+        {
+            // Implementacion por defecto para no romper los dobles de prueba que
+            // solo conocen el listado completo. El adaptador real la sobrescribe
+            // con una unica consulta paginada; aqui se reproduce el mismo contrato.
+            var all = await GetListAsync(vendorId, cancellationToken);
+            var filtered = all
+                .Where(i => !warehouseId.HasValue || i.WarehouseId == warehouseId.Value)
+                .ToList();
+
+            var page = filtered.Skip(skip).Take(take)
+                .Select(i => new InventoryListRow(i, string.Empty, string.Empty))
+                .ToList();
+
+            return (page, filtered.Count);
+        }
+
         Task AddAsync(Inventory inventory, CancellationToken cancellationToken = default);
         Task UpdateAsync(Inventory inventory, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Carga el agregado con su historial de ajustes por conteo fisico
-        /// (ADR-0021, decision 5). Sin el historial, la auditoria de
+        /// (AD, decision 5). Sin el historial, la auditoria de
         /// reincidentes no puede responder quien ajusto que ni cuando.
         /// </summary>
         Task<Inventory> LoadWithHistoryAsync(Guid id, CancellationToken cancellationToken = default);
@@ -48,22 +92,15 @@ namespace Zentric.Domain.Inventories.Ports
         Task SaveAdjustmentAsync(Inventory inventory, StockAdjustmentRecord record, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Reserva de forma ATOMICA una cantidad de UNA fila de existencias
-        /// (ADR-0025): un solo UPDATE condicional
+        /// Reserva atómicamente una cantidad de una fila de existencias mediante UPDATE condicional
         /// (disponible -= n, reservado += n WHERE Id = id AND disponible >= n).
-        /// Devuelve false si no había stock suficiente (cero filas afectadas),
-        /// que es el unico caso en que la base se niega; jamas deja la fila
-        /// negativa aunque dos peticiones corran a la vez. El candado dura lo
-        /// que dura la sentencia, no una transaccion larga (ADR-0025, decision 4).
+        /// Devuelve false si no habia stock suficiente.
         /// </summary>
         Task<bool> TryReserveStockAsync(Guid inventoryId, int quantity, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Libera una reserva ya aplicada (UPDATE inverso condicional:
-        /// reservado -= n, disponible += n WHERE reservado >= n). Es la
-        /// compensacion que exige ADR-0001 para que un fallo a mitad de la
-        /// reserva no deje parciales confirmados, y se aplica en el mismo
-        /// estilo atomico que la reserva. Ver ADR-0025.
+        /// Libera una reserva aplicada mediante UPDATE condicional
+        /// (reservado -= n, disponible += n WHERE reservado >= n) como compensacion si falla la reserva global.
         /// </summary>
         Task ReleaseReservedStockAsync(Guid inventoryId, int quantity, CancellationToken cancellationToken = default);
 

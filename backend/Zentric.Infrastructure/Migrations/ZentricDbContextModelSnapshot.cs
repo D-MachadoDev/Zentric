@@ -17,10 +17,53 @@ namespace Zentric.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.4")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.AuditLogDbModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid?>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EntityName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("NewValues")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OldValues")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityId");
+
+                    b.HasIndex("EntityName");
+
+                    b.HasIndex("OccurredAt");
+
+                    b.ToTable("AuditLogs");
+                });
 
             modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.BuyerDbModel", b =>
                 {
@@ -43,6 +86,35 @@ namespace Zentric.Infrastructure.Migrations
                     b.HasKey("UserId");
 
                     b.ToTable("Buyers");
+                });
+
+            modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.BuyerFavoriteDbModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("buyer_favorites", (string)null);
                 });
 
             modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.CustomerOrderDbModel", b =>
@@ -142,6 +214,46 @@ namespace Zentric.Infrastructure.Migrations
                     b.ToTable("FulfillmentOrders");
                 });
 
+            modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.IdempotencyKeyDbModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RequestMethod")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RequestPath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ResponseBody")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ResponseStatusCode")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("IdempotencyKeys");
+                });
+
             modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.InventoryDbModel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -156,6 +268,9 @@ namespace Zentric.Infrastructure.Migrations
 
                     b.Property<int>("DamagedQuantity")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("ReservedQuantity")
                         .HasColumnType("integer");
@@ -237,6 +352,73 @@ namespace Zentric.Infrastructure.Migrations
                     b.ToTable("OrderItemDbModel");
                 });
 
+            modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.OutboxMessageDbModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OccurredAt");
+
+                    b.HasIndex("ProcessedAt");
+
+                    b.ToTable("OutboxMessages");
+                });
+
+            modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.PasswordResetTokenDbModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordResetTokenDbModel");
+                });
+
             modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.PaymentReceiptDbModel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -271,6 +453,11 @@ namespace Zentric.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<decimal>("AverageRating")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(3,2)")
+                        .HasDefaultValue(0.00m);
+
                     b.Property<string>("Category")
                         .HasColumnType("text");
 
@@ -290,6 +477,11 @@ namespace Zentric.Infrastructure.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int>("ReviewsCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -480,6 +672,177 @@ namespace Zentric.Infrastructure.Migrations
                     b.ToTable("ReturnRequests");
                 });
 
+            modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.ReviewDbModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BuyerName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ImageUrlsJson")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ProductId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("reviews", (string)null);
+                });
+
+            modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.SellerBankAccountDbModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AccountHolderName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("AccountType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DocumentNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("SellerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SellerId")
+                        .IsUnique();
+
+                    b.ToTable("seller_bank_accounts", (string)null);
+                });
+
+            modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.SellerPayoutDbModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("BankSummary")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReferenceNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SellerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestedAt");
+
+                    b.HasIndex("SellerId");
+
+                    b.ToTable("seller_payouts", (string)null);
+                });
+
+            modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.SellerProfileDbModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LogoUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("StoreName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("seller_profiles", (string)null);
+                });
+
             modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.ShipmentDbModel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -583,6 +946,33 @@ namespace Zentric.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.UserRecentlyViewedDbModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ViewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ViewedAt");
+
+                    b.HasIndex("UserId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("UserRecentlyViewed");
+                });
+
             modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.WarehouseDbModel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -665,6 +1055,17 @@ namespace Zentric.Infrastructure.Migrations
 
                     b.Navigation("MainAddress")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.BuyerFavoriteDbModel", b =>
+                {
+                    b.HasOne("Zentric.Infrastructure.Persistence.Models.ProductDbModel", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.DigitalDeliveryRecordDbModel", b =>
@@ -890,6 +1291,17 @@ namespace Zentric.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.ReviewDbModel", b =>
+                {
+                    b.HasOne("Zentric.Infrastructure.Persistence.Models.ProductDbModel", "Product")
+                        .WithMany("Reviews")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.ShipmentDbModel", b =>
                 {
                     b.HasOne("Zentric.Infrastructure.Persistence.Models.FulfillmentOrderDbModel", "FulfillmentOrder")
@@ -920,6 +1332,8 @@ namespace Zentric.Infrastructure.Migrations
 
             modelBuilder.Entity("Zentric.Infrastructure.Persistence.Models.ProductDbModel", b =>
                 {
+                    b.Navigation("Reviews");
+
                     b.Navigation("Variants");
                 });
 #pragma warning restore 612, 618

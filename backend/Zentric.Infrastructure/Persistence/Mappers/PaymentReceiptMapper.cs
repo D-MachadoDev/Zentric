@@ -26,10 +26,7 @@ namespace Zentric.Infrastructure.Persistence.Mappers
             Set(typeof(PaymentReceipt), receipt, "RefundedAmount",
                 new Money(dbModel.RefundedAmount.Amount, dbModel.RefundedAmount.Currency));
 
-            // La hidratacion ocurre por reflexion sobre un objeto sin ctor, de modo
-            // que la lista queda en null (ver PaymentReceipt._credits). Se rellena
-            // aqui, no en el dominio: solo el mapper sabe que el objeto no se
-            // construyo por su ctor normal.
+            // Objeto hidratado por reflexion sin constructor; se inicializa la lista de creditos.
             var credits = GetCredits(receipt);
             foreach (var creditDb in dbModel.Credits)
             {

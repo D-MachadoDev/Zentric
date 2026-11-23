@@ -1,4 +1,5 @@
 using Zentric.Application.Common.Messaging;
+using Zentric.Application.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
@@ -16,10 +17,9 @@ namespace Zentric.Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    // Los listados de usuario exponen PII (documento de identidad y correo), asi que la
-    // Ley los deja solo en manos del Administrador (seccion 5: "responsable de la administracion
-    // de vendedores"). El Supervisor NO los lee: su "consulta y seguimiento operativo" (seccion
-    // 5) no incluye datos personales. Cada usuario conserva su propia identidad por GET /auth/me.
+    // Los listados de usuario exponen PII (documento de identidad y correo), asi que
+    // quedan reservados al Administrador. El Supervisor no los lee porque su rol
+    // operativo no incluye datos personales. Cada usuario consulta su identidad en GET /auth/me.
     [Tags("1. Usuarios y Roles")]
     [Produces("application/json")]
     public class UsersController : ControllerBase
@@ -38,14 +38,8 @@ namespace Zentric.Api.Controllers
         /// </summary>
         /// <remarks>
         /// <para>
-        /// Excepcion justificada a RG-01, y la unica. Sin ella no existiria la
-        /// primera cuenta: no se puede autenticar lo que todavia no se ha
-        /// registrado. La excepcion se limita a lo que la propia Ley permite
-        /// (auto-registro), no abre el registro general.
-        /// </para>
-        /// <para>
-        /// <b>Buyer</b>: se puede registrar sin token. ZENTRIC.md incluye
-        /// "Registro de compradores" entre los procesos del alcance.
+        /// Auto-registro permitido unicamente para Compradores (Buyer) sin token previo.
+        /// Cualquier otro rol requiere token de Administrador.
         /// </para>
         /// <para>
         /// <b>Cualquier otro rol</b>: exige token de Administrador. ZENTRIC.md
@@ -53,10 +47,10 @@ namespace Zentric.Api.Controllers
         /// incorporados por el Administrador", y la Matriz de Responsabilidades
         /// asigna "Registro Vendedores" solo al Admin. Extenderlo a
         /// Supervisor y LogisticsOperator es la lectura coherente de "ningun
-        /// participante administrara informacion fuera de su rol" (RG-03).
+        /// participante administrara informacion fuera de su rol" .
         /// </para>
         /// </remarks>
-        /// <param name="command">Datos de creación del usuario. La contraseña viaja en claro y la calcula el servidor (ADR-0009).</param>
+        /// <param name="command">Datos de creación del usuario. La contraseña viaja en texto y el hash lo calcula el servidor.</param>
         /// <response code="200">Usuario registrado con éxito. Retorna el identificador único (Guid) generado.</response>
         /// <response code="400">Error de validación o conflicto por correo/documento duplicado (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Rol distinto de Buyer sin token de Administrador.</response>
@@ -69,7 +63,7 @@ namespace Zentric.Api.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand command)
         {
-            // La unica excepcion a RG-01 es el auto-registro del comprador.
+            // La unica excepcion a es el auto-registro del comprador.
             if (command.Role != UserRole.Buyer && !IsAdministrator())
             {
                 return Problem(
@@ -96,13 +90,16 @@ namespace Zentric.Api.Controllers
         /// Permite al Administrador consultar todos los usuarios del sistema o filtrar por roles específicos como Vendor o Buyer.
         /// </remarks>
         /// <param name="role">Filtro opcional por rol de usuario (Buyer, Vendor, Admin, LogisticsOperator, Supervisor).</param>
+        /// <param name="page">Página (1-based).</param>
+        /// <param name="size">Tamaño de página.</param>
         /// <response code="200">Lista de usuarios obtenida exitosamente.</response>
         [HttpGet]
         [Authorize(Policy = AuthorizationPolicies.UserAdministration)]
-        [ProducesResponseType(typeof(IReadOnlyList<UserDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetUsers([FromQuery] UserRole? role = null)
+        [ProducesResponseType(typeof(PagedResult<UserDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetUsers([FromQuery] UserRole? role = null, [FromQuery] int page = 1, [FromQuery] int size = 20)
         {
-            var result = await _mediator.Send(new GetUsersQuery(role));
+            var result = await _mediator.Send(new GetUsersQuery(role, page - 1, size));
+            if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
 
@@ -124,7 +121,7 @@ namespace Zentric.Api.Controllers
         }
 
         /// <summary>
-        /// Bloquea un usuario y le cierra el acceso a la plataforma (INV-05).
+        /// Bloquea un usuario y le cierra el acceso a la plataforma .
         /// </summary>
         /// <remarks>
         /// <para>
@@ -137,7 +134,7 @@ namespace Zentric.Api.Controllers
         /// <para>
         /// Ademas cierra el login: <c>User.CanAuthenticate</c> exige <c>Active</c> y no
         /// borrado, asi que un usuario bloqueado no obtiene token (ZENTRIC.md, Dominio 1).
-        /// Los pedidos ya pagados y sus despachos no se tocan (RG-11).
+        /// Los pedidos ya pagados y sus despachos no se tocan .
         /// </para>
         /// </remarks>
         /// <param name="id">Identificador único (Guid) del usuario a bloquear.</param>
@@ -159,7 +156,7 @@ namespace Zentric.Api.Controllers
         }
 
         /// <summary>
-        /// Devuelve el acceso a un usuario bloqueado (INV-05).
+        /// Devuelve el acceso a un usuario bloqueado .
         /// </summary>
         /// <remarks>
         /// Es la inversa de <c>POST {id}/block</c>: sin ella un error del

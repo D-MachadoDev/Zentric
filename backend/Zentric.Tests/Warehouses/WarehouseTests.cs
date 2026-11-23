@@ -9,7 +9,7 @@ namespace Zentric.Tests.Warehouses;
 /// Reglas protegidas: bodega Marketplace sin vendedor, bodega de vendedor con
 /// dueño obligatorio, operaciones bloqueadas sobre bodegas inactivas o borradas.
 /// Nota: la especificación usa el término "Vendor"; el código actual usa
-/// "Seller". Hallazgo C-05 / R-09. Estas pruebas fijan
+/// "Seller". Hallazgo C-05 / . Estas pruebas fijan
 /// el comportamiento actual sin resolver el naming.
 /// </summary>
 public sealed class WarehouseTests

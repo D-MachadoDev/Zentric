@@ -1,7 +1,7 @@
 namespace Zentric.Domain.Orders.Enums
 {
     /// <summary>
-    /// Por que quedo cancelado un pedido. ADR-0022 (decision 2) exige que un
+    /// Por que quedo cancelado un pedido. AD(decision 2) exige que un
     /// pedido liquidado y uno caducado "no puedan leerse igual": con un string
     /// libre ambos se leen igual, asi que la causa es un tipo y el detalle es
     /// texto opcional que no la sustituye.
@@ -16,7 +16,7 @@ namespace Zentric.Domain.Orders.Enums
 
         /// <summary>
         /// Resolucion total: todos los despachos cancelados por quiebre de stock
-        /// (EXC-01) y el comprobante con credito acumulado igual a lo cobrado
+        ///  y el comprobante con credito acumulado igual a lo cobrado
         /// (invariante 14). No llego nada y el dinero volvio entero.
         /// </summary>
         FullyResolved = 1,

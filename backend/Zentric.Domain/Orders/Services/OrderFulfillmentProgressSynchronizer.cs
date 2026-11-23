@@ -23,15 +23,15 @@ namespace Zentric.Domain.Orders.Services
             if (order == null) throw new ArgumentNullException(nameof(order));
             if (fulfillmentStatuses == null) throw new ArgumentNullException(nameof(fulfillmentStatuses));
 
-            // EXC-01: un despacho cancelado por quiebre de stock no llegara jamas a
+            // un despacho cancelado por quiebre de stock no llegara jamas a
             // entregarse. Contarlo como pendiente dejaria al pedido maestro en Paid para
             // siempre, aunque todo lo demas ya este entregado; su linea se salda con el
-            // credito parcial de EXC-02, de modo que no bloquea al resto del pedido.
+            // credito parcial de , de modo que no bloquea al resto del pedido.
             var active = fulfillmentStatuses.Where(s => s != FulfillmentStatus.Cancelled).ToList();
 
             // Si no queda ninguna entrega activa, no hay nada entregado: marcar el pedido
             // como Delivered seria mentir. Se queda donde esta y las lineas se resuelven
-            // por EXC-02.
+            // por .
             if (active.Count == 0)
             {
                 return;

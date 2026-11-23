@@ -68,7 +68,7 @@ namespace Zentric.Tests.Application.Catalog
             var repository = new FakeProductRepository();
             var unitOfWork = new FakeUnitOfWork();
 
-            // Un producto recien creado ya nace Published (CAT-01).
+            // Un producto recien creado ya nace Published (CA).
             var product = new Product(
                 name: "Camiseta",
                 description: "Camiseta de algodon",

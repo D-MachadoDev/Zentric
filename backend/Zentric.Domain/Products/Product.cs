@@ -14,14 +14,16 @@ namespace Zentric.Domain.Products
         public ProductStatus Status { get; private set; }
         public string? ImageUrl { get; private set; }
         public string? Category { get; private set; }
+        public decimal AverageRating { get; private set; }
+        public int ReviewsCount { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
         public DateTime? DeletedAt { get; private set; }
 
         public bool IsDeleted => DeletedAt.HasValue;
 
-        // ADR-0003: un producto Fisico siempre tiene al menos una
-        // variante; los Digitales (CAT-02: sin logistica ni inventario) pueden no tenerla.
+        // Un producto físico siempre tiene al menos una variante; los digitales
+        // (sin logística ni inventario) pueden no tenerla.
         public bool HasVariant => _variants.Any(variant => !variant.IsDeleted);
 
         public bool HasSellableVariant => _variants.Any(variant => variant.CanBeSold);
@@ -45,7 +47,7 @@ namespace Zentric.Domain.Products
         }
 
         /// <summary>
-        /// Crea el producto. Segun ADR-0003 un producto
+        /// Crea el producto. Un producto
         /// <see cref="ProductType.Physical"/> exige al menos una variante; un
         /// <see cref="ProductType.Digital"/> puede nacer sin ninguna.
         /// Cada semilla se compone del SKU y de sus atributos, con la misma forma que
@@ -85,8 +87,8 @@ namespace Zentric.Domain.Products
             var variantSeeds = variants?.ToList()
                 ?? new List<(string Sku, IEnumerable<VariantAttribute> Attributes)>();
 
-            // ADR-0003: Un producto Fisico no puede existir sin variante
-            // porque la variante es la unidad de stock (INV-03): sin ella no hay inventario
+            // Un producto fisico no puede existir sin variante
+            // porque la variante es la unidad de stock: sin ella no hay inventario
             // ni reserva posible, y ese estado bloqueaba al InventoryReservationService.
             if (type == ProductType.Physical && variantSeeds.Count == 0)
             {
@@ -102,6 +104,8 @@ namespace Zentric.Domain.Products
             Status = ProductStatus.Published;
             ImageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
             Category = string.IsNullOrWhiteSpace(category) ? null : category.Trim();
+            AverageRating = 0m;
+            ReviewsCount = 0;
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = CreatedAt;
             DeletedAt = null;
@@ -115,9 +119,9 @@ namespace Zentric.Domain.Products
         /// <summary>
         /// Crea y agrega una variante (SKU) al producto. El VariantId resultante es
         /// la clave con la que el inventario identifica el stock.
-        /// Referencia: ADR-0002.
+        /// Referencia: clave de inventario por variante.
         /// </summary>
-        public ProductVariant AddVariant(string sku, IEnumerable<VariantAttribute> attributes)
+        public ProductVariant AddVariant(string sku, IEnumerable<VariantAttribute> attributes, decimal? priceAmount = null)
         {
             if (IsDeleted)
             {
@@ -131,14 +135,14 @@ namespace Zentric.Domain.Products
 
             var normalizedSku = sku.Trim().ToUpperInvariant();
 
-            // El SKU identifica el stock (ADR-0002), por lo que no puede repetirse
+            // El SKU identifica el stock, por lo que no puede repetirse
             // dentro del mismo producto (frontera de consistencia del agregado).
             if (_variants.Any(variant => string.Equals(variant.Sku, normalizedSku, StringComparison.OrdinalIgnoreCase)))
             {
                 throw new InvalidOperationException($"The product already has a variant with SKU '{normalizedSku}'.");
             }
 
-            var variant = new ProductVariant(Id, normalizedSku, attributes);
+            var variant = new ProductVariant(Id, normalizedSku, attributes, priceAmount);
 
             _variants.Add(variant);
             UpdatedAt = DateTime.UtcNow;
@@ -160,7 +164,7 @@ namespace Zentric.Domain.Products
                 throw new InvalidOperationException("Variant not found in this product.");
             }
 
-            // ADR-0003: un producto Fisico no puede quedarse sin variantes.
+            // Un producto fisico no puede quedarse sin variantes.
             if (Type == ProductType.Physical
                 && _variants.Count(v => !v.IsDeleted && v.Id != variantId) == 0)
             {
@@ -251,7 +255,7 @@ namespace Zentric.Domain.Products
                 throw new ArgumentOutOfRangeException(nameof(newType), "Invalid product type.");
             }
 
-            // ADR-0003: un producto no puede convertirse en Fisico si no
+            // Un producto no puede convertirse en fisico si no
             // tiene variantes, porque quedaria sin unidad de stock.
             if (newType == ProductType.Physical && !HasVariant)
             {
@@ -317,6 +321,87 @@ namespace Zentric.Domain.Products
             Status = ProductStatus.Published;
             UpdatedAt = DateTime.UtcNow;
         }
+
+        /// <summary>
+        /// Asigna y sincroniza explícitamente las métricas de calificación del producto (promedio y conteo de reseñas).
+        /// </summary>
+        public void SetRatingMetrics(decimal averageRating, int reviewsCount)
+        {
+            if (averageRating < 0 || averageRating > 5)
+            {
+                throw new ArgumentOutOfRangeException(nameof(averageRating), "Average rating must be between 0 and 5.");
+            }
+
+            if (reviewsCount < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(reviewsCount), "Reviews count cannot be negative.");
+            }
+
+            AverageRating = Math.Round(averageRating, 2, MidpointRounding.AwayFromZero);
+            ReviewsCount = reviewsCount;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Aplica una calificación al producto de forma atómica.
+        /// Si oldRating es null, se trata de una nueva reseña (incrementa ReviewsCount).
+        /// Si oldRating tiene valor, es una actualización de calificación previa (conserva ReviewsCount).
+        /// </summary>
+        public void ApplyReview(int newRating, int? oldRating = null)
+        {
+            if (newRating < 1 || newRating > 5)
+            {
+                throw new ArgumentOutOfRangeException(nameof(newRating), "Rating must be between 1 and 5.");
+            }
+
+            if (oldRating.HasValue)
+            {
+                if (oldRating.Value < 1 || oldRating.Value > 5)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(oldRating), "Old rating must be between 1 and 5.");
+                }
+
+                if (ReviewsCount <= 0)
+                {
+                    ReviewsCount = 1;
+                }
+
+                var totalScore = (AverageRating * ReviewsCount) - oldRating.Value + newRating;
+                AverageRating = Math.Round(totalScore / ReviewsCount, 2, MidpointRounding.AwayFromZero);
+            }
+            else
+            {
+                var totalScore = (AverageRating * ReviewsCount) + newRating;
+                ReviewsCount++;
+                AverageRating = Math.Round(totalScore / ReviewsCount, 2, MidpointRounding.AwayFromZero);
+            }
+
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Remueve una calificación previa recalculando el promedio atómicamente.
+        /// </summary>
+        public void RemoveReview(int rating)
+        {
+            if (rating < 1 || rating > 5)
+            {
+                throw new ArgumentOutOfRangeException(nameof(rating), "Rating must be between 1 and 5.");
+            }
+
+            if (ReviewsCount <= 1)
+            {
+                ReviewsCount = 0;
+                AverageRating = 0m;
+            }
+            else
+            {
+                var totalScore = (AverageRating * ReviewsCount) - rating;
+                ReviewsCount--;
+                AverageRating = Math.Round(totalScore / ReviewsCount, 2, MidpointRounding.AwayFromZero);
+            }
+
+            UpdatedAt = DateTime.UtcNow;
+        }
     }
 }
-

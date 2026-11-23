@@ -1,7 +1,6 @@
 # Contexto de build: la raiz del repositorio (compose usa context: . y dockerfile: backend/Dockerfile)
 # Los .csproj viven bajo backend/, por eso se copian con ese prefijo.
 
-# ---- Build stage ----
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
@@ -20,7 +19,6 @@ COPY backend/ backend/
 WORKDIR "/src/backend/Zentric.Api"
 RUN dotnet publish "Zentric.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# ---- Runtime stage ----
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 # curl solo para el healthcheck de compose: sondea /health sin ejecutar el
 # host de .NET una segunda vez (la orden anterior, `dotnet ... --health`,

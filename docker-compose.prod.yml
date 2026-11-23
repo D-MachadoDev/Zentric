@@ -1,17 +1,6 @@
-# ==============================================================================
-# Zentric Marketplace — Docker Compose de Producción (W6-S02)
-# ==============================================================================
-# Reglas operativas:
-# 1. Prohibidos valores por defecto inseguros para secretos críticos (POSTGRES_PASSWORD,
-#    JWT_SIGNING_KEY, CORS_ALLOWED_ORIGINS). Si faltan en .env, compose aborta antes de arrancar.
-# 2. PostgreSQL 16.15-alpine aislado en red interna `zentric-internal` sin exponer 5432 al host.
-# 3. En Producción, Program.cs no ejecuta MigrateAsync() automáticamente al arrancar la API;
-#    las migraciones se ejecutan de forma controlada mediante el servicio `migrator` (profile: migrate).
-# Uso:
-#   cp .env.example .env  # Completar secretos reales
-#   docker compose -f docker-compose.prod.yml --profile migrate run --rm migrator
-#   docker compose -f docker-compose.prod.yml up -d
-# ==============================================================================
+# Composicion de produccion: secretos obligatorios en .env, base aislada y migraciones via servicio migrator.
+# Migraciones: docker compose -f docker-compose.prod.yml --profile migrate run --rm migrator
+# Despliegue:  docker compose -f docker-compose.prod.yml up -d
 
 services:
   db:

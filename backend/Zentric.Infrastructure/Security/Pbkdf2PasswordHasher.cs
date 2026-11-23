@@ -7,10 +7,10 @@ namespace Zentric.Infrastructure.Security
     /// <summary>
     /// Adaptador de <see cref="IPasswordHasher"/> basado en PBKDF2-HMAC-SHA256.
     ///
-    /// ADR-0009 fija este algoritmo y 600 000 iteraciones. Se eligio PBKDF2 y no
+    /// ADfija este algoritmo y 600 000 iteraciones. Se eligio PBKDF2 y no
     /// bcrypt o Argon2id porque <c>Rfc2898DeriveBytes</c> viene en la biblioteca
     /// base de .NET: no se anade ninguna dependencia, que es el criterio que ya
-    /// rige el proyecto desde ADR-0007 (riesgo de licencia de paquetes ajenos).
+    /// rige el proyecto desde AD(riesgo de licencia de paquetes ajenos).
     ///
     /// El formato es autocontenido a proposito:
     /// <c>pbkdf2-sha256$&lt;iteraciones&gt;$&lt;salBase64&gt;$&lt;subclaveBase64&gt;</c>.
@@ -67,7 +67,7 @@ namespace Zentric.Infrastructure.Security
         public bool Verify(string password, string storedHash)
         {
             // Se devuelve false, no una excepcion: un hash con formato desconocido
-            // (por ejemplo, uno que escribio un cliente antes de ADR-0009) es un
+            // (por ejemplo, uno que escribio un cliente antes de AD) es un
             // fallo de credencial, no un fallo tecnico.
             if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(storedHash))
             {

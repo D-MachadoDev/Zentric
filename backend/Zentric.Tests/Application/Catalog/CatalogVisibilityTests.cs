@@ -113,7 +113,7 @@ namespace Zentric.Tests.Application.Catalog
 
         private static Product NewProduct(Guid vendorId, string name, bool suspended = false)
         {
-            // Un producto fisico exige al menos una variante (ADR-0003).
+            // Un producto fisico exige al menos una variante (AD).
             var seeds = new (string Sku, IEnumerable<VariantAttribute> Attributes)[]
             {
                 ($"SKU-{name}", new[] { new VariantAttribute("Color", "Rojo") })

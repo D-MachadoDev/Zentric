@@ -1,4 +1,5 @@
 using Zentric.Application.Common.Messaging;
+using Zentric.Application.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zentric.Api.Security;
@@ -46,20 +47,22 @@ namespace Zentric.Api.Controllers
         /// que tienen alguna línea suya, y Administrador, Operador y Supervisor ven todos.
         /// Un cliente no puede pedir "los de otro" porque no hay por dónde decirlo.
         ///
-        /// <c>status</c> es un filtro opcional y va por nombre (ADR-0012). Sin él también
+        /// <c>status</c> es un filtro opcional y va por nombre . Sin él también
         /// devuelve los carritos: el comprador tiene que ver su carrito abierto para poder
         /// continuar la compra.
         /// </remarks>
         /// <param name="status">Filtro opcional por estado del pedido.</param>
+        /// <param name="page">P�gina (1-based).</param>
+        /// <param name="size">Tama�o de p�gina.</param>
         /// <response code="200">Listado de pedidos visibles para el llamante.</response>
         /// <response code="400">El estado indicado no es un <c>OrderStatus</c> válido (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
         [HttpGet]
         [Authorize(Policy = AuthorizationPolicies.OrderRead)]
-        [ProducesResponseType(typeof(IReadOnlyList<OrderListItemDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(Zentric.Application.Common.Models.PagedResult<OrderListItemDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetOrders([FromQuery] string? status)
+        public async Task<IActionResult> GetOrders([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int size = 20)
         {
             var userId = _currentUser.UserId;
             var role = User.GetUserRole();
@@ -68,7 +71,7 @@ namespace Zentric.Api.Controllers
             OrderStatus? parsed = null;
 
             // El estado llega como texto porque el contrato de enums va solo por nombre
-            // (ADR-0012). Un valor desconocido es un 400 explicito y no un filtro silencioso que
+            // . Un valor desconocido es un 400 explicito y no un filtro silencioso que
             // devuelve la lista completa: seria el peor fallo posible, porque el usuario creeria
             // estar filtrando y estaria viendo de todo.
             if (!string.IsNullOrWhiteSpace(status))
@@ -85,7 +88,7 @@ namespace Zentric.Api.Controllers
                 parsed = value;
             }
 
-            var result = await _mediator.Send(new GetOrdersQuery(userId.Value, role.Value, parsed));
+            var result = await _mediator.Send(new GetOrdersQuery(userId.Value, role.Value, parsed, page - 1, size));
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
@@ -98,15 +101,17 @@ namespace Zentric.Api.Controllers
         /// (nombre de producto, SKU, URL de imagen, vendedor) y tiempo de expiración.
         /// </remarks>
         /// <param name="status">Filtro opcional por estado de la orden.</param>
+        /// <param name="page">P�gina (1-based).</param>
+        /// <param name="size">Tama�o de p�gina.</param>
         /// <response code="200">Listado de órdenes del comprador autenticado.</response>
         /// <response code="400">Estado de orden inválido (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
         [HttpGet("buyer")]
         [Authorize(Policy = AuthorizationPolicies.OrderRead)]
-        [ProducesResponseType(typeof(IReadOnlyList<OrderListItemDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(Zentric.Application.Common.Models.PagedResult<OrderListItemDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetBuyerOrders([FromQuery] string? status)
+        public async Task<IActionResult> GetBuyerOrders([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int size = 20)
         {
             var userId = _currentUser.UserId;
             if (userId is null) return MissingIdentity();
@@ -126,7 +131,7 @@ namespace Zentric.Api.Controllers
                 parsed = value;
             }
 
-            var result = await _mediator.Send(new GetOrdersQuery(userId.Value, UserRole.Buyer, parsed));
+            var result = await _mediator.Send(new GetOrdersQuery(userId.Value, UserRole.Buyer, parsed, page - 1, size));
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
@@ -166,7 +171,7 @@ namespace Zentric.Api.Controllers
         /// Valida en tiempo real la disponibilidad de existencias físicas en el inventario antes de admitir el ítem.
         /// Previene la sobreventa bloqueando la adición si la cantidad requerida supera el stock disponible.
         /// </remarks>
-        /// <param name="command">Identificador del carrito, variante y cantidad. El precio y el vendedor NO viajan: los pone el servidor con el catálogo (ADR-0020). Un BuyerId en el cuerpo se descarta: la identidad la fija el token.</param>
+        /// <param name="command">Identificador del carrito, variante y cantidad. El precio y el vendedor NO viajan: los pone el servidor con el catálogo . Un BuyerId en el cuerpo se descarta: la identidad la fija el token.</param>
         /// <response code="200">Ítem añadido satisfactoriamente al carrito.</response>
         /// <response code="400">Error si el carrito no está en estado Cart, si no hay stock suficiente o si el carrito no pertenece al llamante (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
@@ -212,6 +217,30 @@ namespace Zentric.Api.Controllers
 
             // El checkout solo opera sobre pedidos propios.
             var result = await _mediator.Send(new CheckoutOrderCommand(orderId, userId.Value));
+            if (result.IsFailure) return result.ToProblem();
+            return Ok();
+        }
+
+        /// <summary>
+        /// Cancela voluntariamente un pedido propio en estado Cart o PendingPayment y libera inmediatamente el stock reservado.
+        /// </summary>
+        /// <param name="orderId">Identificador único del pedido a cancelar.</param>
+        /// <response code="200">Pedido cancelado y reserva de inventario liberada.</response>
+        /// <response code="400">El pedido ya fue pagado, despachado o cancelado (RFC 7807 ProblemDetails).</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        /// <response code="404">Pedido no encontrado o ajeno al comprador.</response>
+        [HttpPost("{orderId}/cancel")]
+        [Authorize(Policy = AuthorizationPolicies.Checkout)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> CancelOrder(Guid orderId)
+        {
+            var userId = _currentUser.UserId;
+            if (userId is null) return MissingIdentity();
+
+            var result = await _mediator.Send(new CancelOrderCommand(orderId, userId.Value));
             if (result.IsFailure) return result.ToProblem();
             return Ok();
         }
@@ -371,3 +400,7 @@ namespace Zentric.Api.Controllers
             Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
     }
 }
+
+
+
+

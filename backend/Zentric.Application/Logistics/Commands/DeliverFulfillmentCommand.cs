@@ -8,7 +8,7 @@ namespace Zentric.Application.Logistics.Commands
     /// <summary>
     /// Confirma la entrega de un despacho (<c>Dispatched → Delivered</c>).
     ///
-    /// ADDENDUM Dominio 8, estado 4: "Entregado: Recibido por el comprador". El dominio ya tenia
+    /// "Entregado: Recibido por el comprador". El dominio ya tenia
     /// <c>Deliver()</c> y su invariante, pero no existia comando ni endpoint, de modo que ningun
     /// despacho podia cerrarse: se quedaba en Despachado para siempre.
     ///

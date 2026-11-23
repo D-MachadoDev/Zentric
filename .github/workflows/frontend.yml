@@ -1,36 +1,46 @@
 name: frontend
+
 on:
-  push:
-    paths: ["frontend/**", ".github/workflows/frontend.yml"]
-  pull_request:
-    paths: ["frontend/**"]
+    push:
+        paths:
+            - "frontend/**"
+            - ".github/workflows/frontend.yml"
+    pull_request:
+        paths:
+            - "frontend/**"
+            - ".github/workflows/frontend.yml"
+
 jobs:
-  build-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.6.5
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
-      - working-directory: frontend
-        name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - working-directory: frontend
-        name: Typecheck monorepo
-        run: pnpm typecheck
-      - working-directory: frontend/packages/ui
-        name: Test @zentric/ui with >=90% coverage gate
-        run: pnpm exec vitest run --coverage
-      - working-directory: frontend/apps/frontend
-        name: Test @zentric/frontend with >=90% coverage gate
-        run: pnpm exec vitest run --coverage
-      - working-directory: frontend
-        name: Build production bundle
-        run: pnpm build
-      - name: Build production Docker image
-        run: docker build -f frontend/Dockerfile -t zentric-frontend:ci ./frontend
+    build-test:
+        name: Frontend checks
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: frontend
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 12.6.0
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: pnpm
+                  cache-dependency-path: frontend/pnpm-lock.yaml
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Check types
+              run: pnpm typecheck
+
+            - name: Run tests
+              run: pnpm test:run
+
+            - name: Build production bundle
+              run: pnpm build
+
+            - name: Build Docker image
+              run: docker build -f Dockerfile -t zentric-frontend:ci .

@@ -1,4 +1,4 @@
-# ADR-0011: La matriz de autorización por rol vive en un solo archivo
+﻿# ADR-0011: La matriz de autorización por rol vive en un solo archivo
 
 ```yaml
 id: 0011
@@ -17,7 +17,7 @@ y verificada: un **Comprador** con token legítimo obtenía `GET /api/users` con
 usuarios del sistema y podía crear Vendedores; un **Supervisor** (rol de auditoría) podía escribir
 inventario.
 
-Mapear las 30 acciones a la Matriz de Responsabilidades de `ZENTRIC.md` §12 no era un problema de
+Mapear las 30 acciones a la Matriz de Responsabilidades de `ZENTRIC.md` sección 12 no era un problema de
 código sino de **decisiones de negocio**. El Owner dictó la opción A: las escrituras van
 exactas como las fija la Ley, y Administrador y Supervisor reciben solo lectura de pedidos,
 despachos, devoluciones y facturas.
@@ -36,7 +36,7 @@ Diccionario `RolesByPolicy: política → roles`, con las claves como constantes
 | **(a) `[Authorize(Roles = "Seller,Administrator")]` literal en cada controlador** | La matriz queda replicada en 30 sitios; un cambio de regla exige tocar 9 archivos y nada avisa si una ruta se queda fuera. El literal de texto no se rompe al renombrar un valor de `UserRole` |
 | **(b) Diccionario en `Api/Security` + constantes** ✅ | Una lectura = la matriz completa; el registro de políticas y los tests la recorren; `Role(UserRole.Seller)` hace que **renombrar un valor del enum rompa la compilación**, no producción |
 | **(c) Políticas como interfaces en `Zentric.Application`** | Rompe la regla de dependencias: la autorización HTTP es un asunto del adaptador de entrada, y `Application` no debe conocer ASP.NET Core. |
-| **(d) Roles y permisos en base de datos, editables en caliente** | La Matriz §12 es **Ley**, no configuración: si un permiso puede cambiarse sin deploy, deja de ser auditable contra `ZENTRIC.md`. Además exigiría caché e invalidación en cada petición |
+| **(d) Roles y permisos en base de datos, editables en caliente** | La Matriz sección 12 es **Ley**, no configuración: si un permiso puede cambiarse sin deploy, deja de ser auditable contra `ZENTRIC.md`. Además exigiría caché e invalidación en cada petición |
 
 ### 2. `FallbackPolicy = RequireAuthenticatedUser()` en lugar de `DefaultPolicy`
 
@@ -71,7 +71,7 @@ se eliminaron.
 
 - RG-03 deja de ser declarativa: 33 comprobaciones con tokens reales de los cinco roles, `0` fallos.
 - El Administrador **no** aprueba devoluciones (`403` en vivo), que es lo que dice el ADDENDUM
-  Dominio 10 y no lo que sugerían las filas antiguas de la Matriz §12. La colisión queda resuelta en
+  Dominio 10 y no lo que sugerían las filas antiguas de la Matriz sección 12. La colisión queda resuelta en
   el código con la misma regla de precedencia de
   [ADR-0006](ADR-0006-resolucion-contradiccion-ley-addendum.md).
 - Una ruta nueva sin autorización es **imposible de aprobar en review a simple vista**: o declara

@@ -24,7 +24,7 @@ namespace Zentric.Tests.E2E
         public ManagementOperationsE2ETests(ZentricApiFactory factory) => _factory = factory;
 
         /// <summary>
-        /// INV-05: bloquear cierra el login (401) y activar lo devuelve, sin tocar nada mas.
+        /// bloquear cierra el login (401) y activar lo devuelve, sin tocar nada mas.
         /// </summary>
         [Fact]
         public async Task Bloqueo_CierraElLoginYActivarLoDevuelve()
@@ -47,7 +47,7 @@ namespace Zentric.Tests.E2E
         }
 
         /// <summary>
-        /// INV-05: bloquear dos veces o activar un activo responde 400; inexistentes, 404.
+        /// bloquear dos veces o activar un activo responde 400; inexistentes, 404.
         /// </summary>
         [Fact]
         public async Task Bloqueo_DobleBloqueoYActivarActivoResponden400()
@@ -129,7 +129,7 @@ namespace Zentric.Tests.E2E
         }
 
         /// <summary>
-        /// ADR-0021: el conteo solo reduce, es idempotente en 5 minutos y el vendedor no ajusta.
+        /// ADel conteo solo reduce, es idempotente en 5 minutos y el vendedor no ajusta.
         /// </summary>
         [Fact]
         public async Task Ajuste_CuentaReduceEsIdempotenteYRechazaExcesos()

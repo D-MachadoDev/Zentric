@@ -8,6 +8,7 @@ using Zentric.Application.Common.Models;
 using Zentric.Domain.Orders.Ports;
 using Zentric.Domain.Products.Ports;
 using Zentric.Domain.Users.Ports;
+using Zentric.Domain.Inventories.Ports;
 
 namespace Zentric.Application.Orders.Queries
 {
@@ -20,7 +21,8 @@ namespace Zentric.Application.Orders.Queries
         string? ProductName = null,
         string? Sku = null,
         string? ImageUrl = null,
-        string? VendorName = null);
+        string? VendorName = null,
+        Guid? ProductId = null);
 
     public record OrderDto(
         Guid Id,
@@ -30,7 +32,8 @@ namespace Zentric.Application.Orders.Queries
         string Currency,
         IReadOnlyList<OrderItemDto> Items,
         DateTime CreatedAt,
-        DateTime ExpiresAt);
+        DateTime ExpiresAt,
+        bool CanStillPay = true);
 
     /// <summary>
     /// Consulta de un pedido restringida a su comprador.
@@ -48,19 +51,30 @@ namespace Zentric.Application.Orders.Queries
         private readonly ICustomerOrderRepository _orderRepository;
         private readonly IProductRepository? _productRepository;
         private readonly IUserRepository? _userRepository;
+        private readonly IInventoryRepository? _inventoryRepository;
+
+        public GetOrderByIdForBuyerQueryHandler(
+            ICustomerOrderRepository orderRepository,
+            IProductRepository? productRepository,
+            IUserRepository? userRepository,
+            IInventoryRepository? inventoryRepository)
+        {
+            _orderRepository = orderRepository;
+            _productRepository = productRepository;
+            _userRepository = userRepository;
+            _inventoryRepository = inventoryRepository;
+        }
 
         public GetOrderByIdForBuyerQueryHandler(
             ICustomerOrderRepository orderRepository,
             IProductRepository? productRepository = null,
             IUserRepository? userRepository = null)
+            : this(orderRepository, productRepository, userRepository, null)
         {
-            _orderRepository = orderRepository;
-            _productRepository = productRepository;
-            _userRepository = userRepository;
         }
 
         public GetOrderByIdForBuyerQueryHandler(ICustomerOrderRepository orderRepository)
-            : this(orderRepository, null, null)
+            : this(orderRepository, null, null, null)
         {
         }
 
@@ -78,6 +92,9 @@ namespace Zentric.Application.Orders.Queries
             }
 
             var itemDtos = await EnrichItemsAsync(order.Items, cancellationToken);
+            var expiresAt = (order.CheckoutStartedAt ?? order.CreatedAt).AddMinutes(15);
+            bool canStillPay = order.Status == Zentric.Domain.Orders.Enums.OrderStatus.PendingPayment
+                && expiresAt > DateTime.UtcNow;
 
             var dto = new OrderDto(
                 order.Id,
@@ -87,7 +104,8 @@ namespace Zentric.Application.Orders.Queries
                 order.TotalAmount.Currency,
                 itemDtos,
                 order.CreatedAt,
-                order.CreatedAt.AddMinutes(15)
+                expiresAt,
+                canStillPay
             );
 
             return Result<OrderDto>.Success(dto);
@@ -103,12 +121,14 @@ namespace Zentric.Application.Orders.Queries
                 string? sku = null;
                 string? imageUrl = null;
                 string? vendorName = null;
+                Guid? productId = null;
 
                 if (_productRepository != null)
                 {
                     var product = await _productRepository.GetByVariantIdAsync(i.VariantId, cancellationToken);
                     if (product != null)
                     {
+                        productId = product.Id;
                         productName = product.Name;
                         imageUrl = product.ImageUrl;
                         var variant = product.Variants.FirstOrDefault(v => v.Id == i.VariantId);
@@ -131,7 +151,8 @@ namespace Zentric.Application.Orders.Queries
                     productName,
                     sku,
                     imageUrl,
-                    vendorName));
+                    vendorName,
+                    productId));
             }
             return result;
         }
@@ -178,7 +199,7 @@ namespace Zentric.Application.Orders.Queries
                 order.TotalAmount.Currency,
                 itemDtos,
                 order.CreatedAt,
-                order.CreatedAt.AddMinutes(15)
+                (order.CheckoutStartedAt ?? order.CreatedAt).AddMinutes(15)
             );
 
             return Result<OrderDto>.Success(dto);
@@ -194,12 +215,14 @@ namespace Zentric.Application.Orders.Queries
                 string? sku = null;
                 string? imageUrl = null;
                 string? vendorName = null;
+                Guid? productId = null;
 
                 if (_productRepository != null)
                 {
                     var product = await _productRepository.GetByVariantIdAsync(i.VariantId, cancellationToken);
                     if (product != null)
                     {
+                        productId = product.Id;
                         productName = product.Name;
                         imageUrl = product.ImageUrl;
                         var variant = product.Variants.FirstOrDefault(v => v.Id == i.VariantId);
@@ -222,7 +245,8 @@ namespace Zentric.Application.Orders.Queries
                     productName,
                     sku,
                     imageUrl,
-                    vendorName));
+                    vendorName,
+                    productId));
             }
             return result;
         }

@@ -6,7 +6,7 @@ namespace Zentric.Tests.Users;
 
 /// <summary>
 /// Ramas de User sin cubrir: no-ops por igualdad, borrados, roles y la tasa
-/// de stock fantasma (INV-05, ADR-0021).
+/// de stock fantasma (, AD).
 /// </summary>
 public sealed class UserBranchesTests
 {

@@ -6,7 +6,7 @@ using Zentric.Domain.Returns;
 namespace Zentric.Domain.Returns.Ports
 {
     /// <summary>
-    /// Puerto para persistir y consultar auditorías de reembolso (ADR-0020).
+    /// Puerto para persistir y consultar auditorias de reembolso.
     /// </summary>
     public interface IRefundAuditRepository
     {

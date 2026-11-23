@@ -7,7 +7,7 @@ namespace Zentric.Tests.Orders;
 
 /// <summary>
 /// Ramas del pedido sin cubrir: fusion de lineas, retiro, entrega digital
-/// (CAT-02) y resolucion total (ADR-0022).
+/// (CA) y resolucion total (AD).
 /// </summary>
 public sealed class CustomerOrderBranchesTests
 {

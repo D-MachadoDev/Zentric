@@ -6,14 +6,7 @@ using Zentric.Domain.Products.ValueObjects;
 namespace Zentric.Domain.Payments.Ports
 {
     /// <summary>
-    /// Puerto de salida para procesar un cobro. Define QUE necesita el dominio
-    /// (autorizar un importe) sin afirmar COMO se cobra.
-    ///
-    /// Invariante 9 (04-invariants-and-rules.md): la pasarela nace simulada y
-    /// escalable. No se integra ninguna pasarela real (PSE, Stripe, Wompi) porque
-    /// la Ley no la define. El adaptador de infraestructura es intercambiable:
-    /// sustituir la simulacion por una pasarela real exige un nuevo adaptador que
-    /// implemente este mismo puerto, sin tocar Dominio ni los casos de uso.
+    /// Puerto de salida para procesar cobros y autorizar importes sin acoplamiento a una pasarela concreta.
     /// </summary>
     public interface IPaymentGatewayService
     {

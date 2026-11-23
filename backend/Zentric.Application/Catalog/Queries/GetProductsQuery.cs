@@ -12,7 +12,15 @@ using Zentric.Domain.Products.Ports;
 
 namespace Zentric.Application.Catalog.Queries
 {
-    public record ProductVariantDto(Guid Id, string Sku, bool CanBeSold, int AvailableStock = 0);
+    public record ProductVariantAttributeDto(string Name, string Value);
+
+    public record ProductVariantDto(
+        Guid Id,
+        string Sku,
+        bool CanBeSold,
+        int AvailableStock = 0,
+        IReadOnlyList<ProductVariantAttributeDto>? Attributes = null,
+        decimal? Price = null);
 
     public record ProductDto(
         Guid Id,
@@ -26,7 +34,9 @@ namespace Zentric.Application.Catalog.Queries
         IReadOnlyList<ProductVariantDto> Variants,
         DateTime CreatedAt,
         string? ImageUrl = null,
-        string? Category = null);
+        string? Category = null,
+        decimal AverageRating = 0m,
+        int ReviewsCount = 0);
 
     /// <summary>
     /// Visibilidad del catalogo.
@@ -74,7 +84,9 @@ namespace Zentric.Application.Catalog.Queries
                 foreach (var v in p.Variants)
                 {
                     var stock = await _inventoryRepository.GetTotalAvailableStockAsync(v.Id, cancellationToken);
-                    variantDtos.Add(new ProductVariantDto(v.Id, v.Sku, v.CanBeSold, stock));
+                    var attrs = v.Attributes?.Select(a => new ProductVariantAttributeDto(a.Name, a.Value)).ToList();
+                    var effectivePrice = v.PriceAmount ?? p.Price.Amount;
+                    variantDtos.Add(new ProductVariantDto(v.Id, v.Sku, v.CanBeSold, stock, attrs, effectivePrice));
                 }
 
                 dtos.Add(new ProductDto(
@@ -89,7 +101,9 @@ namespace Zentric.Application.Catalog.Queries
                     variantDtos,
                     p.CreatedAt,
                     p.ImageUrl,
-                    p.Category
+                    p.Category,
+                    p.AverageRating,
+                    p.ReviewsCount
                 ));
             }
 
@@ -124,7 +138,9 @@ namespace Zentric.Application.Catalog.Queries
                 var stock = _inventoryRepository != null
                     ? await _inventoryRepository.GetTotalAvailableStockAsync(v.Id, cancellationToken)
                     : 0;
-                variantDtos.Add(new ProductVariantDto(v.Id, v.Sku, v.CanBeSold, stock));
+                var attrs = v.Attributes?.Select(a => new ProductVariantAttributeDto(a.Name, a.Value)).ToList();
+                var effectivePrice = v.PriceAmount ?? p.Price.Amount;
+                variantDtos.Add(new ProductVariantDto(v.Id, v.Sku, v.CanBeSold, stock, attrs, effectivePrice));
             }
 
             var dto = new ProductDto(
@@ -139,7 +155,9 @@ namespace Zentric.Application.Catalog.Queries
                 variantDtos,
                 p.CreatedAt,
                 p.ImageUrl,
-                p.Category
+                p.Category,
+                p.AverageRating,
+                p.ReviewsCount
             );
 
             return Result<ProductDto>.Success(dto);
@@ -255,7 +273,9 @@ namespace Zentric.Application.Catalog.Queries
                 foreach (var v in p.Variants ?? Enumerable.Empty<ProductVariant>())
                 {
                     var stock = await _inventoryRepository!.GetTotalAvailableStockAsync(v.Id, cancellationToken);
-                    variantDtos.Add(new ProductVariantDto(v.Id, v.Sku, v.CanBeSold, stock));
+                    var attrs = v.Attributes?.Select(a => new ProductVariantAttributeDto(a.Name, a.Value)).ToList();
+                    var effectivePrice = v.PriceAmount ?? p.Price.Amount;
+                    variantDtos.Add(new ProductVariantDto(v.Id, v.Sku, v.CanBeSold, stock, attrs, effectivePrice));
                 }
 
                 dtos.Add(new ProductDto(
@@ -263,7 +283,9 @@ namespace Zentric.Application.Catalog.Queries
                     p.Type.ToString(), p.Status.ToString(), variantDtos,
                     p.CreatedAt,
                     p.ImageUrl,
-                    p.Category
+                    p.Category,
+                    p.AverageRating,
+                    p.ReviewsCount
                 ));
             }
 
@@ -293,9 +315,7 @@ namespace Zentric.Application.Catalog.Queries
                     request.VendorId, status, page.Skip, page.Take, request.Category, search, sort, type, cancellationToken);
     }
 
-    // =========================================================================
-    // NUEVAS QUERIES PARA CATEGORÍAS DINÁMICAS Y HERO MOSAICO
-    // =========================================================================
+    // Consultas de categorias dinamicas y agregados de catalogo.
 
     /// <summary>
     /// Obtiene las categorías con conteo de productos publicados.
@@ -349,7 +369,9 @@ namespace Zentric.Application.Catalog.Queries
                 foreach (var v in p.Variants ?? Enumerable.Empty<ProductVariant>())
                 {
                     var stock = await _inventoryRepository!.GetTotalAvailableStockAsync(v.Id, cancellationToken);
-                    variantDtos.Add(new ProductVariantDto(v.Id, v.Sku, v.CanBeSold, stock));
+                    var attrs = v.Attributes?.Select(a => new ProductVariantAttributeDto(a.Name, a.Value)).ToList();
+                    var effectivePrice = v.PriceAmount ?? p.Price.Amount;
+                    variantDtos.Add(new ProductVariantDto(v.Id, v.Sku, v.CanBeSold, stock, attrs, effectivePrice));
                 }
 
                 dtos.Add(new ProductDto(
@@ -364,7 +386,9 @@ namespace Zentric.Application.Catalog.Queries
                     variantDtos,
                     p.CreatedAt,
                     p.ImageUrl,
-                    p.Category
+                    p.Category,
+                    p.AverageRating,
+                    p.ReviewsCount
                 ));
             }
 

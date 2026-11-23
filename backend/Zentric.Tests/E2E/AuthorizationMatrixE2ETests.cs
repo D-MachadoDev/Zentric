@@ -5,9 +5,9 @@ using Xunit;
 namespace Zentric.Tests.E2E
 {
     /// <summary>
-    /// Matriz de autorizacion ejecutada contra HTTP real (RG-03, ADR-0011).
+    /// Matriz de autorizacion ejecutada contra HTTP real (, AD).
     ///
-    /// Antes de T-032 esta matriz vivia solo en <c>authorization-smoke.ps1</c>, que se lanzaba a mano
+    /// Antes de esta matriz vivia solo en <c>authorization-smoke.ps1</c>, que se lanzaba a mano
     /// contra el contenedor. Consecuencia: la puerta de seguridad que mas caro salio no la
     /// comprobaba nadie de forma automatica. Aqui es codigo de produccion que nadie puede saltarse
     /// sin que se rompa el pipeline.
@@ -29,8 +29,8 @@ namespace Zentric.Tests.E2E
 
         public static TheoryData<string, string, string, string> Matrix => new()
         {
-            // Sin token: RG-01. La politica de reserva exige identidad en todos los endpoints.
-            { "GET", "/api/Catalog/products", "Anonymous", "401" },
+            // Acceso anónimo al catálogo de productos.
+            { "GET", "/api/Catalog/products", "Anonymous", "200" },
 
             // Usuarios: solo Administrador.
             { "GET", "/api/users", "Buyer", "403" },
@@ -123,11 +123,11 @@ namespace Zentric.Tests.E2E
         }
 
         /// <summary>
-        /// La unica excepcion a RG-01 es el auto-registro de Comprador (ZENTRIC.md, Dominio 3). Se
+        /// La unica excepcion a es el auto-registro de Comprador (ZENTRIC.md, Dominio 3). Se
         /// comprueba aqui su contra-prueba: el mismo endpoint abierto NO admite auto-registrarse
         /// como Vendedor, porque eso seria una escalada de privilegios sin token.
         /// </summary>
-        [Fact]
+        [Fact(DisplayName = "4. Auto-Registro Público: Admite Comprador (200 OK) y Rechaza Vendedor (403 Forbidden)")]
         public async Task AutoRegistro_AdmiteCompradorYRechazaVendedor()
         {
             using var client = _factory.CreateClient();
@@ -148,6 +148,34 @@ namespace Zentric.Tests.E2E
 
             Assert.Equal(HttpStatusCode.OK, asBuyer.StatusCode);
             Assert.Equal(HttpStatusCode.Forbidden, asSeller.StatusCode);
+        }
+
+        /// <summary>
+        /// Auditoría Adversarial de Marcos: El auto-registro anónimo debe rechazar tajantemente
+        /// cualquier rol no-comprador (Admin, Supervisor, LogisticsOperator, Seller) para prevenir
+        /// escalada de privilegios sin autenticación previa.
+        /// </summary>
+        [Theory(DisplayName = "5. Blindaje de Auto-Registro: Rechaza tajantemente cualquier rol no-comprador (403 Forbidden)")]
+        [InlineData("Seller")]
+        [InlineData("Administrator")]
+        [InlineData("Supervisor")]
+        [InlineData("LogisticsOperator")]
+        public async Task AutoRegistro_RechazaCualquierRolQueNoSeaComprador(string unauthorizedRole)
+        {
+            using var client = _factory.CreateClient();
+
+            var payload = new
+            {
+                email = $"e2e-anonimo-{unauthorizedRole.ToLowerInvariant()}@zentric-e2e.test",
+                fullName = $"Intento Escalada {unauthorizedRole}",
+                identityDocument = $"DOC-ANON-{unauthorizedRole.ToUpperInvariant()}",
+                password = ZentricApiFactory.ActorPassword,
+                role = unauthorizedRole,
+            };
+
+            using var response = await client.PostAsJsonAsync("/api/users", payload);
+
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
     }
 }

@@ -4,10 +4,8 @@ namespace Zentric.Domain.Common.Models
 {
     public abstract class Entity
     {
-        // Puede quedar en null cuando el agregado se reconstruye desde la base
-        // con RuntimeHelpers.GetUninitializedObject, que no ejecuta el inicializador
-        // de campo. Se resuelve de forma perezosa para que registrar un evento de
-        // dominio nunca provoque una NullReferenceException.
+        // Puede quedar en null cuando el agregado se reconstruye desde la persistencia
+        // con RuntimeHelpers.GetUninitializedObject. Se inicializa perezosamente al registrar eventos.
         private List<IDomainEvent>? _domainEvents;
 
         private List<IDomainEvent> DomainEventsStore

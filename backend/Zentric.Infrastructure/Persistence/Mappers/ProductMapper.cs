@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -23,6 +24,8 @@ namespace Zentric.Infrastructure.Persistence.Mappers
             typeof(Product).GetProperty("Status")?.SetValue(prod, dbModel.Status);
             typeof(Product).GetProperty("ImageUrl")?.SetValue(prod, dbModel.ImageUrl);
             typeof(Product).GetProperty("Category")?.SetValue(prod, dbModel.Category);
+            typeof(Product).GetProperty("AverageRating")?.SetValue(prod, dbModel.AverageRating);
+            typeof(Product).GetProperty("ReviewsCount")?.SetValue(prod, dbModel.ReviewsCount);
             typeof(Product).GetProperty("CreatedAt")?.SetValue(prod, dbModel.CreatedAt);
             typeof(Product).GetProperty("UpdatedAt")?.SetValue(prod, dbModel.UpdatedAt);
             typeof(Product).GetProperty("DeletedAt")?.SetValue(prod, dbModel.DeletedAt);
@@ -44,16 +47,31 @@ namespace Zentric.Infrastructure.Persistence.Mappers
 
                     var attrField = typeof(ProductVariant).GetField("_attributes", BindingFlags.NonPublic | BindingFlags.Instance);
                     var attrList = new System.Collections.Generic.List<VariantAttribute>();
+                    decimal? variantPrice = null;
                     if (varDb.Attributes != null)
                     {
                         foreach (var attrDb in varDb.Attributes)
                         {
+                            if (string.Equals(attrDb.Name, "__price__", StringComparison.OrdinalIgnoreCase))
+                            {
+                                if (decimal.TryParse(
+                                    attrDb.Value,
+                                    NumberStyles.Number,
+                                    CultureInfo.InvariantCulture,
+                                    out var parsedPrice) && parsedPrice > 0)
+                                {
+                                    variantPrice = parsedPrice;
+                                }
+                                continue;
+                            }
+
                             var attr = (VariantAttribute)RuntimeHelpers.GetUninitializedObject(typeof(VariantAttribute));
                             typeof(VariantAttribute).GetProperty("Name")?.SetValue(attr, attrDb.Name);
                             typeof(VariantAttribute).GetProperty("Value")?.SetValue(attr, attrDb.Value);
                             attrList.Add(attr);
                         }
                     }
+                    typeof(ProductVariant).GetProperty("PriceAmount")?.SetValue(variant, variantPrice);
                     attrField?.SetValue(variant, attrList);
                     variantsList.Add(variant);
                 }
@@ -75,6 +93,8 @@ namespace Zentric.Infrastructure.Persistence.Mappers
                 Status = domain.Status,
                 ImageUrl = domain.ImageUrl,
                 Category = domain.Category,
+                AverageRating = domain.AverageRating,
+                ReviewsCount = domain.ReviewsCount,
                 CreatedAt = domain.CreatedAt,
                 UpdatedAt = domain.UpdatedAt,
                 DeletedAt = domain.DeletedAt
@@ -97,6 +117,14 @@ namespace Zentric.Infrastructure.Persistence.Mappers
                     {
                         Name = attr.Name,
                         Value = attr.Value
+                    });
+                }
+                if (variant.PriceAmount.HasValue && variant.PriceAmount.Value > 0)
+                {
+                    varDb.Attributes.Add(new VariantAttributeDbModel
+                    {
+                        Name = "__price__",
+                        Value = variant.PriceAmount.Value.ToString(CultureInfo.InvariantCulture)
                     });
                 }
                 dbModel.Variants.Add(varDb);

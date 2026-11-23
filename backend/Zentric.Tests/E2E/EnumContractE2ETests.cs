@@ -7,7 +7,7 @@ using Xunit;
 namespace Zentric.Tests.E2E
 {
     /// <summary>
-    /// Contrato JSON de los <c>enum</c> verificado por HTTP real (ADR-0012).
+    /// Contrato JSON de los <c>enum</c> verificado por HTTP real (AD).
     ///
     /// La forma estricta que dicto el Owner dice que un cuerpo con <c>"role": 2</c> responde 400 y
     /// no se colaba como Administrador. Con las pruebas de contrato existentes se comprobaba la
@@ -120,13 +120,15 @@ namespace Zentric.Tests.E2E
         {
             using var client = _factory.CreateClient();
 
-            using var response = await client.GetAsync("/health");
+            using var response = await client.GetAsync("/ready");
             response.EnsureSuccessStatusCode();
 
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
             Assert.Equal("healthy", document.RootElement.GetProperty("status").GetString());
-            Assert.Equal("up", document.RootElement.GetProperty("database").GetString());
+            var dbCheck = document.RootElement.GetProperty("checks").EnumerateArray()
+                .First(c => c.GetProperty("name").GetString() == "database");
+            Assert.Equal("Healthy", dbCheck.GetProperty("status").GetString());
         }
 
         /// <summary>
@@ -152,7 +154,7 @@ namespace Zentric.Tests.E2E
         [InlineData("Buyer", "/api/orders/11111111-2222-3333-4444-555555555555", "problem")]
         [InlineData("Admin", "/api/orders/11111111-2222-3333-4444-555555555555", "problem")]
         [InlineData("Buyer", "/api/users", "vacio")]
-        [InlineData("Anonymous", "/api/Catalog/products", "vacio")]
+        [InlineData("Anonymous", "/api/auth/me", "vacio")]
         [InlineData("Buyer", "/api/Warehouses", "vacio")]
         public async Task ContratoDeError_TipoDeContentoPorRolYEndpoint(string actor, string path, string expected)
         {

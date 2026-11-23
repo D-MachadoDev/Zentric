@@ -44,7 +44,7 @@ namespace Zentric.Tests.Application.Logistics
 {
     /// <summary>
     /// Pruebas BDD para cancelación por quiebre de stock ("Stock Fantasma"),
-    /// consumidor de reembolso automático (PartialFulfillmentCancelledConsumer, ADR-0020),
+    /// consumidor de reembolso automático (PartialFulfillmentCancelledConsumer, AD),
     /// consumidor de expiración de carrito (CartExpiredConsumer) y adaptadores de persistencia
     /// de Buyer y RefundAudit.
     /// </summary>
