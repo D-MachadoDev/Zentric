@@ -25,7 +25,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 # arrancaba otra copia de la API en el mismo puerto y fallaba con
 # "address already in use", dejando el contenedor como `unhealthy` para siempre).
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
+    && apt-get install -y --no-install-recommends curl libfontconfig1 fontconfig libgdiplus fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 EXPOSE 8080

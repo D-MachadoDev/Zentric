@@ -29,6 +29,9 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore Zentric.slnx
 
+      - name: Install Linux font packages
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1 fontconfig libgdiplus fonts-liberation
+
       - name: Build backend with strict warning zero-tolerance (-warnaserror)
         run: dotnet build Zentric.slnx --no-restore -warnaserror -nodeReuse:false
 
