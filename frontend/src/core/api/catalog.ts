@@ -37,7 +37,10 @@ export function useProductsPagedQuery(params?: ListProductsPagedParams, api?: Ze
   return useQuery({
     queryKey: queryKeys.products.paged(params),
     queryFn: ({ signal }) => resolveApi(api).listProductsPaged(params, signal),
-    staleTime: 5 * 60_000,
+    // Refresco al montar para que el comprador vea el stock/precio actual sin
+    // tener que reiniciar cuando el vendedor cambia inventario.
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 
@@ -78,7 +81,9 @@ export function useProductQuery(id: string, api?: ZentricApiPort) {
   return useQuery({
     queryKey: queryKeys.products.detail(id),
     queryFn: () => resolveApi(api).getProductById(id),
-    staleTime: 5 * 60_000,
+    // Stock/precio siempre frescos al abrir la ficha.
+    staleTime: 0,
+    refetchOnMount: 'always',
     enabled: Boolean(id),
   });
 }

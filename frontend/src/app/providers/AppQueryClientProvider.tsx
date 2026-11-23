@@ -22,7 +22,7 @@ export function AppQueryClientProvider({ children }: { children: ReactNode }) {
               if (typeof status === 'number' && status >= 400 && status < 500) return false;
               return failureCount < 2;
             },
-            refetchOnWindowFocus: false,
+            refetchOnWindowFocus: true,
           },
           mutations: { retry: false },
         },
