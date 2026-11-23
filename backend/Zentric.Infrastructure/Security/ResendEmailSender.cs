@@ -222,6 +222,91 @@ namespace Zentric.Infrastructure.Security
             }
         }
 
+        public async Task SendReturnApprovedEmailAsync(
+            string toEmail,
+            string buyerName,
+            string productName,
+            string orderShortId,
+            int quantity,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(_apiKey) || _apiKey.StartsWith("mock_", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning(
+                    "[ResendEmailSender] Fallback local activo. Aprobación de devolución simulada para: {Email}. Producto: {ProductName}. Pedido: {OrderShortId}",
+                    toEmail, productName, orderShortId);
+                return;
+            }
+
+            try
+            {
+                var ordersUrl = $"{_frontendBaseUrl.TrimEnd('/')}/buyer/orders";
+                var htmlBody = BuildReturnApprovedEmailHtml(buyerName, productName, orderShortId, quantity, ordersUrl);
+
+                var payload = new
+                {
+                    from = _fromEmail,
+                    to = new[] { toEmail },
+                    subject = $"Devolución aprobada — {productName}",
+                    html = htmlBody
+                };
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, ResendApiEndpoint);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+                request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+                using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogError(
+                        "[ResendEmailSender] Error al enviar la aprobación de devolución mediante Resend: {StatusCode} - {Content}. Pedido: {OrderShortId}",
+                        response.StatusCode, errorContent, orderShortId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[ResendEmailSender] Excepción de transporte al enviar la aprobación de devolución. Pedido: {OrderShortId}", orderShortId);
+            }
+        }
+
+        private static string BuildReturnApprovedEmailHtml(
+            string buyerName,
+            string productName,
+            string orderShortId,
+            int quantity,
+            string ordersUrl)
+        {
+            var safeName = System.Net.WebUtility.HtmlEncode(buyerName);
+            var safeProduct = System.Net.WebUtility.HtmlEncode(productName);
+            var safeOrder = System.Net.WebUtility.HtmlEncode(orderShortId);
+            return $@"<!DOCTYPE html>
+<html lang=""es""><head><meta charset=""utf-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1""><title>Devolución aprobada</title></head>
+<body style=""margin:0;padding:0;background:#f5f6f8;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;"">
+  <table role=""presentation"" width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background:#f5f6f8;padding:32px 0;""><tr><td align=""center"">
+    <table role=""presentation"" width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);"">
+      <tr><td style=""background:#0f172a;padding:24px 32px;""><span style=""font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-.5px;"">Zentric</span></td></tr>
+      <tr><td style=""padding:32px;"">
+        <h1 style=""margin:0 0 8px;font-size:22px;"">Devolución aprobada</h1>
+        <p style=""margin:0 0 20px;color:#4b5563;font-size:14px;line-height:1.5;"">Hola {safeName}, el vendedor aprobó tu solicitud de devolución.</p>
+        <table role=""presentation"" width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:20px;""><tr><td style=""padding:16px 20px;"">
+          <p style=""margin:0 0 4px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;"">Producto</p>
+          <p style=""margin:0 0 12px;font-size:15px;font-weight:700;"">{safeProduct}</p>
+          <p style=""margin:0 0 4px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;"">Pedido</p>
+          <p style=""margin:0 0 12px;font-size:15px;font-weight:700;"">#{safeOrder}</p>
+          <p style=""margin:0 0 4px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;"">Cantidad</p>
+          <p style=""margin:0;font-size:15px;font-weight:700;"">{quantity} unidad(es)</p>
+        </td></tr></table>
+        <p style=""margin:0 0 20px;color:#4b5563;font-size:13px;line-height:1.5;"">El reembolso se procesará según el medio de pago original. Podés seguir el estado desde tu cuenta.</p>
+        <a href=""{ordersUrl}"" style=""display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 24px;border-radius:10px;"">Ver mis pedidos</a>
+      </td></tr>
+      <tr><td style=""padding:16px 32px;background:#f8fafc;color:#9ca3af;font-size:11px;"">Zentric — este correo se generó automáticamente.</td></tr>
+    </table>
+  </td></tr></table>
+</body></html>";
+        }
+
         private static string BuildEmailHtml(string toEmail, string resetLink)
         {
             var template = ResolveHtmlTemplate();

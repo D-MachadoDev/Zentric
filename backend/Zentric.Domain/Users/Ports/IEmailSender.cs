@@ -35,5 +35,17 @@ namespace Zentric.Domain.Users.Ports
             string? downloadUrl,
             string orderId,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Notifica al comprador que el vendedor aprobo su devolucion, indicando
+        /// que producto y que pedido exactamente se resolvieron.
+        /// </summary>
+        Task SendReturnApprovedEmailAsync(
+            string toEmail,
+            string buyerName,
+            string productName,
+            string orderShortId,
+            int quantity,
+            CancellationToken cancellationToken = default);
     }
 }

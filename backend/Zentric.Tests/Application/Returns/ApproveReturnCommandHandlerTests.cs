@@ -83,7 +83,11 @@ namespace Zentric.Tests.Application.Returns
             var service = new ReturnsApprovalService();
             var products = new FakeProductRepository();
             var warehouses = new FakeWarehouseRepositoryForReturns();
-            var handler = new ApproveReturnCommandHandler(repository, unitOfWork, service, products, warehouses);
+            var orders = new FakeCustomerOrderRepository();
+            var buyers = new FakeBuyerRepository();
+            var users = new FakeUserRepository();
+            var emails = new FakeEmailSender();
+            var handler = new ApproveReturnCommandHandler(repository, unitOfWork, service, products, warehouses, orders, buyers, users, emails);
 
             var vendorId = Guid.NewGuid();
             var variantId = Guid.NewGuid();
@@ -113,7 +117,11 @@ namespace Zentric.Tests.Application.Returns
             var service = new ReturnsApprovalService();
             var products = new FakeProductRepository();
             var warehouses = new FakeWarehouseRepositoryForReturns();
-            var handler = new ApproveReturnCommandHandler(repository, unitOfWork, service, products, warehouses);
+            var orders = new FakeCustomerOrderRepository();
+            var buyers = new FakeBuyerRepository();
+            var users = new FakeUserRepository();
+            var emails = new FakeEmailSender();
+            var handler = new ApproveReturnCommandHandler(repository, unitOfWork, service, products, warehouses, orders, buyers, users, emails);
 
             var vendorId = Guid.NewGuid();
             var variantId = Guid.NewGuid();
@@ -139,7 +147,11 @@ namespace Zentric.Tests.Application.Returns
             var unitOfWork = new FakeUnitOfWork();
             var products = new FakeProductRepository();
             var warehouses = new FakeWarehouseRepositoryForReturns();
-            var handler = new ApproveReturnCommandHandler(repository, unitOfWork, new ReturnsApprovalService(), products, warehouses);
+            var orders = new FakeCustomerOrderRepository();
+            var buyers = new FakeBuyerRepository();
+            var users = new FakeUserRepository();
+            var emails = new FakeEmailSender();
+            var handler = new ApproveReturnCommandHandler(repository, unitOfWork, new ReturnsApprovalService(), products, warehouses, orders, buyers, users, emails);
 
             var variantId = Guid.NewGuid();
             products.ByVariant[variantId] = new Product("P", "D", new Money(10m, "COP"), Guid.NewGuid(), ProductType.Digital, null);
@@ -168,7 +180,11 @@ namespace Zentric.Tests.Application.Returns
             var unitOfWork = new FakeUnitOfWork();
             var products = new FakeProductRepository();
             var warehouses = new FakeWarehouseRepositoryForReturns();
-            var handler = new ApproveReturnCommandHandler(repository, unitOfWork, new ReturnsApprovalService(), products, warehouses);
+            var orders = new FakeCustomerOrderRepository();
+            var buyers = new FakeBuyerRepository();
+            var users = new FakeUserRepository();
+            var emails = new FakeEmailSender();
+            var handler = new ApproveReturnCommandHandler(repository, unitOfWork, new ReturnsApprovalService(), products, warehouses, orders, buyers, users, emails);
 
             var vendorId = Guid.NewGuid();
             var variantId = Guid.NewGuid();
@@ -199,7 +215,11 @@ namespace Zentric.Tests.Application.Returns
             var unitOfWork = new FakeUnitOfWork();
             var products = new FakeProductRepository();
             var warehouses = new FakeWarehouseRepositoryForReturns();
-            var handler = new ApproveReturnCommandHandler(repository, unitOfWork, new ReturnsApprovalService(), products, warehouses);
+            var orders = new FakeCustomerOrderRepository();
+            var buyers = new FakeBuyerRepository();
+            var users = new FakeUserRepository();
+            var emails = new FakeEmailSender();
+            var handler = new ApproveReturnCommandHandler(repository, unitOfWork, new ReturnsApprovalService(), products, warehouses, orders, buyers, users, emails);
 
             var vendorId = Guid.NewGuid();
             var variantId = Guid.NewGuid();
