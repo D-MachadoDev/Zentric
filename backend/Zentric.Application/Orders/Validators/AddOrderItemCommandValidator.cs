@@ -15,15 +15,15 @@ namespace Zentric.Application.Orders.Validators
         {
             RuleFor(command => command.OrderId)
                 .NotEmpty()
-                .WithMessage("OrderId is required.");
+                .WithMessage("El identificador de pedido es obligatorio.");
 
             RuleFor(command => command.VariantId)
                 .NotEmpty()
-                .WithMessage("VariantId is required.");
+                .WithMessage("El identificador de variante es obligatorio.");
 
             RuleFor(command => command.Quantity)
                 .GreaterThan(0)
-                .WithMessage("Quantity must be greater than zero.");
+                .WithMessage("La cantidad debe ser mayor a cero.");
 
             // Sin reglas de precio ni moneda en el comando: el precio se resuelve desde el catalogo.
 
@@ -31,7 +31,7 @@ namespace Zentric.Application.Orders.Validators
             // es defensa en profundidad, igual que las demas.
             RuleFor(command => command.BuyerId)
                 .NotEmpty()
-                .WithMessage("BuyerId is required.");
+                .WithMessage("El identificador del comprador es obligatorio.");
         }
     }
 }

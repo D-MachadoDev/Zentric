@@ -27,7 +27,7 @@ namespace Zentric.Tests.UseCases
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal("BuyerId is required.", result.Errors[0].ErrorMessage);
+            Assert.Equal("El identificador del comprador es obligatorio.", result.Errors[0].ErrorMessage);
         }
     }
 }

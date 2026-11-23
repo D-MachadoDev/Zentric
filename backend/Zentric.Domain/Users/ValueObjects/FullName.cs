@@ -9,30 +9,33 @@ namespace Zentric.Domain.Users.ValueObjects
 
         public FullName(string firstName, string lastName)
         {
-            FirstName = NormalizeNamePart(firstName, "first name");
-            LastName = NormalizeNamePart(lastName, "last name");
+            FirstName = NormalizeNamePart(firstName, nameof(firstName), "El nombre");
+            LastName = NormalizeNamePart(lastName, nameof(lastName), "El apellido");
         }
 
         public FullName(string fullName)
         {
             if (string.IsNullOrWhiteSpace(fullName))
             {
-                throw new ArgumentException("Full name cannot be empty.", nameof(fullName));
+                throw new ArgumentException("El nombre completo no puede estar vacío.", nameof(fullName));
             }
 
             var parts = fullName.Trim()
                 .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-            if (parts.Length < 2)
+            // Empresas o tiendas pueden tener un nombre de una sola palabra.
+            if (parts.Length == 1)
             {
-                throw new ArgumentException("Full name must include first name and last name.", nameof(fullName));
+                FirstName = NormalizeNamePart(parts[0], nameof(fullName), "El nombre");
+                LastName = "";
+                return;
             }
 
-            FirstName = NormalizeNamePart(parts[0], "first name");
-            LastName = NormalizeNamePart(string.Join(" ", parts.Skip(1)), "last name");
+            FirstName = NormalizeNamePart(parts[0], nameof(fullName), "El nombre");
+            LastName = NormalizeNamePart(string.Join(" ", parts.Skip(1)), nameof(fullName), "El apellido");
         }
 
-        public string Value => $"{FirstName} {LastName}";
+        public string Value => string.IsNullOrEmpty(LastName) ? FirstName : $"{FirstName} {LastName}";
 
         public bool Equals(FullName? other)
         {
@@ -62,28 +65,28 @@ namespace Zentric.Domain.Users.ValueObjects
             return Value;
         }
 
-        private static string NormalizeNamePart(string value, string fieldName)
+        private static string NormalizeNamePart(string value, string paramName, string label)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                throw new ArgumentException($"{fieldName} cannot be empty.", fieldName);
+                throw new ArgumentException($"{label} no puede estar vacío.", paramName);
             }
 
             var normalized = value.Trim();
 
             if (normalized.Length < 2)
             {
-                throw new ArgumentException($"{fieldName} is too short.", fieldName);
+                throw new ArgumentException($"{label} es demasiado corto.", paramName);
             }
 
             if (normalized.Length > 80)
             {
-                throw new ArgumentException($"{fieldName} is too long.", fieldName);
+                throw new ArgumentException($"{label} es demasiado largo.", paramName);
             }
 
             if (normalized.Any(char.IsDigit))
             {
-                throw new ArgumentException($"{fieldName} cannot contain numbers.", fieldName);
+                throw new ArgumentException($"{label} no puede contener números.", paramName);
             }
 
             return char.ToUpperInvariant(normalized[0]) + normalized.Substring(1).ToLowerInvariant();

@@ -85,7 +85,7 @@ namespace Zentric.Tests.Application.Catalog
 
             Assert.False(result.IsSuccess);
             Assert.Equal(Zentric.Application.Common.Models.ErrorKind.Validation, result.ErrorKind);
-            Assert.Contains("already published", result.Error);
+            Assert.Contains("ya está publicado", result.Error);
             Assert.False(unitOfWork.SaveChangesCalled);
         }
     }

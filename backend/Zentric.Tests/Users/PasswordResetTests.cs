@@ -90,7 +90,7 @@ namespace Zentric.Tests.Users
 
             // Segundo uso consecutivo debe arrojar InvalidOperationException
             var ex = Assert.Throws<InvalidOperationException>(() => tokenEntity.Use(now));
-            Assert.Contains("already been used", ex.Message);
+            Assert.Contains("ya ha sido utilizado", ex.Message);
         }
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace Zentric.Tests.Users
             Assert.False(tokenEntity.IsValid(future));
 
             var ex = Assert.Throws<InvalidOperationException>(() => tokenEntity.Use(future));
-            Assert.Contains("expired", ex.Message);
+            Assert.Contains("ha expirado", ex.Message);
         }
 
         /// <summary>

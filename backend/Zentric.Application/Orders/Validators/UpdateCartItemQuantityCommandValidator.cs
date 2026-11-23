@@ -14,19 +14,19 @@ namespace Zentric.Application.Orders.Validators
         {
             RuleFor(command => command.OrderId)
                 .NotEmpty()
-                .WithMessage("OrderId is required.");
+                .WithMessage("El identificador de pedido es obligatorio.");
 
             RuleFor(command => command.VariantId)
                 .NotEmpty()
-                .WithMessage("VariantId is required.");
+                .WithMessage("El identificador de variante es obligatorio.");
 
             RuleFor(command => command.BuyerId)
                 .NotEmpty()
-                .WithMessage("BuyerId is required.");
+                .WithMessage("El identificador del comprador es obligatorio.");
 
             RuleFor(command => command.Quantity)
                 .GreaterThanOrEqualTo(1)
-                .WithMessage("Quantity must be at least 1.");
+                .WithMessage("La cantidad debe ser al menos 1.");
         }
     }
 }

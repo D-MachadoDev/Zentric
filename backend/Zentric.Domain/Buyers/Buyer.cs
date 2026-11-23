@@ -63,12 +63,12 @@ namespace Zentric.Domain.Buyers
         {
             if (mainAddress is null)
             {
-                throw new ArgumentException("Main address is required.", nameof(mainAddress));
+                throw new ArgumentException("La dirección principal es obligatoria.", nameof(mainAddress));
             }
 
             if (userId == Guid.Empty)
             {
-                throw new ArgumentException("UserId is required.", nameof(userId));
+                throw new ArgumentException("El identificador de usuario es obligatorio.", nameof(userId));
             }
 
             // ZENTRIC.md Dominio 2: Vinculación 1:1 con la cuenta de usuario
@@ -115,7 +115,7 @@ namespace Zentric.Domain.Buyers
         {
             if (address is null)
             {
-                throw new ArgumentException("Address cannot be empty.", nameof(address));
+                throw new ArgumentException("La dirección no puede estar vacía.", nameof(address));
             }
 
             _additionalAddresses.Add(address);
@@ -132,7 +132,7 @@ namespace Zentric.Domain.Buyers
         {
             if (!_additionalAddresses.Remove(address))
             {
-                throw new InvalidOperationException("Address not found in additional addresses.");
+                throw new InvalidOperationException("La dirección no se encontró en las direcciones adicionales.");
             }
 
             UpdatedAt = DateTime.UtcNow;
@@ -148,7 +148,7 @@ namespace Zentric.Domain.Buyers
         {
             if (newAddress is null)
             {
-                throw new ArgumentException("New main address cannot be empty.", nameof(newAddress));
+                throw new ArgumentException("La nueva dirección principal no puede estar vacía.", nameof(newAddress));
             }
 
             MainAddress = newAddress;

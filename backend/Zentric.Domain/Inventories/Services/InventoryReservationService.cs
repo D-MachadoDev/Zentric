@@ -97,7 +97,7 @@ namespace Zentric.Domain.Inventories.Services
                 if (remainingToReserve > 0)
                 {
                     await ReleaseAppliedAsync(applied, cancellationToken);
-                    throw new InvalidOperationException($"Not enough stock available for variant {item.VariantId}. Needed {item.Quantity}, but only could reserve {item.Quantity - remainingToReserve}.");
+                    throw new InvalidOperationException($"No hay suficiente stock disponible para la variante {item.VariantId}. Se necesitaban {item.Quantity}, pero solo se pudieron reservar {item.Quantity - remainingToReserve}.");
                 }
             }
         }

@@ -127,7 +127,7 @@ namespace Zentric.Tests.Application.Returns
             var result = await handler.Handle(command, CancellationToken.None);
 
             Assert.False(result.IsSuccess);
-            Assert.Contains("inspected as good condition", result.Error);
+            Assert.Contains("inspeccionado en buen estado", result.Error);
         }
 
         [Fact]
@@ -214,7 +214,7 @@ namespace Zentric.Tests.Application.Returns
             var result = await handler.Handle(new ApproveReturnCommand(returnReq.Id, vendorId, UserRole.Seller), CancellationToken.None);
 
             Assert.False(result.IsSuccess);
-            Assert.Contains("inspected as good condition", result.Error);
+            Assert.Contains("inspeccionado en buen estado", result.Error);
             Assert.False(unitOfWork.SaveChangesCalled);
         }
     }

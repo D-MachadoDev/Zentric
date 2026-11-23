@@ -23,10 +23,10 @@ namespace Zentric.Domain.Logistics
         public FulfillmentOrder(Guid customerOrderId, Guid vendorId)
         {
             if (customerOrderId == Guid.Empty)
-                throw new ArgumentException("Customer order ID is required.", nameof(customerOrderId));
+                throw new ArgumentException("El identificador de pedido es obligatorio.", nameof(customerOrderId));
 
             if (vendorId == Guid.Empty)
-                throw new ArgumentException("Vendor ID is required.", nameof(vendorId));
+                throw new ArgumentException("El identificador de vendedor es obligatorio.", nameof(vendorId));
 
             Id = Guid.NewGuid();
             CustomerOrderId = customerOrderId;
@@ -39,7 +39,7 @@ namespace Zentric.Domain.Logistics
         public void AddShipment(Guid warehouseId, string trackingNumber)
         {
             if (Status == FulfillmentStatus.Cancelled)
-                throw new InvalidOperationException("Cannot add shipments to a cancelled order.");
+                throw new InvalidOperationException("No se pueden agregar envíos a un pedido cancelado.");
 
             _shipments.Add(new Shipment(Id, warehouseId, trackingNumber));
             UpdatedAt = DateTime.UtcNow;
@@ -48,10 +48,10 @@ namespace Zentric.Domain.Logistics
         public void Pack()
         {
             if (Status == FulfillmentStatus.Cancelled)
-                throw new InvalidOperationException("Cannot pack a cancelled order.");
+                throw new InvalidOperationException("No se puede empacar un pedido cancelado.");
 
             if (Status != FulfillmentStatus.PendingPack)
-                throw new InvalidOperationException("Order must be in PendingPack state to be packed.");
+                throw new InvalidOperationException("El pedido debe estar en estado PendingPack para ser empacado.");
 
             Status = FulfillmentStatus.Packed;
             UpdatedAt = DateTime.UtcNow;
@@ -60,10 +60,10 @@ namespace Zentric.Domain.Logistics
         public void Dispatch()
         {
             if (Status == FulfillmentStatus.Cancelled)
-                throw new InvalidOperationException("Cannot dispatch a cancelled order.");
+                throw new InvalidOperationException("No se puede despachar un pedido cancelado.");
 
             if (Status != FulfillmentStatus.Packed)
-                throw new InvalidOperationException("Order must be packed before being dispatched.");
+                throw new InvalidOperationException("El pedido debe estar empacado antes de ser despachado.");
 
             Status = FulfillmentStatus.Dispatched;
             UpdatedAt = DateTime.UtcNow;
@@ -77,7 +77,7 @@ namespace Zentric.Domain.Logistics
         public void Deliver()
         {
             if (Status != FulfillmentStatus.Dispatched)
-                throw new InvalidOperationException("Order must be dispatched before being delivered.");
+                throw new InvalidOperationException("El pedido debe estar despachado antes de ser entregado.");
                 
             Status = FulfillmentStatus.Delivered;
             UpdatedAt = DateTime.UtcNow;
@@ -86,7 +86,7 @@ namespace Zentric.Domain.Logistics
         public void CancelDueToNoStock()
         {
             if (Status == FulfillmentStatus.Dispatched || Status == FulfillmentStatus.Delivered)
-                throw new InvalidOperationException("Cannot cancel a dispatched or delivered order due to stock ghost.");
+                throw new InvalidOperationException("No se puede cancelar un pedido despachado o entregado por stock fantasma.");
 
             Status = FulfillmentStatus.Cancelled;
             CancellationReason = "Stock Fantasma";

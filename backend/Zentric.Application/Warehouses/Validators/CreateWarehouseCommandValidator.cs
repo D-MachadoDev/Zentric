@@ -9,24 +9,24 @@ namespace Zentric.Application.Warehouses.Validators
         public CreateWarehouseCommandValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Warehouse name is required.");
+                .NotEmpty().WithMessage("El nombre de la bodega es obligatorio.");
 
             RuleFor(x => x.Location)
-                .NotEmpty().WithMessage("Warehouse location is required.");
+                .NotEmpty().WithMessage("La ubicación de la bodega es obligatoria.");
 
             RuleFor(x => x.Capacity)
-                .GreaterThanOrEqualTo(0).WithMessage("Capacity cannot be negative.");
+                .GreaterThanOrEqualTo(0).WithMessage("La capacidad no puede ser negativa.");
 
             RuleFor(x => x.Type)
-                .IsInEnum().WithMessage("Invalid warehouse type.");
+                .IsInEnum().WithMessage("Tipo de bodega inválido.");
 
             RuleFor(x => x)
                 .Must(x => !(x.Type == WarehouseType.Marketplace && x.VendorId.HasValue))
-                .WithMessage("Marketplace warehouses cannot have a vendor assigned.");
+                .WithMessage("Las bodegas del marketplace no pueden tener un vendedor asignado.");
 
             RuleFor(x => x)
                 .Must(x => !(x.Type == WarehouseType.Vendor && !x.VendorId.HasValue))
-                .WithMessage("Vendor warehouses must have a vendor assigned.");
+                .WithMessage("Las bodegas de vendedor deben tener un vendedor asignado.");
         }
     }
 }

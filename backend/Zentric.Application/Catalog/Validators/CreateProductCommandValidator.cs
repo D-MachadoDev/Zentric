@@ -17,12 +17,12 @@ namespace Zentric.Application.Catalog.Validators
 
             RuleFor(x => x.DigitalDownloadUrl)
                 .Must(BeNullOrAbsoluteHttpUrl)
-                .WithMessage("Digital download URL must be an absolute http(s) URL.");
+                .WithMessage("La URL de descarga digital debe ser una URL absoluta http(s).");
 
             RuleFor(x => x.Variants)
                 .NotEmpty()
                 .When(x => x.Type == ProductType.Physical)
-                .WithMessage("A physical product requires at least one variant.");
+                .WithMessage("Un producto físico requiere al menos una variante.");
 
             RuleForEach(x => x.Variants).ChildRules(variant =>
             {

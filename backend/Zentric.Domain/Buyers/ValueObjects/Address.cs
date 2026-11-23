@@ -32,7 +32,7 @@ namespace Zentric.Domain.Buyers.ValueObjects
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                throw new ArgumentException("Address fields cannot be empty.", paramName);
+                throw new ArgumentException("Los campos de la dirección no pueden estar vacíos.", paramName);
             }
 
             return value.Trim();

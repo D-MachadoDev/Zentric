@@ -67,21 +67,21 @@ namespace Zentric.Domain.Products
         {
             if (string.IsNullOrWhiteSpace(name))
             {
-                throw new ArgumentException("Product name cannot be empty.", nameof(name));
+                throw new ArgumentException("El nombre del producto no puede estar vacío.", nameof(name));
             }
 
             if (string.IsNullOrWhiteSpace(description))
             {
-                throw new ArgumentException("Product description cannot be empty.", nameof(description));
+                throw new ArgumentException("La descripción del producto no puede estar vacía.", nameof(description));
             }
 
             if (vendorId == Guid.Empty)
             {
-                throw new ArgumentException("The product must belong to a vendor.", nameof(vendorId));
+                throw new ArgumentException("El producto debe pertenecer a un vendedor.", nameof(vendorId));
             }
             if (!Enum.IsDefined(typeof(ProductType), type))
             {
-                throw new ArgumentOutOfRangeException(nameof(type), "Invalid product type.");
+                throw new ArgumentOutOfRangeException(nameof(type), "Tipo de producto inválido.");
             }
 
             ArgumentNullException.ThrowIfNull(price);
@@ -93,7 +93,7 @@ namespace Zentric.Domain.Products
                 && !IsAbsoluteHttpUrl(digitalDownloadUrl))
             {
                 throw new ArgumentException(
-                    "Digital download URL must be an absolute http(s) URL.",
+                    "La URL de descarga digital debe ser una URL absoluta http(s).",
                     nameof(digitalDownloadUrl));
             }
 
@@ -105,7 +105,7 @@ namespace Zentric.Domain.Products
             // ni reserva posible, y ese estado bloqueaba al InventoryReservationService.
             if (type == ProductType.Physical && variantSeeds.Count == 0)
             {
-                throw new ArgumentException("A physical product requires at least one variant.", nameof(variants));
+                throw new ArgumentException("Un producto físico requiere al menos una variante.", nameof(variants));
             }
 
             Id = Guid.NewGuid();
@@ -139,12 +139,12 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot add variants to a deleted product.");
+                throw new InvalidOperationException("No se pueden agregar variantes a un producto eliminado.");
             }
 
             if (string.IsNullOrWhiteSpace(sku))
             {
-                throw new ArgumentException("Variant SKU is required.", nameof(sku));
+                throw new ArgumentException("El SKU de la variante es obligatorio.", nameof(sku));
             }
 
             var normalizedSku = sku.Trim().ToUpperInvariant();
@@ -153,7 +153,7 @@ namespace Zentric.Domain.Products
             // dentro del mismo producto (frontera de consistencia del agregado).
             if (_variants.Any(variant => string.Equals(variant.Sku, normalizedSku, StringComparison.OrdinalIgnoreCase)))
             {
-                throw new InvalidOperationException($"The product already has a variant with SKU '{normalizedSku}'.");
+                throw new InvalidOperationException($"El producto ya tiene una variante con SKU '{normalizedSku}'.");
             }
 
             var variant = new ProductVariant(Id, normalizedSku, attributes, priceAmount);
@@ -168,21 +168,21 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot remove variants from a deleted product.");
+                throw new InvalidOperationException("No se pueden eliminar variantes de un producto eliminado.");
             }
 
             var variant = _variants.SingleOrDefault(variant => variant.Id == variantId);
 
             if (variant is null)
             {
-                throw new InvalidOperationException("Variant not found in this product.");
+                throw new InvalidOperationException("Variante no encontrada en este producto.");
             }
 
             // Un producto fisico no puede quedarse sin variantes.
             if (Type == ProductType.Physical
                 && _variants.Count(v => !v.IsDeleted && v.Id != variantId) == 0)
             {
-                throw new InvalidOperationException("A physical product must keep at least one variant.");
+                throw new InvalidOperationException("Un producto físico debe conservar al menos una variante.");
             }
 
             _variants.Remove(variant);
@@ -193,17 +193,17 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot update a deleted product.");
+                throw new InvalidOperationException("No se puede actualizar un producto eliminado.");
             }
 
             if (string.IsNullOrWhiteSpace(name))
             {
-                throw new ArgumentException("Product name cannot be empty.", nameof(name));
+                throw new ArgumentException("El nombre del producto no puede estar vacío.", nameof(name));
             }
 
             if (string.IsNullOrWhiteSpace(description))
             {
-                throw new ArgumentException("Product description cannot be empty.", nameof(description));
+                throw new ArgumentException("La descripción del producto no puede estar vacía.", nameof(description));
             }
 
             ArgumentNullException.ThrowIfNull(price);
@@ -226,7 +226,7 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot update category of a deleted product.");
+                throw new InvalidOperationException("No se puede actualizar la categoría de un producto eliminado.");
             }
 
             Category = string.IsNullOrWhiteSpace(category) ? null : category.Trim();
@@ -237,7 +237,7 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot update image of a deleted product.");
+                throw new InvalidOperationException("No se puede actualizar la imagen de un producto eliminado.");
             }
 
             ImageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
@@ -248,7 +248,7 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot update the price of a deleted product.");
+                throw new InvalidOperationException("No se puede actualizar el precio de un producto eliminado.");
             }
 
             ArgumentNullException.ThrowIfNull(newPrice);
@@ -261,19 +261,19 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot update the type of a deleted product.");
+                throw new InvalidOperationException("No se puede actualizar el tipo de un producto eliminado.");
             }
 
             if (!Enum.IsDefined(typeof(ProductType), newType))
             {
-                throw new ArgumentOutOfRangeException(nameof(newType), "Invalid product type.");
+                throw new ArgumentOutOfRangeException(nameof(newType), "Tipo de producto inválido.");
             }
 
             // Un producto no puede convertirse en fisico si no
             // tiene variantes, porque quedaria sin unidad de stock.
             if (newType == ProductType.Physical && !HasVariant)
             {
-                throw new InvalidOperationException("A physical product requires at least one variant.");
+                throw new InvalidOperationException("Un producto físico requiere al menos una variante.");
             }
 
             Type = newType;
@@ -284,12 +284,12 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot publish a deleted product.");
+                throw new InvalidOperationException("No se puede publicar un producto eliminado.");
             }
 
             if (Status == ProductStatus.Published)
             {
-                throw new InvalidOperationException("Product is already published.");
+                throw new InvalidOperationException("El producto ya está publicado.");
             }
 
             Status = ProductStatus.Published;
@@ -300,12 +300,12 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot suspend a deleted product.");
+                throw new InvalidOperationException("No se puede suspender un producto eliminado.");
             }
 
             if (Status == ProductStatus.Suspended)
             {
-                throw new InvalidOperationException("Product is already suspended.");
+                throw new InvalidOperationException("El producto ya está suspendido.");
             }
 
             Status = ProductStatus.Suspended;
@@ -316,7 +316,7 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Product is already deleted.");
+                throw new InvalidOperationException("El producto ya está eliminado.");
             }
 
             DeletedAt = DateTime.UtcNow;
@@ -328,7 +328,7 @@ namespace Zentric.Domain.Products
         {
             if (!IsDeleted)
             {
-                throw new InvalidOperationException("Product is not deleted.");
+                throw new InvalidOperationException("El producto no está eliminado.");
             }
 
             DeletedAt = null;
@@ -343,12 +343,12 @@ namespace Zentric.Domain.Products
         {
             if (averageRating < 0 || averageRating > 5)
             {
-                throw new ArgumentOutOfRangeException(nameof(averageRating), "Average rating must be between 0 and 5.");
+                throw new ArgumentOutOfRangeException(nameof(averageRating), "La calificación promedio debe estar entre 0 y 5.");
             }
 
             if (reviewsCount < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(reviewsCount), "Reviews count cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(reviewsCount), "El número de reseñas no puede ser negativo.");
             }
 
             AverageRating = Math.Round(averageRating, 2, MidpointRounding.AwayFromZero);
@@ -365,14 +365,14 @@ namespace Zentric.Domain.Products
         {
             if (newRating < 1 || newRating > 5)
             {
-                throw new ArgumentOutOfRangeException(nameof(newRating), "Rating must be between 1 and 5.");
+                throw new ArgumentOutOfRangeException(nameof(newRating), "La calificación debe estar entre 1 y 5.");
             }
 
             if (oldRating.HasValue)
             {
                 if (oldRating.Value < 1 || oldRating.Value > 5)
                 {
-                    throw new ArgumentOutOfRangeException(nameof(oldRating), "Old rating must be between 1 and 5.");
+                    throw new ArgumentOutOfRangeException(nameof(oldRating), "La calificación anterior debe estar entre 1 y 5.");
                 }
 
                 if (ReviewsCount <= 0)
@@ -400,7 +400,7 @@ namespace Zentric.Domain.Products
         {
             if (rating < 1 || rating > 5)
             {
-                throw new ArgumentOutOfRangeException(nameof(rating), "Rating must be between 1 and 5.");
+                throw new ArgumentOutOfRangeException(nameof(rating), "La calificación debe estar entre 1 y 5.");
             }
 
             if (ReviewsCount <= 1)

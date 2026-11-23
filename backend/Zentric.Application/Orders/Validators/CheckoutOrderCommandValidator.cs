@@ -8,11 +8,11 @@ namespace Zentric.Application.Orders.Validators
         public CheckoutOrderCommandValidator()
         {
             RuleFor(v => v.OrderId)
-                .NotEmpty().WithMessage("Order ID is required.");
+                .NotEmpty().WithMessage("El identificador de pedido es obligatorio.");
 
             // Identidad derivada del token por el controlador.
             RuleFor(v => v.BuyerId)
-                .NotEmpty().WithMessage("BuyerId is required.");
+                .NotEmpty().WithMessage("El identificador del comprador es obligatorio.");
         }
     }
 }

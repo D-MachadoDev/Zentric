@@ -224,7 +224,7 @@ public Task<IReadOnlyList<FulfillmentOrder>> GetByCustomerOrderIdAsync(
             var result = await mediator.Send(new CreateCartCommand(Guid.Empty));
 
             Assert.True(result.IsFailure);
-            Assert.Equal("BuyerId is required.", result.Error);
+            Assert.Equal("El identificador del comprador es obligatorio.", result.Error);
             Assert.Equal(0, orders.Count);
         }
 
@@ -236,7 +236,7 @@ public Task<IReadOnlyList<FulfillmentOrder>> GetByCustomerOrderIdAsync(
             var result = await mediator.Send(new AddOrderItemCommand(Guid.NewGuid(), Guid.NewGuid(), 0, Guid.NewGuid()));
 
             Assert.True(result.IsFailure);
-            Assert.Contains("Quantity must be greater than zero.", result.Error);
+            Assert.Contains("La cantidad debe ser mayor a cero.", result.Error);
         }
 
         [Fact]

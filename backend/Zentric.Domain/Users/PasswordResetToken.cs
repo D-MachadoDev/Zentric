@@ -30,8 +30,8 @@ namespace Zentric.Domain.Users
 
         public PasswordResetToken(Guid userId, string tokenHash, DateTime expiresAt, DateTime? createdAt = null)
         {
-            if (userId == Guid.Empty) throw new ArgumentException("UserId cannot be empty.", nameof(userId));
-            if (string.IsNullOrWhiteSpace(tokenHash)) throw new ArgumentException("TokenHash cannot be empty.", nameof(tokenHash));
+            if (userId == Guid.Empty) throw new ArgumentException("El identificador de usuario no puede estar vacío.", nameof(userId));
+            if (string.IsNullOrWhiteSpace(tokenHash)) throw new ArgumentException("El hash del token no puede estar vacío.", nameof(tokenHash));
 
             Id = Guid.NewGuid();
             UserId = userId;
@@ -42,7 +42,7 @@ namespace Zentric.Domain.Users
 
             if (ExpiresAt <= CreatedAt)
             {
-                throw new ArgumentException("ExpiresAt must be after CreatedAt.", nameof(expiresAt));
+                throw new ArgumentException("ExpiresAt debe ser posterior a CreatedAt.", nameof(expiresAt));
             }
         }
 
@@ -83,7 +83,7 @@ namespace Zentric.Domain.Users
         {
             if (string.IsNullOrWhiteSpace(rawToken))
             {
-                throw new ArgumentException("Raw token cannot be empty.", nameof(rawToken));
+                throw new ArgumentException("El token en claro no puede estar vacío.", nameof(rawToken));
             }
 
             byte[] inputBytes = Encoding.UTF8.GetBytes(rawToken.Trim());
@@ -98,12 +98,12 @@ namespace Zentric.Domain.Users
         {
             if (IsUsed)
             {
-                throw new InvalidOperationException("The password reset token has already been used.");
+                throw new InvalidOperationException("El token de restablecimiento de contraseña ya ha sido utilizado.");
             }
 
             if (IsExpired(nowUtc))
             {
-                throw new InvalidOperationException("The password reset token has expired.");
+                throw new InvalidOperationException("El token de restablecimiento de contraseña ha expirado.");
             }
 
             UsedAt = nowUtc;

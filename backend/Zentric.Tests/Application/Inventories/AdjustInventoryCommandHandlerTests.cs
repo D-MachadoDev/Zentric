@@ -64,7 +64,7 @@ namespace Zentric.Tests.Application.Inventories
                 CancellationToken.None);
 
             Assert.False(result.IsSuccess);
-            Assert.Contains("cannot add stock", result.Error);
+            Assert.Contains("no puede agregar stock", result.Error);
         }
 
         [Fact]
@@ -80,7 +80,7 @@ namespace Zentric.Tests.Application.Inventories
                 CancellationToken.None);
 
             Assert.False(result.IsSuccess);
-            Assert.Contains("negative", result.Error);
+            Assert.Contains("negativa", result.Error);
         }
 
         [Fact]
@@ -96,7 +96,7 @@ namespace Zentric.Tests.Application.Inventories
                 CancellationToken.None);
 
             Assert.False(result.IsSuccess);
-            Assert.Contains("required", result.Error);
+            Assert.Contains("obligatorio", result.Error);
         }
 
         [Fact]

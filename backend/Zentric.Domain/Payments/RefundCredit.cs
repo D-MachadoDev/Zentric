@@ -58,15 +58,15 @@ namespace Zentric.Domain.Payments
             DateTime occurredAt)
         {
             if (quantity <= 0)
-                throw new ArgumentException("A refund credit must cover at least one unit.", nameof(quantity));
+                throw new ArgumentException("Un crédito de reembolso debe cubrir al menos una unidad.", nameof(quantity));
 
             if (amount is null) throw new ArgumentNullException(nameof(amount));
 
             if (amount.Amount <= 0m)
-                throw new ArgumentException("A refund credit must be greater than zero.", nameof(amount));
+                throw new ArgumentException("Un crédito de reembolso debe ser mayor a cero.", nameof(amount));
 
             if (string.IsNullOrWhiteSpace(ruleApplied))
-                throw new ArgumentException("A refund credit must name the rule that authorised it.", nameof(ruleApplied));
+                throw new ArgumentException("Un crédito de reembolso debe indicar la regla que lo autorizó.", nameof(ruleApplied));
 
             Id = Guid.NewGuid();
             PaymentReceiptId = paymentReceiptId;

@@ -36,10 +36,16 @@ public sealed class FullNameTests
         Assert.Throws<ArgumentException>(() => new FullName(value));
     }
 
-    [Fact(DisplayName = "4. Formato Incompleto: Una sola palabra sin apellido lanza ArgumentException")]
-    public void Constructor_UnaSolaPalabra_Lanza()
+    [Theory(DisplayName = "4. Nombre de una sola palabra: Empresas y tiendas se aceptan con apellido vacío")]
+    [InlineData("Madonna", "Madonna")]
+    [InlineData("TechStore", "Techstore")]
+    public void Constructor_UnaSolaPalabra_EsValida(string fullName, string expected)
     {
-        Assert.Throws<ArgumentException>(() => new FullName("Madonna"));
+        var name = new FullName(fullName);
+
+        Assert.Equal(expected, name.FirstName);
+        Assert.Equal("", name.LastName);
+        Assert.Equal(expected, name.Value);
     }
 
     [Theory(DisplayName = "5. Partes Incompletas: Nombre o apellido vacío lanza ArgumentException")]

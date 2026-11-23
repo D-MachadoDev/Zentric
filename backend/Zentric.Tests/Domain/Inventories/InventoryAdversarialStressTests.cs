@@ -163,7 +163,7 @@ namespace Zentric.Tests.Domain.Inventories
             Assert.True(inv.IsDeleted);
 
             var ex = Assert.Throws<InvalidOperationException>(() => inv.MarkAsDeleted());
-            Assert.Contains("already deleted", ex.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("ya está eliminado", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
 
         #endregion

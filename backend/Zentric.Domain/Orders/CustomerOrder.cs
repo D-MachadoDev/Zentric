@@ -73,7 +73,7 @@ namespace Zentric.Domain.Orders
         public CustomerOrder(Guid buyerId)
         {
             if (buyerId == Guid.Empty)
-                throw new ArgumentException("Buyer ID is required.", nameof(buyerId));
+                throw new ArgumentException("El identificador del comprador es obligatorio.", nameof(buyerId));
 
             Id = Guid.NewGuid();
             BuyerId = buyerId;
@@ -88,7 +88,7 @@ namespace Zentric.Domain.Orders
             
             if (Status != OrderStatus.Cart)
             {
-                throw new InvalidOperationException("Can only add items while the order is in the Cart status.");
+                throw new InvalidOperationException("Solo se pueden agregar artículos mientras el pedido está en estado Cart.");
             }
 
             var existingItem = _items.SingleOrDefault(i => i.VariantId == variantId);
@@ -117,13 +117,13 @@ namespace Zentric.Domain.Orders
 
             if (Status != OrderStatus.Cart)
             {
-                throw new InvalidOperationException("Can only remove items while the order is in the Cart status.");
+                throw new InvalidOperationException("Solo se pueden eliminar artículos mientras el pedido está en estado Cart.");
             }
 
             var itemToRemove = _items.SingleOrDefault(i => i.VariantId == variantId);
             if (itemToRemove == null)
             {
-                throw new InvalidOperationException("Item not found in cart");
+                throw new InvalidOperationException("Artículo no encontrado en el carrito");
             }
 
             _items.Remove(itemToRemove);
@@ -148,18 +148,18 @@ namespace Zentric.Domain.Orders
 
             if (Status != OrderStatus.Cart)
             {
-                throw new InvalidOperationException("Can only update item quantities while the order is in the Cart status.");
+                throw new InvalidOperationException("Solo se pueden actualizar las cantidades de los artículos mientras el pedido está en estado Cart.");
             }
 
             if (quantity < 1)
             {
-                throw new InvalidOperationException("Quantity must be at least 1. Use RemoveItem to remove the line entirely.");
+                throw new InvalidOperationException("La cantidad debe ser al menos 1. Use RemoveItem para eliminar la línea por completo.");
             }
 
             var item = _items.SingleOrDefault(i => i.VariantId == variantId);
             if (item == null)
             {
-                throw new InvalidOperationException("Item not found in cart");
+                throw new InvalidOperationException("Artículo no encontrado en el carrito");
             }
 
             item.UpdateQuantity(quantity);
@@ -177,7 +177,7 @@ namespace Zentric.Domain.Orders
             // La entrega digital solo tiene sentido en pedidos pagados
             if (Status != OrderStatus.Paid)
             {
-                throw new InvalidOperationException("Digital delivery can only be recorded for paid orders.");
+                throw new InvalidOperationException("La entrega digital solo se puede registrar para pedidos pagados.");
             }
 
             _digitalDeliveries.Add(record);
@@ -190,12 +190,12 @@ namespace Zentric.Domain.Orders
 
             if (Status != OrderStatus.Cart)
             {
-                throw new InvalidOperationException("Only an order in Cart status can be checked out.");
+                throw new InvalidOperationException("Solo un pedido en estado Cart puede iniciar el pago.");
             }
 
             if (_items.Count == 0)
             {
-                throw new InvalidOperationException("Cannot checkout an empty cart.");
+                throw new InvalidOperationException("No se puede iniciar el pago de un carrito vacío.");
             }
 
             // (/): la caducidad es una regla de negocio y vive aqui, no
@@ -211,7 +211,7 @@ namespace Zentric.Domain.Orders
 
             if (DateTime.UtcNow - CheckoutStartedAt.Value > TimeSpan.FromMinutes(15))
             {
-                throw new InvalidOperationException("Cart reservation has expired (15-minute timeout).");
+                throw new InvalidOperationException("La reserva del carrito ha expirado (tiempo de espera de 15 minutos).");
             }
 
             Status = OrderStatus.PendingPayment;
@@ -226,7 +226,7 @@ namespace Zentric.Domain.Orders
 
             if (Status != OrderStatus.PendingPayment)
             {
-                throw new InvalidOperationException("Only an order in PendingPayment status can renew its reservation.");
+                throw new InvalidOperationException("Solo un pedido en estado PendingPayment puede renovar su reserva.");
             }
 
             CheckoutStartedAt = DateTime.UtcNow;
@@ -239,7 +239,7 @@ namespace Zentric.Domain.Orders
 
             if (Status != OrderStatus.PendingPayment)
             {
-                throw new InvalidOperationException("Order must be in PendingPayment status to be paid.");
+                throw new InvalidOperationException("El pedido debe estar en estado PendingPayment para ser pagado.");
             }
 
             Status = OrderStatus.Paid;
@@ -254,7 +254,7 @@ namespace Zentric.Domain.Orders
 
             if (Status != OrderStatus.Paid)
             {
-                throw new InvalidOperationException("Order must be paid before being dispatched.");
+                throw new InvalidOperationException("El pedido debe estar pagado antes de ser despachado.");
             }
 
             Status = OrderStatus.Dispatched;
@@ -267,7 +267,7 @@ namespace Zentric.Domain.Orders
 
             if (Status != OrderStatus.Dispatched)
             {
-                throw new InvalidOperationException("Order must be dispatched before being delivered.");
+                throw new InvalidOperationException("El pedido debe estar despachado antes de ser entregado.");
             }
 
             Status = OrderStatus.Delivered;
@@ -316,19 +316,19 @@ namespace Zentric.Domain.Orders
 
             if (Status == OrderStatus.Delivered)
             {
-                throw new InvalidOperationException("A delivered order cannot be resolved as cancelled.");
+                throw new InvalidOperationException("Un pedido entregado no puede resolverse como cancelado.");
             }
 
             if (!areAllFulfillmentsCancelled)
             {
                 throw new InvalidOperationException(
-                    "An order can only be fully resolved when every one of its fulfillments is cancelled.");
+                    "Un pedido solo puede resolverse por completo cuando todos sus despachos están cancelados.");
             }
 
             if (!isReceiptFullyRefunded)
             {
                 throw new InvalidOperationException(
-                    "An order can only be fully resolved once its payment receipt has been refunded in full.");
+                    "Un pedido solo puede resolverse por completo una vez que su comprobante de pago ha sido reembolsado en su totalidad.");
             }
 
             Status = OrderStatus.Cancelled;
@@ -343,7 +343,7 @@ namespace Zentric.Domain.Orders
 
             if (Status != OrderStatus.Cart && Status != OrderStatus.PendingPayment)
             {
-                throw new InvalidOperationException("Only an order in Cart or PendingPayment status can be cancelled due to timeout.");
+                throw new InvalidOperationException("Solo un pedido en estado Cart o PendingPayment puede cancelarse por tiempo de espera.");
             }
 
             Status = OrderStatus.Cancelled;
@@ -357,11 +357,11 @@ namespace Zentric.Domain.Orders
             // Regla de Negocio SSoT: Un pedido en estado Delivered o Cancelled no podrá ser modificado bajo ninguna circunstancia.
             if (Status == OrderStatus.Delivered)
             {
-                throw new InvalidOperationException("A delivered order cannot be modified under any circumstances.");
+                throw new InvalidOperationException("Un pedido entregado no puede modificarse bajo ninguna circunstancia.");
             }
             if (Status == OrderStatus.Cancelled)
             {
-                throw new InvalidOperationException("A cancelled order cannot be modified under any circumstances.");
+                throw new InvalidOperationException("Un pedido cancelado no puede modificarse bajo ninguna circunstancia.");
             }
         }
     }

@@ -16,8 +16,8 @@ namespace Zentric.Domain.Products
 
         public UserRecentlyViewed(Guid userId, Guid productId, DateTime viewedAt)
         {
-            if (userId == Guid.Empty) throw new ArgumentException("UserId cannot be empty", nameof(userId));
-            if (productId == Guid.Empty) throw new ArgumentException("ProductId cannot be empty", nameof(productId));
+            if (userId == Guid.Empty) throw new ArgumentException("El identificador de usuario no puede estar vacío.", nameof(userId));
+            if (productId == Guid.Empty) throw new ArgumentException("El identificador de producto no puede estar vacío.", nameof(productId));
 
             UserId = userId;
             ProductId = productId;

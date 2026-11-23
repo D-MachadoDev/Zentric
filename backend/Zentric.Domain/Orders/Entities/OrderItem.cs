@@ -40,16 +40,16 @@ namespace Zentric.Domain.Orders.Entities
         internal OrderItem(Guid customerOrderId, Guid variantId, Guid vendorId, int quantity, Money unitPrice)
         {
             if (customerOrderId == Guid.Empty)
-                throw new ArgumentException("Customer order ID is required.", nameof(customerOrderId));
+                throw new ArgumentException("El identificador de pedido es obligatorio.", nameof(customerOrderId));
 
             if (variantId == Guid.Empty)
-                throw new ArgumentException("Variant ID is required.", nameof(variantId));
+                throw new ArgumentException("El identificador de variante es obligatorio.", nameof(variantId));
 
             if (vendorId == Guid.Empty)
-                throw new ArgumentException("Vendor ID is required.", nameof(vendorId));
+                throw new ArgumentException("El identificador de vendedor es obligatorio.", nameof(vendorId));
 
             if (quantity <= 0)
-                throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(quantity), "La cantidad debe ser mayor a cero.");
 
             ArgumentNullException.ThrowIfNull(unitPrice);
 
@@ -64,7 +64,7 @@ namespace Zentric.Domain.Orders.Entities
         internal void AddQuantity(int additionalQuantity)
         {
             if (additionalQuantity <= 0)
-                throw new ArgumentOutOfRangeException(nameof(additionalQuantity), "Additional quantity must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(additionalQuantity), "La cantidad adicional debe ser mayor a cero.");
 
             Quantity += additionalQuantity;
         }
@@ -72,7 +72,7 @@ namespace Zentric.Domain.Orders.Entities
         internal void UpdateQuantity(int newQuantity)
         {
             if (newQuantity <= 0)
-                throw new ArgumentOutOfRangeException(nameof(newQuantity), "Quantity must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(newQuantity), "La cantidad debe ser mayor a cero.");
 
             Quantity = newQuantity;
         }
@@ -84,7 +84,7 @@ namespace Zentric.Domain.Orders.Entities
         {
             if (DeliveredAt.HasValue)
             {
-                throw new InvalidOperationException("Order item is already marked as delivered.");
+                throw new InvalidOperationException("La línea del pedido ya está marcada como entregada.");
             }
 
             DeliveredAt = DateTime.UtcNow;

@@ -42,7 +42,7 @@ namespace Zentric.Domain.Products.ValueObjects
         {
             if (string.IsNullOrWhiteSpace(currency))
             {
-                throw new ArgumentException("Currency cannot be empty.", nameof(currency));
+                throw new ArgumentException("La moneda no puede estar vacía.", nameof(currency));
             }
 
             var normalized = currency.Trim().ToUpperInvariant();
@@ -50,13 +50,13 @@ namespace Zentric.Domain.Products.ValueObjects
             if (normalized.Length != 3)
             {
                 throw new ArgumentException(
-                    "Currency must be a valid ISO 4217 code, for example COP.", nameof(currency));
+                    "La moneda debe ser un código ISO 4217 válido, por ejemplo COP.", nameof(currency));
             }
 
             if (!Allowed.Contains(normalized))
             {
                 throw new ArgumentException(
-                    $"Currency '{normalized}' is not supported. Supported: {string.Join(", ", Allowed)}.",
+                    $"La moneda '{normalized}' no es compatible. Compatibles: {string.Join(", ", Allowed)}.",
                     nameof(currency));
             }
 
@@ -72,7 +72,7 @@ namespace Zentric.Domain.Products.ValueObjects
     public sealed class MixedCurrencyException : InvalidOperationException
     {
         public MixedCurrencyException(string currency, string expected)
-            : base($"Cannot mix currencies in the same operation: '{expected}' and '{currency}'.")
+            : base($"No se pueden mezclar monedas en la misma operación: '{expected}' y '{currency}'.")
         {
             Currency = currency;
             Expected = expected;
@@ -93,7 +93,7 @@ namespace Zentric.Domain.Products.ValueObjects
         {
             if (amount < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(amount), "Amount cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(amount), "El monto no puede ser negativo.");
             }
 
             // Valida contra la lista blanca de divisas soportadas.
@@ -119,7 +119,7 @@ namespace Zentric.Domain.Products.ValueObjects
         {
             if (quantity < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(quantity), "La cantidad no puede ser negativa.");
             }
 
             return new Money(Amount * quantity, Currency);

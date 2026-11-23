@@ -61,7 +61,7 @@ namespace Zentric.Domain.Payments
             if (amount is null) throw new ArgumentNullException(nameof(amount));
             if (amount.Amount <= 0m)
             {
-                throw new ArgumentException("Payment amount must be positive.", nameof(amount));
+                throw new ArgumentException("El monto del pago debe ser positivo.", nameof(amount));
             }
 
             return new PaymentReceipt
@@ -84,7 +84,7 @@ namespace Zentric.Domain.Payments
         {
             if (string.IsNullOrWhiteSpace(transactionId))
             {
-                throw new ArgumentException("Transaction id is required.", nameof(transactionId));
+                throw new ArgumentException("El identificador de la transacción es obligatorio.", nameof(transactionId));
             }
 
             if (Status == PaymentStatus.Approved) return;
@@ -135,7 +135,7 @@ namespace Zentric.Domain.Payments
             if (credit.Amount.Currency != Amount.Currency)
             {
                 throw new InvalidOperationException(
-                    $"Refund credit currency {credit.Amount.Currency} does not match receipt currency {Amount.Currency}.");
+                    $"La moneda del crédito de reembolso {credit.Amount.Currency} no coincide con la moneda del comprobante {Amount.Currency}.");
             }
 
             Accredit(credit.Amount);
@@ -153,18 +153,18 @@ namespace Zentric.Domain.Payments
             if (Status != PaymentStatus.Approved && Status != PaymentStatus.Refunded)
             {
                 throw new InvalidOperationException(
-                    "Only an approved payment receipt can be refunded.");
+                    "Solo un comprobante de pago aprobado puede ser reembolsado.");
             }
 
             if (creditAmount.Currency != Amount.Currency)
             {
                 throw new InvalidOperationException(
-                    $"Refund currency {creditAmount.Currency} does not match receipt currency {Amount.Currency}.");
+                    $"La moneda del reembolso {creditAmount.Currency} no coincide con la moneda del comprobante {Amount.Currency}.");
             }
 
             if (creditAmount.Amount <= 0m)
             {
-                throw new ArgumentException("Refund must be greater than zero.", nameof(creditAmount));
+                throw new ArgumentException("El reembolso debe ser mayor a cero.", nameof(creditAmount));
             }
 
             // Invariante 14 : el credito se ACUMULA y la suma de todos los
@@ -176,7 +176,7 @@ namespace Zentric.Domain.Payments
             if (creditAmount.Amount > remaining)
             {
                 throw new ArgumentException(
-                    $"Refund of {creditAmount.Amount} would exceed the remaining balance of {remaining} on the receipt.",
+                    $"El reembolso de {creditAmount.Amount} superaría el saldo restante de {remaining} del comprobante.",
                     nameof(creditAmount));
             }
 

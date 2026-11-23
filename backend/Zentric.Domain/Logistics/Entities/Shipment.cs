@@ -15,9 +15,9 @@ namespace Zentric.Domain.Logistics.Entities
         internal Shipment(Guid fulfillmentOrderId, Guid warehouseId, string trackingNumber)
         {
             if (fulfillmentOrderId == Guid.Empty)
-                throw new ArgumentException("FulfillmentOrderId required", nameof(fulfillmentOrderId));
+                throw new ArgumentException("El identificador de la orden de despacho es obligatorio.", nameof(fulfillmentOrderId));
             if (warehouseId == Guid.Empty)
-                throw new ArgumentException("WarehouseId required", nameof(warehouseId));
+                throw new ArgumentException("El identificador de bodega es obligatorio.", nameof(warehouseId));
             
             Id = Guid.NewGuid();
             FulfillmentOrderId = fulfillmentOrderId;

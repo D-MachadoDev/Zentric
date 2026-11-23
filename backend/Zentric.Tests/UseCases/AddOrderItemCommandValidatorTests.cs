@@ -33,7 +33,7 @@ namespace Zentric.Tests.UseCases
             var result = _validator.Validate(command);
 
             Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, error => error.ErrorMessage == "OrderId is required.");
+            Assert.Contains(result.Errors, error => error.ErrorMessage == "El identificador de pedido es obligatorio.");
         }
 
         [Fact]
@@ -44,7 +44,7 @@ namespace Zentric.Tests.UseCases
             var result = _validator.Validate(command);
 
             Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, error => error.ErrorMessage == "VariantId is required.");
+            Assert.Contains(result.Errors, error => error.ErrorMessage == "El identificador de variante es obligatorio.");
         }
 
         [Theory]
@@ -57,7 +57,7 @@ namespace Zentric.Tests.UseCases
             var result = _validator.Validate(command);
 
             Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, error => error.ErrorMessage == "Quantity must be greater than zero.");
+            Assert.Contains(result.Errors, error => error.ErrorMessage == "La cantidad debe ser mayor a cero.");
         }
 
         [Fact]
@@ -70,7 +70,7 @@ namespace Zentric.Tests.UseCases
             var result = _validator.Validate(command);
 
             Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, error => error.ErrorMessage == "BuyerId is required.");
+            Assert.Contains(result.Errors, error => error.ErrorMessage == "El identificador del comprador es obligatorio.");
         }
     }
 }

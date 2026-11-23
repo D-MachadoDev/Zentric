@@ -28,27 +28,27 @@ namespace Zentric.Domain.Warehouses
         {
             if (string.IsNullOrWhiteSpace(name))
             {
-                throw new ArgumentException("Warehouse name is required.", nameof(name));
+                throw new ArgumentException("El nombre de la bodega es obligatorio.", nameof(name));
             }
 
             if (string.IsNullOrWhiteSpace(location))
             {
-                throw new ArgumentException("Warehouse location is required.", nameof(location));
+                throw new ArgumentException("La ubicación de la bodega es obligatoria.", nameof(location));
             }
 
             if (capacity < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(capacity), "Capacity cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(capacity), "La capacidad no puede ser negativa.");
             }
 
             if (type == WarehouseType.Marketplace && vendorId.HasValue)
             {
-                throw new InvalidOperationException("Marketplace warehouses cannot have a vendor assigned.");
+                throw new InvalidOperationException("Las bodegas del marketplace no pueden tener un vendedor asignado.");
             }
 
             if (type == WarehouseType.Vendor && !vendorId.HasValue)
             {
-                throw new InvalidOperationException("Vendor warehouses must have the owner vendor ID.");
+                throw new InvalidOperationException("Las bodegas de vendedor deben tener el identificador del vendedor propietario.");
             }
 
             Id = Guid.NewGuid();
@@ -67,17 +67,17 @@ namespace Zentric.Domain.Warehouses
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot rename a deleted warehouse.");
+                throw new InvalidOperationException("No se puede renombrar una bodega eliminada.");
             }
 
             if (!IsActive)
             {
-                throw new InvalidOperationException("Cannot rename an inactive warehouse.");
+                throw new InvalidOperationException("No se puede renombrar una bodega inactiva.");
             }
 
             if (string.IsNullOrWhiteSpace(newName))
             {
-                throw new ArgumentException("Warehouse name is invalid.");
+                throw new ArgumentException("El nombre de la bodega es inválido.");
             }
 
             Name = newName.Trim();
@@ -88,17 +88,17 @@ namespace Zentric.Domain.Warehouses
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot move a deleted warehouse.");
+                throw new InvalidOperationException("No se puede mover una bodega eliminada.");
             }
 
             if (!IsActive)
             {
-                throw new InvalidOperationException("Cannot change the location of an inactive warehouse.");
+                throw new InvalidOperationException("No se puede cambiar la ubicación de una bodega inactiva.");
             }
 
             if (string.IsNullOrWhiteSpace(newLocation))
             {
-                throw new ArgumentException("Warehouse location is invalid.");
+                throw new ArgumentException("La ubicación de la bodega es inválida.");
             }
 
             Location = newLocation.Trim();
@@ -109,17 +109,17 @@ namespace Zentric.Domain.Warehouses
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot expand the capacity of a deleted warehouse.");
+                throw new InvalidOperationException("No se puede ampliar la capacidad de una bodega eliminada.");
             }
 
             if (!IsActive)
             {
-                throw new InvalidOperationException("Cannot expand the capacity of an inactive warehouse.");
+                throw new InvalidOperationException("No se puede ampliar la capacidad de una bodega inactiva.");
             }
 
             if (addedCapacity < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(addedCapacity), "Added capacity cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(addedCapacity), "La capacidad agregada no puede ser negativa.");
             }
 
             Capacity += addedCapacity;
@@ -130,17 +130,17 @@ namespace Zentric.Domain.Warehouses
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot change the capacity of a deleted warehouse.");
+                throw new InvalidOperationException("No se puede cambiar la capacidad de una bodega eliminada.");
             }
 
             if (!IsActive)
             {
-                throw new InvalidOperationException("Cannot change the capacity of an inactive warehouse.");
+                throw new InvalidOperationException("No se puede cambiar la capacidad de una bodega inactiva.");
             }
 
             if (newCapacity < 0)
             {
-                throw new ArgumentException("Warehouse capacity is invalid.");
+                throw new ArgumentException("La capacidad de la bodega es inválida.");
             }
 
             Capacity = newCapacity;
@@ -151,12 +151,12 @@ namespace Zentric.Domain.Warehouses
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot activate a deleted warehouse.");
+                throw new InvalidOperationException("No se puede activar una bodega eliminada.");
             }
 
             if (IsActive)
             {
-                throw new InvalidOperationException("Warehouse is already active.");
+                throw new InvalidOperationException("La bodega ya está activa.");
             }
 
             IsActive = true;
@@ -167,12 +167,12 @@ namespace Zentric.Domain.Warehouses
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot deactivate a deleted warehouse.");
+                throw new InvalidOperationException("No se puede desactivar una bodega eliminada.");
             }
 
             if (!IsActive)
             {
-                throw new InvalidOperationException("Warehouse is already inactive.");
+                throw new InvalidOperationException("La bodega ya está inactiva.");
             }
 
             IsActive = false;
@@ -183,7 +183,7 @@ namespace Zentric.Domain.Warehouses
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Warehouse is already deleted.");
+                throw new InvalidOperationException("La bodega ya está eliminada.");
             }
 
             DeletedAt = DateTime.UtcNow;
@@ -195,7 +195,7 @@ namespace Zentric.Domain.Warehouses
         {
             if (!IsDeleted)
             {
-                throw new InvalidOperationException("Warehouse is not deleted.");
+                throw new InvalidOperationException("La bodega no está eliminada.");
             }
 
             DeletedAt = null;

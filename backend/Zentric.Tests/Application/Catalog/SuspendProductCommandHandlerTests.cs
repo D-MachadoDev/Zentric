@@ -68,7 +68,7 @@ namespace Zentric.Tests.Application.Catalog
 
             Assert.False(result.IsSuccess);
             Assert.Equal(Zentric.Application.Common.Models.ErrorKind.Validation, result.ErrorKind);
-            Assert.Contains("already suspended", result.Error);
+            Assert.Contains("ya está suspendido", result.Error);
         }
 
         [Fact]
@@ -89,7 +89,7 @@ namespace Zentric.Tests.Application.Catalog
             var result = await handler.Handle(new SuspendProductCommand(product.Id), CancellationToken.None);
 
             Assert.False(result.IsSuccess);
-            Assert.Contains("deleted", result.Error);
+            Assert.Contains("eliminado", result.Error);
         }
     }
 }

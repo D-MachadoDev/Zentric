@@ -84,7 +84,7 @@ namespace Zentric.Tests.Application.Users
 
             Assert.False(result.IsSuccess);
             Assert.Equal(Zentric.Application.Common.Models.ErrorKind.Validation, result.ErrorKind);
-            Assert.Contains("already blocked", result.Error);
+            Assert.Contains("ya está bloqueado", result.Error);
         }
 
         /// <summary>
@@ -119,7 +119,7 @@ namespace Zentric.Tests.Application.Users
             var result = await handler.Handle(new BlockUserCommand(user.Id), CancellationToken.None);
 
             Assert.False(result.IsSuccess);
-            Assert.Contains("deleted", result.Error);
+            Assert.Contains("eliminado", result.Error);
         }
 
         [Fact(DisplayName = "6. Activación de Usuario Inexistente: Retorna NotFound")]
@@ -163,7 +163,7 @@ namespace Zentric.Tests.Application.Users
 
             Assert.False(result.IsSuccess);
             Assert.Equal(Zentric.Application.Common.Models.ErrorKind.Validation, result.ErrorKind);
-            Assert.Contains("already active", result.Error);
+            Assert.Contains("ya está activo", result.Error);
         }
     }
 }

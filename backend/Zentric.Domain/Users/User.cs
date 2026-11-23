@@ -41,9 +41,9 @@ namespace Zentric.Domain.Users
 
         public User(string identityDocument, FullName fullName, Email email, string passwordHash, UserRole role)
         {
-            if (string.IsNullOrWhiteSpace(identityDocument)) throw new ArgumentException("Identity document cannot be empty.", nameof(identityDocument));
-            if (string.IsNullOrWhiteSpace(passwordHash)) throw new ArgumentException("Password hash cannot be empty.", nameof(passwordHash));
-            if (!Enum.IsDefined(role)) throw new ArgumentOutOfRangeException(nameof(role), "Invalid user role.");
+            if (string.IsNullOrWhiteSpace(identityDocument)) throw new ArgumentException("El documento de identidad no puede estar vacío.", nameof(identityDocument));
+            if (string.IsNullOrWhiteSpace(passwordHash)) throw new ArgumentException("El hash de la contraseña no puede estar vacío.", nameof(passwordHash));
+            if (!Enum.IsDefined(role)) throw new ArgumentOutOfRangeException(nameof(role), "Rol de usuario inválido.");
 
             Id = Guid.NewGuid();
             // Solo se recorta el espacio exterior. No se aplica
@@ -63,12 +63,12 @@ namespace Zentric.Domain.Users
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot update the full name of a deleted user.");
+                throw new InvalidOperationException("No se puede actualizar el nombre completo de un usuario eliminado.");
             }
 
             if (Status == UserStatus.Blocked)
             {
-                throw new InvalidOperationException("Cannot update the full name of a blocked user.");
+                throw new InvalidOperationException("No se puede actualizar el nombre completo de un usuario bloqueado.");
             }
 
             if (newFullName.Equals(FullName))
@@ -84,12 +84,12 @@ namespace Zentric.Domain.Users
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot update the email of a deleted user.");
+                throw new InvalidOperationException("No se puede actualizar el correo de un usuario eliminado.");
             }
 
             if (Status == UserStatus.Blocked)
             {
-                throw new InvalidOperationException("Cannot update the email of a blocked user.");
+                throw new InvalidOperationException("No se puede actualizar el correo de un usuario bloqueado.");
             }
 
             if (newEmail.Equals(Email))
@@ -105,12 +105,12 @@ namespace Zentric.Domain.Users
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot update the password of a deleted user.");
+                throw new InvalidOperationException("No se puede actualizar la contraseña de un usuario eliminado.");
             }
 
             if (Status == UserStatus.Blocked)
             {
-                throw new InvalidOperationException("Cannot update the password of a blocked user.");
+                throw new InvalidOperationException("No se puede actualizar la contraseña de un usuario bloqueado.");
             }
 
             if (newPasswordHash == PasswordHash)
@@ -120,7 +120,7 @@ namespace Zentric.Domain.Users
 
             if (string.IsNullOrWhiteSpace(newPasswordHash))
             {
-                throw new ArgumentException("Password hash cannot be empty.", nameof(newPasswordHash));
+                throw new ArgumentException("El hash de la contraseña no puede estar vacío.", nameof(newPasswordHash));
             }
 
             PasswordHash = newPasswordHash;
@@ -131,12 +131,12 @@ namespace Zentric.Domain.Users
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot block a deleted user.");
+                throw new InvalidOperationException("No se puede bloquear un usuario eliminado.");
             }
 
             if (Status == UserStatus.Blocked)
             {
-                throw new InvalidOperationException("User is already blocked.");
+                throw new InvalidOperationException("El usuario ya está bloqueado.");
             }
 
             Status = UserStatus.Blocked;
@@ -147,12 +147,12 @@ namespace Zentric.Domain.Users
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot activate a deleted user.");
+                throw new InvalidOperationException("No se puede activar un usuario eliminado.");
             }
 
             if (Status == UserStatus.Active)
             {
-                throw new InvalidOperationException("User is already active.");
+                throw new InvalidOperationException("El usuario ya está activo.");
             }
 
             Status = UserStatus.Active;
@@ -163,17 +163,17 @@ namespace Zentric.Domain.Users
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot update the role of a deleted user.");
+                throw new InvalidOperationException("No se puede actualizar el rol de un usuario eliminado.");
             }
 
             if (Status == UserStatus.Blocked)
             {
-                throw new InvalidOperationException("Cannot update the role of a blocked user.");
+                throw new InvalidOperationException("No se puede actualizar el rol de un usuario bloqueado.");
             }
 
             if (!Enum.IsDefined(typeof(UserRole), newRole))
             {
-                throw new ArgumentOutOfRangeException(nameof(newRole), "Invalid user role.");
+                throw new ArgumentOutOfRangeException(nameof(newRole), "Rol de usuario inválido.");
             }
 
             if (newRole == Role)
@@ -189,12 +189,12 @@ namespace Zentric.Domain.Users
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("User is already deleted.");
+                throw new InvalidOperationException("El usuario ya está eliminado.");
             }
 
             if (Status != UserStatus.Active)
             {
-                throw new InvalidOperationException("Only active users can be deleted by themselves.");
+                throw new InvalidOperationException("Solo los usuarios activos pueden eliminarse a sí mismos.");
             }
 
             DeletedAt = DateTime.UtcNow;
@@ -206,7 +206,7 @@ namespace Zentric.Domain.Users
         {
             if (!IsDeleted)
             {
-                throw new InvalidOperationException("User is not deleted.");
+                throw new InvalidOperationException("El usuario no está eliminado.");
             }
 
             DeletedAt = null;
@@ -218,7 +218,7 @@ namespace Zentric.Domain.Users
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("User is already deleted.");
+                throw new InvalidOperationException("El usuario ya está eliminado.");
             }
 
             DeletedAt = DateTime.UtcNow;

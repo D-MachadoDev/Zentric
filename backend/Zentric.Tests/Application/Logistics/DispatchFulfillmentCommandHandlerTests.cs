@@ -76,7 +76,7 @@ namespace Zentric.Tests.Application.Logistics
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Contains("must be packed", result.Error);
+            Assert.Contains("debe estar empacado", result.Error);
         }
 
         [Fact]

@@ -24,13 +24,13 @@ namespace Zentric.Domain.Returns
         {
             if (productType == ProductType.Digital)
             {
-                throw new InvalidOperationException("Digital products cannot be returned.");
+                throw new InvalidOperationException("Los productos digitales no se pueden devolver.");
             }
 
-            if (customerOrderId == Guid.Empty) throw new ArgumentException("Customer order required.", nameof(customerOrderId));
-            if (variantId == Guid.Empty) throw new ArgumentException("Variant required.", nameof(variantId));
-            if (warehouseId == Guid.Empty) throw new ArgumentException("Warehouse required.", nameof(warehouseId));
-            if (quantity <= 0) throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be greater than zero.");
+            if (customerOrderId == Guid.Empty) throw new ArgumentException("El identificador de pedido es obligatorio.", nameof(customerOrderId));
+            if (variantId == Guid.Empty) throw new ArgumentException("El identificador de variante es obligatorio.", nameof(variantId));
+            if (warehouseId == Guid.Empty) throw new ArgumentException("El identificador de bodega es obligatorio.", nameof(warehouseId));
+            if (quantity <= 0) throw new ArgumentOutOfRangeException(nameof(quantity), "La cantidad debe ser mayor a cero.");
 
             Id = Guid.NewGuid();
             CustomerOrderId = customerOrderId;
@@ -47,7 +47,7 @@ namespace Zentric.Domain.Returns
         public void InspectByLogistics(bool isGoodCondition)
         {
             if (Status != ReturnStatus.Requested)
-                throw new InvalidOperationException("Only requested returns can be inspected.");
+                throw new InvalidOperationException("Solo las devoluciones solicitadas pueden ser inspeccionadas.");
 
             IsGoodCondition = isGoodCondition;
             UpdatedAt = DateTime.UtcNow;
@@ -56,10 +56,10 @@ namespace Zentric.Domain.Returns
         public void ApproveByVendor(bool isSameWarehouseAndVendor)
         {
             if (Status != ReturnStatus.Requested)
-                throw new InvalidOperationException("Only requested returns can be approved.");
+                throw new InvalidOperationException("Solo las devoluciones solicitadas pueden ser aprobadas.");
 
             if (!isSameWarehouseAndVendor && !IsGoodCondition)
-                throw new InvalidOperationException("For separate logistics, cannot approve a return if the item has not been inspected as good condition.");
+                throw new InvalidOperationException("Con logística separada, no se puede aprobar una devolución si el artículo no ha sido inspeccionado en buen estado.");
 
             VendorApproved = true;
             Status = ReturnStatus.Approved;
@@ -71,7 +71,7 @@ namespace Zentric.Domain.Returns
         public void Reject()
         {
             if (Status != ReturnStatus.Requested)
-                throw new InvalidOperationException("Only requested returns can be rejected.");
+                throw new InvalidOperationException("Solo las devoluciones solicitadas pueden ser rechazadas.");
 
             Status = ReturnStatus.Rejected;
             UpdatedAt = DateTime.UtcNow;
@@ -80,7 +80,7 @@ namespace Zentric.Domain.Returns
         public void MarkAsRefunded()
         {
             if (Status != ReturnStatus.Approved)
-                throw new InvalidOperationException("Return must be approved before refund.");
+                throw new InvalidOperationException("La devolución debe estar aprobada antes del reembolso.");
 
             Status = ReturnStatus.Refunded;
             UpdatedAt = DateTime.UtcNow;

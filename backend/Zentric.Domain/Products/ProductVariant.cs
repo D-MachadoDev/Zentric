@@ -40,17 +40,17 @@ namespace Zentric.Domain.Products
         {
             if (productId == Guid.Empty)
             {
-                throw new ArgumentException("The variant must belong to a product.", nameof(productId));
+                throw new ArgumentException("La variante debe pertenecer a un producto.", nameof(productId));
             }
 
             if (string.IsNullOrWhiteSpace(sku))
             {
-                throw new ArgumentException("Variant SKU is required.", nameof(sku));
+                throw new ArgumentException("El SKU de la variante es obligatorio.", nameof(sku));
             }
 
             if (priceAmount.HasValue && priceAmount.Value <= 0)
             {
-                throw new ArgumentException("Variant price must be positive when specified.", nameof(priceAmount));
+                throw new ArgumentException("El precio de la variante debe ser positivo cuando se especifica.", nameof(priceAmount));
             }
 
             ArgumentNullException.ThrowIfNull(attributes);
@@ -72,12 +72,12 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot update the price of a deleted variant.");
+                throw new InvalidOperationException("No se puede actualizar el precio de una variante eliminada.");
             }
 
             if (priceAmount.HasValue && priceAmount.Value <= 0)
             {
-                throw new ArgumentException("Variant price must be positive when specified.", nameof(priceAmount));
+                throw new ArgumentException("El precio de la variante debe ser positivo cuando se especifica.", nameof(priceAmount));
             }
 
             PriceAmount = priceAmount;
@@ -90,18 +90,18 @@ namespace Zentric.Domain.Products
 
             if (attributeList.Count == 0)
             {
-                throw new ArgumentException("A variant must declare at least one attribute.", nameof(attributes));
+                throw new ArgumentException("Una variante debe declarar al menos un atributo.", nameof(attributes));
             }
 
             if (attributeList.Any(attribute => attribute is null))
             {
-                throw new ArgumentException("Variant attributes cannot contain null entries.", nameof(attributes));
+                throw new ArgumentException("Los atributos de la variante no pueden contener entradas nulas.", nameof(attributes));
             }
 
             if (attributeList.Select(attribute => attribute.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count()
                 != attributeList.Count)
             {
-                throw new ArgumentException("A variant cannot repeat the same attribute name.", nameof(attributes));
+                throw new ArgumentException("Una variante no puede repetir el mismo nombre de atributo.", nameof(attributes));
             }
 
             return attributeList;
@@ -111,12 +111,12 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot update the SKU of a deleted variant.");
+                throw new InvalidOperationException("No se puede actualizar el SKU de una variante eliminada.");
             }
 
             if (string.IsNullOrWhiteSpace(newSku))
             {
-                throw new ArgumentException("Variant SKU is required.", nameof(newSku));
+                throw new ArgumentException("El SKU de la variante es obligatorio.", nameof(newSku));
             }
 
             Sku = newSku.Trim().ToUpperInvariant();
@@ -127,7 +127,7 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot update the attributes of a deleted variant.");
+                throw new InvalidOperationException("No se pueden actualizar los atributos de una variante eliminada.");
             }
 
             ArgumentNullException.ThrowIfNull(attributes);
@@ -143,12 +143,12 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot activate a deleted variant.");
+                throw new InvalidOperationException("No se puede activar una variante eliminada.");
             }
 
             if (IsActive)
             {
-                throw new InvalidOperationException("Variant is already active.");
+                throw new InvalidOperationException("La variante ya está activa.");
             }
 
             IsActive = true;
@@ -159,12 +159,12 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Cannot deactivate a deleted variant.");
+                throw new InvalidOperationException("No se puede desactivar una variante eliminada.");
             }
 
             if (!IsActive)
             {
-                throw new InvalidOperationException("Variant is already inactive.");
+                throw new InvalidOperationException("La variante ya está inactiva.");
             }
 
             IsActive = false;
@@ -175,7 +175,7 @@ namespace Zentric.Domain.Products
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Variant is already deleted.");
+                throw new InvalidOperationException("La variante ya está eliminada.");
             }
 
             DeletedAt = DateTime.UtcNow;
@@ -187,7 +187,7 @@ namespace Zentric.Domain.Products
         {
             if (!IsDeleted)
             {
-                throw new InvalidOperationException("Variant is not deleted.");
+                throw new InvalidOperationException("La variante no está eliminada.");
             }
 
             DeletedAt = null;

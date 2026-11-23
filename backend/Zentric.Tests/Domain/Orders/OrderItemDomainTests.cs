@@ -173,7 +173,7 @@ namespace Zentric.Tests.Domain.Orders
             item.MarkDelivered();
 
             var ex = Assert.Throws<InvalidOperationException>(() => item.MarkDelivered());
-            Assert.Contains("already marked as delivered", ex.Message);
+            Assert.Contains("ya está marcada como entregada", ex.Message);
         }
 
         [Fact]

@@ -13,7 +13,7 @@ namespace Zentric.Application.Orders.Validators
         {
             RuleFor(command => command.BuyerId)
                 .NotEmpty()
-                .WithMessage("BuyerId is required.");
+                .WithMessage("El identificador del comprador es obligatorio.");
         }
     }
 }

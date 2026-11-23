@@ -34,22 +34,22 @@ namespace Zentric.Domain.Products
         {
             if (productId == Guid.Empty)
             {
-                throw new ArgumentException("Product ID cannot be empty.", nameof(productId));
+                throw new ArgumentException("El identificador de producto no puede estar vacío.", nameof(productId));
             }
 
             if (userId == Guid.Empty)
             {
-                throw new ArgumentException("User ID cannot be empty.", nameof(userId));
+                throw new ArgumentException("El identificador de usuario no puede estar vacío.", nameof(userId));
             }
 
             if (rating < 1 || rating > 5)
             {
-                throw new ArgumentOutOfRangeException(nameof(rating), "Rating must be between 1 and 5.");
+                throw new ArgumentOutOfRangeException(nameof(rating), "La calificación debe estar entre 1 y 5.");
             }
 
             if (comment != null && comment.Trim().Length > 2000)
             {
-                throw new ArgumentException("Comment cannot exceed 2000 characters.", nameof(comment));
+                throw new ArgumentException("El comentario no puede superar los 2000 caracteres.", nameof(comment));
             }
 
             Id = Guid.NewGuid();
@@ -68,12 +68,12 @@ namespace Zentric.Domain.Products
         {
             if (rating < 1 || rating > 5)
             {
-                throw new ArgumentOutOfRangeException(nameof(rating), "Rating must be between 1 and 5.");
+                throw new ArgumentOutOfRangeException(nameof(rating), "La calificación debe estar entre 1 y 5.");
             }
 
             if (comment != null && comment.Trim().Length > 2000)
             {
-                throw new ArgumentException("Comment cannot exceed 2000 characters.", nameof(comment));
+                throw new ArgumentException("El comentario no puede superar los 2000 caracteres.", nameof(comment));
             }
 
             Rating = rating;

@@ -109,7 +109,7 @@ namespace Zentric.Tests.Application.Orders
                 CancellationToken.None);
 
             Assert.True(result.IsFailure);
-            Assert.Equal("Item not found in cart", result.Error);
+            Assert.Equal("Artículo no encontrado en el carrito", result.Error);
             Assert.Single(order.Items);
         }
     }

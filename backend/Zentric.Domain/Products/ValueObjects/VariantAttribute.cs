@@ -54,7 +54,7 @@ namespace Zentric.Domain.Products.ValueObjects
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                throw new ArgumentException("Variant attribute name and value are required.", paramName);
+                throw new ArgumentException("El nombre y el valor del atributo de la variante son obligatorios.", paramName);
             }
 
             var normalized = value.Trim();
@@ -63,7 +63,7 @@ namespace Zentric.Domain.Products.ValueObjects
             // valor, y ambos son obligatorios.
             if (normalized.Length > 50)
             {
-                throw new ArgumentException("Variant attribute name and value cannot exceed 50 characters.", paramName);
+                throw new ArgumentException("El nombre y el valor del atributo de la variante no pueden superar los 50 caracteres.", paramName);
             }
 
             return normalized;

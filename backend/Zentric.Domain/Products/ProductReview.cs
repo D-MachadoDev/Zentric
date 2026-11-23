@@ -34,22 +34,22 @@ namespace Zentric.Domain.Products
         {
             if (productId == Guid.Empty)
             {
-                throw new ArgumentException("Product ID cannot be empty.", nameof(productId));
+                throw new ArgumentException("El identificador de producto no puede estar vacío.", nameof(productId));
             }
 
             if (buyerId == Guid.Empty)
             {
-                throw new ArgumentException("Buyer ID cannot be empty.", nameof(buyerId));
+                throw new ArgumentException("El identificador del comprador no puede estar vacío.", nameof(buyerId));
             }
 
             if (rating < 1 || rating > 5)
             {
-                throw new ArgumentOutOfRangeException(nameof(rating), "Rating must be between 1 and 5.");
+                throw new ArgumentOutOfRangeException(nameof(rating), "La calificación debe estar entre 1 y 5.");
             }
 
             if (comment != null && comment.Trim().Length > 2000)
             {
-                throw new ArgumentException("Comment cannot exceed 2000 characters.", nameof(comment));
+                throw new ArgumentException("El comentario no puede superar los 2000 caracteres.", nameof(comment));
             }
 
             Id = Guid.NewGuid();

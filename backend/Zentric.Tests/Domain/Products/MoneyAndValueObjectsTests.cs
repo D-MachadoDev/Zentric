@@ -13,7 +13,7 @@ namespace Zentric.Tests.Domain.Products
 
             Assert.Equal("USD", ex.Currency);
             Assert.Equal("COP", ex.Expected);
-            Assert.Contains("Cannot mix currencies in the same operation: 'COP' and 'USD'.", ex.Message);
+            Assert.Contains("No se pueden mezclar monedas en la misma operación: 'COP' y 'USD'.", ex.Message);
         }
 
         [Fact]

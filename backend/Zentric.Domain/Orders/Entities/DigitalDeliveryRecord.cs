@@ -33,22 +33,22 @@ namespace Zentric.Domain.Orders.Entities
             string variantSku)
         {
             if (orderId == Guid.Empty)
-                throw new ArgumentException("Order ID is required.", nameof(orderId));
+                throw new ArgumentException("El identificador de pedido es obligatorio.", nameof(orderId));
 
             if (orderItemId == Guid.Empty)
-                throw new ArgumentException("Order item ID is required.", nameof(orderItemId));
+                throw new ArgumentException("El identificador de la línea del pedido es obligatorio.", nameof(orderItemId));
 
             if (productId == Guid.Empty)
-                throw new ArgumentException("Product ID is required.", nameof(productId));
+                throw new ArgumentException("El identificador de producto es obligatorio.", nameof(productId));
 
             if (variantId == Guid.Empty)
-                throw new ArgumentException("Variant ID is required.", nameof(variantId));
+                throw new ArgumentException("El identificador de variante es obligatorio.", nameof(variantId));
 
             if (string.IsNullOrWhiteSpace(productName))
-                throw new ArgumentException("Product name is required.", nameof(productName));
+                throw new ArgumentException("El nombre del producto es obligatorio.", nameof(productName));
 
             if (string.IsNullOrWhiteSpace(variantSku))
-                throw new ArgumentException("Variant SKU is required.", nameof(variantSku));
+                throw new ArgumentException("El SKU de la variante es obligatorio.", nameof(variantSku));
 
             Id = Guid.NewGuid();
             OrderId = orderId;

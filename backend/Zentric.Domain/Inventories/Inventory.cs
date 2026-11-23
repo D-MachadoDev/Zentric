@@ -58,32 +58,32 @@ namespace Zentric.Domain.Inventories
         {
             if (variantId == Guid.Empty)
             {
-                throw new ArgumentException("VariantId is required.", nameof(variantId));
+                throw new ArgumentException("El identificador de variante es obligatorio.", nameof(variantId));
             }
 
             if (warehouseId == Guid.Empty)
             {
-                throw new ArgumentException("WarehouseId is required.", nameof(warehouseId));
+                throw new ArgumentException("El identificador de bodega es obligatorio.", nameof(warehouseId));
             }
 
             if (availableQuantity < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(availableQuantity), "Available quantity cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(availableQuantity), "La cantidad disponible no puede ser negativa.");
             }
 
             if (reservedQuantity < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(reservedQuantity), "Reserved quantity cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(reservedQuantity), "La cantidad reservada no puede ser negativa.");
             }
 
             if (damagedQuantity < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(damagedQuantity), "Damaged quantity cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(damagedQuantity), "La cantidad dañada no puede ser negativa.");
             }
 
             if (usedQuantity < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(usedQuantity), "Used quantity cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(usedQuantity), "La cantidad usada no puede ser negativa.");
             }
 
             Id = Guid.NewGuid();
@@ -104,7 +104,7 @@ namespace Zentric.Domain.Inventories
         {
             if (quantity <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity to add must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(quantity), "La cantidad a agregar debe ser mayor a cero.");
             }
 
             AvailableQuantity += quantity;
@@ -122,12 +122,12 @@ namespace Zentric.Domain.Inventories
         {
             if (quantity <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity to reserve must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(quantity), "La cantidad a reservar debe ser mayor a cero.");
             }
 
             if (AvailableQuantity < quantity)
             {
-                throw new ArgumentOutOfRangeException(nameof(quantity), "Not enough available stock to reserve.");
+                throw new ArgumentOutOfRangeException(nameof(quantity), "No hay suficiente stock disponible para reservar.");
             }
 
             AvailableQuantity -= quantity;
@@ -145,12 +145,12 @@ namespace Zentric.Domain.Inventories
         {
             if (quantity <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity to dispatch must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(quantity), "La cantidad a despachar debe ser mayor a cero.");
             }
 
             if (ReservedQuantity < quantity)
             {
-                throw new ArgumentOutOfRangeException(nameof(quantity), "Not enough reserved stock to dispatch.");
+                throw new ArgumentOutOfRangeException(nameof(quantity), "No hay suficiente stock reservado para despachar.");
             }
 
             ReservedQuantity -= quantity;
@@ -161,12 +161,12 @@ namespace Zentric.Domain.Inventories
         {
             if (quantity <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity to mark as damaged must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(quantity), "La cantidad a marcar como dañada debe ser mayor a cero.");
             }
 
             if (AvailableQuantity < quantity)
             {
-                throw new ArgumentOutOfRangeException(nameof(quantity), "Not enough available stock to mark as damaged.");
+                throw new ArgumentOutOfRangeException(nameof(quantity), "No hay suficiente stock disponible para marcar como dañado.");
             }
 
             AvailableQuantity -= quantity;
@@ -181,12 +181,12 @@ namespace Zentric.Domain.Inventories
             // reducía AvailableQuantity por debajo de cero.
             if (quantity <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity to return must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(quantity), "La cantidad a devolver debe ser mayor a cero.");
             }
 
             if (ReservedQuantity < quantity)
             {
-                throw new ArgumentOutOfRangeException(nameof(quantity), "Not enough reserved stock to return.");
+                throw new ArgumentOutOfRangeException(nameof(quantity), "No hay suficiente stock reservado para devolver.");
             }
 
             ReservedQuantity -= quantity;
@@ -199,7 +199,7 @@ namespace Zentric.Domain.Inventories
         {
             if (quantity <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(quantity), "La cantidad debe ser mayor a cero.");
             }
             UsedQuantity += quantity;
             UpdatedAt = DateTime.UtcNow;
@@ -208,10 +208,10 @@ namespace Zentric.Domain.Inventories
         public void ReconcileGhostStock(int ghostQuantity)
         {
             if (ghostQuantity <= 0)
-                throw new ArgumentOutOfRangeException(nameof(ghostQuantity), "Ghost quantity must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(ghostQuantity), "La cantidad fantasma debe ser mayor a cero.");
 
             if (ReservedQuantity < ghostQuantity)
-                throw new InvalidOperationException("Cannot reconcile more ghost stock than is reserved.");
+                throw new InvalidOperationException("No se puede conciliar más stock fantasma del que está reservado.");
 
             ReservedQuantity -= ghostQuantity;
             
@@ -228,7 +228,7 @@ namespace Zentric.Domain.Inventories
         {
             if (quantity <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity to receive must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(quantity), "La cantidad a recibir debe ser mayor a cero.");
             }
             AvailableQuantity += quantity;
             UpdatedAt = DateTime.UtcNow;
@@ -240,24 +240,24 @@ namespace Zentric.Domain.Inventories
             // Operador Logistico corrige el disponible sin autorizacion previa.
             if (countedQuantity < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(countedQuantity), "Counted quantity cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(countedQuantity), "La cantidad contada no puede ser negativa.");
             }
 
             if (countedBy == Guid.Empty)
             {
-                throw new ArgumentException("Counter identity is required.", nameof(countedBy));
+                throw new ArgumentException("La identidad del contador es obligatoria.", nameof(countedBy));
             }
 
             if (string.IsNullOrWhiteSpace(reason))
             {
-                throw new ArgumentException("Adjustment reason is required.", nameof(reason));
+                throw new ArgumentException("El motivo del ajuste es obligatorio.", nameof(reason));
             }
 
             // Al alza no hay ajuste: es el Ingreso normal del Vendedor (
             // decision 3). Un conteo no puede inventar stock.
             if (countedQuantity > AvailableQuantity)
             {
-                throw new InvalidOperationException("A physical count cannot add stock. Upward corrections are a vendor Ingreso, not an adjustment.");
+                throw new InvalidOperationException("Un conteo físico no puede agregar stock. Las correcciones al alza son un Ingreso del vendedor, no un ajuste.");
             }
 
             // Sin diferencia no hay ajuste ni registro: el historial audita
@@ -292,7 +292,7 @@ namespace Zentric.Domain.Inventories
         {
             if (IsDeleted)
             {
-                throw new InvalidOperationException("Inventory is already deleted.");
+                throw new InvalidOperationException("El inventario ya está eliminado.");
             }
 
             if (AvailableQuantity > 0 || ReservedQuantity > 0 || DamagedQuantity > 0 || UsedQuantity > 0)

@@ -64,7 +64,7 @@ namespace Zentric.Tests.Domain.Payments
             // Solo quedan 40 por acreditar: 60 rebasan el saldo.
             var error = Assert.Throws<ArgumentException>(() => receipt.Refund(new Money(60m, "COP")));
 
-            Assert.Contains("exceed", error.Message.ToLowerInvariant());
+            Assert.Contains("superaría", error.Message.ToLowerInvariant());
             Assert.Equal(60m, receipt.RefundedAmount.Amount);
         }
 

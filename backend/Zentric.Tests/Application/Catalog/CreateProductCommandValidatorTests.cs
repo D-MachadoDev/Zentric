@@ -49,7 +49,7 @@ namespace Zentric.Tests.Application.Catalog
 
             var result = _validator.Validate(command);
             Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, e => e.PropertyName == "Variants" && e.ErrorMessage == "A physical product requires at least one variant.");
+            Assert.Contains(result.Errors, e => e.PropertyName == "Variants" && e.ErrorMessage == "Un producto físico requiere al menos una variante.");
         }
     }
 }

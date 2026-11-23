@@ -10,7 +10,7 @@ namespace Zentric.Application.Catalog.Validators
             RuleFor(x => x.ProductId).NotEmpty();
             RuleFor(x => x.VendorId).NotEmpty();
             RuleFor(x => x.Sku).NotEmpty().MaximumLength(100);
-            RuleFor(x => x.Attributes).NotEmpty().WithMessage("A variant must declare at least one attribute.");
+            RuleFor(x => x.Attributes).NotEmpty().WithMessage("Una variante debe declarar al menos un atributo.");
             RuleForEach(x => x.Attributes).ChildRules(attribute =>
             {
                 attribute.RuleFor(a => a.Name).NotEmpty().MaximumLength(50);
@@ -19,7 +19,7 @@ namespace Zentric.Application.Catalog.Validators
             RuleFor(x => x.PriceAmount)
                 .GreaterThan(0)
                 .When(x => x.PriceAmount.HasValue)
-                .WithMessage("Variant price must be positive when specified.");
+                .WithMessage("El precio de la variante debe ser positivo cuando se especifica.");
         }
     }
 }

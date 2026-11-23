@@ -9,30 +9,30 @@ namespace Zentric.Domain.Users.ValueObjects
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                throw new ArgumentException("Email cannot be empty.", nameof(value));
+                throw new ArgumentException("El correo electrónico no puede estar vacío.", nameof(value));
             }
 
             var normalized = value.Trim();
 
             if (normalized.Length < 5)
             {
-                throw new ArgumentException("Email is too short.", nameof(value));
+                throw new ArgumentException("El correo electrónico es demasiado corto.", nameof(value));
             }
 
             if (!normalized.Contains('@'))
             {
-                throw new ArgumentException("Invalid email format.", nameof(value));
+                throw new ArgumentException("Formato de correo inválido.", nameof(value));
             }
 
             var parts = normalized.Split('@');
             if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[0]) || string.IsNullOrWhiteSpace(parts[1]))
             {
-                throw new ArgumentException("Invalid email format.", nameof(value));
+                throw new ArgumentException("Formato de correo inválido.", nameof(value));
             }
 
             if (!parts[1].Contains('.'))
             {
-                throw new ArgumentException("Invalid email format.", nameof(value));
+                throw new ArgumentException("Formato de correo inválido.", nameof(value));
             }
 
             Value = normalized.ToLowerInvariant();

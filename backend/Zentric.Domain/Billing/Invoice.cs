@@ -45,7 +45,7 @@ namespace Zentric.Domain.Billing
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(percentage),
-                    "Platform fee percentage must be between 0 and 1.");
+                    "El porcentaje de comisión de la plataforma debe estar entre 0 y 1.");
             }
 
             Percentage = percentage;
@@ -101,18 +101,18 @@ namespace Zentric.Domain.Billing
             if (platformShare < 0m || platformShare > 1m)
             {
                 throw new ArgumentOutOfRangeException(
-                    nameof(platformShare), "Share must be between 0 and 1.");
+                    nameof(platformShare), "La participación debe estar entre 0 y 1.");
             }
 
             if (vendorShare < 0m || vendorShare > 1m)
             {
                 throw new ArgumentOutOfRangeException(
-                    nameof(vendorShare), "Share must be between 0 and 1.");
+                    nameof(vendorShare), "La participación debe estar entre 0 y 1.");
             }
 
             if (Math.Abs((platformShare + vendorShare) - 1m) > 0.0001m)
             {
-                throw new ArgumentException("Platform and vendor shares must sum to 1.");
+                throw new ArgumentException("Las participaciones de la plataforma y del vendedor deben sumar 1.");
             }
 
             PlatformShare = platformShare;
@@ -149,7 +149,7 @@ namespace Zentric.Domain.Billing
         public static Invoice CreateMaster(Guid customerOrderId, Money totalAmount)
         {
             ArgumentNullException.ThrowIfNull(totalAmount);
-            if (customerOrderId == Guid.Empty) throw new ArgumentException("Order ID is required.");
+            if (customerOrderId == Guid.Empty) throw new ArgumentException("El identificador de pedido es obligatorio.");
 
             return new Invoice
             {
@@ -166,8 +166,8 @@ namespace Zentric.Domain.Billing
         public static Invoice CreateVendorDetail(Guid customerOrderId, Guid vendorId, Money vendorTotalAmount)
         {
             ArgumentNullException.ThrowIfNull(vendorTotalAmount);
-            if (customerOrderId == Guid.Empty) throw new ArgumentException("Order ID is required.");
-            if (vendorId == Guid.Empty) throw new ArgumentException("Vendor ID is required.");
+            if (customerOrderId == Guid.Empty) throw new ArgumentException("El identificador de pedido es obligatorio.");
+            if (vendorId == Guid.Empty) throw new ArgumentException("El identificador de vendedor es obligatorio.");
 
             return new Invoice
             {
@@ -184,7 +184,7 @@ namespace Zentric.Domain.Billing
         public static Invoice CreateZentricDetail(Guid customerOrderId, Money zentricFeeAmount)
         {
             ArgumentNullException.ThrowIfNull(zentricFeeAmount);
-            if (customerOrderId == Guid.Empty) throw new ArgumentException("Order ID is required.");
+            if (customerOrderId == Guid.Empty) throw new ArgumentException("El identificador de pedido es obligatorio.");
 
             return new Invoice
             {
@@ -206,17 +206,17 @@ namespace Zentric.Domain.Billing
         {
             if (Type != InvoiceType.Master)
             {
-                throw new InvalidOperationException("Only the Master invoice can be annulled.");
+                throw new InvalidOperationException("Solo la factura Maestra puede ser anulada.");
             }
 
             if (string.IsNullOrWhiteSpace(reason))
             {
-                throw new ArgumentException("Annullation reason is required.", nameof(reason));
+                throw new ArgumentException("El motivo de la anulación es obligatorio.", nameof(reason));
             }
 
             if (Status == InvoiceStatus.Anulled)
             {
-                throw new InvalidOperationException("Invoice is already annulled.");
+                throw new InvalidOperationException("La factura ya está anulada.");
             }
 
             Status = InvoiceStatus.Anulled;

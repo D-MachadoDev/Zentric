@@ -29,7 +29,7 @@ namespace Zentric.Tests.UseCases
                 CancellationToken.None);
 
             Assert.True(result.IsFailure);
-            Assert.Equal("BuyerId is required.", result.Error);
+            Assert.Equal("El identificador del comprador es obligatorio.", result.Error);
             Assert.False(handlerInvoked);
             Assert.Throws<InvalidOperationException>(() => { _ = result.Value; });
         }
@@ -51,7 +51,7 @@ namespace Zentric.Tests.UseCases
                 CancellationToken.None);
 
             Assert.True(result.IsFailure);
-            Assert.Contains("Quantity must be greater than zero.", result.Error);
+            Assert.Contains("La cantidad debe ser mayor a cero.", result.Error);
             Assert.False(handlerInvoked);
         }
 

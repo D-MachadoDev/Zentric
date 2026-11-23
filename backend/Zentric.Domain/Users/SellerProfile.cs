@@ -21,17 +21,17 @@ namespace Zentric.Domain.Users
         {
             if (userId == Guid.Empty)
             {
-                throw new ArgumentException("User ID cannot be empty.", nameof(userId));
+                throw new ArgumentException("El identificador de usuario no puede estar vacío.", nameof(userId));
             }
 
             if (string.IsNullOrWhiteSpace(storeName))
             {
-                throw new ArgumentException("Store name cannot be empty.", nameof(storeName));
+                throw new ArgumentException("El nombre de la tienda no puede estar vacío.", nameof(storeName));
             }
 
             if (storeName.Trim().Length > 150)
             {
-                throw new ArgumentException("Store name cannot exceed 150 characters.", nameof(storeName));
+                throw new ArgumentException("El nombre de la tienda no puede superar los 150 caracteres.", nameof(storeName));
             }
 
             Id = Guid.NewGuid();
@@ -59,12 +59,12 @@ namespace Zentric.Domain.Users
         {
             if (string.IsNullOrWhiteSpace(storeName))
             {
-                throw new ArgumentException("Store name cannot be empty.", nameof(storeName));
+                throw new ArgumentException("El nombre de la tienda no puede estar vacío.", nameof(storeName));
             }
 
             if (storeName.Trim().Length > 150)
             {
-                throw new ArgumentException("Store name cannot exceed 150 characters.", nameof(storeName));
+                throw new ArgumentException("El nombre de la tienda no puede superar los 150 caracteres.", nameof(storeName));
             }
 
             StoreName = storeName.Trim();
