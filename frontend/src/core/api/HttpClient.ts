@@ -252,8 +252,25 @@ export class HttpClient implements ZentricApiPort {
 
   // ── Módulo 9: Sonda de Disponibilidad (/health) ─────────────────────────
 
-  getHealth(): Promise<HealthStatus> {
-    return this.#json<HealthStatus>('/health', { method: 'GET' }, false);
+  async getHealth(): Promise<HealthStatus> {
+    // `/health` es liveness (no consulta dependencias). `/ready` incluye el
+    // chequeo de base de datos, que es lo que muestra la UI. Mapeamos
+    // `checks[database]` a `database: 'up' | 'down'`.
+    const raw = await this.#json<{
+      status?: string;
+      timestamp?: string;
+      checks?: Array<{ name?: string; status?: string }>;
+    }>('/ready', { method: 'GET' }, false);
+
+    const db = raw.checks?.find((c) => (c.name ?? '').toLowerCase() === 'database');
+    const database: 'up' | 'down' =
+      db && (db.status ?? '').toLowerCase() === 'healthy' ? 'up' : 'down';
+
+    return {
+      status: raw.status === 'healthy' ? 'healthy' : 'degraded',
+      database,
+      timestamp: raw.timestamp ?? new Date().toISOString(),
+    };
   }
 
   // ── Módulo 0: Autenticación e Identidad (/api/auth) ─────────────────────
