@@ -324,8 +324,19 @@ app.MapHealthChecks("/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.
 .WithName("Ready");
 
 // Inicializacion del primer Administrador cuando no existen usuarios con dicho rol.
+// Un fallo de bootstrap (p.ej. la DB no esta disponible en el arranque) NO debe
+// tumbar el host: se registra y el servicio sigue vivo; /health refleja el estado real.
 app.Lifetime.ApplicationStarted.Register(() =>
-    Zentric.Api.Bootstrap.AdministratorBootstrapper.Run(app.Services, app.Configuration));
+{
+    try
+    {
+        Zentric.Api.Bootstrap.AdministratorBootstrapper.Run(app.Services, app.Configuration);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "AdministratorBootstrapper fallo al inicializar; el servicio continua y /health reporta el estado de la DB.");
+    }
+});
 
 app.MapControllers();
 app.Run();
