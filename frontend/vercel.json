@@ -9,6 +9,14 @@
       "destination": "https://zentric-uv54.onrender.com/api/:path*"
     },
     {
+      "source": "/health",
+      "destination": "https://zentric-uv54.onrender.com/health"
+    },
+    {
+      "source": "/ready",
+      "destination": "https://zentric-uv54.onrender.com/ready"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -325,7 +325,7 @@ if (isLoading || isProductLoading) {
       )}
 
       {/* ── Split-Frame Asimétrico (60% Formulario / 40% Resumen / Éxito) ──── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Lado Izquierdo: Formulario de Creación (60% -> col-span-7) */}
         <div className="lg:col-span-7">
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
