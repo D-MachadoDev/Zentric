@@ -233,34 +233,10 @@ public sealed class PdfInvoiceGenerator
     {
         if (PdfSharp.Fonts.GlobalFontSettings.FontResolver is null)
         {
-            var assembly = typeof(PdfDocument).Assembly;
-            // PlatformFontResolver usa el sistema de fuentes del SO (GDI en Windows,
-            // fontconfig/libgdiplus en Linux). EvenNewerFontResolver queda de fallback.
-            var candidates = new[]
-            {
-                "PdfSharp.Fonts.PlatformFontResolver",
-                "PdfSharp.Fonts.EvenNewerFontResolver",
-            };
-
-            foreach (var typeName in candidates)
-            {
-                var resolverType = assembly.GetType(typeName);
-                if (resolverType is null) continue;
-
-                try
-                {
-                    var instance = Activator.CreateInstance(resolverType, nonPublic: true);
-                    if (instance is PdfSharp.Fonts.IFontResolver resolver)
-                    {
-                        PdfSharp.Fonts.GlobalFontSettings.FontResolver = resolver;
-                        return;
-                    }
-                }
-                catch
-                {
-                    // Provee el siguiente resolver.
-                }
-            }
+            // Resolver propio que mapea "Arial"/"Courier New" a las fuentes reales
+            // del SO (Liberation en Linux, Arial en Windows). Los resolvers integrados
+            // de PdfSharp 6 no encuentran "Arial" en Linux y lanzan NullReferenceException.
+            PdfSharp.Fonts.GlobalFontSettings.FontResolver = new SystemFontResolver();
         }
     }
 }

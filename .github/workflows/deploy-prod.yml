@@ -39,7 +39,6 @@ jobs:
         timeout-minutes: 10
         run: >-
           dotnet test Zentric.slnx --no-build --verbosity normal
-          --filter "FullyQualifiedName!~GetInvoicePdfQueryTests"
           --settings Coverlet.runsettings --collect:"XPlat Code Coverage"
           --blame-hang-timeout 5m --blame-hang-dump-type none
 
