@@ -8,29 +8,29 @@ namespace Zentric.Application.Users.Validators
         public UpdateUserProfileCommandValidator()
         {
             RuleFor(x => x.UserId)
-                .NotEmpty().WithMessage("UserId cannot be empty.");
+                .NotEmpty().WithMessage("El identificador de usuario es obligatorio.");
 
             RuleFor(x => x.FullName)
-                .NotEmpty().WithMessage("Full name cannot be empty.")
+                .NotEmpty().WithMessage("El nombre completo es obligatorio.")
                 .Must(name => !string.IsNullOrWhiteSpace(name) && name.Trim().Split(' ', System.StringSplitOptions.RemoveEmptyEntries).Length >= 2)
-                .WithMessage("Full name must include first name and last name.");
+                .WithMessage("El nombre completo debe incluir nombre y apellido.");
 
             When(x => x.Address != null, () =>
             {
                 RuleFor(x => x.Address!.Street)
-                    .NotEmpty().WithMessage("Street cannot be empty.");
+                    .NotEmpty().WithMessage("La dirección es obligatoria.");
 
                 RuleFor(x => x.Address!.City)
-                    .NotEmpty().WithMessage("City cannot be empty.");
+                    .NotEmpty().WithMessage("La ciudad es obligatoria.");
 
                 RuleFor(x => x.Address!.State)
-                    .NotEmpty().WithMessage("State cannot be empty.");
+                    .NotEmpty().WithMessage("El departamento es obligatorio.");
 
                 RuleFor(x => x.Address!.ZipCode)
-                    .NotEmpty().WithMessage("ZipCode cannot be empty.");
+                    .NotEmpty().WithMessage("El código postal es obligatorio.");
 
                 RuleFor(x => x.Address!.Country)
-                    .NotEmpty().WithMessage("Country cannot be empty.");
+                    .NotEmpty().WithMessage("El país es obligatorio.");
             });
         }
     }

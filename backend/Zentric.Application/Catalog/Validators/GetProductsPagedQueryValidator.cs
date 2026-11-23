@@ -19,12 +19,12 @@ namespace Zentric.Application.Catalog.Validators
             RuleFor(x => x.Sort)
                 .Must(ProductPagedFilters.IsSupportedSort)
                 .When(x => !string.IsNullOrWhiteSpace(x.Sort))
-                .WithMessage("'sort' must be one of: relevance, price-asc, price-desc.");
+                .WithMessage("'sort' debe ser uno de: relevance, price-asc, price-desc.");
 
             RuleFor(x => x.Type)
                 .Must(ProductPagedFilters.IsSupportedType)
                 .When(x => !string.IsNullOrWhiteSpace(x.Type))
-                .WithMessage("'type' must be one of: Physical, Digital.");
+                .WithMessage("'type' debe ser uno de: Physical, Digital.");
         }
     }
 }

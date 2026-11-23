@@ -13,16 +13,16 @@ namespace Zentric.Application.Logistics.Validators
         {
             RuleFor(command => command.CustomerOrderId)
                 .NotEmpty()
-                .WithMessage("CustomerOrder ID is required.");
+                .WithMessage("El identificador de pedido es obligatorio.");
 
             RuleFor(command => command.VendorId)
                 .NotEmpty()
-                .WithMessage("Vendor ID is required.");
+                .WithMessage("El identificador de vendedor es obligatorio.");
 
             // Identidad derivada del token por el controlador.
             RuleFor(command => command.CallerId)
                 .NotEmpty()
-                .WithMessage("CallerId is required.");
+                .WithMessage("El identificador del solicitante es obligatorio.");
         }
     }
 }

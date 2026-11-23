@@ -8,11 +8,11 @@ namespace Zentric.Application.Users.Validators
         public LoginCommandValidator()
         {
             RuleFor(x => x.Email)
-                .NotEmpty().WithMessage("Email cannot be empty.")
-                .EmailAddress().WithMessage("Email format is invalid.");
+                .NotEmpty().WithMessage("El correo electrónico es obligatorio.")
+                .EmailAddress().WithMessage("Formato de correo inválido.");
 
             RuleFor(x => x.Password)
-                .NotEmpty().WithMessage("Password cannot be empty.");
+                .NotEmpty().WithMessage("La contraseña es obligatoria.");
         }
     }
 }

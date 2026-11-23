@@ -9,15 +9,15 @@ namespace Zentric.Application.Returns.Validators
         {
             RuleFor(command => command.CustomerOrderId)
                 .NotEmpty()
-                .WithMessage("CustomerOrder ID is required.");
+                .WithMessage("El identificador de pedido es obligatorio.");
 
             RuleFor(command => command.VariantId)
                 .NotEmpty()
-                .WithMessage("Variant ID is required.");
+                .WithMessage("El identificador de variante es obligatorio.");
 
             RuleFor(command => command.Quantity)
                 .GreaterThan(0)
-                .WithMessage("Quantity must be greater than zero.");
+                .WithMessage("La cantidad a devolver debe ser mayor a cero.");
                 
             // ADProductType y el lugar de recepcion NO se validan aqui porque ya
             // no vienen del cuerpo (el tipo lo deduce el producto en el servidor y la
@@ -27,7 +27,7 @@ namespace Zentric.Application.Returns.Validators
             // la usa para verificar la propiedad del pedido.
             RuleFor(command => command.BuyerId)
                 .NotEmpty()
-                .WithMessage("BuyerId is required.");
+                .WithMessage("El identificador del comprador es obligatorio.");
         }
     }
 }

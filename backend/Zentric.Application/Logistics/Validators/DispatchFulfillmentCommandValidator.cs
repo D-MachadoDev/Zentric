@@ -8,11 +8,11 @@ namespace Zentric.Application.Logistics.Validators
         public DispatchFulfillmentCommandValidator()
         {
             RuleFor(v => v.FulfillmentOrderId)
-                .NotEmpty().WithMessage("Fulfillment Order ID is required.");
+                .NotEmpty().WithMessage("El identificador de despacho es obligatorio.");
 
             // Identidad derivada del token por el controlador.
             RuleFor(v => v.CallerId)
-                .NotEmpty().WithMessage("CallerId is required.");
+                .NotEmpty().WithMessage("El identificador del solicitante es obligatorio.");
         }
     }
 }

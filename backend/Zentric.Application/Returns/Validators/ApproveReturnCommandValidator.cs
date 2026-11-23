@@ -9,12 +9,12 @@ namespace Zentric.Application.Returns.Validators
         {
             RuleFor(command => command.ReturnRequestId)
                 .NotEmpty()
-                .WithMessage("ReturnRequest ID is required.");
+                .WithMessage("El identificador de solicitud de devolución es obligatorio.");
 
             // Identidad derivada del token por el controlador.
             RuleFor(command => command.CallerId)
                 .NotEmpty()
-                .WithMessage("CallerId is required.");
+                .WithMessage("El identificador del solicitante es obligatorio.");
         }
     }
 }

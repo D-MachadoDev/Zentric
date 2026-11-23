@@ -8,23 +8,23 @@ namespace Zentric.Application.Users.Validators
         public CreateUserCommandValidator()
         {
             RuleFor(x => x.IdentityDocument)
-                .NotEmpty().WithMessage("Identity document cannot be empty.");
+                .NotEmpty().WithMessage("El documento de identidad es obligatorio.");
 
             RuleFor(x => x.FullName)
-                .NotEmpty().WithMessage("Full name cannot be empty.");
+                .NotEmpty().WithMessage("El nombre completo es obligatorio.");
 
             RuleFor(x => x.Email)
-                .NotEmpty().WithMessage("Email cannot be empty.")
-                .EmailAddress().WithMessage("Email format is invalid.");
+                .NotEmpty().WithMessage("El correo electrónico es obligatorio.")
+                .EmailAddress().WithMessage("Formato de correo inválido.");
 
             RuleFor(x => x.Password)
-                .NotEmpty().WithMessage("Password cannot be empty.")
+                .NotEmpty().WithMessage("La contraseña es obligatoria.")
                 // Longitud minima de 8 caracteres.
-                .MinimumLength(8).WithMessage("Password must be at least 8 characters long.")
-                .MaximumLength(128).WithMessage("Password must be at most 128 characters long.");
+                .MinimumLength(8).WithMessage("La contraseña debe tener al menos 8 caracteres.")
+                .MaximumLength(128).WithMessage("La contraseña no puede superar 128 caracteres.");
 
             RuleFor(x => x.Role)
-                .IsInEnum().WithMessage("Invalid user role.");
+                .IsInEnum().WithMessage("Rol de usuario inválido.");
         }
     }
 }
