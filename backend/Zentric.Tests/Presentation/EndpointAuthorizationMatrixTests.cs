@@ -127,6 +127,7 @@ namespace Zentric.Tests.Presentation
                 ["BillingController.AnnullMasterInvoice"] = AuthorizationPolicies.BillingGenerate,
                 ["BillingController.GetInvoices"] = AuthorizationPolicies.BillingRead,
                 ["BillingController.GetInvoicesByOrder"] = AuthorizationPolicies.BillingRead,
+                ["BillingController.GetInvoicePdf"] = AuthorizationPolicies.BillingRead,
 
                 // Perfil de Vendedor: tienda, marca y logo.
                 ["SellerProfileController.GetProfile"] = AuthorizationPolicies.ProductManagement,
