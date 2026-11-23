@@ -262,7 +262,7 @@ export function LoginPage() {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="buyer@zentric.local"
+                  placeholder="tu@correo.com"
                   autoComplete="email"
                   value={email}
                   onChange={(e) => {
