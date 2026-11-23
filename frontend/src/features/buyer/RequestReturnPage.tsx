@@ -168,8 +168,10 @@ export function RequestReturnPage() {
                       <Package className="h-5 w-5 text-foreground-muted" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-foreground">Variante SKU: {item.variantId}</p>
-                      <p className="text-xs text-foreground-muted">Cantidad comprada: {item.quantity}</p>
+                      <p className="text-sm font-medium text-foreground">{item.productName ?? 'Artículo de compra'}</p>
+                      <p className="text-xs text-foreground-muted">
+                        {item.sku ? `SKU: ${item.sku} · ` : ''}Cantidad comprada: {item.quantity}
+                      </p>
                     </div>
                     {selectedVariantId === item.variantId && <CheckCircle2 className="h-5 w-5 text-brand" />}
                   </button>

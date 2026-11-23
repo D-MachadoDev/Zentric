@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using Zentric.Application.Common.Messaging;
 using Zentric.Application.Common.Models;
+using Zentric.Domain.Products.Ports;
 using Zentric.Domain.Returns.Enums;
 using Zentric.Domain.Returns.Ports;
 using Zentric.Domain.Users.Enums;
@@ -19,8 +21,13 @@ namespace Zentric.Application.Returns.Queries
     public class GetReturnsQueryHandler : IRequestHandler<GetReturnsQuery, Result<PagedResult<ReturnRequestDto>>>
     {
         private readonly IReturnRequestRepository _returnRepository;
+        private readonly IProductRepository _productRepository;
 
-        public GetReturnsQueryHandler(IReturnRequestRepository returnRepository) => _returnRepository = returnRepository;
+        public GetReturnsQueryHandler(IReturnRequestRepository returnRepository, IProductRepository productRepository)
+        {
+            _returnRepository = returnRepository;
+            _productRepository = productRepository;
+        }
 
         public async Task<Result<PagedResult<ReturnRequestDto>>> Handle(
             GetReturnsQuery request, CancellationToken cancellationToken)
@@ -47,8 +54,11 @@ namespace Zentric.Application.Returns.Queries
 
             var returns = await _returnRepository.GetListAsync(buyerId, vendorId, request.Status, cancellationToken);
 
-            var items = returns
-                .Select(ret => new ReturnRequestDto(
+            var items = new List<ReturnRequestDto>();
+            foreach (var ret in returns)
+            {
+                var product = await _productRepository.GetByVariantIdAsync(ret.VariantId, cancellationToken);
+                items.Add(new ReturnRequestDto(
                     ret.Id,
                     ret.CustomerOrderId,
                     ret.VariantId,
@@ -57,8 +67,10 @@ namespace Zentric.Application.Returns.Queries
                     ret.Status.ToString(),
                     ret.IsGoodCondition,
                     ret.VendorApproved,
-                    ret.CreatedAt))
-                .ToList();
+                    ret.CreatedAt,
+                    product?.Name,
+                    product?.VendorId));
+            }
 
             var page = new PageRequest(request.Page, request.Size);
             var paged = items.Skip(page.Skip).Take(page.Take).ToList();

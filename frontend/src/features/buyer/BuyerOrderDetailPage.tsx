@@ -596,16 +596,28 @@ export function BuyerOrderDetailPage() {
                   </p>
                 </div>
 
-                <Link to="/buyer/returns/new" search={{ orderId: order.id }}>
+                {orderReturns.length > 0 ? (
                   <Button
                     variant="outline"
                     size="sm"
                     pill
-                    className="w-full border-brand/40 text-brand hover:bg-brand/10 text-xs font-semibold rounded-full cursor-pointer"
+                    disabled
+                    className="w-full border-border text-foreground-muted text-xs font-semibold rounded-full opacity-60"
                   >
-                    Solicitar Devolución
+                    Devolución ya solicitada
                   </Button>
-                </Link>
+                ) : (
+                  <Link to="/buyer/returns/new" search={{ orderId: order.id }}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      pill
+                      className="w-full border-brand/40 text-brand hover:bg-brand/10 text-xs font-semibold rounded-full cursor-pointer"
+                    >
+                      Solicitar Devolución
+                    </Button>
+                  </Link>
+                )}
               </div>
             )}
 

@@ -17,7 +17,9 @@ namespace Zentric.Application.Returns.Queries
         string Status,
         bool IsGoodCondition,
         bool VendorApproved,
-        DateTime CreatedAt);
+        DateTime CreatedAt,
+        string? ProductName = null,
+        Guid? VendorId = null);
 
     /// <summary>
     /// Devolucion por id. La visibilidad depende del rol del llamante
@@ -64,6 +66,7 @@ namespace Zentric.Application.Returns.Queries
                 return Result<ReturnRequestDto>.NotFound("Return request not found.");
             }
 
+            var product = await _productRepository.GetByVariantIdAsync(ret.VariantId, cancellationToken);
             var dto = new ReturnRequestDto(
                 ret.Id,
                 ret.CustomerOrderId,
@@ -73,7 +76,9 @@ namespace Zentric.Application.Returns.Queries
                 ret.Status.ToString(),
                 ret.IsGoodCondition,
                 ret.VendorApproved,
-                ret.CreatedAt
+                ret.CreatedAt,
+                product?.Name,
+                product?.VendorId
             );
 
             return Result<ReturnRequestDto>.Success(dto);

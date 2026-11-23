@@ -212,6 +212,8 @@ const mockDeliveredOrder: Order = {
     {
       id: 'item-del-1',
       variantId: 'var-1111-1111',
+      productName: 'Monitor Gamer 27" Curvo 165Hz',
+      sku: 'MON-GM-27-165',
       quantity: 2,
       unitPrice: 150000,
       totalPrice: 300000,
@@ -1414,10 +1416,10 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       renderWithClient(<RequestReturnPage />);
 
       expect(await screen.findByText('Solicitud de Devolución')).toBeInTheDocument();
-       expect(await screen.findByText(/Variante SKU: var-1111/i)).toBeInTheDocument();
+       expect(await screen.findByText(/Monitor Gamer 27/i)).toBeInTheDocument();
 
       // Seleccionar variante
-       const variantCard = await screen.findByText(/Variante SKU: var-1111/i);
+       const variantCard = await screen.findByText(/Monitor Gamer 27/i);
       fireEvent.click(variantCard);
 
       // Aceptar terminos legales
@@ -1463,8 +1465,8 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       const orderSelect = screen.getByRole('combobox');
       fireEvent.change(orderSelect, { target: { value: mockDeliveredOrder.id } });
 
-      expect(await screen.findByText(/Variante SKU: var-1111/i)).toBeInTheDocument();
-      fireEvent.click(screen.getByText(/Variante SKU: var-1111/i));
+      expect(await screen.findByText(/Monitor Gamer 27/i)).toBeInTheDocument();
+      fireEvent.click(screen.getByText(/Monitor Gamer 27/i));
       fireEvent.click(screen.getByRole('checkbox'));
 
       // Configurar cantidad inválida

@@ -544,7 +544,18 @@ export function BuyerOrdersPage() {
                       </>
                     )}
 
-                    {isDelivered && (
+                    {isDelivered && (buyerReturns.some((r) => r.customerOrderId === order.id) ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        pill
+                        disabled
+                        className="border-border text-foreground-muted text-xs rounded-full opacity-60"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                        Devolución solicitada
+                      </Button>
+                    ) : (
                       <Link to="/buyer/returns/new" search={{ orderId: order.id }}>
                         <Button
                           variant="outline"
@@ -556,7 +567,7 @@ export function BuyerOrdersPage() {
                           Devolución
                         </Button>
                       </Link>
-                    )}
+                    ))}
 
                     <Link to="/buyer/orders/$orderId" params={{ orderId: order.id }}>
                       <Button

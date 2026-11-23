@@ -317,11 +317,15 @@ export function LogisticsReturnsInspectPage() {
               <div className="space-y-2.5 text-xs font-mono">
                 <div>
                   <span className="text-foreground-muted block text-[11px] font-sans">Pedido:</span>
-                  <span className="text-foreground">#{selectedReturn.customerOrderId}</span>
+                  <span className="text-foreground">#{selectedReturn.customerOrderId.slice(0, 8)}</span>
                 </div>
                 <div>
-                  <span className="text-foreground-muted block text-[11px] font-sans">Variante:</span>
-                  <span className="text-brand">#{selectedReturn.variantId}</span>
+                  <span className="text-foreground-muted block text-[11px] font-sans">Producto:</span>
+                  <span className="text-foreground">{selectedReturn.productName ?? 'Artículo'}</span>
+                </div>
+                <div>
+                  <span className="text-foreground-muted block text-[11px] font-sans">Vendedor:</span>
+                  <span className="text-brand">#{selectedReturn.vendorId?.slice(0, 8) ?? '—'}</span>
                 </div>
                 <div>
                   <span className="text-foreground-muted block text-[11px] font-sans">Unidades Recibidas:</span>

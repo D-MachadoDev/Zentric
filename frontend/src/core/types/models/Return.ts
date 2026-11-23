@@ -17,6 +17,10 @@ export interface ReturnRequest {
   isGoodCondition: boolean;
   /** Aprobación del Vendedor. */
   vendorApproved: boolean;
+  /** Nombre del producto devuelto (resuelto por el backend). */
+  productName?: string;
+  /** Id del vendedor dueño de la variante (para saber de quién es). */
+  vendorId?: string;
   /** ISO-8601 (DateTime). */
   createdAt: string;
 }
