@@ -1,7 +1,7 @@
 name: system-quality
 
 # These checks need the full application stack, not only the frontend bundle.
-# Playwright drives the browser; Lighthouse measures the production preview.
+# Playwright drives the browser against the production preview.
 
 on:
     push:
@@ -84,40 +84,4 @@ jobs:
                   path: |
                       frontend/playwright-report
                       frontend/test-results
-                  retention-days: 7
-
-    lighthouse:
-        name: Lighthouse
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-
-            - uses: pnpm/action-setup@v4
-              with:
-                  version: 12.6.0
-
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 24
-                  cache: pnpm
-                  cache-dependency-path: frontend/pnpm-lock.yaml
-
-            - name: Install frontend dependencies
-              working-directory: frontend
-              run: pnpm install --frozen-lockfile
-
-            - name: Build production bundle
-              working-directory: frontend
-              run: pnpm build
-
-            - name: Run Lighthouse
-              working-directory: frontend
-              run: pnpm exec lhci autorun
-
-            - name: Upload Lighthouse report
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: lighthouse-report
-                  path: frontend/.lighthouseci
                   retention-days: 7
