@@ -94,7 +94,11 @@ export function useRecentlyViewedQuery(
   return useQuery({
     queryKey: ['recentlyViewed', maxItems],
     queryFn: () => resolveApi(api).getRecentlyViewed(maxItems),
-    staleTime: 30_000,
+    // El backend devuelve la imagen/precio ACTUALES del producto, pero si cacheamos
+    // el carrusel el comprador veía fotos viejas cuando un vendedor cambiaba la foto.
+    // Forzamos lectura fresca en cada montaje (PDP, home) para evitar datos rancios.
+    staleTime: 0,
+    refetchOnMount: 'always',
     enabled: options?.enabled ?? true,
   });
 }
