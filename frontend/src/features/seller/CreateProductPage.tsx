@@ -324,6 +324,23 @@ if (isLoading || isProductLoading) {
         </Alert>
       )}
 
+      {/* Confirmación de éxito siempre visible tras publicar, incluso antes de
+          desplazarse hasta la ficha lateral (en móvil queda bajo el formulario). */}
+      {createdResult && (
+        <Alert
+          role="status"
+          aria-live="polite"
+          className="rounded-none border-brand/40 bg-brand/5 text-brand shadow-2xs"
+        >
+          <CheckCircle2 className="h-5 w-5 text-brand shrink-0" />
+          <AlertTitle className="text-foreground">Producto publicado correctamente</AlertTitle>
+          <AlertDescription className="text-xs mt-0.5 text-brand/90">
+            <span className="font-mono font-semibold">{createdResult.productId}</span> quedó registrado en tu catálogo con{' '}
+            {createdResult.variantIds.length} {createdResult.variantIds.length === 1 ? 'variante' : 'variantes'}. Ya puedes cargar el stock inicial en bodega.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* ── Split-Frame Asimétrico (60% Formulario / 40% Resumen / Éxito) ──── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Lado Izquierdo: Formulario de Creación (60% -> col-span-7) */}

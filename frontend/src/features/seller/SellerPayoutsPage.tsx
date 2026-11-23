@@ -5,12 +5,18 @@ import {
   Badge,
   Skeleton,
   MoneyAmount,
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  Button,
 } from '@zentric/ui';
 import {
   Wallet,
   TrendingUp,
   ShoppingBag,
   History,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { getSellerPayoutsSummary, getSellerPayoutsHistory } from './sellerApi';
 import type {
@@ -20,6 +26,16 @@ import type {
 
 const STORAGE_SUMMARY_KEY = 'zentric_seller_wallet_summary';
 const STORAGE_MOVEMENTS_KEY = 'zentric_seller_wallet_movements';
+
+/** Lee una clave de localStorage de forma segura (JSON inválido o ausente → null). */
+function readStoredJson<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Página de Saldo y Billetera Comercial del Vendedor (/seller/pagos).
@@ -31,6 +47,8 @@ export function SellerPayoutsPage() {
   const session = auth?.session ?? appServices.session;
 
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
   const [summary, setSummary] = useState<PayoutSummary>({
     availableBalance: 0,
     totalSettledSales: 0,
@@ -42,9 +60,11 @@ export function SellerPayoutsPage() {
 
   useEffect(() => {
     let isMounted = true;
+    setLoadError(false);
 
     async function loadData() {
       setIsLoading(true);
+      let hadRemoteError = false;
       try {
         const token = session.getAccessToken();
         let remoteSummary: PayoutSummary | null = null;
@@ -54,33 +74,35 @@ export function SellerPayoutsPage() {
           remoteSummary = await getSellerPayoutsSummary(token);
         } catch {
           // Fallback a localStorage si la API aún no está disponible.
+          hadRemoteError = true;
         }
 
         try {
           remoteMovements = await getSellerPayoutsHistory(token);
         } catch {
           // Fallback a localStorage si la API aún no está disponible.
+          hadRemoteError = true;
         }
 
-        const savedSummary = localStorage.getItem(STORAGE_SUMMARY_KEY);
-        const savedMovements = localStorage.getItem(STORAGE_MOVEMENTS_KEY);
+        const savedSummary = readStoredJson<PayoutSummary>(STORAGE_SUMMARY_KEY);
+        const savedMovements = readStoredJson<BalanceMovement[]>(STORAGE_MOVEMENTS_KEY);
 
         if (isMounted) {
           if (remoteSummary) {
             setSummary(remoteSummary);
           } else if (savedSummary) {
-            setSummary(JSON.parse(savedSummary));
+            setSummary(savedSummary);
           }
 
           if (remoteMovements && remoteMovements.length > 0) {
             setMovements(remoteMovements);
-          } else if (savedMovements) {
-            try {
-              setMovements(JSON.parse(savedMovements));
-            } catch {
-              setMovements([]);
-            }
+          } else if (Array.isArray(savedMovements)) {
+            setMovements(savedMovements);
+          } else {
+            setMovements([]);
           }
+
+          if (hadRemoteError) setLoadError(true);
         }
       } finally {
         if (isMounted) setIsLoading(false);
@@ -91,7 +113,7 @@ export function SellerPayoutsPage() {
     return () => {
       isMounted = false;
     };
-  }, [session]);
+  }, [session, reloadToken]);
 
   if (isLoading) {
     return (
@@ -108,6 +130,27 @@ export function SellerPayoutsPage() {
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
+      {loadError && (
+        <div className="space-y-3">
+          <Alert variant="destructive" className="rounded-2xl border-destructive/40 bg-destructive/10 text-destructive">
+            <AlertCircle className="size-5 text-destructive" />
+            <AlertTitle>No se pudo sincronizar tu saldo</AlertTitle>
+            <AlertDescription className="text-xs mt-0.5">
+              Mostrando los últimos datos disponibles en este equipo. Reintenta para actualizar con el servidor.
+            </AlertDescription>
+          </Alert>
+          <Button
+            variant="outline"
+            size="sm"
+            pill
+            onClick={() => setReloadToken((t) => t + 1)}
+            className="rounded-full border-border text-foreground hover:bg-surface-muted"
+          >
+            <RefreshCw className="size-3.5 mr-1.5" /> Reintentar
+          </Button>
+        </div>
+      )}
+
       {/* ── Encabezado ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/70">
         <div className="space-y-1">

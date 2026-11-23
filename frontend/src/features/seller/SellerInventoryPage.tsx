@@ -497,16 +497,19 @@ export function SellerInventoryPage() {
           ) : (
             <div className="rounded-none border border-border bg-surface shadow-2xs overflow-hidden">
               <div className="max-h-[calc(100vh-270px)] min-h-[340px] overflow-y-auto">
-              <Table aria-label="Inventario de productos por almacén" className="w-full text-left text-sm text-foreground font-sans table-fixed">
+              {/* Tabla responsive: columnas secundarias (Bodega, Reservado, Usado, Dañado) se
+                  ocultan progresivamente en pantallas pequeñas y el contenedor permite scroll
+                  horizontal. Siempre permanecen visibles: Variante/SKU, Disponible y Acciones. */}
+              <Table aria-label="Inventario de productos por almacén" className="w-full text-left text-sm text-foreground font-sans">
                 <TableHeader className="sticky top-0 z-10 bg-surface-muted/80 backdrop-blur-xs text-xs font-bold text-foreground-muted uppercase tracking-wider border-b border-border shadow-2xs">
                   <TableRow>
-                    <TableHead scope="col" className="py-3 px-3.5 w-[32%]">Variante / SKU</TableHead>
-                    <TableHead scope="col" className="py-3 px-3 w-[22%]">Bodega</TableHead>
-                    <TableHead scope="col" className="py-3 px-2 text-right w-[10%]">Disponible</TableHead>
-                    <TableHead scope="col" className="py-3 px-2 text-right w-[9%]">Reservado</TableHead>
-                    <TableHead scope="col" className="py-3 px-2 text-right w-[8%]">Usado</TableHead>
-                    <TableHead scope="col" className="py-3 px-2 text-right w-[9%]">Dañado</TableHead>
-                    <TableHead scope="col" className="py-3 px-3 text-right w-[10%]">Acciones</TableHead>
+                    <TableHead scope="col" className="py-3 px-3.5 min-w-[200px]">Variante / SKU</TableHead>
+                    <TableHead scope="col" className="py-3 px-3 hidden md:table-cell">Bodega</TableHead>
+                    <TableHead scope="col" className="py-3 px-2 text-right">Disponible</TableHead>
+                    <TableHead scope="col" className="py-3 px-2 text-right hidden sm:table-cell">Reservado</TableHead>
+                    <TableHead scope="col" className="py-3 px-2 text-right hidden lg:table-cell">Usado</TableHead>
+                    <TableHead scope="col" className="py-3 px-2 text-right hidden lg:table-cell">Dañado</TableHead>
+                    <TableHead scope="col" className="py-3 px-3 text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-border/60">
@@ -544,7 +547,7 @@ export function SellerInventoryPage() {
                             : 'hover:bg-surface-muted/40 transition-colors cursor-pointer'
                         }
                       >
-                        <TableCell className="py-3 px-3.5 min-w-0">
+                        <TableCell className="py-3 px-3.5 min-w-[200px]">
                           <div className="font-bold text-foreground text-sm truncate" title={inv.productName || inv.variantId}>
                             {inv.productName || 'Variante Registrada'}
                           </div>
@@ -566,7 +569,7 @@ export function SellerInventoryPage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="py-3 px-3 min-w-0">
+                        <TableCell className="py-3 px-3 min-w-0 hidden md:table-cell">
                           <div className="font-medium text-foreground text-xs sm:text-sm flex items-center gap-1.5 truncate" title={warehouseName}>
                             <WarehouseIcon className="h-3.5 w-3.5 text-foreground-muted shrink-0" />
                             <span className="truncate">{warehouseName}</span>
@@ -578,13 +581,13 @@ export function SellerInventoryPage() {
                         <TableCell className="py-3 px-2 text-right font-mono font-bold text-foreground tabular-nums text-sm sm:text-base">
                           {inv.availableQuantity}
                         </TableCell>
-                        <TableCell className="py-3 px-2 text-right font-mono font-semibold text-warning tabular-nums text-sm sm:text-base">
+                        <TableCell className="py-3 px-2 text-right font-mono font-semibold text-warning tabular-nums text-sm sm:text-base hidden sm:table-cell">
                           {inv.reservedQuantity}
                         </TableCell>
-                        <TableCell className="py-3 px-2 text-right font-mono text-foreground-muted tabular-nums text-sm sm:text-base">
+                        <TableCell className="py-3 px-2 text-right font-mono text-foreground-muted tabular-nums text-sm sm:text-base hidden lg:table-cell">
                           {inv.usedQuantity ?? 0}
                         </TableCell>
-                        <TableCell className="py-3 px-2 text-right font-mono text-destructive tabular-nums text-sm sm:text-base">
+                        <TableCell className="py-3 px-2 text-right font-mono text-destructive tabular-nums text-sm sm:text-base hidden lg:table-cell">
                           {inv.damagedQuantity}
                         </TableCell>
                         <TableCell className="py-3 px-3 text-right">
