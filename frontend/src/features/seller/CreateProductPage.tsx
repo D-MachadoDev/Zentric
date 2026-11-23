@@ -140,6 +140,7 @@ export function CreateProductPage({ productId }: { productId?: string }) {
   const [category, setCategory] = useState(initialCategory);
   const [description, setDescription] = useState(initialDescription);
   const [imageUrl, setImageUrl] = useState(initialImageUrl);
+  const [digitalDownloadUrl, setDigitalDownloadUrl] = useState('');
   const [priceAmount, setPriceAmount] = useState(initialPriceAmount);
   const [type, setType] = useState(initialType);
   const [previewImageFailed, setPreviewImageFailed] = useState(false);
@@ -277,6 +278,7 @@ export function CreateProductPage({ productId }: { productId?: string }) {
         category: category.trim().toLowerCase(),
         variants: formattedVariants.length > 0 ? formattedVariants : undefined,
         imageUrl: imageUrl.trim() || undefined,
+        digitalDownloadUrl: digitalDownloadUrl.trim() || undefined,
       });
 
       setCreatedResult(result);
@@ -498,6 +500,25 @@ if (isLoading || isProductLoading) {
                   </div>
                 )}
               </div>
+
+              {type === ProductType.Digital && (
+                <div className="space-y-2">
+                  <Label htmlFor="product-download-url" optional optionalText="(Opcional)">
+                    Link de descarga (producto digital)
+                  </Label>
+                  <Input
+                    id="product-download-url"
+                    type="url"
+                    placeholder="https://drive.google.com/... o https://tudominio.com/archivo.zip"
+                    value={digitalDownloadUrl}
+                    onChange={(e) => setDigitalDownloadUrl(e.target.value)}
+                    className="bg-surface-muted border-border font-mono text-foreground text-xs px-4"
+                  />
+                  <p className="text-[11px] text-foreground-muted">
+                    El comprador recibirá este enlace por correo después de pagar. Pega una URL http(s) directa al archivo o página de descarga.
+                  </p>
+                </div>
+              )}
             </section>
 
             {/* ── Sección 3: Precio ─────────────────────────────────────── */}

@@ -27,7 +27,7 @@ namespace Zentric.Application.Catalog.Commands
     /// justo despues de crear el producto. Sin el tendria que hacer un GET extra al recurso recien
     /// creado solo para sacar una clave que el propio servidor acaba de generar.
     /// </summary>
-    public record CreatedProductDto(Guid ProductId, IReadOnlyList<Guid> VariantIds);
+    public record CreatedProductDto(Guid ProductId, IReadOnlyList<Guid> VariantIds, string? DigitalDownloadUrl = null);
 
     public record CreateProductCommand(
         string Name,
@@ -38,7 +38,8 @@ namespace Zentric.Application.Catalog.Commands
         ProductType Type,
         List<CreateProductVariantDto>? Variants = null,
         string? ImageUrl = null,
-        string? Category = null) : IRequest<Result<CreatedProductDto>>;
+        string? Category = null,
+        string? DigitalDownloadUrl = null) : IRequest<Result<CreatedProductDto>>;
 
     public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand, Result<CreatedProductDto>>
     {
@@ -67,7 +68,8 @@ namespace Zentric.Application.Catalog.Commands
                 request.Type,
                 variants,
                 request.ImageUrl,
-                request.Category
+                request.Category,
+                request.DigitalDownloadUrl
             );
 
             if (request.Variants != null)
@@ -88,7 +90,8 @@ namespace Zentric.Application.Catalog.Commands
 
             return Result<CreatedProductDto>.Success(new CreatedProductDto(
                 product.Id,
-                product.Variants.Select(v => v.Id).ToList()));
+                product.Variants.Select(v => v.Id).ToList(),
+                product.DigitalDownloadUrl));
         }
     }
 }

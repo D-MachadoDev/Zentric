@@ -14,6 +14,7 @@ namespace Zentric.Domain.Products
         public ProductStatus Status { get; private set; }
         public string? ImageUrl { get; private set; }
         public string? Category { get; private set; }
+        public string? DigitalDownloadUrl { get; private set; }
         public decimal AverageRating { get; private set; }
         public int ReviewsCount { get; private set; }
         public DateTime CreatedAt { get; private set; }
@@ -61,7 +62,8 @@ namespace Zentric.Domain.Products
             ProductType type,
             IEnumerable<(string Sku, IEnumerable<VariantAttribute> Attributes)>? variants = null,
             string? imageUrl = null,
-            string? category = null)
+            string? category = null,
+            string? digitalDownloadUrl = null)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -84,6 +86,17 @@ namespace Zentric.Domain.Products
 
             ArgumentNullException.ThrowIfNull(price);
 
+            // El enlace de descarga solo tiene sentido en productos digitales y,
+            // cuando se informa, debe ser una URL absoluta http(s): es lo que se
+            // envia por correo al comprador tras el pago.
+            if (!string.IsNullOrWhiteSpace(digitalDownloadUrl)
+                && !IsAbsoluteHttpUrl(digitalDownloadUrl))
+            {
+                throw new ArgumentException(
+                    "Digital download URL must be an absolute http(s) URL.",
+                    nameof(digitalDownloadUrl));
+            }
+
             var variantSeeds = variants?.ToList()
                 ?? new List<(string Sku, IEnumerable<VariantAttribute> Attributes)>();
 
@@ -104,6 +117,7 @@ namespace Zentric.Domain.Products
             Status = ProductStatus.Published;
             ImageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
             Category = string.IsNullOrWhiteSpace(category) ? null : category.Trim();
+            DigitalDownloadUrl = string.IsNullOrWhiteSpace(digitalDownloadUrl) ? null : digitalDownloadUrl.Trim();
             AverageRating = 0m;
             ReviewsCount = 0;
             CreatedAt = DateTime.UtcNow;
@@ -402,6 +416,13 @@ namespace Zentric.Domain.Products
             }
 
             UpdatedAt = DateTime.UtcNow;
+        }
+
+        private static bool IsAbsoluteHttpUrl(string url)
+        {
+            return Uri.TryCreate(url, UriKind.Absolute, out var uri)
+                && (string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

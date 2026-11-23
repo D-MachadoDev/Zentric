@@ -22,5 +22,18 @@ namespace Zentric.Domain.Users.Ports
             byte[] invoicePdf,
             string invoiceUrl,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Envía al comprador el correo de entrega de un producto digital tras el
+        /// pago. Si <paramref name="downloadUrl"/> tiene valor, el botón principal
+        /// permite descargar el producto; en caso contrario enlaza al pedido.
+        /// </summary>
+        Task SendDigitalDeliveryEmailAsync(
+            string toEmail,
+            string buyerName,
+            string productName,
+            string? downloadUrl,
+            string orderId,
+            CancellationToken cancellationToken = default);
     }
 }

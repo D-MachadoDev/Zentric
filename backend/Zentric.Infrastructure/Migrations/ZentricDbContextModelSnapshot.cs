@@ -471,6 +471,9 @@ namespace Zentric.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("DigitalDownloadUrl")
+                        .HasColumnType("text");
+
                     b.Property<string>("ImageUrl")
                         .HasColumnType("text");
 

@@ -15,6 +15,7 @@ namespace Zentric.Infrastructure.Persistence.Models
         public ProductStatus Status { get; set; }
         public string? ImageUrl { get; set; }
         public string? Category { get; set; }
+        public string? DigitalDownloadUrl { get; set; }
         public decimal AverageRating { get; set; }
         public int ReviewsCount { get; set; }
         public DateTime CreatedAt { get; set; }

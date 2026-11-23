@@ -24,6 +24,7 @@ namespace Zentric.Infrastructure.Persistence.Mappers
             typeof(Product).GetProperty("Status")?.SetValue(prod, dbModel.Status);
             typeof(Product).GetProperty("ImageUrl")?.SetValue(prod, dbModel.ImageUrl);
             typeof(Product).GetProperty("Category")?.SetValue(prod, dbModel.Category);
+            typeof(Product).GetProperty("DigitalDownloadUrl")?.SetValue(prod, dbModel.DigitalDownloadUrl);
             typeof(Product).GetProperty("AverageRating")?.SetValue(prod, dbModel.AverageRating);
             typeof(Product).GetProperty("ReviewsCount")?.SetValue(prod, dbModel.ReviewsCount);
             typeof(Product).GetProperty("CreatedAt")?.SetValue(prod, dbModel.CreatedAt);
@@ -93,6 +94,7 @@ namespace Zentric.Infrastructure.Persistence.Mappers
                 Status = domain.Status,
                 ImageUrl = domain.ImageUrl,
                 Category = domain.Category,
+                DigitalDownloadUrl = domain.DigitalDownloadUrl,
                 AverageRating = domain.AverageRating,
                 ReviewsCount = domain.ReviewsCount,
                 CreatedAt = domain.CreatedAt,

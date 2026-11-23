@@ -89,6 +89,8 @@ export interface CreateProductInput {
   variants?: CreateProductVariantInput[];
   imageUrl?: string | null;
   category?: string;
+  /** Enlace de descarga opcional para productos digitales; se envía por correo tras el pago. */
+  digitalDownloadUrl?: string;
   /** Calificación promedio acumulada (0.0 a 5.0) */
   averageRating?: number;
   /** Conteo total de reseñas verificadas */

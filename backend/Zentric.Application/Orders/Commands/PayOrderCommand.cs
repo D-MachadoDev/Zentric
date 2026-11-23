@@ -97,7 +97,9 @@ namespace Zentric.Application.Orders.Commands
                 receipt.Approve(charge.TransactionId!);
                 order.MarkAsPaid();
 
-                // CAregistrar entrega inmediata de productos digitales
+                // CAregistrar entrega inmediata de productos digitales. Tambien se
+                // recolecta el enlace de descarga para el correo posterior.
+                var digitalItems = new List<(string ProductName, string? DownloadUrl)>();
                 foreach (var item in order.Items)
                 {
                     var product = await _productRepository.GetByVariantIdAsync(item.VariantId, cancellationToken);
@@ -112,6 +114,7 @@ namespace Zentric.Application.Orders.Commands
                             product.Name,
                             product.Variants.FirstOrDefault(v => v.Id == item.VariantId)?.Sku ?? "UNKNOWN");
                         order.AddDigitalDelivery(digitalDelivery);
+                        digitalItems.Add((product.Name, product.DigitalDownloadUrl));
                     }
                 }
 
@@ -150,6 +153,19 @@ namespace Zentric.Application.Orders.Commands
                         order.Id);
                 }
 
+                // Enviar el correo de entrega por cada producto digital: no fatal.
+                try
+                {
+                    await SendDigitalDeliveryEmailsAsync(order, digitalItems, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(
+                        ex,
+                        "[PayOrderCommand] Error al enviar los correos de entrega digital del pedido {OrderId}. El pago y la entrega ya quedaron registrados.",
+                        order.Id);
+                }
+
                 return Result<bool>.Success(true);
             }
             catch (InvalidOperationException ex)
@@ -169,9 +185,58 @@ namespace Zentric.Application.Orders.Commands
                 return;
             }
 
-            // Correo y nombre real del comprador desde su cuenta; si no está
-            // disponible, se degrada a un identificador determinista para no
-            // romper el envío.
+            var (buyerEmail, buyerName) = await ResolveBuyerContactAsync(order);
+
+            var pdfGenerator = new PdfInvoiceGenerator();
+            var invoicePdf = pdfGenerator.GenerateInvoice(order, buyerEmail);
+
+            var baseUrl = _configuration?["Frontend:BaseUrl"] ?? "http://localhost:15434";
+            var invoiceUrl = $"{baseUrl.TrimEnd('/')}/buyer/orders/{order.Id}";
+            var orderCode = order.Id.ToString()[..8].ToUpperInvariant();
+
+            await _emailSender.SendInvoiceEmailAsync(
+                buyerEmail,
+                buyerName,
+                orderCode,
+                invoicePdf,
+                invoiceUrl,
+                cancellationToken);
+        }
+
+        /// <summary>
+        /// Envía un correo de entrega por cada producto digital del pedido. No
+        /// fatal: el pago y la entrega ya quedaron registrados antes de llegar aquí.
+        /// </summary>
+        private async Task SendDigitalDeliveryEmailsAsync(
+            CustomerOrder order,
+            IReadOnlyList<(string ProductName, string? DownloadUrl)> digitalItems,
+            CancellationToken cancellationToken)
+        {
+            if (_emailSender is null || digitalItems.Count == 0)
+            {
+                return;
+            }
+
+            var (buyerEmail, buyerName) = await ResolveBuyerContactAsync(order);
+
+            foreach (var (productName, downloadUrl) in digitalItems)
+            {
+                await _emailSender.SendDigitalDeliveryEmailAsync(
+                    buyerEmail,
+                    buyerName,
+                    productName,
+                    downloadUrl,
+                    order.Id.ToString(),
+                    cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// Correo y nombre real del comprador desde su cuenta; si no está
+        /// disponible, se degrada a un identificador determinista para no romper el envío.
+        /// </summary>
+        private async Task<(string Email, string Name)> ResolveBuyerContactAsync(CustomerOrder order)
+        {
             string buyerEmail = $"buyer-{order.BuyerId}@zentric.local";
             string buyerName = "Comprador";
 
@@ -192,20 +257,7 @@ namespace Zentric.Application.Orders.Commands
                 }
             }
 
-            var pdfGenerator = new PdfInvoiceGenerator();
-            var invoicePdf = pdfGenerator.GenerateInvoice(order, buyerEmail);
-
-            var baseUrl = _configuration?["Frontend:BaseUrl"] ?? "http://localhost:15434";
-            var invoiceUrl = $"{baseUrl.TrimEnd('/')}/buyer/orders/{order.Id}";
-            var orderCode = order.Id.ToString()[..8].ToUpperInvariant();
-
-            await _emailSender.SendInvoiceEmailAsync(
-                buyerEmail,
-                buyerName,
-                orderCode,
-                invoicePdf,
-                invoiceUrl,
-                cancellationToken);
+            return (buyerEmail, buyerName);
         }
     }
 }

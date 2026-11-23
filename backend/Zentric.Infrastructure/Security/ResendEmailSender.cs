@@ -23,6 +23,7 @@ namespace Zentric.Infrastructure.Security
         private readonly HttpClient _httpClient;
         private readonly string? _apiKey;
         private readonly string _fromEmail;
+        private readonly string _frontendBaseUrl;
         private readonly ILogger<ResendEmailSender> _logger;
 
         public ResendEmailSender(
@@ -43,6 +44,8 @@ namespace Zentric.Infrastructure.Security
             _fromEmail = !string.IsNullOrWhiteSpace(configuredFrom)
                 ? configuredFrom
                 : (!string.IsNullOrWhiteSpace(envFrom) ? envFrom : "Zentric <no-reply@zentric.me>");
+
+            _frontendBaseUrl = configuration["Frontend:BaseUrl"] ?? "http://localhost:15434";
         }
 
         public async Task SendPasswordResetEmailAsync(string toEmail, string resetLink, CancellationToken cancellationToken = default)
@@ -157,6 +160,65 @@ namespace Zentric.Infrastructure.Security
                     ex,
                     "[ResendEmailSender] Excepción de transporte al enviar la factura por email. Fallback de enlace: {InvoiceUrl}",
                     invoiceUrl);
+            }
+        }
+
+        public async Task SendDigitalDeliveryEmailAsync(
+            string toEmail,
+            string buyerName,
+            string productName,
+            string? downloadUrl,
+            string orderId,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(_apiKey) || _apiKey.StartsWith("mock_", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning(
+                    "[ResendEmailSender] Fallback local activo. Entrega digital simulada para: {Email}. Producto: {ProductName}. Enlace de descarga: {DownloadUrl}",
+                    toEmail,
+                    productName,
+                    downloadUrl);
+                return;
+            }
+
+            try
+            {
+                var orderUrl = $"{_frontendBaseUrl.TrimEnd('/')}/buyer/orders/{orderId}";
+                var htmlBody = BuildDigitalDeliveryEmailHtml(buyerName, productName, downloadUrl, orderUrl);
+
+                var payload = new
+                {
+                    from = _fromEmail,
+                    to = new[] { toEmail },
+                    subject = $"Tu producto digital está listo — Zentric",
+                    html = htmlBody
+                };
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, ResendApiEndpoint);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(payload),
+                    Encoding.UTF8,
+                    "application/json");
+
+                using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogError(
+                        "[ResendEmailSender] Error al enviar la entrega digital mediante Resend: {StatusCode} - {Content}. Enlace de descarga: {DownloadUrl}",
+                        response.StatusCode,
+                        errorContent,
+                        downloadUrl);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "[ResendEmailSender] Excepción de transporte al enviar la entrega digital. Enlace de descarga: {DownloadUrl}",
+                    downloadUrl);
             }
         }
 
@@ -660,6 +722,168 @@ namespace Zentric.Infrastructure.Security
                 <div style="font-family:Inter, -apple-system, BlinkMacSystemFont, sans-serif;font-size:12px;line-height:1.65;color:#8A8A8E;">
                   <strong>Zentric Marketplace S.A.S.</strong> · NIT 900.123.456-7 · Bogotá D.C., Colombia<br/>
                   Recibes este correo porque realizaste una compra en Zentric. Enviamos notificaciones transaccionales sobre tus pedidos.
+                </div>
+                <div style="padding-top:12px;font-family:Inter, -apple-system, BlinkMacSystemFont, sans-serif;font-size:11.5px;color:#8A8A8E;">
+                  <a href="https://zentric.me/ayuda" target="_blank" style="color:#71717A;text-decoration:underline;margin:0 6px;">Centro de Ayuda</a> ·
+                  <a href="https://zentric.me/terminos" target="_blank" style="color:#71717A;text-decoration:underline;margin:0 6px;">Términos y Condiciones</a> ·
+                  <a href="https://zentric.me/privacidad" target="_blank" style="color:#71717A;text-decoration:underline;margin:0 6px;">Política de Privacidad</a>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+
+    </div>
+  </body>
+</html>
+""";
+
+        private static string BuildDigitalDeliveryEmailHtml(string buyerName, string productName, string? downloadUrl, string orderUrl)
+        {
+            var hasDownload = !string.IsNullOrWhiteSpace(downloadUrl);
+            var actionUrl = hasDownload ? downloadUrl! : orderUrl;
+            var actionLabel = hasDownload ? "Descargar mi producto" : "Ver mi pedido";
+
+            return DigitalDeliveryEmailTemplate
+                .Replace("{{buyerName}}", buyerName)
+                .Replace("{{productName}}", productName)
+                .Replace("{{actionUrl}}", actionUrl)
+                .Replace("{{actionLabel}}", actionLabel);
+        }
+
+        private const string DigitalDeliveryEmailTemplate = """
+<!doctype html>
+<html lang="es" dir="ltr" xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Tu producto digital está listo</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="x-apple-disable-message-reformatting">
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+    <style type="text/css">
+      #outlook a { padding:0; }
+      body { margin:0;padding:0;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%; }
+      table, td { border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt; }
+      img { border:0;height:auto;line-height:100%; outline:none;text-decoration:none;-ms-interpolation-mode:bicubic; }
+      a { color: #0D9488; text-decoration: underline; }
+      @media only screen and (max-width: 480px) {
+        .main-wrapper { padding: 16px 10px 32px 10px !important; }
+        .main-card { padding: 28px 20px 24px 20px !important; border-radius: 14px !important; }
+        .mobile-btn { display: block !important; width: 100% !important; box-sizing: border-box !important; text-align: center !important; min-height: 48px !important; line-height: 48px !important; font-size: 15px !important; border-radius: 10px !important; }
+        .header-logo { font-size: 22px !important; }
+        .hero-title { font-size: 22px !important; letter-spacing: -0.02em !important; }
+      }
+    </style>
+  </head>
+
+  <body style="word-spacing:normal;background-color:#F4F4F5;margin:0;padding:0;">
+
+    <div style="display:none;font-size:1px;color:#F4F4F5;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;mso-hide:all;">
+      Tu pago fue aprobado. Descarga tu producto digital o revisa tu pedido.
+    </div>
+
+    <div class="main-wrapper" role="article" lang="es" dir="ltr" style="word-spacing:normal;background-color:#F4F4F5;padding:36px 12px 48px 12px;">
+
+      <div style="margin:0px auto;max-width:580px;">
+
+        <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;background-color:#ffffff;border:1px solid #E4E4E7;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px -2px rgba(0,0,0,0.05);">
+          <tbody>
+            <tr>
+              <td class="main-card" style="padding:40px 40px 32px 40px;text-align:left;">
+
+                <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+                  <tbody>
+                    <tr>
+                      <td align="left" style="padding-bottom:28px;">
+                        <a href="https://zentric.me" target="_blank" style="text-decoration:none;display:inline-block;">
+                          <span class="header-logo" style="font-family:Inter, -apple-system, BlinkMacSystemFont, sans-serif;font-size:24px;font-weight:800;letter-spacing:-0.6px;color:#09090B;">zentric<span style="color:#0D9488;font-weight:900;">.</span></span>
+                        </a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+                  <tbody>
+                    <tr>
+                      <td align="left" style="padding-bottom:12px;">
+                        <h1 class="hero-title" style="font-family:Inter, -apple-system, BlinkMacSystemFont, sans-serif;font-size:24px;font-weight:700;letter-spacing:-0.03em;line-height:1.25;margin:0;color:#09090B;">
+                          ¡{{productName}} está listo, {{buyerName}}!
+                        </h1>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="left" style="padding-bottom:24px;">
+                        <p style="font-family:Inter, -apple-system, BlinkMacSystemFont, sans-serif;font-size:15px;line-height:1.65;margin:0;color:#3F3F46;">
+                          Tu pago fue aprobado y tu producto digital ya está disponible. Usa el botón a continuación para acceder a tu contenido.
+                        </p>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+                  <tbody>
+                    <tr>
+                      <td align="left" style="padding-bottom:20px;">
+                        <div>
+                          <a href="{{actionUrl}}" target="_blank" class="mobile-btn" style="background-color:#09090B;border-radius:10px;color:#ffffff;display:inline-block;font-family:Inter, -apple-system, BlinkMacSystemFont, sans-serif;font-size:15px;font-weight:600;min-height:48px;line-height:48px;text-align:center;text-decoration:none;padding:0 30px;box-shadow:0 2px 4px rgba(0,0,0,0.12);">
+                            {{actionLabel}} &rarr;
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+                  <tbody>
+                    <tr>
+                      <td style="border-top:1px solid #F0F0F0;padding-bottom:20px;"></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+                  <tbody>
+                    <tr>
+                      <td align="left" style="padding-bottom:6px;">
+                        <div style="font-family:Inter, -apple-system, BlinkMacSystemFont, sans-serif;font-size:12px;font-weight:600;color:#71717A;text-transform:uppercase;letter-spacing:0.04em;">
+                          ¿Problemas con el botón?
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="left" style="padding-bottom:16px;">
+                        <div style="background-color:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 14px;word-break:break-all;">
+                          <a href="{{actionUrl}}" target="_blank" style="color:#0D9488;text-decoration:none;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;font-size:12.5px;line-height:1.5;">{{actionUrl}}</a>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="left">
+                        <div style="font-family:Inter, -apple-system, BlinkMacSystemFont, sans-serif;font-size:13px;line-height:1.6;color:#52525B;">
+                          Si tienes dudas, escríbenos a <a href="mailto:soporte@zentric.me" style="color:#0D9488;text-decoration:underline;">soporte@zentric.me</a>.
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+          <tbody>
+            <tr>
+              <td align="center" style="padding:28px 24px 0 24px;text-align:center;">
+                <div style="font-family:Inter, -apple-system, BlinkMacSystemFont, sans-serif;font-size:12px;line-height:1.65;color:#8A8A8E;">
+                  <strong>Zentric Marketplace S.A.S.</strong> · NIT 900.123.456-7 · Bogotá D.C., Colombia<br/>
+                  Recibes este correo porque realizaste una compra digital en Zentric. Enviamos notificaciones transaccionales sobre tus pedidos.
                 </div>
                 <div style="padding-top:12px;font-family:Inter, -apple-system, BlinkMacSystemFont, sans-serif;font-size:11.5px;color:#8A8A8E;">
                   <a href="https://zentric.me/ayuda" target="_blank" style="color:#71717A;text-decoration:underline;margin:0 6px;">Centro de Ayuda</a> ·

@@ -15,6 +15,10 @@ namespace Zentric.Application.Catalog.Validators
             RuleFor(x => x.VendorId).NotEmpty();
             RuleFor(x => x.Type).IsInEnum();
 
+            RuleFor(x => x.DigitalDownloadUrl)
+                .Must(BeNullOrAbsoluteHttpUrl)
+                .WithMessage("Digital download URL must be an absolute http(s) URL.");
+
             RuleFor(x => x.Variants)
                 .NotEmpty()
                 .When(x => x.Type == ProductType.Physical)
@@ -29,6 +33,14 @@ namespace Zentric.Application.Catalog.Validators
                     attribute.RuleFor(a => a.Value).NotEmpty().MaximumLength(50);
                 });
             });
+        }
+
+        private static bool BeNullOrAbsoluteHttpUrl(string? url)
+        {
+            return string.IsNullOrWhiteSpace(url)
+                || (Uri.TryCreate(url, UriKind.Absolute, out var uri)
+                    && (string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)));
         }
     }
 }

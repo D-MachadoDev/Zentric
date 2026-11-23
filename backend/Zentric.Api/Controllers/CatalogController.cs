@@ -35,7 +35,7 @@ namespace Zentric.Api.Controllers
         /// Permite a un vendedor registrado definir el SKU, nombre comercial, dimensiones físicas (alto, ancho, largo, peso)
         /// y precio unitario base para su posterior comercialización en el Marketplace.
         /// </remarks>
-        /// <param name="command">Datos descriptivos, dimensionales y precio del producto. El VendorId ya no lo decide el cliente: lo fija el token, y un valor en el cuerpo se descarta.</param>
+        /// <param name="request">Datos descriptivos, dimensionales y precio del producto. El VendorId ya no lo decide el cliente: lo fija el token, y un valor en el cuerpo se descarta.</param>
         /// <response code="200">Ficha de producto creada en estado Published (CA, sin aprobación previa). Retorna el productId y los variantIds creados, para que el vendedor pueda dar de alta stock sin releer el producto.</response>
         /// <response code="400">Error de validación si faltan dimensiones o el precio es inválido (RFC 7807 ProblemDetails).</response>
         /// <response code="401">Token ausente o inválido.</response>
@@ -44,7 +44,7 @@ namespace Zentric.Api.Controllers
         [ProducesResponseType(typeof(Zentric.Application.Catalog.Commands.CreatedProductDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> CreateProduct([FromBody] CreateProductCommand command)
+        public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
         {
             var userId = _currentUser.UserId;
             if (userId is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
@@ -52,7 +52,19 @@ namespace Zentric.Api.Controllers
             // El vendedor es el llamante. Un VendorId en el cuerpo se
             // descarta: registrar producto a nombre de otro corromperia el split
             // de facturacion y no se podria corregir despues.
-            var result = await _mediator.Send(command with { VendorId = userId.Value });
+            var command = new CreateProductCommand(
+                request.Name,
+                request.Description,
+                request.PriceAmount,
+                request.PriceCurrency,
+                userId.Value,
+                request.Type,
+                request.Variants,
+                request.ImageUrl,
+                request.Category,
+                request.DigitalDownloadUrl);
+
+            var result = await _mediator.Send(command);
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
