@@ -16,6 +16,7 @@ import {
   Button,
   Badge,
   Input,
+  PasswordInput,
   Alert,
   AlertTitle,
   AlertDescription,
@@ -247,9 +248,8 @@ export function CreateUserPage() {
                     <Lock className="h-3.5 w-3.5 text-brand" />
                     Contraseña Inicial
                   </label>
-                  <Input
+                  <PasswordInput
                     id="password"
-                    type="password"
                     placeholder="Mínimo 8 caracteres"
                     value={formData.password}
                     onChange={(e) => handleChange('password', e.target.value)}
