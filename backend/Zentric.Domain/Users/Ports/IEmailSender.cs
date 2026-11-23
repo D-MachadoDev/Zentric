@@ -10,5 +10,17 @@ namespace Zentric.Domain.Users.Ports
     public interface IEmailSender
     {
         Task SendPasswordResetEmailAsync(string toEmail, string resetLink, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Envía al comprador el correo de confirmación de pago con la factura
+        /// electrónica en PDF adjunta y un enlace para ver su pedido.
+        /// </summary>
+        Task SendInvoiceEmailAsync(
+            string toEmail,
+            string buyerName,
+            string orderCode,
+            byte[] invoicePdf,
+            string invoiceUrl,
+            CancellationToken cancellationToken = default);
     }
 }

@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Zentric.Application.Billing.Commands;
 using Zentric.Application.Billing.Pdf;
 using Zentric.Application.Common.Messaging;
@@ -9,6 +11,7 @@ using Zentric.Domain.Orders.Ports;
 using Zentric.Domain.Payments;
 using Zentric.Domain.Payments.Ports;
 using Zentric.Domain.Products.Ports;
+using Zentric.Domain.Users.Ports;
 
 namespace Zentric.Application.Orders.Commands
 {
@@ -27,6 +30,10 @@ namespace Zentric.Application.Orders.Commands
         private readonly IPaymentGatewayService _paymentGateway;
         private readonly IPaymentReceiptRepository _receiptRepository;
         private readonly IProductRepository _productRepository;
+        private readonly IUserRepository? _userRepository;
+        private readonly IEmailSender? _emailSender;
+        private readonly IConfiguration? _configuration;
+        private readonly ILogger<PayOrderCommandHandler>? _logger;
 
         public PayOrderCommandHandler(
             IMediator mediator,
@@ -34,7 +41,11 @@ namespace Zentric.Application.Orders.Commands
             IUnitOfWork unitOfWork,
             IPaymentGatewayService paymentGateway,
             IPaymentReceiptRepository receiptRepository,
-            IProductRepository productRepository)
+            IProductRepository productRepository,
+            IUserRepository? userRepository = null,
+            IEmailSender? emailSender = null,
+            IConfiguration? configuration = null,
+            ILogger<PayOrderCommandHandler>? logger = null)
         {
             _mediator = mediator;
             _orderRepository = orderRepository;
@@ -42,6 +53,10 @@ namespace Zentric.Application.Orders.Commands
             _paymentGateway = paymentGateway;
             _receiptRepository = receiptRepository;
             _productRepository = productRepository;
+            _userRepository = userRepository;
+            _emailSender = emailSender;
+            _configuration = configuration;
+            _logger = logger;
         }
 
         public async Task<Result<bool>> Handle(PayOrderCommand request, CancellationToken cancellationToken)
@@ -120,22 +135,19 @@ namespace Zentric.Application.Orders.Commands
                         $"Payment processed but invoice generation failed: {generateResult.Error}");
                 }
 
-                // Generate PDF invoice
-                var orderForPdf = order; // Already loaded via GetByIdForBuyerAsync
-                var buyerEmail = orderForPdf.BuyerId != Guid.Empty
-                    ? $"buyer-{orderForPdf.BuyerId}@zentric.local"
-                    : "buyer@zentric.local";
-
+                // Enviar la factura por correo al comprador: no fatal. El pago y
+                // las facturas ya quedaron registrados, así que un fallo aquí no
+                // revierte nada.
                 try
                 {
-                    var pdfGenerator = new PdfInvoiceGenerator();
-                    var invoicePdf = pdfGenerator.GenerateInvoice(orderForPdf!, buyerEmail);
-                    var pdfBytes = invoicePdf.Length;
-                    _ = pdfBytes;
+                    await SendInvoiceEmailAsync(order, cancellationToken);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // Non-fatal: payment was recorded and invoices generated in database.
+                    _logger?.LogError(
+                        ex,
+                        "[PayOrderCommand] Error al enviar el correo con la factura del pedido {OrderId}. El pago y las facturas ya quedaron registrados.",
+                        order.Id);
                 }
 
                 return Result<bool>.Success(true);
@@ -144,6 +156,56 @@ namespace Zentric.Application.Orders.Commands
             {
                 return Result<bool>.Failure(ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Genera el PDF de la factura y lo envía por correo al comprador real.
+        /// Si no hay remitente configurado (por ejemplo, en tests) no hace nada.
+        /// </summary>
+        private async Task SendInvoiceEmailAsync(CustomerOrder order, CancellationToken cancellationToken)
+        {
+            if (_emailSender is null)
+            {
+                return;
+            }
+
+            // Correo y nombre real del comprador desde su cuenta; si no está
+            // disponible, se degrada a un identificador determinista para no
+            // romper el envío.
+            string buyerEmail = $"buyer-{order.BuyerId}@zentric.local";
+            string buyerName = "Comprador";
+
+            if (_userRepository is not null)
+            {
+                var user = await _userRepository.GetByIdAsync(order.BuyerId);
+                if (user is not null)
+                {
+                    if (!string.IsNullOrWhiteSpace(user.Email?.Value))
+                    {
+                        buyerEmail = user.Email.Value;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(user.FullName?.Value))
+                    {
+                        buyerName = user.FullName.Value;
+                    }
+                }
+            }
+
+            var pdfGenerator = new PdfInvoiceGenerator();
+            var invoicePdf = pdfGenerator.GenerateInvoice(order, buyerEmail);
+
+            var baseUrl = _configuration?["Frontend:BaseUrl"] ?? "http://localhost:15434";
+            var invoiceUrl = $"{baseUrl.TrimEnd('/')}/buyer/orders/{order.Id}";
+            var orderCode = order.Id.ToString()[..8].ToUpperInvariant();
+
+            await _emailSender.SendInvoiceEmailAsync(
+                buyerEmail,
+                buyerName,
+                orderCode,
+                invoicePdf,
+                invoiceUrl,
+                cancellationToken);
         }
     }
 }
