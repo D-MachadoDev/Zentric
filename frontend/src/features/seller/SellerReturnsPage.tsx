@@ -143,6 +143,7 @@ export function SellerReturnsPage() {
     setInspectionFilter('All');
     setWarehouseFilter('All');
     setSortOrder('recent');
+    setPage(1);
   };
 
   const selectedReturn =
@@ -174,7 +175,12 @@ export function SellerReturnsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8 w-full max-w-full">
+      <div
+        className="space-y-8 w-full max-w-full"
+        role="status"
+        aria-busy="true"
+        aria-label="Cargando devoluciones..."
+      >
         <Skeleton className="h-8 w-48 rounded-none bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-8 h-96 rounded-none border border-border bg-surface" />
@@ -345,9 +351,13 @@ export function SellerReturnsPage() {
           {filteredReturns.length === 0 ? (
             <StateView
               state="empty"
-              title="No hay devoluciones registradas"
+              title={
+                activeFiltersCount > 0
+                  ? 'No hay devoluciones registradas'
+                  : 'No tienes devoluciones pendientes todavía'
+              }
               description={
-                searchTerm || statusFilter !== 'All'
+                activeFiltersCount > 0
                   ? 'No hay solicitudes de devolución que coincidan con los filtros aplicados.'
                   : 'Ningún comprador ha solicitado devolución para tus productos.'
               }

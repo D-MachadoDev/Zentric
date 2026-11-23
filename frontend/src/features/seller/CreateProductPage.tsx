@@ -335,7 +335,7 @@ if (isLoading || isProductLoading) {
           <CheckCircle2 className="h-5 w-5 text-brand shrink-0" />
           <AlertTitle className="text-foreground">Producto publicado correctamente</AlertTitle>
           <AlertDescription className="text-xs mt-0.5 text-brand/90">
-            <span className="font-mono font-semibold">{createdResult.productId}</span> quedó registrado en tu catálogo con{' '}
+            El producto quedó registrado en tu catálogo con{' '}
             {createdResult.variantIds.length} {createdResult.variantIds.length === 1 ? 'variante' : 'variantes'}. Ya puedes cargar el stock inicial en bodega.
           </AlertDescription>
         </Alert>

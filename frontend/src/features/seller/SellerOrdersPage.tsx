@@ -140,7 +140,12 @@ export function SellerOrdersPage() {
 
   if (isLoadingOrders) {
     return (
-      <div className="space-y-8 w-full max-w-full">
+      <div
+        className="space-y-8 w-full max-w-full"
+        role="status"
+        aria-busy="true"
+        aria-label="Cargando pedidos recibidos..."
+      >
         <Skeleton className="h-8 w-48 bg-surface" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <Skeleton className="lg:col-span-8 h-96 rounded-none bg-surface" />
@@ -303,9 +308,9 @@ export function SellerOrdersPage() {
           {filteredOrders.length === 0 ? (
             <StateView
               state="empty"
-              title="No hay pedidos registrados"
+              title={hasFilters ? 'No hay pedidos registrados' : 'No tienes pedidos recibidos todavía'}
               description={
-                searchTerm || statusFilter !== 'All'
+                hasFilters
                   ? 'No hay pedidos que coincidan con los filtros aplicados.'
                   : 'Aún no se han recibido compras que contengan productos de tu catálogo.'
               }

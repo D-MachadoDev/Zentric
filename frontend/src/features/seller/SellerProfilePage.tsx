@@ -58,7 +58,15 @@ export function SellerProfilePage() {
         }
 
         const localSaved = localStorage.getItem(STORAGE_KEY);
-        const localData = localSaved ? JSON.parse(localSaved) : null;
+        let localData: SellerProfileData | null = null;
+        if (localSaved) {
+          try {
+            localData = JSON.parse(localSaved);
+          } catch {
+            // El respaldo local está dañado; se descarta sin romper la carga del perfil.
+            localData = null;
+          }
+        }
 
         if (isMounted) {
           const effectiveName =
@@ -142,7 +150,12 @@ export function SellerProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <div
+        className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6"
+        role="status"
+        aria-busy="true"
+        aria-label="Cargando perfil de tienda..."
+      >
         <Skeleton className="h-8 w-60 bg-surface rounded-lg" />
         <Skeleton className="h-80 rounded-2xl bg-surface" />
       </div>
