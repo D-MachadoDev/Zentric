@@ -1161,6 +1161,76 @@ describe('Módulo del Comprador (W4-S02-buyer-module)', () => {
       expect(img).toBeInTheDocument();
       expect(img).toHaveAttribute('src', 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500');
     });
+
+    it('permite descargar la Factura Maestra en PDF llamando a api.getInvoicePdf con feedback de descarga y visibilidad móvil', async () => {
+      mockParams = { orderId: mockDeliveredOrder.id };
+      vi.spyOn(appServices.api, 'getOrderById').mockResolvedValue(mockDeliveredOrder);
+      vi.spyOn(appServices.api, 'listFulfillments').mockResolvedValue([]);
+
+      const mockMasterInvoice: Invoice = {
+        id: 'fa5ece0c-4444-4444-8888-999900001111',
+        customerOrderId: mockDeliveredOrder.id,
+        vendorId: null,
+        type: InvoiceType.Master,
+        totalAmount: 2290000,
+        currency: 'COP',
+        issuedAt: '2026-11-23T12:00:00.000Z',
+      };
+      vi.spyOn(appServices.api, 'getInvoicesByOrder').mockResolvedValue([mockMasterInvoice]);
+
+      const mockPdfBlob = new Blob(['%PDF-1.4 mock DIAN binary invoice content'], { type: 'application/pdf' });
+      const getInvoicePdfSpy = vi.spyOn(appServices.api, 'getInvoicePdf').mockResolvedValue(mockPdfBlob);
+
+      const mockCreateObjectURL = vi.fn().mockReturnValue('blob:http://localhost/mock-dian-uuid');
+      const mockRevokeObjectURL = vi.fn();
+      window.URL.createObjectURL = mockCreateObjectURL;
+      window.URL.revokeObjectURL = mockRevokeObjectURL;
+
+      renderWithClient(<BuyerOrderDetailPage />);
+
+      const downloadButton = await screen.findByRole('button', { name: /descargar/i });
+      expect(downloadButton).toBeInTheDocument();
+      // Verificación de visibilidad móvil: no debe tener hidden
+      expect(downloadButton.className).not.toContain('hidden');
+
+      await act(async () => {
+        fireEvent.click(downloadButton);
+      });
+
+      expect(getInvoicePdfSpy).toHaveBeenCalledWith(mockMasterInvoice.id);
+      expect(mockCreateObjectURL).toHaveBeenCalledWith(mockPdfBlob);
+      expect(mockRevokeObjectURL).toHaveBeenCalledWith('blob:http://localhost/mock-dian-uuid');
+    });
+
+    it('ejecuta fallback a window.print si la descarga remota de PDF falla', async () => {
+      mockParams = { orderId: mockDeliveredOrder.id };
+      vi.spyOn(appServices.api, 'getOrderById').mockResolvedValue(mockDeliveredOrder);
+      vi.spyOn(appServices.api, 'listFulfillments').mockResolvedValue([]);
+
+      const mockMasterInvoice: Invoice = {
+        id: 'fa5ece0c-4444-4444-8888-999900001111',
+        customerOrderId: mockDeliveredOrder.id,
+        vendorId: null,
+        type: InvoiceType.Master,
+        totalAmount: 2290000,
+        currency: 'COP',
+        issuedAt: '2026-11-23T12:00:00.000Z',
+      };
+      vi.spyOn(appServices.api, 'getInvoicesByOrder').mockResolvedValue([mockMasterInvoice]);
+      vi.spyOn(appServices.api, 'getInvoicePdf').mockRejectedValue(new Error('Network failure'));
+
+      const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
+
+      renderWithClient(<BuyerOrderDetailPage />);
+
+      const downloadButton = await screen.findByRole('button', { name: /descargar/i });
+
+      await act(async () => {
+        fireEvent.click(downloadButton);
+      });
+
+      expect(printSpy).toHaveBeenCalled();
+    });
   });
 
   describe('BuyerOrderPaymentPage', () => {

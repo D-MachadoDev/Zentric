@@ -4,6 +4,7 @@ import { useProductsPagedQuery } from '../../core';
 import { useInvoicesByOrderQuery } from '../../core';
 import { useFulfillmentsQuery } from '../../core';
 import { useReturnsQuery } from '../../core';
+import { resolveApi } from '../../core';
 import {
   OrderStatus,
   InvoiceType,
@@ -47,6 +48,7 @@ import {
   Calendar,
   PackageCheck,
   Download,
+  Loader2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { getProductImageUrl } from './productImages';
@@ -116,6 +118,30 @@ export function BuyerOrderDetailPage() {
   const masterInvoice: Invoice | undefined = (invoices ?? []).find(
     (inv: Invoice) => inv.type === InvoiceType.Master
   );
+
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
+  const handleDownloadInvoice = async () => {
+    if (!masterInvoice) return;
+    setIsDownloadingPdf(true);
+    try {
+      const api = resolveApi();
+      const blob = await api.getInvoicePdf(masterInvoice.id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Factura-DIAN-${masterInvoice.id.slice(0, 8).toUpperCase()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      // Fallback a impresión ante entornos locales o desconectados
+      window.print();
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
 
   if (isLoadingOrder) {
     return (
@@ -489,11 +515,16 @@ export function BuyerOrderDetailPage() {
                     variant="outline"
                     size="sm"
                     pill
-                    onClick={() => window.print()}
-                    className="border-border text-foreground text-xs rounded-full cursor-pointer hidden sm:flex items-center gap-1.5"
+                    onClick={handleDownloadInvoice}
+                    disabled={isDownloadingPdf}
+                    className="border-border text-foreground text-xs rounded-full cursor-pointer flex items-center gap-1.5"
                   >
-                    <Download className="size-3.5" />
-                    Descargar
+                    {isDownloadingPdf ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Download className="size-3.5" />
+                    )}
+                    {isDownloadingPdf ? 'Descargando...' : 'Descargar'}
                   </Button>
                 </div>
               </div>

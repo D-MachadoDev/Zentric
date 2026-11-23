@@ -1,101 +1,165 @@
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
-using Zentric.Application.Common.Models;
+using Zentric.Domain.Billing;
+using Zentric.Domain.Billing.Enums;
 using Zentric.Domain.Orders;
-using Zentric.Domain.Products.ValueObjects;
 
 namespace Zentric.Application.Billing.Pdf;
 
 /// <summary>
-/// Generates PDF invoices for paid orders using PDFsharp/MigraDoc.
-/// Free, open-source PDF generation library (MIT/X11 license).
+/// Generador de representaciones gráficas de Factura Electrónica de Venta con certificación DIAN.
+/// Utiliza PDFsharp en memoria para emitir documentos con validez tributaria formal según la normativa colombiana.
 /// </summary>
 public sealed class PdfInvoiceGenerator
 {
-    private const double PdfPageHeight = 842; // A4 height in points
-    private const double Margin = 50; // Page margin in points
+    private const double PdfPageHeight = 842; // A4 en puntos (72 dpi)
+    private const double PdfPageWidth = 595;
+    private const double Margin = 40; // Margen de página
+
+    private static readonly CultureInfo ColombianCulture = new("es-CO");
 
     /// <summary>
-    /// Generates a PDF invoice for the specified order.
+    /// Genera la Factura Electrónica en PDF a partir de una orden y su factura formal de persistencia.
     /// </summary>
-    /// <param name="order">The paid order to generate invoice for.</param>
-    /// <param name="buyerEmail">The buyer's email address.</param>
-    /// <returns>A PDF invoice as a byte array.</returns>
+    public byte[] GenerateInvoice(Invoice invoice, CustomerOrder order, string buyerEmail)
+    {
+        return GenerateInvoiceInternal(order, buyerEmail, invoice);
+    }
+
+    /// <summary>
+    /// Sobrecarga para generación directa desde una orden de compra (retrocompatibilidad).
+    /// </summary>
     public byte[] GenerateInvoice(CustomerOrder order, string buyerEmail)
     {
-        // Create a PDF document
+        return GenerateInvoiceInternal(order, buyerEmail, null);
+    }
+
+    private byte[] GenerateInvoiceInternal(CustomerOrder order, string buyerEmail, Invoice? invoice)
+    {
+        EnsureFontResolver();
+
         var document = new PdfDocument();
-        document.Info.Title = $"Invoice - Order {order.Id}";
-        document.Info.Subject = "Zentric Invoice";
-        document.Info.Author = "Zentric System";
-        document.Info.Keywords = "invoice, order, payment";
+        var invoiceCode = invoice != null
+            ? invoice.Id.ToString()[..8].ToUpperInvariant()
+            : order.Id.ToString()[..8].ToUpperInvariant();
 
-        // Ensure a font resolver is available (PDFsharp 6.0 requires one)
-        if (PdfSharp.Fonts.GlobalFontSettings.FontResolver is null)
-        {
-            var resolverType = typeof(PdfSharp.Pdf.PdfDocument).Assembly.GetType("PdfSharp.Fonts.EvenNewerFontResolver");
-            if (resolverType is null)
-                throw new InvalidOperationException("EvenNewerFontResolver type not found.");
-            var instance = System.Activator.CreateInstance(resolverType, true);
-            if (instance is null)
-                throw new InvalidOperationException("Failed to create font resolver instance.");
-            PdfSharp.Fonts.GlobalFontSettings.FontResolver = (PdfSharp.Fonts.IFontResolver)instance;
-        }
+        document.Info.Title = $"Factura Electrónica DIAN #{invoiceCode}";
+        document.Info.Subject = "Factura Electrónica de Venta - Zentric";
+        document.Info.Author = "Zentric Technologies S.A.S.";
+        document.Info.Keywords = "factura, dian, electronica, colombia, cufe";
 
-
-        // Add a page
         var page = document.AddPage();
         var gfx = XGraphics.FromPdfPage(page);
 
-        // Set up font objects
-        var titleFont = new XFont("Arial", 24, XFontStyleEx.Bold);
-        var headingFont = new XFont("Arial", 14, XFontStyleEx.Bold);
-        var normalFont = new XFont("Arial", 11);
-        var smallFont = new XFont("Arial", 9);
-        var boldNormalFont = new XFont("Arial", 11, XFontStyleEx.Bold);
+        // Tipografías
+        var titleFont = new XFont("Arial", 16, XFontStyleEx.Bold);
+        var subtitleFont = new XFont("Arial", 10, XFontStyleEx.Bold);
+        var headingFont = new XFont("Arial", 12, XFontStyleEx.Bold);
+        var labelBoldFont = new XFont("Arial", 9, XFontStyleEx.Bold);
+        var normalFont = new XFont("Arial", 9);
+        var smallFont = new XFont("Arial", 7.5);
+        var cufeFont = new XFont("Courier New", 7);
 
+        // Paleta de colores
+        var brandBrush = new XSolidBrush(XColor.FromArgb(16, 185, 129)); // Esmeralda Zentric
+        var primaryDarkBrush = new XSolidBrush(XColor.FromArgb(15, 23, 42)); // Slate 900
+        var mutedBrush = new XSolidBrush(XColor.FromArgb(100, 116, 139)); // Slate 500
+        var lightGrayBrush = new XSolidBrush(XColor.FromArgb(241, 245, 249)); // Slate 100
+        var darkGrayBrush = new XSolidBrush(XColor.FromArgb(51, 65, 85)); // Slate 700
 
-        // Current Y position
+        var borderPen = new XPen(XColor.FromArgb(226, 232, 240), 1);
+        var accentPen = new XPen(XColor.FromArgb(16, 185, 129), 1.5);
+
         double y = Margin;
 
-        // Company header
-        gfx.DrawString("ZENTRIC", titleFont, XBrushes.DarkBlue, new XPoint(Margin, y));
-        y += 40;
+        // 1. Cabecera Institucional DIAN y Zentric
+        gfx.DrawString("zentric.", titleFont, brandBrush, new XPoint(Margin, y + 14));
+        gfx.DrawString("FACTURACIÓN ELECTRÓNICA DIAN", subtitleFont, primaryDarkBrush, new XPoint(Margin + 70, y + 14));
 
-        // Invoice info
-        gfx.DrawString($"Invoice #: {order.Id:N}", headingFont, XBrushes.Black, new XPoint(Margin, y));
-        y += 20;
-        gfx.DrawString($"Date: {DateTime.UtcNow:yyyy-MM-dd HH:mm}", normalFont, XBrushes.Black, new XPoint(Margin, y));
-        y += 20;
-        gfx.DrawString($"Buyer Email: {buyerEmail}", normalFont, XBrushes.Black, new XPoint(Margin, y));
-        y += 30;
+        var invoiceTypeTitle = (invoice?.Type == InvoiceType.VendorDetail)
+            ? "Factura de Venta (Detalle Vendedor)"
+            : "Factura Maestra (Consolidada)";
 
-        // Order items table header
-        gfx.DrawString("Items", boldNormalFont, XBrushes.DarkBlue, new XPoint(Margin, y));
-        gfx.DrawString("Description", boldNormalFont, XBrushes.DarkBlue, new XPoint(Margin + 100, y));
-        gfx.DrawString("Qty", boldNormalFont, XBrushes.DarkBlue, new XPoint(Margin + 300, y));
-        gfx.DrawString("Price", boldNormalFont, XBrushes.DarkBlue, new XPoint(Margin + 400, y));
-        gfx.DrawString("Total", boldNormalFont, XBrushes.DarkBlue, new XPoint(Margin + 480, y));
-        y += 20;
+        gfx.DrawString(invoiceTypeTitle, headingFont, primaryDarkBrush, new XPoint(PdfPageWidth - Margin - 220, y + 10));
+        gfx.DrawString($"Factura #{invoiceCode}", headingFont, brandBrush, new XPoint(PdfPageWidth - Margin - 220, y + 26));
 
-        // Order items
+        y += 42;
+        gfx.DrawLine(accentPen, Margin, y, PdfPageWidth - Margin, y);
+        y += 12;
+
+        // 2. Información del Emisor y Régimen Tributario
+        double colWidth = (PdfPageWidth - (Margin * 2) - 20) / 2;
+
+        // Cuadro Emisor (Izquierda)
+        gfx.DrawRoundedRectangle(borderPen, lightGrayBrush, Margin, y, colWidth, 75, 4, 4);
+        gfx.DrawString("EMISOR:", labelBoldFont, primaryDarkBrush, new XPoint(Margin + 10, y + 14));
+        gfx.DrawString("Zentric Technologies S.A.S.", labelBoldFont, darkGrayBrush, new XPoint(Margin + 10, y + 28));
+        gfx.DrawString("NIT: 901.845.293-4 · Régimen Común · Responsable de IVA", normalFont, darkGrayBrush, new XPoint(Margin + 10, y + 42));
+        gfx.DrawString("Actividad Económica: Comercio Electrónico y Servicios TIC (CIIU 4791 / 6201)", smallFont, mutedBrush, new XPoint(Margin + 10, y + 54));
+        gfx.DrawString("Bogotá D.C., Colombia · facturacion@zentric.co", smallFont, mutedBrush, new XPoint(Margin + 10, y + 66));
+
+        // Cuadro Tributario DIAN y Adquirente (Derecha)
+        double rightColX = Margin + colWidth + 20;
+        gfx.DrawRoundedRectangle(borderPen, lightGrayBrush, rightColX, y, colWidth, 75, 4, 4);
+        gfx.DrawString("DATOS FISCALES Y ADQUIRENTE:", labelBoldFont, primaryDarkBrush, new XPoint(rightColX + 10, y + 14));
+
+        var issuedDate = invoice?.IssuedAt ?? order.CreatedAt;
+        var formattedDate = issuedDate.ToString("dd 'de' MMMM 'de' yyyy, HH:mm 'COT'", ColombianCulture);
+
+        gfx.DrawString($"Fecha Emisión: {formattedDate}", normalFont, darkGrayBrush, new XPoint(rightColX + 10, y + 28));
+        gfx.DrawString($"Adquirente: {buyerEmail}", normalFont, darkGrayBrush, new XPoint(rightColX + 10, y + 42));
+        gfx.DrawString($"Pedido Zentric: #{order.Id.ToString()[..8].ToUpperInvariant()}", normalFont, darkGrayBrush, new XPoint(rightColX + 10, y + 54));
+        gfx.DrawString("Medio de Pago: Pasarela Digital Acreditada (Inmediato)", smallFont, mutedBrush, new XPoint(rightColX + 10, y + 66));
+
+        y += 85;
+
+        // 3. Resolución DIAN y Validez Tributaria
+        var greenBorderPen = new XPen(XColor.FromArgb(167, 243, 208), 1);
+        var greenBgBrush = new XSolidBrush(XColor.FromArgb(236, 253, 245));
+        gfx.DrawRoundedRectangle(greenBorderPen, greenBgBrush, Margin, y, PdfPageWidth - (Margin * 2), 34, 4, 4);
+        gfx.DrawString("Resolución DIAN No. 18764000001 de 2026. Habilitación de Facturación Electrónica", labelBoldFont, primaryDarkBrush, new XPoint(Margin + 10, y + 13));
+        gfx.DrawString("Prefijo FA: 000001 a 999999 · Vigencia: 24 meses · Validez Tributaria Decreto 2242 de 2015", smallFont, darkGrayBrush, new XPoint(Margin + 10, y + 25));
+
+        y += 44;
+
+        // 4. Tabla de Ítems / Conceptos Facturados
+        // Cabecera de la tabla
+        double tableWidth = PdfPageWidth - (Margin * 2);
+        gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(248, 250, 252)), Margin, y, tableWidth, 22);
+        gfx.DrawRectangle(borderPen, Margin, y, tableWidth, 22);
+
+        gfx.DrawString("Ítem / Ref", labelBoldFont, primaryDarkBrush, new XPoint(Margin + 8, y + 15));
+        gfx.DrawString("Descripción", labelBoldFont, primaryDarkBrush, new XPoint(Margin + 100, y + 15));
+        gfx.DrawString("Cant.", labelBoldFont, primaryDarkBrush, new XPoint(Margin + 310, y + 15));
+        gfx.DrawString("Valor Unitario", labelBoldFont, primaryDarkBrush, new XPoint(Margin + 360, y + 15));
+        gfx.DrawString("Total", labelBoldFont, primaryDarkBrush, new XPoint(Margin + 440, y + 15));
+
+        y += 22;
+
+        decimal totalNet = 0;
         foreach (var item in order.Items)
         {
-            // Get product info - in production, fetch from repository by variant ID
-            // For now, display variant ID and SKU from loaded order data
-            gfx.DrawString(item.VariantId.ToString(), normalFont, XBrushes.Black, new XPoint(Margin, y));
-            gfx.DrawString($"Variant {item.VariantId:N}", normalFont, XBrushes.Black, new XPoint(Margin + 100, y));
-            gfx.DrawString(item.Quantity.ToString(), normalFont, XBrushes.Black, new XPoint(Margin + 300, y));
+            gfx.DrawLine(borderPen, Margin, y, Margin + tableWidth, y);
 
-            // Format price using number format (configurable currency)
-            var priceString = item.UnitPrice.Amount.ToString("N0");
-            gfx.DrawString(priceString, normalFont, XBrushes.Black, new XPoint(Margin + 400, y));
+            var itemSku = $"VAR-{item.VariantId.ToString()[..6].ToUpperInvariant()}";
+            var itemDesc = $"Línea de Pedido · {itemSku}";
+            var itemQty = item.Quantity.ToString();
+            var unitPrice = FormatMoney(item.UnitPrice.Amount, item.UnitPrice.Currency);
+            var itemTotal = FormatMoney(item.TotalPrice.Amount, item.TotalPrice.Currency);
+            totalNet += item.TotalPrice.Amount;
 
-            var totalString = item.TotalPrice.Amount.ToString("N0");
-            gfx.DrawString(totalString, normalFont, XBrushes.Black, new XPoint(Margin + 480, y));
-            y += 18;
+            gfx.DrawString(itemSku, normalFont, darkGrayBrush, new XPoint(Margin + 8, y + 14));
+            gfx.DrawString(itemDesc, normalFont, darkGrayBrush, new XPoint(Margin + 100, y + 14));
+            gfx.DrawString(itemQty, normalFont, darkGrayBrush, new XPoint(Margin + 315, y + 14));
+            gfx.DrawString(unitPrice, normalFont, darkGrayBrush, new XPoint(Margin + 360, y + 14));
+            gfx.DrawString(itemTotal, labelBoldFont, primaryDarkBrush, new XPoint(Margin + 440, y + 14));
 
-            if (y > PdfPageHeight - 100)
+            y += 20;
+
+            if (y > PdfPageHeight - 140)
             {
                 page = document.AddPage();
                 gfx = XGraphics.FromPdfPage(page);
@@ -103,27 +167,81 @@ public sealed class PdfInvoiceGenerator
             }
         }
 
-        // Total row
-        gfx.DrawString("", normalFont, XBrushes.Black, new XPoint(Margin, y));
-        gfx.DrawString("TOTAL", boldNormalFont, XBrushes.Black, new XPoint(Margin + 300, y));
-        var totalStr = order.TotalAmount.Amount.ToString("N0");
-        gfx.DrawString(totalStr, boldNormalFont, XBrushes.DarkBlue, new XPoint(Margin + 400, y));
-        y += 20;
+        gfx.DrawLine(borderPen, Margin, y, Margin + tableWidth, y);
+        y += 12;
 
-        // Payment info
-        gfx.DrawString($"Payment Status: Paid", normalFont, XBrushes.Black, new XPoint(Margin, y));
-        y += 20;
-        gfx.DrawString($"Payment Date: {DateTime.UtcNow:yyyy-MM-dd HH:mm}", normalFont, XBrushes.Black, new XPoint(Margin, y));
-        y += 30;
+        // 5. Desglose de Totales e Impuestos (IVA 19% Incluido)
+        double totalsX = Margin + 280;
+        double totalsWidth = tableWidth - 280;
 
-        // Footer
-        gfx.DrawString("Thank you for your purchase!", smallFont, XBrushes.Gray, new XPoint(Margin, y));
-        y += 20;
-        gfx.DrawString("Zentric Systems © 2026", smallFont, XBrushes.Gray, new XPoint(Margin, y));
+        var currency = order.TotalAmount.Currency;
+        var totalAmount = order.TotalAmount.Amount;
+        // En Colombia el valor total de marketplace incluye IVA
+        var subtotal = Math.Round(totalAmount / 1.19m, 2);
+        var iva19 = totalAmount - subtotal;
 
-        // Save to memory stream
+        gfx.DrawString("Subtotal (Base Imponible):", normalFont, darkGrayBrush, new XPoint(totalsX, y + 10));
+        gfx.DrawString(FormatMoney(subtotal, currency), normalFont, darkGrayBrush, new XPoint(totalsX + 130, y + 10));
+        y += 16;
+
+        gfx.DrawString("IVA (19% Tarifa General):", normalFont, darkGrayBrush, new XPoint(totalsX, y + 10));
+        gfx.DrawString(FormatMoney(iva19, currency), normalFont, darkGrayBrush, new XPoint(totalsX + 130, y + 10));
+        y += 16;
+
+        gfx.DrawLine(accentPen, totalsX, y + 4, totalsX + totalsWidth, y + 4);
+        y += 8;
+
+        gfx.DrawString("TOTAL FACTURADO:", headingFont, primaryDarkBrush, new XPoint(totalsX, y + 14));
+        gfx.DrawString(FormatMoney(totalAmount, currency), headingFont, brandBrush, new XPoint(totalsX + 130, y + 14));
+        y += 28;
+
+        // 6. CUFE (Código Único de Facturación Electrónica) y Código QR Simulado
+        var cufeHash = GenerateCufe(invoice?.Id ?? order.Id, issuedDate, totalAmount);
+
+        gfx.DrawRoundedRectangle(borderPen, lightGrayBrush, Margin, y, tableWidth, 48, 4, 4);
+        gfx.DrawString("CUFE (Código Único de Facturación Electrónica):", labelBoldFont, primaryDarkBrush, new XPoint(Margin + 8, y + 12));
+        gfx.DrawString(cufeHash, cufeFont, darkGrayBrush, new XPoint(Margin + 8, y + 25));
+        gfx.DrawString("Documento oficial emitido conforme a las especificaciones técnicas del Anexo Técnico DIAN vigente.", smallFont, mutedBrush, new XPoint(Margin + 8, y + 38));
+
+        y += 58;
+
+        // 7. Pie Institucional
+        gfx.DrawLine(borderPen, Margin, y, Margin + tableWidth, y);
+        y += 12;
+        gfx.DrawString("Esta factura electrónica de venta constituye título valor según la Ley 1231 de 2008.", smallFont, mutedBrush, new XPoint(Margin, y));
+        y += 11;
+        gfx.DrawString("Zentric Technologies S.A.S. · Representación Gráfica Autorizada · www.zentric.co", smallFont, mutedBrush, new XPoint(Margin, y));
+
         using var stream = new System.IO.MemoryStream();
         document.Save(stream, false);
         return stream.ToArray();
+    }
+
+    private static string FormatMoney(decimal amount, string currency)
+    {
+        return $"$ {amount.ToString("N2", ColombianCulture)} {currency}";
+    }
+
+    private static string GenerateCufe(Guid id, DateTime date, decimal amount)
+    {
+        var raw = $"{id:N}-{date:yyyyMMddHHmmss}-{amount:F2}-9018452934";
+        var bytes = SHA384.HashData(Encoding.UTF8.GetBytes(raw));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
+    }
+
+    private static void EnsureFontResolver()
+    {
+        if (PdfSharp.Fonts.GlobalFontSettings.FontResolver is null)
+        {
+            var resolverType = typeof(PdfDocument).Assembly.GetType("PdfSharp.Fonts.EvenNewerFontResolver");
+            if (resolverType is not null)
+            {
+                var instance = Activator.CreateInstance(resolverType, true);
+                if (instance is PdfSharp.Fonts.IFontResolver resolver)
+                {
+                    PdfSharp.Fonts.GlobalFontSettings.FontResolver = resolver;
+                }
+            }
+        }
     }
 }

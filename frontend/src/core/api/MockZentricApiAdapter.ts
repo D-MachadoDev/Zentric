@@ -951,4 +951,8 @@ export class MockZentricApiAdapter implements ZentricApiPort {
   async getInvoicesByOrder(orderId: string): Promise<Invoice[]> {
     return this.invoices.filter((i) => i.customerOrderId === orderId);
   }
+
+  async getInvoicePdf(_invoiceId: string): Promise<Blob> {
+    return new Blob(['%PDF-1.4 mock invoice'], { type: 'application/pdf' });
+  }
 }

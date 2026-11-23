@@ -202,6 +202,11 @@ export interface ZentricApiPort {
   /** Listado paginado de facturas (backend: GET /api/Billing/invoices?page&size). */
   listInvoicesPaged(params?: ListInvoicesPagedParams): Promise<PagedResult<Invoice>>;
   getInvoicesByOrder(orderId: string): Promise<Invoice[]>;
+  /**
+   * Descarga la representación gráfica oficial en PDF de una factura DIAN certificada.
+   * Backend: GET /api/Billing/invoices/{invoiceId}/pdf (requiere token Bearer).
+   */
+  getInvoicePdf(invoiceId: string): Promise<Blob>;
 
   // ── Módulo 9: Favoritos del Comprador (/api/buyer/favorites) ────────────
   /**

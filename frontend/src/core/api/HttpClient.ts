@@ -120,7 +120,9 @@ export class HttpClient implements ZentricApiPort {
    */
   async #send(path: string, init: RequestInit = {}, withAuth = true): Promise<Response> {
     const headers = new Headers(init.headers);
-    headers.set('Accept', 'application/json');
+    if (!headers.has('Accept')) {
+      headers.set('Accept', 'application/json');
+    }
     if (init.body !== undefined) headers.set('Content-Type', 'application/json');
 
     // Erradicación de cabeceras forjables
@@ -647,6 +649,17 @@ export class HttpClient implements ZentricApiPort {
 
   getInvoicesByOrder(orderId: string): Promise<Invoice[]> {
     return this.#listItems<Invoice>(`/api/Billing/invoices/order/${encodeURIComponent(orderId)}`);
+  }
+
+  async getInvoicePdf(invoiceId: string): Promise<Blob> {
+    const response = await this.#send(
+      `/api/Billing/invoices/${encodeURIComponent(invoiceId)}/pdf`,
+      {
+        method: 'GET',
+        headers: { Accept: 'application/pdf' },
+      },
+    );
+    return response.blob();
   }
 
   // ── Módulo 9: Favoritos del Comprador (/api/buyer/favorites) ────────────

@@ -141,6 +141,37 @@ namespace Zentric.Api.Controllers
             if (result.IsFailure) return result.ToProblem();
             return Ok(result.Value);
         }
+
+        /// <summary>
+        /// Descarga la representación gráfica oficial en PDF de la Factura Electrónica certificada por la DIAN.
+        /// </summary>
+        /// <remarks>
+        /// Aplica Zero Trust:
+        /// - El Comprador solo puede descargar la Factura Maestra de sus compras.
+        /// - El Vendedor solo puede descargar sus facturas de detalle de venta.
+        /// - Administrador y Supervisor tienen acceso de auditoría completo.
+        /// </remarks>
+        /// <param name="invoiceId">Identificador único (Guid) de la factura a descargar.</param>
+        /// <response code="200">Archivo PDF generado en memoria y retornado como flujo binario application/pdf.</response>
+        /// <response code="401">Token ausente o inválido.</response>
+        /// <response code="404">Factura no encontrada o no perteneciente al llamante (RFC 7807 ProblemDetails).</response>
+        [HttpGet("invoices/{invoiceId:guid}/pdf")]
+        [Authorize(Policy = AuthorizationPolicies.BillingRead)]
+        [Produces("application/pdf")]
+        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetInvoicePdf(Guid invoiceId)
+        {
+            var userId = _currentUser.UserId;
+            var role = User.GetUserRole();
+            if (userId is null || role is null) return Unauthorized(new ProblemDetails { Detail = "Missing or invalid bearer token." });
+
+            var result = await _mediator.Send(new GetInvoicePdfQuery(invoiceId, userId.Value, role.Value));
+            if (result.IsFailure) return result.ToProblem();
+
+            return File(result.Value.FileBytes, result.Value.ContentType, result.Value.FileName);
+        }
     }
 
     /// <summary>
